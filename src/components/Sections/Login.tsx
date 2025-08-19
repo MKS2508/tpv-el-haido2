@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import User from "@/models/User"
 import {Loader2} from "lucide-react"
 import { useResponsive } from "@/hooks/useResponsive"
+import { isTauriEnvironment } from "@/utils/environment"
 
 interface LoginProps {
     users: User[]
@@ -17,10 +18,38 @@ const Login = ({ users, onLogin }: LoginProps) => {
     const [error, setError] = useState('')
     const [currentTime, setCurrentTime] = useState(new Date())
     const [isLoading, setIsLoading] = useState(false)
+    const [isTauri, setIsTauri] = useState(false)
     const { isMobile, isLaptop, isDesktop, isLargeDesktop, isUltraWide } = useResponsive()
     
     // Helper to determine if we should use desktop layout
     const isDesktopLayout = isLaptop || isDesktop || isLargeDesktop || isUltraWide
+
+    // Check if we're in Tauri environment after component mounts
+    useEffect(() => {
+        const checkTauriEnvironment = () => {
+            const isInTauri = typeof window !== 'undefined' && 
+                             (window as any).__TAURI__ !== undefined ||
+                             (window as any).__TAURI_IPC__ !== undefined ||
+                             window.location.protocol === 'tauri:'
+            
+            console.log('🔍 Checking Tauri environment:', {
+                __TAURI__: !!(window as any).__TAURI__,
+                __TAURI_IPC__: !!(window as any).__TAURI_IPC__,
+                protocol: window.location.protocol,
+                userAgent: window.navigator.userAgent,
+                isInTauri
+            })
+            
+            setIsTauri(isInTauri)
+        }
+        
+        checkTauriEnvironment()
+        
+        // Check again after a short delay to ensure Tauri APIs are loaded
+        const timeoutId = setTimeout(checkTauriEnvironment, 500)
+        
+        return () => clearTimeout(timeoutId)
+    }, [])
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000)
@@ -92,12 +121,7 @@ const Login = ({ users, onLogin }: LoginProps) => {
                 isDesktopLayout ? 'max-w-[240px] lg:max-w-[280px]' : 'gap-3 max-w-xs'
             }`}>
                 {digits.map((digit, index) => (
-                    <motion.div
-                        key={index}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.03, duration: 0.2 }}
-                    >
+                    <div key={index}>
                         <Button
                             onClick={() => {
                                 if (digit === 'delete') handlePinDelete()
@@ -114,7 +138,7 @@ const Login = ({ users, onLogin }: LoginProps) => {
                         >
                             {digit === 'delete' ? '⌫' : digit}
                         </Button>
-                    </motion.div>
+                    </div>
                 ))}
             </div>
         )
@@ -212,16 +236,11 @@ const Login = ({ users, onLogin }: LoginProps) => {
                                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                                     className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 w-full max-w-lg"
                                 >
-                                    {users.map((user, index) => (
-                                        <motion.div
+                                    {users.map((user) => (
+                                        <div
                                             key={user.id}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.1, duration: 0.3 }}
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
                                             onClick={() => handleUserSelect(user)}
-                                            className="flex flex-col items-center cursor-pointer p-4 rounded-2xl transition-all hover:bg-white/30 dark:hover:bg-gray-800/30"
+                                            className="user-card flex flex-col items-center cursor-pointer p-4 rounded-2xl"
                                         >
                                             <Avatar className="w-32 h-32 sm:w-40 sm:h-40 ring-4 ring-white/50 dark:ring-gray-700/50 hover:ring-primary/50 transition-all shadow-xl">
                                                 <AvatarImage src={user.profilePicture} alt={user.name}/>
@@ -232,7 +251,7 @@ const Login = ({ users, onLogin }: LoginProps) => {
                                             <p className="mt-3 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                                                 {user.name}
                                             </p>
-                                        </motion.div>
+                                        </div>
                                     ))}
                                 </motion.div>
                             ) : (
@@ -446,8 +465,8 @@ const Login = ({ users, onLogin }: LoginProps) => {
                     </div>
                 </motion.div>
 
-                {/* Fullscreen button - outside container - Only on desktop */}
-                {!isMobile && (
+                {/* Fullscreen button - outside container - Only on desktop and web */}
+                {!isMobile && !isTauri && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

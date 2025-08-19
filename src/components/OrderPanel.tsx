@@ -94,13 +94,13 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
                         </ScrollArea>
                     </div>
                     
-                    {/* Footer con total y botón - altura fija, SIEMPRE VISIBLE */}
+                    {/* Footer con total y botón - STICKY BOTTOM, SIEMPRE VISIBLE */}
                     <motion.div 
-                        className="flex-shrink-0 px-3 py-3 border-t border-border bg-card"
+                        className="sticky bottom-0 flex-shrink-0 px-3 py-3 border-t border-border bg-card/95 backdrop-blur-sm z-10"
                         animate={{
                             backgroundColor: showPaymentHighlight 
-                                ? "hsl(var(--success) / 0.05)" 
-                                : "hsl(var(--card))"
+                                ? "hsl(var(--success) / 0.08)" 
+                                : "hsl(var(--card) / 0.95)"
                         }}
                         transition={{ duration: 0.5 }}
                     >
@@ -150,11 +150,15 @@ const OrderPanel: React.FC<OrderPanelProps> = ({
                     </motion.div>
                 </>
             ) : (
-                <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                        <ShoppingCartIcon className="h-16 w-16 mx-auto mb-4 opacity-50"/>
-                        <p className="text-lg font-medium mb-2">No hay orden seleccionada</p>
-                        <p className="text-sm">Selecciona una mesa para comenzar</p>
+                <div className="flex-1 overflow-hidden">
+                    <div className="h-full overflow-y-auto">
+                        <div className="min-h-full flex items-center justify-center p-4">
+                            <div className="text-center text-muted-foreground">
+                                <ShoppingCartIcon className="h-16 w-16 mx-auto mb-4 opacity-50"/>
+                                <p className="text-lg font-medium mb-2">No hay orden seleccionada</p>
+                                <p className="text-sm">Selecciona una mesa para comenzar</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

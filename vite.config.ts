@@ -15,6 +15,22 @@ export default defineConfig(async () => ({
     },
   },
 
+  build: {
+    rollupOptions: {
+      external: [],
+    },
+  },
+
+  optimizeDeps: {
+    force: true, // Forzar re-optimización
+    exclude: ['get-nonce'],
+  },
+
+  define: {
+    global: 'globalThis',
+    'process.env': {},
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

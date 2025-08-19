@@ -40,10 +40,10 @@ const MoonSunSwitch: React.FC<DarkModeToggleProps> = ({ isDarkMode, toggleDarkMo
                     checked={isDarkMode}
                     onChange={toggleDarkMode}
                 />
-                <span className={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden z-[1] rounded-full`}>
-                    <div className={`${styles.background} absolute w-1.5 h-1.5 bg-white rounded-full bottom-0 right-0 transition-all duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)]`}></div>
-                    <div className={`${styles.star} scale-0 transition-all duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)]`}></div>
-                    <div className={`${styles.star} scale-0 transition-all duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)]`}></div>
+                <span className={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-600 ease-out overflow-hidden z-[1] rounded-full`}>
+                    <div className={`${styles.background} absolute w-1.5 h-1.5 bg-white rounded-full bottom-0 right-0 transition-all duration-600 ease-out`}></div>
+                    <div className={`${styles.star} scale-0 transition-all duration-600 ease-out`}></div>
+                    <div className={`${styles.star} scale-0 transition-all duration-600 ease-out`}></div>
                 </span>
             </label>
         </div>

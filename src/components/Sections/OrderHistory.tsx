@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useRef, useEffect, memo } from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import Order from "@/models/Order.ts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { renderTicketPreview } from "@/assets/utils/utils.ts";
 import { toast } from "@/components/ui/use-toast.ts";
 import PaymentModal from "@/components/PaymentModal.tsx";
-import useStore from "@/store/store.ts";
+import { useOrderHistoryData } from "@/store/selectors";
 import { useResponsive } from "@/hooks/useResponsive";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,12 +27,12 @@ interface OrderHistoryProps {
     setSelectedOrderId: (orderId: number | null) => void;
 }
 
-export default function Component({
+const OrderHistory = memo(({
                                       setActiveSection,
                                       selectedOrder,
                                       setSelectedOrder,
                                       setSelectedOrderId
-                                  }: OrderHistoryProps) {
+                                  }: OrderHistoryProps) => {
     const { isMobile } = useResponsive()
     const [sortConfig, setSortConfig] = useState<{ key: keyof Order; direction: 'asc' | 'desc' }>({
         key: 'date',
@@ -44,7 +44,7 @@ export default function Component({
     const [paymentMethod, setPaymentMethod] = useState('efectivo');
     const [cashAmount, setCashAmount] = useState('');
     const [showTicketDialog, setShowTicketDialog] = useState(false);
-    const { orderHistory, setOrderHistory, activeOrders } = useStore()
+    const { orderHistory, setOrderHistory, activeOrders } = useOrderHistoryData()
     const tableRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [startY, setStartY] = useState(0);
@@ -611,4 +611,8 @@ export default function Component({
             )}
         </div>
     )
-}
+})
+
+OrderHistory.displayName = 'OrderHistory'
+
+export default OrderHistory

@@ -26,10 +26,10 @@ import { DateRangePicker } from "@/components/ui/DateRangePicker.tsx"
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))']
 
 // Header Component
-const HomeHeader = ({ userName, dateRange, setDateRange, isMobile }: {
+const HomeHeader = ({ userName, dateRange, handleDateRangeChange, isMobile }: {
     userName: string
     dateRange: { from: Date, to: Date }
-    setDateRange: (range: { from: Date, to: Date }) => void
+    handleDateRangeChange: (values: { range: { from: Date; to: Date | undefined }; rangeCompare?: { from: Date; to: Date | undefined } | undefined }) => void
     isMobile: boolean
 }) => (
     <motion.div 
@@ -653,8 +653,8 @@ const Home = memo(({ userName }: HomeProps) => {
     }), [filteredOrders])
 
     // Callback memoizado para cambios de fecha
-    const handleDateRangeChange = useCallback(({range}: {range: {from: Date, to: Date}}) => {
-        const {from, to} = range
+    const handleDateRangeChange = useCallback((values: { range: { from: Date; to: Date | undefined }; rangeCompare?: { from: Date; to: Date | undefined } | undefined }) => {
+        const {from, to} = values.range
         if (!from || !to) return
         setDateRange({from, to})
     }, [])
@@ -664,7 +664,7 @@ const Home = memo(({ userName }: HomeProps) => {
             <HomeHeader 
                 userName={userName}
                 dateRange={dateRange}
-                setDateRange={setDateRange}
+                handleDateRangeChange={handleDateRangeChange}
                 isMobile={isMobile}
             />
 

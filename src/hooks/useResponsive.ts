@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 export type BreakpointSize = 'mobile' | 'tablet' | 'laptop' | 'desktop' | 'largeDesktop' | 'ultraWide'
 
@@ -45,30 +45,70 @@ export function useResponsive(): ResponsiveState {
     }
   })
 
+  // Helper function para actualizar estado - memoizada
+  const updateState = useCallback((width: number, height: number) => {
+    setState({
+      width,
+      height,
+      isMobile: width < BREAKPOINTS.mobile,
+      isTablet: width >= BREAKPOINTS.mobile && width < BREAKPOINTS.tablet,
+      isLaptop: width >= BREAKPOINTS.tablet && width < BREAKPOINTS.laptop,
+      isDesktop: width >= BREAKPOINTS.laptop && width < BREAKPOINTS.desktop,
+      isLargeDesktop: width >= BREAKPOINTS.desktop && width < BREAKPOINTS.largeDesktop,
+      isUltraWide: width >= BREAKPOINTS.ultraWide,
+      breakpoint: getBreakpoint(width),
+      isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    })
+  }, [])
+
   useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth
-      const height = window.innerHeight
+    // Cleanup refs para mejor cleanup
+    let timeoutId: NodeJS.Timeout | null = null
+    let isMounted = true
+    
+    const debouncedHandleResize = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
       
-      setState({
-        width,
-        height,
-        isMobile: width < BREAKPOINTS.mobile,
-        isTablet: width >= BREAKPOINTS.mobile && width < BREAKPOINTS.tablet,
-        isLaptop: width >= BREAKPOINTS.tablet && width < BREAKPOINTS.laptop,
-        isDesktop: width >= BREAKPOINTS.laptop && width < BREAKPOINTS.desktop,
-        isLargeDesktop: width >= BREAKPOINTS.desktop && width < BREAKPOINTS.largeDesktop,
-        isUltraWide: width >= BREAKPOINTS.ultraWide,
-        breakpoint: getBreakpoint(width),
-        isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0
-      })
+      timeoutId = setTimeout(() => {
+        if (isMounted) { // Evitar updates en componente desmontado
+          const width = window.innerWidth
+          const height = window.innerHeight
+          updateState(width, height)
+        }
+      }, 150) // 150ms debounce delay
     }
 
-    window.addEventListener('resize', handleResize)
-    handleResize() // Call once to set initial state
+    // Throttled handler para mejor performance
+    let lastResize = 0
+    const handleResize = () => {
+      const now = Date.now()
+      if (now - lastResize < 16) return // ~60fps throttle
+      lastResize = now
+      debouncedHandleResize()
+    }
 
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    // Add event listener con passive true para mejor performance
+    window.addEventListener('resize', handleResize, { passive: true })
+    
+    // Set initial state immediately (sin debounce)
+    if (isMounted && typeof window !== 'undefined') {
+      const initialWidth = window.innerWidth
+      const initialHeight = window.innerHeight
+      updateState(initialWidth, initialHeight)
+    }
+
+    // Cleanup function mejorado
+    return () => {
+      isMounted = false
+      window.removeEventListener('resize', handleResize)
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+        timeoutId = null
+      }
+    }
+  }, [updateState]) // Dependencia del callback memoizado
 
   return state
 }

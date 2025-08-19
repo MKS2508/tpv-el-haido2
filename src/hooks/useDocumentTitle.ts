@@ -34,7 +34,8 @@ export function useDocumentTitle(
     // Intentar actualizar título de ventana Tauri si está disponible
     if (isTauriEnvironment()) {
       try {
-        import('@tauri-apps/api/window').then(({ appWindow }) => {
+        import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+          const appWindow = getCurrentWindow();
           appWindow.setTitle(newTitle).catch(() => {
             // Silently fail si no se puede actualizar el título de Tauri
           })

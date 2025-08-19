@@ -1,6 +1,6 @@
 import React from "react";
 import Product from "@/models/Product.ts";
-import ProductCard from "@/components/ui/ProductCard";
+import OptimizedProductCard from "@/components/ui/OptimizedProductCard";
 
 interface ProductButtonProps extends React.HTMLAttributes<HTMLDivElement> {
     product: Product;
@@ -14,7 +14,7 @@ const ProductButton: React.FC<ProductButtonProps> = ({
     ...props
 }) => {
     return (
-        <ProductCard
+        <OptimizedProductCard
             product={product}
             mode="order"
             onAction={handleAddToOrder}

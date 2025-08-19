@@ -52,7 +52,7 @@ function App() {
         setProducts,
 
         setOrderHistory
-    } = useStore()
+    } = useAppData()
 
     // Use the perfect new theme system
     const { mode, setMode } = useAppTheme()
@@ -208,69 +208,45 @@ function App() {
         })
         prevSectionRef.current = activeSection
     }, [activeSection, isMobile])
+    // Optimized page variants - mantiene direcciones pero elimina scale y cálculos complejos
     const pageVariants = {
         enter: (direction: {axis: 'x' | 'y', value: number}) => {
-            let enterValue: string
-            
-            if (direction.axis === 'x') {
-                // MÓVIL - Horizontal (left/right movement)
-                enterValue = direction.value > 0 ? '100%' : '-100%'  // Forward: desde derecha, Backward: desde izquierda
-            } else {
-                // DESKTOP - Vertical (up/down movement)
-                enterValue = direction.value > 0 ? '50vh' : '-50vh'  // Forward: desde abajo, Backward: desde arriba (using vh for clarity)
-            }
-            
-            console.log('📥 ENTER ANIMATION:', {
-                axis: direction.axis,
-                value: direction.value,
-                enterValue,
-                isForward: direction.value > 0,
-                device: direction.axis === 'x' ? 'MOBILE' : 'DESKTOP'
-            })
+            // Simplified calculation - mantener direcciones forward/upward
+            const enterValue = direction.value > 0 ? 
+                (direction.axis === 'x' ? '100%' : '30vh') :   // Forward: right/down
+                (direction.axis === 'x' ? '-100%' : '-30vh')   // Backward: left/up
             
             return {
                 [direction.axis]: enterValue,
                 opacity: 0,
-                scale: 0.95, // Add subtle scale effect
+                // Eliminado: scale (costoso para GPU)
             }
         },
         center: {
             x: 0,
             y: 0,
             opacity: 1,
-            scale: 1,
+            // Eliminado: scale
         },
         exit: (direction: {axis: 'x' | 'y', value: number}) => {
-            let exitValue: string
-            
-            if (direction.axis === 'x') {
-                // MÓVIL - Horizontal (left/right movement)
-                exitValue = direction.value > 0 ? '-100%' : '100%'  // Forward: sale izquierda, Backward: sale derecha
-            } else {
-                // DESKTOP - Vertical (up/down movement)  
-                exitValue = direction.value > 0 ? '-50vh' : '50vh'  // Forward: sale arriba, Backward: sale abajo (using vh for clarity)
-            }
-            
-            console.log('📤 EXIT ANIMATION:', {
-                axis: direction.axis,
-                value: direction.value,
-                exitValue,
-                isForward: direction.value > 0,
-                device: direction.axis === 'x' ? 'MOBILE' : 'DESKTOP'
-            })
+            // Simplified calculation - mantener direcciones
+            const exitValue = direction.value > 0 ? 
+                (direction.axis === 'x' ? '-100%' : '-30vh') :  // Forward: left/up  
+                (direction.axis === 'x' ? '100%' : '30vh')      // Backward: right/down
             
             return {
                 [direction.axis]: exitValue,
                 opacity: 0,
-                scale: 0.95, // Add subtle scale effect
+                // Eliminado: scale
             }
         },
     }
 
+    // Optimized transition - más simple y rápido
     const pageTransition = {
         type: 'tween',
-        ease: [0.4, 0, 0.2, 1], // Better easing curve
-        duration: isMobile ? 0.35 : 0.4, // Faster on mobile
+        ease: 'easeOut', // Más simple que bezier curve
+        duration: isMobile ? 0.25 : 0.3, // Más rápido para mejor performance
     }
 
 
@@ -351,7 +327,7 @@ function App() {
                 )}
                 
                 <main className={cn(
-                    "flex-1 h-full relative overscroll-y-none",
+                    "flex-1 h-full relative overflow-hidden overscroll-y-none",
                     isMobile && "w-full"
                 )}>
                     <AnimatePresence custom={getDirection(activeSection)}>
@@ -363,7 +339,7 @@ function App() {
                             animate="center"
                             exit="exit"
                             transition={pageTransition}
-                            className="absolute inset-0 rounded-3xl overflow-hidden"
+                            className="absolute inset-0 overflow-hidden"
                         >
                             <Card className={cn(
                                 "h-full w-full bg-card border-card-border shadow-xl overflow-hidden",
@@ -400,7 +376,7 @@ function App() {
                                         )}
                                         {/* NewOrder Section - No padding for mobile layout */}
                                         {activeSection === 'newOrder' && (
-                                            <div className={isMobile ? "h-full" : ""}>
+                                            <div className="h-full overflow-hidden">
                                                 <NewOrder />
                                             </div>
                                         )}

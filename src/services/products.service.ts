@@ -21,8 +21,7 @@ export default class ProductService implements IProductService {
             // Check if we're running in Tauri environment
             if (typeof window !== 'undefined' && '__TAURI_IPC__' in window) {
                 const response = await fetch(this.ENDPOINT, {
-                    method: 'GET',
-                    timeout: { secs: 30, nanos: 0 }
+                    method: 'GET'
                 });
                 const products = await response.json() as Product[];
                 console.log("products get from tauri", products);

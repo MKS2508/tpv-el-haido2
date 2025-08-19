@@ -63,6 +63,9 @@ const NewOrder = memo(({}: NewOrderProps) => {
     const [selectedCategory, setSelectedCategory] = useState<string | null>("Fijados")
     const [showOrderPanel, setShowOrderPanel] = useState(false)
 
+    // Memoizar ProductService para evitar recreación
+    const productsService = useMemo(() => new ProductService(), [])
+
     useEffect(() => {
         const updatedTables = tables.map(table => {
             const activeOrder = activeOrders.find(order => order.tableNumber === table.id && order.status === 'inProgress')
@@ -78,16 +81,20 @@ const NewOrder = memo(({}: NewOrderProps) => {
         }
     }, [activeOrders]) // Remove 'tables' from the dependency array
 
+    // Memoizar filtro de órdenes en progreso para evitar recálculo en cada render
+    const inProgressOrders = useMemo(() => {
+        return orderHistory.filter(order => order.status === 'inProgress')
+    }, [orderHistory])
+
     useEffect(() => {
         if (activeOrders.length > 0 && !selectedOrderId) {
             setSelectedOrderId(activeOrders[0].id)
         } else if (activeOrders.length === 0) {
-            const inProgressOrders = orderHistory.filter(order => order.status === 'inProgress')
             if (inProgressOrders.length > 0) {
                 setActiveOrders(inProgressOrders)
             }
         }
-    }, [activeOrders.length, selectedOrderId, orderHistory])
+    }, [activeOrders.length, selectedOrderId, inProgressOrders, setActiveOrders, setSelectedOrderId])
 
     useEffect(() => {
         if (selectedOrderId) {
@@ -100,21 +107,19 @@ const NewOrder = memo(({}: NewOrderProps) => {
 
     useEffect(() => {
         if (selectedUser && products.length === 0) {
-            const productsService = new ProductService()
             productsService.getProducts().then(fetchedProducts => {
                 setProducts(fetchedProducts)
             })
         }
-    }, [selectedUser, products.length])
+    }, [selectedUser, products.length, productsService, setProducts])
 
     useEffect(() => {
         if (selectedUser && products.length > 0) {
             const pinnedProductIds = selectedUser.pinnedProductIds || []
-            const productsService = new ProductService()
             const pinnedProducts = productsService.getProductsByIdArray(pinnedProductIds, products)
             setRecentProducts(pinnedProducts)
         }
-    }, [selectedUser, products])
+    }, [selectedUser, products, productsService, setRecentProducts])
 
 
 
@@ -173,7 +178,7 @@ const NewOrder = memo(({}: NewOrderProps) => {
     }
 
 
-    // Función memoizada para filtrar productos por categoría
+    // Memoizar filtros costosos para optimizar rendimiento
     const filteredProducts = useMemo(() => {
         if (!selectedCategory) return []
         
@@ -184,8 +189,34 @@ const NewOrder = memo(({}: NewOrderProps) => {
         return products.filter(product => product.category === selectedCategory)
     }, [selectedCategory, products, recentProducts])
 
+    // Memoizar tablas disponibles - filtro costoso que se ejecutaba en cada render
+    const availableTables = useMemo(() => {
+        return tables.filter(table => 
+            table.id !== 0 && 
+            table.available && 
+            !activeOrders.find(order => order.tableNumber === table.id)
+        )
+    }, [tables, activeOrders])
+
+    // Memoizar si la barra está libre
+    const isBarAvailable = useMemo(() => {
+        return !activeOrders.find(order => order.tableNumber === 0)
+    }, [activeOrders])
+
+    // Memoizar tablas ocupadas
+    // const occupiedTables = useMemo(() => {
+    //     return tables.filter(table => 
+    //         activeOrders.find(order => order.tableNumber === table.id)
+    //     )
+    // }, [tables, activeOrders])
+
+    // Memoizar total de tablas para mostrar fade indicator
+    const totalAvailableTables = useMemo(() => {
+        return availableTables.length + activeOrders.length
+    }, [availableTables.length, activeOrders.length])
+
     return (
-        <div className="h-full max-h-full flex flex-col bg-background overflow-hidden overscroll-none">
+        <div className="h-full w-full flex flex-col bg-background overflow-hidden">
             {/* TopBar con selector de mesas y comandas - optimizado para mobile */}
             <div className={cn(
                 "border-b border-border bg-card flex-shrink-0",
@@ -194,7 +225,7 @@ const NewOrder = memo(({}: NewOrderProps) => {
                 <div className="relative min-h-[2.5rem] flex items-center">
                     <div className="flex gap-1.5 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory w-full pb-1 -mb-1">
                         {/* Barra (si está libre) */}
-                        {!activeOrders.find(order => order.tableNumber === 0) && (
+                        {isBarAvailable && (
                             <button
                                 onClick={() => handleTableChange(0)}
                                 className={cn(
@@ -214,11 +245,7 @@ const NewOrder = memo(({}: NewOrderProps) => {
                         )}
                         
                         {/* Mesas libres */}
-                        {tables.filter(table => 
-                            table.id !== 0 && 
-                            table.available && 
-                            !activeOrders.find(order => order.tableNumber === table.id)
-                        ).map((table) => (
+                        {availableTables.map((table) => (
                             <button
                                 key={`available-${table.id}`}
                                 onClick={() => handleTableChange(table.id)}
@@ -240,11 +267,10 @@ const NewOrder = memo(({}: NewOrderProps) => {
 
                         {/* Comandas Activas (mezcladas en la misma fila) */}
                         {activeOrders.map(order => (
-                            <button
+                            <div
                                 key={`order-${order.id}`}
-                                onClick={() => setSelectedOrderId(order.id)}
                                 className={cn(
-                                    "table-button border rounded-lg flex items-center font-medium transition-all duration-150 active:scale-[0.98] flex-shrink-0 snap-start",
+                                    "table-button border rounded-lg flex items-center font-medium transition-all duration-150 active:scale-[0.98] flex-shrink-0 snap-start cursor-pointer",
                                     selectedOrderId === order.id
                                         ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
                                         : "bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted/80",
@@ -256,6 +282,7 @@ const NewOrder = memo(({}: NewOrderProps) => {
                                     fontSize: isMobile ? '0.7rem' : '0.75rem',
                                     boxShadow: selectedOrderId === order.id ? 'var(--shadow-md)' : 'var(--shadow-sm)'
                                 }}
+                                onClick={() => setSelectedOrderId(order.id)}
                             >
                                 <span className={`w-2 h-2 rounded-full ${
                                     selectedOrderId === order.id 
@@ -278,15 +305,12 @@ const NewOrder = memo(({}: NewOrderProps) => {
                                 >
                                     ×
                                 </button>
-                            </button>
+                            </div>
                         ))}
                     </div>
                     
                     {/* Fade indicator único al final (si hay muchos elementos) */}
-                    {(tables.filter(table => 
-                        table.available && 
-                        !activeOrders.find(order => order.tableNumber === table.id)
-                    ).length + activeOrders.length) > 6 && (
+                    {totalAvailableTables > 6 && (
                         <div className="absolute top-0 right-0 bottom-1 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none" />
                     )}
                 </div>
@@ -350,7 +374,11 @@ const NewOrder = memo(({}: NewOrderProps) => {
                         <div className="flex-1 min-h-0">
                             <ProductGrid
                                 products={filteredProducts}
-                                handleAddToOrder={(product) => selectedOrderId && handleAddToOrder(selectedOrderId, product)}
+                                handleAddToOrder={(product) => {
+                                    if (selectedOrderId) {
+                                        handleAddToOrder(selectedOrderId, product)
+                                    }
+                                }}
                                 selectedOrderId={selectedOrderId}
                             />
                         </div>
@@ -390,9 +418,9 @@ const NewOrder = memo(({}: NewOrderProps) => {
                 </div>
             ) : (
                 /* Desktop Layout - 3 columnas optimizadas */
-                <div className="flex-1 flex min-h-0 max-w-full overflow-hidden">
+                <div className="flex-1 flex min-h-0 w-full overflow-hidden">
                     {/* Categorías - Ancho mínimo flexible */}
-                    <div className="w-48 min-w-[12rem] max-w-[16rem] h-full border-r border-border flex-shrink-0">
+                    <div className="w-48 min-w-[12rem] max-w-[16rem] flex-shrink-0 border-r border-border overflow-hidden">
                         <CategorySidebar 
                             categories={categories}
                             selectedCategory={selectedCategory}
@@ -400,32 +428,40 @@ const NewOrder = memo(({}: NewOrderProps) => {
                         />
                     </div>
 
-                    {/* Productos - Toma espacio disponible */}
-                    <div className="flex-1 min-w-0 flex flex-col border-r border-sidebar-border">
+                    {/* Productos - Toma espacio disponible con scroll independiente */}
+                    <div className="flex-1 min-w-0 flex flex-col border-r border-sidebar-border overflow-hidden">
                         <div className="h-12 px-3 border-b border-sidebar-border bg-sidebar/40 flex items-center gap-2 flex-shrink-0">
                             <Package className="w-4 h-4 text-sidebar-foreground" />
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-sm font-medium text-sidebar-foreground truncate">
                                     {selectedCategory === "Fijados" ? "Productos Favoritos" : selectedCategory}
                                 </h3>
-                                {selectedOrderId && (
+                                {selectedOrderId ? (
                                     <p className="text-xs text-sidebar-foreground/70 truncate">
                                         Agregando a {selectedOrder?.tableNumber === 0 ? 'Barra' : `Mesa ${selectedOrder?.tableNumber}`}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-sidebar-foreground/50 truncate">
+                                        Selecciona una mesa para comenzar
                                     </p>
                                 )}
                             </div>
                         </div>
-                        <div className="flex-1 min-h-0">
+                        <div className="flex-1 min-h-0 overflow-hidden">
                             <ProductGrid
                                 products={filteredProducts}
-                                handleAddToOrder={(product) => selectedOrderId && handleAddToOrder(selectedOrderId, product)}
+                                handleAddToOrder={(product) => {
+                                    if (selectedOrderId) {
+                                        handleAddToOrder(selectedOrderId, product)
+                                    }
+                                }}
                                 selectedOrderId={selectedOrderId}
                             />
                         </div>
                     </div>
 
-                    {/* Resumen del Pedido - Ancho fijo óptimo */}
-                    <div className="w-80 min-w-[20rem] max-w-[24rem] flex-shrink-0 h-full">
+                    {/* Resumen del Pedido - Ancho fijo óptimo con overflow independiente */}
+                    <div className="w-80 min-w-[20rem] max-w-[24rem] flex-shrink-0 overflow-hidden">
                         <OrderPanel 
                             activeOrders={activeOrders}
                             selectedOrder={selectedOrder}
@@ -496,4 +532,8 @@ const NewOrder = memo(({}: NewOrderProps) => {
             </Dialog>
         </div>
     )
-}
+})
+
+NewOrder.displayName = 'NewOrder'
+
+export default NewOrder

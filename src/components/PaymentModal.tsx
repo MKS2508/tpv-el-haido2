@@ -244,8 +244,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                         exit={{ opacity: 0, y: 20 }}
                                         transition={{ duration: 0.3 }}
                                         className={cn(
-                                            "grid gap-4",
-                                            isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 gap-6"
+                                            "grid gap-6",
+                                            isMobile ? "grid-cols-1" : "grid-cols-2 gap-8"
                                         )}
                                     >
                                         <div className={cn(
@@ -257,7 +257,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                             )}>Cantidad en Efectivo</Label>
                                             <div className={cn(
                                                 "grid grid-cols-3",
-                                                isMobile ? "gap-2" : "gap-4"
+                                                isMobile ? "gap-2" : "gap-3"
                                             )}>
                                                 <AnimatePresence>
                                                     {numpadButtons.map((key, index) => (
@@ -274,10 +274,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                                                 variant="outline"
                                                                 onClick={() => handleLocalCashInput(key)}
                                                                 className={cn(
-                                                                    "w-full bg-input border border-border",
+                                                                    "w-full bg-input border border-border font-bold hover:bg-input/80 transition-all duration-150",
                                                                     isMobile 
                                                                         ? "h-18 text-2xl active:scale-95 touch-manipulation" 
-                                                                        : "h-32 text-4xl"
+                                                                        : "h-20 text-3xl hover:scale-105 active:scale-95"
                                                                 )}
                                                             >
                                                                 {key}

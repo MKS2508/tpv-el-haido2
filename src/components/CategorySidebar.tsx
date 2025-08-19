@@ -17,15 +17,15 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
 }) => {
 
     return (
-        <div className="h-full flex flex-col bg-sidebar border-sidebar-border overflow-hidden">
+        <div className="h-full w-full flex flex-col bg-sidebar border-sidebar-border overflow-hidden">
             {/* Header */}
             <div className="h-12 px-3 border-b border-sidebar-border bg-sidebar-accent/20 flex items-center gap-2 flex-shrink-0">
                 <Grid3X3 className="w-4 h-4 text-sidebar-foreground/70" />
                 <h3 className="text-sm font-medium text-sidebar-foreground">Categorías</h3>
             </div>
             
-            {/* Lista de categorías con scroll */}
-            <ScrollArea className="flex-1 min-h-0">
+            {/* Lista de categorías con scroll independiente */}
+            <ScrollArea className="flex-1 min-h-0 w-full">
                 <div className="p-1.5 space-y-0.5">
                     {/* Categoría Fijados primero */}
                     <CategoryCard

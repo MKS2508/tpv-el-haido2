@@ -1,0 +1,88 @@
+/* 
+  Optimized Login CSS - Reemplaza animaciones Framer Motion costosas
+  Elimina delays escalonados y whileHover/whileTap
+*/
+
+/* User card optimizations */
+.user-card {
+  will-change: transform;
+  transform: scale(1) translateZ(0);
+  transition: 
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.2s ease-out;
+  backface-visibility: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hover only on non-touch devices */
+@media (hover: hover) and (pointer: fine) {
+  .user-card:hover {
+    transform: scale(1.02) translateZ(0);
+    background-color: rgb(255 255 255 / 0.3);
+  }
+  
+  .dark .user-card:hover {
+    background-color: rgb(31 41 55 / 0.3);
+  }
+}
+
+/* Active/tap state */
+.user-card:active {
+  transform: scale(0.98) translateZ(0);
+  transition-duration: 0.1s;
+}
+
+/* Reduce motion for accessibility and performance */
+@media (prefers-reduced-motion: reduce) {
+  .user-card {
+    transition: background-color 0.1s ease-out;
+    animation: none;
+  }
+  
+  .user-card:hover,
+  .user-card:active {
+    transform: none;
+  }
+}
+
+/* Touch optimizations */
+.user-card {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Focus states for accessibility */
+.user-card:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Performance optimizations for low-end devices */
+.reduced-motion .user-card {
+  transition: opacity 0.1s ease-out;
+  transform: none;
+  will-change: auto;
+}
+
+.reduced-motion .user-card:hover {
+  opacity: 0.8;
+}
+
+.reduced-motion .user-card:active {
+  opacity: 0.6;
+}
+
+/* Container optimizations */
+.login-container {
+  contain: layout style paint;
+}
+
+/* Avatar ring transitions - more efficient than complex animations */
+.avatar-ring {
+  transition: box-shadow 0.2s ease-out;
+}
+
+.user-card:hover .avatar-ring {
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.5);
+}
