@@ -1,0 +1,64 @@
+{
+  "themes": [
+    {
+      "value": "default",
+      "label": "Default",
+      "description": "Clean neutral theme with balanced contrast"
+    },
+    {
+      "value": "blue",
+      "label": "Blue",
+      "description": "Professional blue theme with clean aesthetics"
+    },
+    {
+      "value": "green",
+      "label": "Green",
+      "description": "Fresh green theme with natural vibes"
+    },
+    {
+      "value": "purple",
+      "label": "Purple",
+      "description": "Elegant purple theme with modern styling"
+    },
+    {
+      "value": "orange",
+      "label": "Orange",
+      "description": "Energetic orange theme with warm tones"
+    },
+    {
+      "value": "tangerine",
+      "label": "Tangerine",
+      "description": "Warm orange accents with clean backgrounds"
+    },
+    {
+      "value": "midnight-blossom",
+      "label": "Midnight Blossom",
+      "description": "Deep purples and blues with elegant contrasts"
+    },
+    {
+      "value": "restaurant-professional",
+      "label": "Restaurant Professional",
+      "description": "Professional restaurant theme with sophisticated styling"
+    },
+    {
+      "value": "cyberpunk",
+      "label": "Cyberpunk",
+      "description": "Neon pink and cyan with a futuristic grid pattern"
+    },
+    {
+      "value": "cyberpunk2222",
+      "label": "Cyberpunk 2222",
+      "description": "Advanced cyberpunk theme with enhanced effects"
+    },
+    {
+      "value": "bubblegum",
+      "label": "Bubblegum",
+      "description": "Playful pastel theme with soft colors"
+    },
+    {
+      "value": "doom64",
+      "label": "Doom64",
+      "description": "Retro-inspired dark theme with bold contrasts"
+    }
+  ]
+}

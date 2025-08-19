@@ -1,0 +1,115 @@
+/* Base theme variables - these apply to all themes as fallbacks */
+:root {
+  --radius: 0.5rem;
+  --font-sans: system-ui, sans-serif;
+  --font-mono: monospace;
+
+  /* Shadow variables that are consistent across themes */
+  --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);
+
+  /* Additional status colors - Universal set */
+  --success: hsl(142 76% 36%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(48 96% 53%);
+  --warning-foreground: hsl(0 0% 0%);
+  --info: hsl(221 83% 53%);
+  --info-foreground: hsl(0 0% 100%);
+
+  /* Default Light Theme Colors (from your computed output) */
+  --background: hsl(204.0 12.20% 91.96%);
+  --foreground: hsl(0 0% 20%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 20%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 20%);
+  --primary: hsl(13.21 73.04% 54.90%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(220.0 14.29% 95.88%);
+  --secondary-foreground: hsl(215 13.79% 34.12%);
+  --muted: hsl(210 20.00% 98.04%);
+  --muted-foreground: hsl(220 8.94% 46.08%);
+  --accent: hsl(207.69 46.43% 89.02%);
+  --accent-foreground: hsl(224.44 64.29% 32.94%);
+  --destructive: hsl(0 84.24% 60.20%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(210 9.37% 87.45%);
+  --input: hsl(220 15.79% 96.27%);
+  --ring: hsl(13.21 73.04% 54.90%);
+  --chart-1: hsl(210 37.50% 65.49%);
+  --chart-2: hsl(12.9 73.23% 75.10%);
+  --chart-3: hsl(213.16 29.92% 50.20%);
+  --chart-4: hsl(216.92 35.78% 42.75%);
+  --chart-5: hsl(221.01 43.65% 35.49%);
+  --sidebar: hsl(216 7.94% 87.65%);
+  --sidebar-foreground: hsl(0 0% 20%);
+  --sidebar-primary: hsl(13.21 73.04% 54.90%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(207.69 46.43% 89.02%);
+  --sidebar-accent-foreground: hsl(224.44 64.29% 32.94%);
+  --sidebar-border: hsl(220 13.04% 90.98%);
+  --sidebar-ring: hsl(13.21 73.04% 54.90%);
+  --font-sans: Inter, sans-serif;
+  --font-serif: Source Serif 4, serif;
+  --font-mono: JetBrains Mono, monospace;
+  
+  /* Layout and spacing - Universal */
+  --spacing: 0.25rem;
+  --tracking-normal: 0em;
+}
+
+.dark { /* Changed from .dark:not([data-theme]) to just .dark */
+  --background: hsl(222.2 84% 4.9%);
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(222.2 84% 4.9%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(222.2 84% 4.9%);
+  --popover-foreground: hsl(210 40% 98%);
+  --primary: hsl(217.2 91.2% 59.8%);
+  --primary-foreground: hsl(222.2 47.4% 11.2%);
+  --secondary: hsl(217.2 32.6% 17.5%);
+  --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(217.2 32.6% 17.5%);
+  --muted-foreground: hsl(215 20.2% 65.1%);
+  --accent: hsl(217.2 32.6% 17.5%);
+  --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(217.2 32.6% 17.5%);
+  --input: hsl(217.2 32.6% 17.5%);
+  --ring: hsl(224.3 76.3% 48%);
+  --chart-1: hsl(217.2 91.2% 59.8%);
+  --chart-2: hsl(280 65% 60%);
+  --chart-3: hsl(330 65% 60%);
+  --chart-4: hsl(30 65% 60%);
+  --chart-5: hsl(180 65% 60%);
+  --sidebar: hsl(222.2 84% 4.9%);
+  --sidebar-foreground: hsl(210 40% 98%);
+  --sidebar-primary: hsl(217.2 91.2% 59.8%);
+  --sidebar-primary-foreground: hsl(222.2 47.4% 11.2%);
+  --sidebar-accent: hsl(217.2 32.6% 17.5%);
+  --sidebar-accent-foreground: hsl(210 40% 98%);
+  --sidebar-border: hsl(217.2 32.6% 17.5%);
+  --sidebar-ring: hsl(224.3 76.3% 48%);
+  --font-sans: Inter, sans-serif;
+  --font-serif: Source Serif 4, serif;
+  --font-mono: JetBrains Mono, monospace;
+  --success: hsl(142 70% 45%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(48 90% 55%);
+  --warning-foreground: hsl(0 0% 0%);
+  --info: hsl(221 76% 48%);
+  --info-foreground: hsl(0 0% 100%);
+  
+  /* Layout and spacing - Universal */
+  --spacing: 0.25rem;
+  --tracking-normal: 0em;
+}
+
+

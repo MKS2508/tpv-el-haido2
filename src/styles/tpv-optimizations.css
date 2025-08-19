@@ -1,0 +1,360 @@
+/* ===== TPV/POS SPECIFIC OPTIMIZATIONS ===== */
+
+/* Screen Size Optimizations for Common POS Displays */
+
+/* Small POS Tablets (10"-12") */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .product-button {
+    min-width: 4.5rem;
+    min-height: 4.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .category-button {
+    min-height: 3.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .payment-button {
+    min-height: 4rem;
+    font-size: 1.125rem;
+  }
+  
+  .table-button {
+    min-width: 4.5rem;
+    min-height: 2.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Medium POS Displays (13"-17") */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .product-button {
+    min-width: 5rem;
+    min-height: 5rem;
+    font-size: 1rem;
+  }
+  
+  .category-button {
+    min-height: 3.75rem;
+    font-size: 1rem;
+  }
+  
+  .payment-button {
+    min-height: 4.5rem;
+    font-size: 1.25rem;
+  }
+  
+  .table-button {
+    min-width: 5rem;
+    min-height: 3rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Large POS Displays (18"-21") */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .product-button {
+    min-width: 5.5rem;
+    min-height: 5.5rem;
+    font-size: 1.125rem;
+    padding: 1rem;
+  }
+  
+  .category-button {
+    min-height: 4rem;
+    font-size: 1.125rem;
+    padding: 1rem 1.25rem;
+  }
+  
+  .payment-button {
+    min-height: 5rem;
+    font-size: 1.375rem;
+  }
+  
+  .table-button {
+    min-width: 5.5rem;
+    min-height: 3.25rem;
+    font-size: 1rem;
+  }
+}
+
+/* Extra Large POS Displays (22"+) */
+@media (min-width: 1920px) {
+  .product-button {
+    min-width: 6rem;
+    min-height: 6rem;
+    font-size: 1.25rem;
+    padding: 1.25rem;
+  }
+  
+  .category-button {
+    min-height: 4.5rem;
+    font-size: 1.25rem;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .payment-button {
+    min-height: 5.5rem;
+    font-size: 1.5rem;
+  }
+  
+  .table-button {
+    min-width: 6rem;
+    min-height: 3.5rem;
+    font-size: 1.125rem;
+  }
+}
+
+/* Environment-Specific Adaptations */
+
+/* Bright Environment Mode */
+.environment-bright {
+  --primary: hsl(var(--primary) / 0.9);
+  --secondary: hsl(var(--secondary) / 0.95);
+  --border: hsl(var(--border) / 0.8);
+}
+
+.environment-bright .product-button,
+.environment-bright .category-button,
+.environment-bright .payment-button {
+  border-width: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Low Light Environment Mode */
+.environment-dim {
+  --background: hsl(var(--background) / 0.95);
+  --card: hsl(var(--card) / 0.9);
+}
+
+.environment-dim .product-button,
+.environment-dim .category-button {
+  background: hsl(var(--card) / 0.95);
+  border: 1px solid hsl(var(--border) / 0.6);
+}
+
+/* High Traffic Mode - Larger targets, faster animations */
+.high-traffic-mode {
+  --touch-target-size: 3.5rem;
+  --touch-target-large: 4rem;
+  --touch-target-xl: 4.5rem;
+  --touch-feedback-duration: 0.08s;
+}
+
+.high-traffic-mode .product-button {
+  min-width: 5rem;
+  min-height: 5rem;
+}
+
+.high-traffic-mode .category-button {
+  min-height: 4rem;
+}
+
+.high-traffic-mode .payment-button {
+  min-height: 5rem;
+  font-size: 1.375rem;
+  font-weight: 800;
+}
+
+/* Accessibility Mode - High Contrast, Large Text */
+.accessibility-mode {
+  --touch-target-size: 4rem;
+  --touch-target-large: 4.5rem;
+  --touch-target-xl: 5rem;
+}
+
+.accessibility-mode .product-button,
+.accessibility-mode .category-button,
+.accessibility-mode .payment-button,
+.accessibility-mode .table-button {
+  border: 3px solid currentColor;
+  font-weight: 700;
+}
+
+.accessibility-mode .product-button {
+  min-width: 6rem;
+  min-height: 6rem;
+  font-size: 1.375rem;
+}
+
+.accessibility-mode .category-button {
+  min-height: 4.5rem;
+  font-size: 1.25rem;
+}
+
+.accessibility-mode .payment-button {
+  min-height: 5.5rem;
+  font-size: 1.5rem;
+}
+
+/* Speed Service Mode - Streamlined for fast operations */
+.speed-service-mode .product-button {
+  transition-duration: 0.05s;
+}
+
+.speed-service-mode .category-button {
+  transition-duration: 0.05s;
+}
+
+.speed-service-mode .payment-button {
+  background: hsl(142 76% 36%); /* Green for quick recognition */
+  color: white;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+}
+
+/* Specialized Industry Optimizations */
+
+/* Restaurant Mode */
+.restaurant-theme {
+  --primary: hsl(45 93% 47%); /* Gold */
+  --primary-foreground: hsl(0 0% 100%);
+  --accent: hsl(25 95% 53%); /* Orange */
+}
+
+.restaurant-theme .product-button {
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary)) 100%);
+}
+
+/* Cafe Mode */
+.cafe-theme {
+  --primary: hsl(142 76% 36%); /* Green */
+  --primary-foreground: hsl(0 0% 100%);
+}
+
+.cafe-theme .product-button {
+  border-radius: 0.75rem;
+  background: hsl(var(--card));
+}
+
+/* Bar Mode */
+.bar-theme {
+  --primary: hsl(217 91% 60%); /* Blue */
+  --accent: hsl(271 81% 56%); /* Purple */
+}
+
+.bar-theme .product-button,
+.bar-theme .category-button {
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary) / 0.5) 100%);
+  backdrop-filter: blur(8px);
+}
+
+/* Loading and State Management */
+.tpv-loading {
+  pointer-events: none;
+  opacity: 0.6;
+  position: relative;
+}
+
+.tpv-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: -0.75rem 0 0 -0.75rem;
+  border: 3px solid transparent;
+  border-top-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 10;
+}
+
+.tpv-success {
+  animation: success-pulse 0.5s ease-in-out;
+}
+
+.tpv-error {
+  animation: error-shake 0.5s ease-in-out;
+}
+
+@keyframes success-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px hsl(142 76% 36% / 0.5); }
+}
+
+@keyframes error-shake {
+  0%, 20%, 40%, 60%, 80% { transform: translateX(-2px); }
+  10%, 30%, 50%, 70% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+
+/* Print Receipt Animation */
+.print-animation {
+  animation: print-slide 0.8s ease-out;
+}
+
+@keyframes print-slide {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-10px) scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0.6;
+  }
+}
+
+/* Order Complete Celebration */
+.order-complete {
+  animation: celebrate 1s ease-out;
+}
+
+@keyframes celebrate {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.1) rotate(3deg); }
+  50% { transform: scale(1.05) rotate(-3deg); }
+  75% { transform: scale(1.1) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Focus Management for Keyboard Users */
+.tpv-focus-visible:focus-visible {
+  outline: 3px solid hsl(var(--ring));
+  outline-offset: 3px;
+  z-index: 10;
+}
+
+/* Emergency/Alert Styles */
+.emergency-alert {
+  animation: emergency-blink 1s infinite;
+  border: 2px solid hsl(0 84% 60%);
+}
+
+@keyframes emergency-blink {
+  0%, 50% { background-color: hsl(0 84% 60% / 0.1); }
+  51%, 100% { background-color: hsl(0 84% 60% / 0.3); }
+}
+
+/* Queue Management */
+.queue-indicator {
+  position: relative;
+}
+
+.queue-indicator::after {
+  content: attr(data-queue-count);
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: hsl(0 84% 60%);
+  color: white;
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  animation: pulse-queue 2s infinite;
+}
+
+@keyframes pulse-queue {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}

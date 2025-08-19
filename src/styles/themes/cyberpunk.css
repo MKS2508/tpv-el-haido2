@@ -1,0 +1,128 @@
+/* Cyberpunk Theme */
+:root[data-theme="cyberpunk"] {
+  --background: #0d1117;
+  --foreground: #ff00ff;
+  --card: #161b22;
+  --card-foreground: #ff00ff;
+  --popover: #161b22;
+  --popover-foreground: #ff00ff;
+  --primary: #ff00ff;
+  --primary-foreground: #000000;
+  --secondary: #21262d;
+  --secondary-foreground: #00ffff;
+  --muted: #21262d;
+  --muted-foreground: #888888;
+  --accent: #00ffff;
+  --accent-foreground: #000000;
+  --destructive: #ff0040;
+  --destructive-foreground: #ffffff;
+  --border: #30363d;
+  --input: #21262d;
+  --ring: #ff00ff;
+  --chart-1: 300 100% 50%;
+  --chart-2: 271 81% 56%;
+  --chart-3: 221 83% 53%;
+  --chart-4: 180 100% 50%;
+  --chart-5: 142 76% 36%;
+  
+  /* Sidebar colors */
+  --sidebar: #0d1117;
+  --sidebar-foreground: #ff00ff;
+  --sidebar-primary: #ff00ff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #00ffff;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #30363d;
+  --sidebar-ring: #ff00ff;
+
+  /* Typography */
+  --font-sans: system-ui, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  
+  /* Status colors */
+  --success: hsl(120 100% 40%);
+  --success-foreground: hsl(0 0% 0%);
+  --warning: hsl(60 100% 50%);
+  --warning-foreground: hsl(0 0% 0%);
+  --info: hsl(180 100% 50%);
+  --info-foreground: hsl(0 0% 0%);
+  
+  /* Layout and spacing */
+  --spacing: 0.25rem;
+  --tracking-normal: 0em;
+  
+  /* Shadow variables */
+  --shadow-2xs: 0px 1px 3px 0px hsl(300 100% 50% / 0.3);
+  --shadow-xs: 0px 1px 3px 0px hsl(300 100% 50% / 0.3);
+  --shadow-sm: 0px 1px 3px 0px hsl(300 100% 50% / 0.4), 0px 1px 2px -1px hsl(300 100% 50% / 0.4);
+  --shadow: 0px 1px 3px 0px hsl(300 100% 50% / 0.4), 0px 1px 2px -1px hsl(300 100% 50% / 0.4);
+  --shadow-md: 0px 1px 3px 0px hsl(300 100% 50% / 0.4), 0px 2px 4px -1px hsl(300 100% 50% / 0.4);
+  --shadow-lg: 0px 1px 3px 0px hsl(300 100% 50% / 0.4), 0px 4px 6px -1px hsl(300 100% 50% / 0.4);
+  --shadow-xl: 0px 1px 3px 0px hsl(300 100% 50% / 0.4), 0px 8px 10px -1px hsl(300 100% 50% / 0.4);
+  --shadow-2xl: 0px 1px 3px 0px hsl(300 100% 50% / 0.6);
+}
+
+.dark[data-theme="cyberpunk"] {
+  --background: #000000;
+  --foreground: #ff00ff;
+  --card: #0a0a0a;
+  --card-foreground: #ff00ff;
+  --popover: #0a0a0a;
+  --popover-foreground: #ff00ff;
+  --primary: #ff00ff;
+  --primary-foreground: #000000;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #00ffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #aaaaaa;
+  --accent: #00ffff;
+  --accent-foreground: #000000;
+  --destructive: #ff0040;
+  --destructive-foreground: #ffffff;
+  --border: #333333;
+  --input: #1a1a1a;
+  --ring: #ff00ff;
+  --chart-1: 300 100% 50%;
+  --chart-2: 271 81% 56%;
+  --chart-3: 221 83% 53%;
+  --chart-4: 180 100% 50%;
+  --chart-5: 142 76% 36%;
+  
+  /* Sidebar colors */
+  --sidebar: #000000;
+  --sidebar-foreground: #ff00ff;
+  --sidebar-primary: #ff00ff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #00ffff;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #333333;
+  --sidebar-ring: #ff00ff;
+
+  /* Typography */
+  --font-sans: system-ui, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  
+  /* Status colors */
+  --success: hsl(120 100% 45%);
+  --success-foreground: hsl(0 0% 0%);
+  --warning: hsl(60 100% 55%);
+  --warning-foreground: hsl(0 0% 0%);
+  --info: hsl(180 100% 55%);
+  --info-foreground: hsl(0 0% 0%);
+  
+  /* Layout and spacing */
+  --spacing: 0.25rem;
+  --tracking-normal: 0em;
+  
+  /* Shadow variables */
+  --shadow-2xs: 0px 1px 3px 0px hsl(300 100% 50% / 0.4);
+  --shadow-xs: 0px 1px 3px 0px hsl(300 100% 50% / 0.4);
+  --shadow-sm: 0px 1px 3px 0px hsl(300 100% 50% / 0.5), 0px 1px 2px -1px hsl(300 100% 50% / 0.5);
+  --shadow: 0px 1px 3px 0px hsl(300 100% 50% / 0.5), 0px 1px 2px -1px hsl(300 100% 50% / 0.5);
+  --shadow-md: 0px 1px 3px 0px hsl(300 100% 50% / 0.5), 0px 2px 4px -1px hsl(300 100% 50% / 0.5);
+  --shadow-lg: 0px 1px 3px 0px hsl(300 100% 50% / 0.5), 0px 4px 6px -1px hsl(300 100% 50% / 0.5);
+  --shadow-xl: 0px 1px 3px 0px hsl(300 100% 50% / 0.5), 0px 8px 10px -1px hsl(300 100% 50% / 0.5);
+  --shadow-2xl: 0px 1px 3px 0px hsl(300 100% 50% / 0.7);
+}
