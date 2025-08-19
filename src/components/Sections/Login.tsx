@@ -27,16 +27,24 @@ const Login = ({ users, onLogin }: LoginProps) => {
     // Check if we're in Tauri environment after component mounts
     useEffect(() => {
         const checkTauriEnvironment = () => {
-            const isInTauri = typeof window !== 'undefined' && 
-                             (window as any).__TAURI__ !== undefined ||
-                             (window as any).__TAURI_IPC__ !== undefined ||
-                             window.location.protocol === 'tauri:'
+            const isInTauri = typeof window !== 'undefined' && (
+                (window as any).__TAURI__ !== undefined ||
+                (window as any).__TAURI_IPC__ !== undefined ||
+                window.location.protocol === 'tauri:' ||
+                // Additional check for Tauri v2
+                (window as any).__TAURI_INVOKE__ !== undefined ||
+                // Check if running in Tauri webview (common user agent patterns)
+                (window.navigator.userAgent.includes('Tauri') || 
+                 window.navigator.userAgent.includes('tauri'))
+            )
             
             console.log('🔍 Checking Tauri environment:', {
                 __TAURI__: !!(window as any).__TAURI__,
                 __TAURI_IPC__: !!(window as any).__TAURI_IPC__,
+                __TAURI_INVOKE__: !!(window as any).__TAURI_INVOKE__,
                 protocol: window.location.protocol,
                 userAgent: window.navigator.userAgent,
+                userAgentIncludesTauri: window.navigator.userAgent.includes('Tauri') || window.navigator.userAgent.includes('tauri'),
                 isInTauri
             })
             
@@ -466,7 +474,7 @@ const Login = ({ users, onLogin }: LoginProps) => {
                 </motion.div>
 
                 {/* Fullscreen button - outside container - Only on desktop and web */}
-                {!isMobile && !isTauri && (
+                {!isMobile && !isTauri && typeof window !== 'undefined' && !window.location.href.includes('tauri') && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
