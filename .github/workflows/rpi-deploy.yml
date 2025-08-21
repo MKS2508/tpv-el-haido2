@@ -63,6 +63,8 @@ jobs:
         # Install essential ARM64 libraries from ports.ubuntu.com
         echo "📦 Installing ARM64 libraries..."
         sudo apt-get install -y --no-install-recommends \
+          libglib2.0-dev-bin:arm64 \
+          libglib2.0-dev-bin-linux:arm64 \
           libglib2.0-dev:arm64 \
           libssl-dev:arm64
         
