@@ -32,15 +32,18 @@ jobs:
         # Add ARM64 architecture
         sudo dpkg --add-architecture arm64
         
-        # CRITICAL: Replace sources.list to avoid security.ubuntu.com completely
+        # CRITICAL: Replace sources.list completely with architecture-specific sources
         sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
         
-        # Create clean sources.list with NO security.ubuntu.com references
+        # Clear sources.list and ALL sources.list.d files
+        sudo rm -f /etc/apt/sources.list.d/*
+        
+        # Create clean sources.list with ARCHITECTURE-SPECIFIC entries
         sudo tee /etc/apt/sources.list << EOF
-        # AMD64 packages from archive.ubuntu.com (no security updates for now)
-        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs) main restricted universe multiverse
-        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe multiverse
-        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-backports main restricted universe multiverse
+        # AMD64 ONLY packages from archive.ubuntu.com
+        deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs) main restricted universe multiverse
+        deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe multiverse
+        deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-backports main restricted universe multiverse
         EOF
         
         # ARM64 packages exclusively from ports.ubuntu.com 
