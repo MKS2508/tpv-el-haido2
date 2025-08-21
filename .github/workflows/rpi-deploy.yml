@@ -22,17 +22,17 @@ jobs:
     - name: 📥 Checkout repository
       uses: actions/checkout@v4
 
-    - name: 🐳 Setup Docker and Cross-compilation tools
+    - name: 🐳 Setup Cross-compilation tools
       run: |
         # Install basic tools
         sudo apt-get update
         sudo apt-get install -y curl wget build-essential imagemagick
         
-        # Install cross-compilation toolchain (no ARM64 libs needed)
-        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-        
         # Install cross-rs for Docker-based cross-compilation
         cargo install cross --git https://github.com/cross-rs/cross
+        
+        # Verify Docker is available
+        docker --version
         
         echo "✅ Cross-compilation toolchain ready"
 
@@ -55,21 +55,17 @@ jobs:
 
     - name: 🔧 Configure cross-compilation
       run: |
-        # Create Cargo config
-        mkdir -p .cargo
-        cat > .cargo/config.toml << EOF
-        [target.aarch64-unknown-linux-gnu]
-        linker = "aarch64-linux-gnu-gcc"
-        EOF
-        
-        echo "✅ Cross-compilation configured"
+        echo "✅ Cross-compilation will be handled by Cross.toml"
 
-    - name: 🍓 Cross-compile complete Tauri application using Docker
+    - name: 🍓 Build frontend
+      run: |
+        echo "🎨 Building React frontend..."
+        npm run build
+        echo "✅ Frontend build completed"
+
+    - name: 🐳 Cross-compile Rust backend using Docker
       run: |
         echo "🚀 Starting Docker-based cross-compilation..."
-        
-        # Build frontend first
-        npm run build
         
         # Use cross-rs for reliable ARM64 cross-compilation
         cd src-tauri
@@ -77,15 +73,15 @@ jobs:
         
         echo "✅ Cross-compilation completed successfully"
 
-    - name: 📦 Generate packages with native Tauri CLI
+    - name: 📦 Generate DEB/RPM packages 
       run: |
-        echo "📦 Generating DEB, RPM packages..."
+        echo "📦 Generating packages with Tauri CLI..."
         
-        # Install Tauri CLI
+        # Install Tauri CLI globally
         npm install -g @tauri-apps/cli
         
-        # Generate packages using Tauri's native bundling
-        npm run tauri build -- --target aarch64-unknown-linux-gnu
+        # Generate DEB and RPM packages
+        npx tauri build --target aarch64-unknown-linux-gnu --bundles deb,rpm
         
         echo "✅ Package generation completed"
 

@@ -1,0 +1,22 @@
+[build.env]
+passthrough = [
+    "PKG_CONFIG_PATH",
+    "PKG_CONFIG_LIBDIR",
+    "PKG_CONFIG_ALLOW_CROSS",
+    "PKG_CONFIG_SYSROOT_DIR",
+    "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS",
+    "TAURI_PRIVATE_KEY",
+    "TAURI_KEY_PASSWORD"
+]
+
+[target.aarch64-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/aarch64-unknown-linux-gnu:main"
+pre-build = [
+    "apt-get update && apt-get install -y libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.0-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev"
+]
+
+[target.aarch64-unknown-linux-gnu.env]
+PKG_CONFIG_PATH = "/usr/lib/aarch64-linux-gnu/pkgconfig"
+PKG_CONFIG_LIBDIR = "/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+PKG_CONFIG_ALLOW_CROSS = "1"
+PKG_CONFIG_ALLOW_SYSTEM_CFLAGS = "1"
