@@ -22,19 +22,14 @@ jobs:
     - name: 📥 Checkout repository
       uses: actions/checkout@v4
 
-    - name: 🐳 Setup Cross-compilation tools
+    - name: 🐳 Setup basic cross-compilation
       run: |
-        # Install basic tools
+        # Install basic tools and cross-compilation toolchain
         sudo apt-get update
-        sudo apt-get install -y curl wget build-essential imagemagick
+        sudo apt-get install -y curl wget build-essential imagemagick \
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
         
-        # Install cross-rs for Docker-based cross-compilation
-        cargo install cross --git https://github.com/cross-rs/cross
-        
-        # Verify Docker is available
-        docker --version
-        
-        echo "✅ Cross-compilation toolchain ready"
+        echo "✅ Basic cross-compilation toolchain ready"
 
     - name: 🦀 Install Rust toolchain
       uses: actions-rs/toolchain@v1
@@ -55,35 +50,32 @@ jobs:
 
     - name: 🔧 Configure cross-compilation
       run: |
-        echo "✅ Cross-compilation will be handled by Cross.toml"
-
-    - name: 🍓 Build frontend
-      run: |
-        echo "🎨 Building React frontend..."
-        npm run build
-        echo "✅ Frontend build completed"
-
-    - name: 🐳 Cross-compile Rust backend using Docker
-      run: |
-        echo "🚀 Starting Docker-based cross-compilation..."
+        # Create Cargo config
+        mkdir -p .cargo
+        cat > .cargo/config.toml << EOF
+        [target.aarch64-unknown-linux-gnu]
+        linker = "aarch64-linux-gnu-gcc"
+        EOF
         
-        # Use cross-rs for reliable ARM64 cross-compilation
-        cd src-tauri
-        cross build --release --target aarch64-unknown-linux-gnu
-        
-        echo "✅ Cross-compilation completed successfully"
+        echo "✅ Cross-compilation configured"
 
-    - name: 📦 Generate DEB/RPM packages 
+    - name: 🍓 Build complete Tauri application for ARM64
       run: |
-        echo "📦 Generating packages with Tauri CLI..."
+        echo "🚀 Building complete Tauri application for ARM64..."
         
-        # Install Tauri CLI globally
+        # Install Tauri CLI
         npm install -g @tauri-apps/cli
         
-        # Generate DEB and RPM packages
-        npx tauri build --target aarch64-unknown-linux-gnu --bundles deb,rpm
+        # Use system cross-compilation instead of Docker
+        export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
+        export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
+        export AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar
+        export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
         
-        echo "✅ Package generation completed"
+        # Build everything with Tauri CLI (includes frontend and backend)
+        npx tauri build --target aarch64-unknown-linux-gnu
+        
+        echo "✅ Complete build completed successfully"
 
     - name: 🔧 Setup Bun runtime
       uses: oven-sh/setup-bun@v1
