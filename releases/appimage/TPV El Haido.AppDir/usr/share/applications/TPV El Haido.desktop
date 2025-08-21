@@ -1,0 +1,9 @@
+[Desktop Entry]
+Categories=
+Comment=TPV: El Haido - Point of Sale System
+Exec=tpv-el-haido
+StartupWMClass=tpv-el-haido
+Icon=tpv-el-haido
+Name=TPV El Haido
+Terminal=false
+Type=Application
