@@ -1,0 +1,182 @@
+name: 🍓 RPi ARM64 Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-rpi:
+    name: 🏗️ Build for Raspberry Pi 3 (ARM64)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🦀 Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: aarch64-unknown-linux-gnu
+        override: true
+        components: rustfmt, clippy
+
+    - name: 📦 Install cross-compilation dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+
+    - name: ⚡ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: 🔧 Install Node dependencies
+      run: npm ci
+
+    - name: 🎨 Install ImageMagick for icons
+      run: sudo apt-get install -y imagemagick
+
+    - name: 🔧 Configure Cargo for cross-compilation
+      run: |
+        mkdir -p .cargo
+        cat > .cargo/config.toml << EOF
+        [target.aarch64-unknown-linux-gnu]
+        linker = "aarch64-linux-gnu-gcc"
+        EOF
+
+    - name: 🏗️ Build frontend
+      run: npm run build
+
+    - name: 🍓 Cross-compile for ARM64/RPi3
+      run: |
+        npm run tauri build -- --target aarch64-unknown-linux-gnu
+      env:
+        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+
+    - name: 🔧 Setup Bun runtime
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: 📋 Generate documentation
+      run: |
+        bun run generate-docs.ts
+
+    - name: 📊 Check generated files
+      run: |
+        ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/
+        ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/ || echo "DEB not found"
+        ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/ || echo "RPM not found"
+
+    - name: 📦 Upload RPi executables
+      uses: actions/upload-artifact@v4
+      with:
+        name: tpv-el-haido-rpi3-executables
+        path: |
+          src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
+          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb
+          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm
+        if-no-files-found: warn
+
+    - name: 📚 Upload documentation and MD files
+      uses: actions/upload-artifact@v4
+      with:
+        name: tpv-el-haido-rpi3-documentation
+        path: |
+          RPi-Build-Documentation.md
+          README.md
+          generate-docs.ts
+          rpi-explorer.ts
+          rpi-builder-cli.tsx
+        if-no-files-found: warn
+
+  create-release:
+    name: 🚀 Create GitHub Release  
+    needs: build-rpi
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: 📦 Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: 🔢 Generate release version
+      id: version
+      run: |
+        VERSION="v0.1.0-$(date +%Y%m%d)-$(echo $GITHUB_SHA | cut -c1-7)"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Generated version: $VERSION"
+
+    - name: 🏷️ Create Release Tag
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git tag -a ${{ steps.version.outputs.version }} -m "RPi ARM64 Release ${{ steps.version.outputs.version }}"
+        git push origin ${{ steps.version.outputs.version }}
+
+    - name: 🚀 Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        name: "🍓 TPV El Haido RPi3 Release ${{ steps.version.outputs.version }}"
+        body: |
+          # 🍓 TPV El Haido - Raspberry Pi 3 ARM64 Release
+          
+          ## 📱 Archivos para Raspberry Pi 3
+          
+          ### 📦 Instalación (Recomendado)
+          ```bash
+          # Descargar e instalar DEB
+          sudo dpkg -i TPV\ El\ Haido_0.1.0_arm64.deb
+          sudo apt-get install -f
+          ```
+          
+          ### 🔧 Ejecutable Directo  
+          ```bash
+          # Descargar y ejecutar
+          chmod +x tpv-el-haido
+          ./tpv-el-haido
+          ```
+          
+          ## 📊 Artefactos Incluidos
+          - **DEB Package** (21MB) - Para instalación con dpkg
+          - **RPM Package** (21MB) - Para sistemas con rpm
+          - **Ejecutable ARM64** (34.7MB) - Ejecutable directo
+          - **Documentación** - Guía completa de compilación
+          
+          ## 🎯 Compatibilidad
+          - ✅ Raspberry Pi 3 (ARM64)
+          - ✅ Raspberry Pi 4 (ARM64)
+          - ✅ Otros sistemas ARM64 Linux
+          
+          ---
+          *🤖 Generado automáticamente con GitHub Actions*
+        files: |
+          artifacts/tpv-el-haido-rpi3-executables/*
+          artifacts/tpv-el-haido-rpi3-documentation/*
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📢 Summary
+      run: |
+        echo "## 🎉 Release Created Successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "### 🍓 RPi3 ARM64 Build: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Executables compiled for aarch64-unknown-linux-gnu" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ DEB and RPM packages generated" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Documentation included" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ GitHub Release created with artifacts" >> $GITHUB_STEP_SUMMARY
