@@ -13,89 +13,25 @@ env:
 jobs:
   build-rpi:
     name: 🏗️ Build for Raspberry Pi 3 (ARM64)  
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [aarch64-unknown-linux-gnu]
+    runs-on: ubuntu-latest-arm64
     
     steps:
     - name: 📥 Checkout repository
       uses: actions/checkout@v4
 
-    - name: 🐳 Setup cross-compilation environment with ARM64 libraries
+    - name: 🐳 Setup native ARM64 build environment
       run: |
-        # Install basic tools and cross-compilation toolchain
+        # Install basic tools and development dependencies
         sudo apt-get update
-        sudo apt-get install -y curl wget build-essential imagemagick \
-          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config
+        sudo apt-get install -y curl wget build-essential imagemagick pkg-config \
+          libglib2.0-dev libssl-dev
         
-        # Add ARM64 architecture
-        sudo dpkg --add-architecture arm64
-        
-        # CRITICAL: Replace sources.list completely with architecture-specific sources
-        sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
-        
-        # Clear sources.list and ALL sources.list.d files
-        sudo rm -f /etc/apt/sources.list.d/*
-        
-        # Create clean sources.list with ARCHITECTURE-SPECIFIC entries
-        sudo tee /etc/apt/sources.list << EOF
-        # AMD64 ONLY packages from archive.ubuntu.com
-        deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs) main restricted universe multiverse
-        deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe multiverse
-        deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-backports main restricted universe multiverse
-        EOF
-        
-        # ARM64 packages exclusively from ports.ubuntu.com 
-        sudo tee /etc/apt/sources.list.d/ports-arm64.list << EOF
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe multiverse
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-updates main restricted universe multiverse
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-security main restricted universe multiverse
-        EOF
-        
-        # Update package lists (should work now!)
-        sudo apt-get update
-        
-        # Debug: Check if APT preferences are working
-        echo "🔍 APT policy for libglib2.0-dev:arm64:"
-        apt-cache policy libglib2.0-dev:arm64 | head -10
-        
-        # Install essential ARM64 libraries from ports.ubuntu.com
-        # Note: Skip -dev-bin packages as they have complex Python dependencies
-        echo "📦 Installing ARM64 libraries..."
-        sudo apt-get install -y --no-install-recommends \
-          libglib2.0-0:arm64 \
-          libglib2.0-dev:arm64 \
-          libssl-dev:arm64 \
-          libssl3:arm64 || {
-            echo "⚠️ Some packages failed, trying alternative approach..."
-            # Fallback: install minimal required packages only
-            sudo apt-get install -y --no-install-recommends \
-              libssl-dev:arm64
-          }
-        
-        # Create pkg-config wrapper for cross-compilation
-        sudo tee /usr/local/bin/aarch64-linux-gnu-pkg-config << 'EOF'
-        #!/bin/bash
-        export PKG_CONFIG_DIR=
-        export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-        export PKG_CONFIG_SYSROOT_DIR=/
-        export PKG_CONFIG_ALLOW_CROSS=1
-        export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
-        exec pkg-config "$@"
-        EOF
-        sudo chmod +x /usr/local/bin/aarch64-linux-gnu-pkg-config
-        
-        # Verify critical files exist
-        ls -la /usr/lib/aarch64-linux-gnu/pkgconfig/glib-2.0.pc || echo "⚠️ glib-2.0.pc not found"
-        
-        echo "✅ Cross-compilation environment with ARM64 libraries configured"
+        echo "✅ Native ARM64 build environment configured"
 
     - name: 🦀 Install Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-        target: aarch64-unknown-linux-gnu
         override: true
         components: rustfmt, clippy
 
@@ -108,38 +44,15 @@ jobs:
     - name: 🔧 Install Node dependencies
       run: npm ci
 
-    - name: 🔧 Configure cross-compilation
+    - name: 🍓 Build complete Tauri application natively
       run: |
-        # Create Cargo config
-        mkdir -p .cargo
-        cat > .cargo/config.toml << EOF
-        [target.aarch64-unknown-linux-gnu]
-        linker = "aarch64-linux-gnu-gcc"
-        EOF
-        
-        echo "✅ Cross-compilation configured"
-
-    - name: 🍓 Build complete Tauri application for ARM64
-      run: |
-        echo "🚀 Building complete Tauri application for ARM64..."
+        echo "🚀 Building complete Tauri application natively on ARM64..."
         
         # Install Tauri CLI
         npm install -g @tauri-apps/cli
         
-        # Configure cross-compilation environment variables  
-        export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
-        export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
-        export AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar
-        export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
-        
-        # Configure PKG_CONFIG for cross-compilation (critical!)
-        export PKG_CONFIG_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-pkg-config
-        export PKG_CONFIG_ALLOW_CROSS=1
-        export PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig"
-        export PKG_CONFIG_SYSROOT_DIR="/"
-        
         # Build everything with Tauri CLI (includes frontend and backend)
-        npx tauri build --target aarch64-unknown-linux-gnu
+        npx tauri build
         
         echo "✅ Complete Tauri build completed successfully"
 
@@ -159,23 +72,23 @@ jobs:
         echo "📊 Verifying generated files..."
         
         # Check executable
-        if [ -f "src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido" ]; then
-          echo "✅ Executable found: $(ls -lh src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido)"
-          echo "🔍 File info: $(file src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido)"
+        if [ -f "src-tauri/target/release/tpv-el-haido" ]; then
+          echo "✅ Executable found: $(ls -lh src-tauri/target/release/tpv-el-haido)"
+          echo "🔍 File info: $(file src-tauri/target/release/tpv-el-haido)"
         else
           echo "❌ Executable not found"
         fi
         
         # Check DEB package
-        if [ -f "src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb"/*.deb ]; then
-          echo "✅ DEB package found: $(ls -lh src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb)"
+        if [ -f "src-tauri/target/release/bundle/deb"/*.deb ]; then
+          echo "✅ DEB package found: $(ls -lh src-tauri/target/release/bundle/deb/*.deb)"
         else
           echo "⚠️ DEB package not found"
         fi
         
         # Check RPM package  
-        if [ -f "src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm"/*.rpm ]; then
-          echo "✅ RPM package found: $(ls -lh src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm)"
+        if [ -f "src-tauri/target/release/bundle/rpm"/*.rpm ]; then
+          echo "✅ RPM package found: $(ls -lh src-tauri/target/release/bundle/rpm/*.rpm)"
         else
           echo "⚠️ RPM package not found"
         fi
@@ -192,10 +105,10 @@ jobs:
       with:
         name: rpi-arm64-build
         path: |
-          src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
-          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb
-          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm
-          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/appimage/
+          src-tauri/target/release/tpv-el-haido
+          src-tauri/target/release/bundle/deb/*.deb
+          src-tauri/target/release/bundle/rpm/*.rpm
+          src-tauri/target/release/bundle/appimage/
         retention-days: 30
 
     - name: 📚 Upload documentation and MD files
@@ -214,9 +127,9 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
-          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb
-          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm
+          src-tauri/target/release/tpv-el-haido
+          src-tauri/target/release/bundle/deb/*.deb
+          src-tauri/target/release/bundle/rpm/*.rpm
           RPi-Build-Documentation.md
         body: |
           # 🍓 TPV El Haido - ARM64 Release for Raspberry Pi 3
