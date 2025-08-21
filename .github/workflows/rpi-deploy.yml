@@ -60,6 +60,12 @@ jobs:
         echo "🔍 APT policy for libglib2.0-dev:arm64:"
         apt-cache policy libglib2.0-dev:arm64 | head -10
         
+        # Install Python dependencies first (architecture-independent)
+        echo "📦 Installing Python dependencies..."
+        sudo apt-get install -y --no-install-recommends \
+          python3-packaging \
+          python3-dev
+        
         # Install essential ARM64 libraries from ports.ubuntu.com
         echo "📦 Installing ARM64 libraries..."
         sudo apt-get install -y --no-install-recommends \
