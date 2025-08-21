@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import User from "@/models/User"
 import {Loader2} from "lucide-react"
 import { useResponsive } from "@/hooks/useResponsive"
-import { isTauriEnvironment } from "@/utils/environment"
 
 interface LoginProps {
     users: User[]

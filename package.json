@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@number-flow/react": "^0.5.10",
+    "@opentui/core": "^0.1.8",
+    "@opentui/react": "^0.1.8",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-dialog": "^1.1.1",
@@ -28,7 +30,7 @@
     "@radix-ui/react-toast": "^1.2.1",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-http": "^2.5.1",
-    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-opener": "^2.5.0",
     "@tauri-apps/plugin-shell": "^2.3.0",
     "@types/react-window": "^1.8.8",
     "axios": "^1.7.7",
