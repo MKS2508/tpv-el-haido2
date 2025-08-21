@@ -46,60 +46,86 @@ jobs:
         # Add ARM64 architecture
         sudo dpkg --add-architecture arm64
         
-        # Backup original sources and configure ARM64 repos properly
+        # Clean APT cache and configuration
+        sudo apt-get clean
+        sudo rm -f /var/lib/apt/lists/*
+        
+        # Backup and completely recreate sources configuration
         sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
         
-        # Configure sources for multi-arch (amd64 + arm64)
+        # Create clean sources.list (AMD64 only, no mixed architectures)
         sudo tee /etc/apt/sources.list << EOF
-        # AMD64 repositories (default)
-        deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs) main restricted universe multiverse
-        deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe multiverse
-        deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-backports main restricted universe multiverse
-        deb [arch=amd64] http://security.ubuntu.com/ubuntu/ $(lsb_release -cs)-security main restricted universe multiverse
+        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs) main restricted universe multiverse
+        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe multiverse
+        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-backports main restricted universe multiverse
+        deb http://security.ubuntu.com/ubuntu/ $(lsb_release -cs)-security main restricted universe multiverse
         EOF
         
-        # Create separate ARM64 sources file
-        sudo tee /etc/apt/sources.list.d/arm64.list << EOF
-        # ARM64 repositories (all from ports.ubuntu.com)
+        # Create dedicated ARM64 sources
+        sudo tee /etc/apt/sources.list.d/ports-arm64.list << EOF
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe multiverse
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-updates main restricted universe multiverse
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-backports main restricted universe multiverse
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-security main restricted universe multiverse
         EOF
         
+        # Create pin-priority to force ARM64 packages from ports.ubuntu.com ONLY
+        sudo tee /etc/apt/preferences.d/99-arm64-ports << EOF
+        # Force all ARM64 packages to come from ports.ubuntu.com
+        Package: *
+        Pin: release o=Ubuntu,a=$(lsb_release -cs)*,n=$(lsb_release -cs)*
+        Pin-Priority: -1
+        
+        Package: *:arm64
+        Pin: origin ports.ubuntu.com
+        Pin-Priority: 1000
+        
+        Package: *:arm64
+        Pin: origin archive.ubuntu.com
+        Pin-Priority: -1
+        
+        Package: *:arm64
+        Pin: origin security.ubuntu.com
+        Pin-Priority: -1
+        EOF
+        
         sudo apt-get update
         
-        # Install ARM64 libraries required for Tauri (with retry logic)
+        # Install ARM64 libraries with enhanced error handling
         echo "=== Installing ARM64 development libraries ==="
         
-        # Install core libraries first
-        sudo apt-get install -y --fix-missing \
-          libglib2.0-dev:arm64 \
-          libgobject-2.0-dev:arm64 \
-          libgio-2.0-dev:arm64 || echo "Some glib packages failed, continuing..."
-          
-        # Install GTK libraries
-        sudo apt-get install -y --fix-missing \
-          libgtk-3-dev:arm64 \
-          libcairo2-dev:arm64 \
-          libpango1.0-dev:arm64 \
-          libgdk-pixbuf2.0-dev:arm64 \
-          libatk1.0-dev:arm64 || echo "Some GTK packages failed, continuing..."
+        # Function to install with fallback
+        install_with_fallback() {
+          local packages="$1"
+          local description="$2"
+          echo "Installing $description..."
+          if sudo apt-get install -y --fix-missing $packages; then
+            echo "✅ $description installed successfully"
+            return 0
+          else
+            echo "⚠️ $description installation failed, continuing..."
+            return 1
+          fi
+        }
         
-        # Install WebKit and other libraries (these might not be available)
-        sudo apt-get install -y --fix-missing \
-          libssl-dev:arm64 \
-          librsvg2-dev:arm64 || echo "Some additional packages failed, continuing..."
-          
-        # Try to install WebKit (often problematic in cross-compilation)
-        sudo apt-get install -y --fix-missing \
-          libsoup2.4-dev:arm64 \
-          libjavascriptcoregtk-4.0-dev:arm64 \
-          libwebkit2gtk-4.0-dev:arm64 \
-          libayatana-appindicator3-dev:arm64 || echo "WebKit packages not available, will use fallback compilation"
+        # Install packages in order of importance
+        install_with_fallback "libglib2.0-dev:arm64 libgobject-2.0-dev:arm64 libgio-2.0-dev:arm64" "GLib core libraries"
+        install_with_fallback "libgtk-3-dev:arm64" "GTK3 development libraries" 
+        install_with_fallback "libcairo2-dev:arm64 libpango1.0-dev:arm64" "Cairo and Pango libraries"
+        install_with_fallback "libgdk-pixbuf2.0-dev:arm64 libatk1.0-dev:arm64" "GDK-Pixbuf and ATK libraries"
+        install_with_fallback "libssl-dev:arm64" "SSL development libraries"
+        install_with_fallback "librsvg2-dev:arm64" "SVG libraries"
+        
+        # WebKit packages (most likely to fail)
+        install_with_fallback "libsoup2.4-dev:arm64" "Soup2 libraries" || true
+        install_with_fallback "libjavascriptcoregtk-4.0-dev:arm64" "JavaScriptCore libraries" || true
+        install_with_fallback "libwebkit2gtk-4.0-dev:arm64" "WebKit2 libraries" || true
+        install_with_fallback "libayatana-appindicator3-dev:arm64" "App indicator libraries" || true
         
         # Install ImageMagick for icons
         sudo apt-get install -y imagemagick
+        
+        echo "=== ARM64 libraries installation completed ==="
 
     - name: ⚡ Setup Node.js
       uses: actions/setup-node@v4
