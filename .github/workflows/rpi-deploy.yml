@@ -22,15 +22,46 @@ jobs:
     - name: 📥 Checkout repository
       uses: actions/checkout@v4
 
-    - name: 🐳 Setup cross-compilation environment
+    - name: 🐳 Setup cross-compilation environment with ARM64 libraries
       run: |
-        # Install basic tools and cross-compilation toolchain only
+        # Install basic tools and cross-compilation toolchain
         sudo apt-get update
         sudo apt-get install -y curl wget build-essential imagemagick \
-          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config
         
-        echo "✅ Basic cross-compilation toolchain installed"
-        echo "⚠️ Skipping ARM64 system libraries due to APT repository conflicts"
+        # Add ARM64 architecture
+        sudo dpkg --add-architecture arm64
+        
+        # Configure APT sources to use ONLY ports.ubuntu.com for ARM64 (avoid security.ubuntu.com 404)
+        sudo tee /etc/apt/sources.list.d/ports-arm64.list << EOF
+        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe multiverse
+        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-updates main restricted universe multiverse
+        EOF
+        
+        # Update package lists
+        sudo apt-get update
+        
+        # Install essential ARM64 libraries from ports.ubuntu.com
+        sudo apt-get install -y --no-install-recommends \
+          libglib2.0-dev:arm64 \
+          libssl-dev:arm64
+        
+        # Create pkg-config wrapper for cross-compilation
+        sudo tee /usr/local/bin/aarch64-linux-gnu-pkg-config << 'EOF'
+        #!/bin/bash
+        export PKG_CONFIG_DIR=
+        export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+        export PKG_CONFIG_SYSROOT_DIR=/
+        export PKG_CONFIG_ALLOW_CROSS=1
+        export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
+        exec pkg-config "$@"
+        EOF
+        sudo chmod +x /usr/local/bin/aarch64-linux-gnu-pkg-config
+        
+        # Verify critical files exist
+        ls -la /usr/lib/aarch64-linux-gnu/pkgconfig/glib-2.0.pc || echo "⚠️ glib-2.0.pc not found"
+        
+        echo "✅ Cross-compilation environment with ARM64 libraries configured"
 
     - name: 🦀 Install Rust toolchain
       uses: actions-rs/toolchain@v1
@@ -60,26 +91,29 @@ jobs:
         
         echo "✅ Cross-compilation configured"
 
-    - name: 🍓 Build simple ARM64 executable (bypass system deps)
+    - name: 🍓 Build complete Tauri application for ARM64
       run: |
-        echo "🚀 Building ARM64 executable without system GUI dependencies..."
+        echo "🚀 Building complete Tauri application for ARM64..."
         
-        # Configure cross-compilation environment
+        # Install Tauri CLI
+        npm install -g @tauri-apps/cli
+        
+        # Configure cross-compilation environment variables  
         export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
         export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
         export AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar
         export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
         
-        # Build only the Rust backend for now (skip GUI dependencies)
-        cd src-tauri
-        cargo build --release --target aarch64-unknown-linux-gnu --no-default-features
+        # Configure PKG_CONFIG for cross-compilation (critical!)
+        export PKG_CONFIG_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-pkg-config
+        export PKG_CONFIG_ALLOW_CROSS=1
+        export PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig"
+        export PKG_CONFIG_SYSROOT_DIR="/"
         
-        # Copy to expected location for artifact upload
-        mkdir -p ../dist-arm64
-        cp target/aarch64-unknown-linux-gnu/release/tpv-el-haido ../dist-arm64/
+        # Build everything with Tauri CLI (includes frontend and backend)
+        npx tauri build --target aarch64-unknown-linux-gnu
         
-        echo "✅ ARM64 executable built successfully"
-        echo "📁 Executable available at: dist-arm64/tpv-el-haido"
+        echo "✅ Complete Tauri build completed successfully"
 
     - name: 🔧 Setup Bun runtime
       uses: oven-sh/setup-bun@v1
@@ -94,14 +128,28 @@ jobs:
 
     - name: 📊 Check generated files
       run: |
-        echo "📊 Verifying generated ARM64 executable..."
+        echo "📊 Verifying generated files..."
         
-        # Check ARM64 executable
-        if [ -f "dist-arm64/tpv-el-haido" ]; then
-          echo "✅ ARM64 Executable found: $(ls -lh dist-arm64/tpv-el-haido)"
-          echo "🔍 File info: $(file dist-arm64/tpv-el-haido)"
+        # Check executable
+        if [ -f "src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido" ]; then
+          echo "✅ Executable found: $(ls -lh src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido)"
+          echo "🔍 File info: $(file src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido)"
         else
-          echo "❌ ARM64 Executable not found"
+          echo "❌ Executable not found"
+        fi
+        
+        # Check DEB package
+        if [ -f "src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb"/*.deb ]; then
+          echo "✅ DEB package found: $(ls -lh src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb)"
+        else
+          echo "⚠️ DEB package not found"
+        fi
+        
+        # Check RPM package  
+        if [ -f "src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm"/*.rpm ]; then
+          echo "✅ RPM package found: $(ls -lh src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm)"
+        else
+          echo "⚠️ RPM package not found"
         fi
         
         # Check documentation
@@ -110,15 +158,16 @@ jobs:
         else
           echo "❌ Documentation not found"
         fi
-        
-        echo "⚠️ Note: Full GUI packages (DEB/RPM) skipped due to system dependency conflicts"
 
-    - name: 📦 Upload RPi ARM64 executable
+    - name: 📦 Upload complete RPi ARM64 build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: rpi-arm64-executable
+        name: rpi-arm64-build
         path: |
-          dist-arm64/tpv-el-haido
+          src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
+          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb
+          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm
+          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/appimage/
         retention-days: 30
 
     - name: 📚 Upload documentation and MD files
