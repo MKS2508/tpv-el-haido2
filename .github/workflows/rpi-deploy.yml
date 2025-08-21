@@ -56,8 +56,11 @@ jobs:
         deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe multiverse
         deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-backports main restricted universe multiverse
         deb [arch=amd64] http://security.ubuntu.com/ubuntu/ $(lsb_release -cs)-security main restricted universe multiverse
+        EOF
         
-        # ARM64 repositories (ports)
+        # Create separate ARM64 sources file
+        sudo tee /etc/apt/sources.list.d/arm64.list << EOF
+        # ARM64 repositories (all from ports.ubuntu.com)
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe multiverse
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-updates main restricted universe multiverse
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-backports main restricted universe multiverse
