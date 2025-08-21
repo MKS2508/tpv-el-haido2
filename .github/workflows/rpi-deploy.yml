@@ -22,6 +22,20 @@ jobs:
     - name: 📥 Checkout repository
       uses: actions/checkout@v4
 
+    - name: 🐳 Setup Docker and Cross-compilation tools
+      run: |
+        # Install basic tools
+        sudo apt-get update
+        sudo apt-get install -y curl wget build-essential imagemagick
+        
+        # Install cross-compilation toolchain (no ARM64 libs needed)
+        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        
+        # Install cross-rs for Docker-based cross-compilation
+        cargo install cross --git https://github.com/cross-rs/cross
+        
+        echo "✅ Cross-compilation toolchain ready"
+
     - name: 🦀 Install Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
@@ -29,103 +43,6 @@ jobs:
         target: aarch64-unknown-linux-gnu
         override: true
         components: rustfmt, clippy
-
-    - name: 📦 Setup comprehensive cross-compilation environment
-      run: |
-        # Update and install base cross-compilation tools
-        sudo apt-get update
-        sudo apt-get install -y \
-          gcc-aarch64-linux-gnu \
-          g++-aarch64-linux-gnu \
-          libc6-dev-arm64-cross \
-          pkg-config \
-          curl \
-          wget \
-          build-essential
-        
-        # Add ARM64 architecture
-        sudo dpkg --add-architecture arm64
-        
-        # Clean APT cache and configuration
-        sudo apt-get clean
-        sudo rm -f /var/lib/apt/lists/*
-        
-        # Backup and completely recreate sources configuration
-        sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
-        
-        # Create clean sources.list (AMD64 only, no mixed architectures)
-        sudo tee /etc/apt/sources.list << EOF
-        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs) main restricted universe multiverse
-        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe multiverse
-        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-backports main restricted universe multiverse
-        deb http://security.ubuntu.com/ubuntu/ $(lsb_release -cs)-security main restricted universe multiverse
-        EOF
-        
-        # Create dedicated ARM64 sources
-        sudo tee /etc/apt/sources.list.d/ports-arm64.list << EOF
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe multiverse
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-updates main restricted universe multiverse
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-backports main restricted universe multiverse
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-security main restricted universe multiverse
-        EOF
-        
-        # Create pin-priority to force ARM64 packages from ports.ubuntu.com ONLY
-        sudo tee /etc/apt/preferences.d/99-arm64-ports << EOF
-        # Force all ARM64 packages to come from ports.ubuntu.com
-        Package: *
-        Pin: release o=Ubuntu,a=$(lsb_release -cs)*,n=$(lsb_release -cs)*
-        Pin-Priority: -1
-        
-        Package: *:arm64
-        Pin: origin ports.ubuntu.com
-        Pin-Priority: 1000
-        
-        Package: *:arm64
-        Pin: origin archive.ubuntu.com
-        Pin-Priority: -1
-        
-        Package: *:arm64
-        Pin: origin security.ubuntu.com
-        Pin-Priority: -1
-        EOF
-        
-        sudo apt-get update
-        
-        # Install ARM64 libraries with enhanced error handling
-        echo "=== Installing ARM64 development libraries ==="
-        
-        # Function to install with fallback
-        install_with_fallback() {
-          local packages="$1"
-          local description="$2"
-          echo "Installing $description..."
-          if sudo apt-get install -y --fix-missing $packages; then
-            echo "✅ $description installed successfully"
-            return 0
-          else
-            echo "⚠️ $description installation failed, continuing..."
-            return 1
-          fi
-        }
-        
-        # Install packages in order of importance
-        install_with_fallback "libglib2.0-dev:arm64 libgobject-2.0-dev:arm64 libgio-2.0-dev:arm64" "GLib core libraries"
-        install_with_fallback "libgtk-3-dev:arm64" "GTK3 development libraries" 
-        install_with_fallback "libcairo2-dev:arm64 libpango1.0-dev:arm64" "Cairo and Pango libraries"
-        install_with_fallback "libgdk-pixbuf2.0-dev:arm64 libatk1.0-dev:arm64" "GDK-Pixbuf and ATK libraries"
-        install_with_fallback "libssl-dev:arm64" "SSL development libraries"
-        install_with_fallback "librsvg2-dev:arm64" "SVG libraries"
-        
-        # WebKit packages (most likely to fail)
-        install_with_fallback "libsoup2.4-dev:arm64" "Soup2 libraries" || true
-        install_with_fallback "libjavascriptcoregtk-4.0-dev:arm64" "JavaScriptCore libraries" || true
-        install_with_fallback "libwebkit2gtk-4.0-dev:arm64" "WebKit2 libraries" || true
-        install_with_fallback "libayatana-appindicator3-dev:arm64" "App indicator libraries" || true
-        
-        # Install ImageMagick for icons
-        sudo apt-get install -y imagemagick
-        
-        echo "=== ARM64 libraries installation completed ==="
 
     - name: ⚡ Setup Node.js
       uses: actions/setup-node@v4
@@ -136,7 +53,7 @@ jobs:
     - name: 🔧 Install Node dependencies
       run: npm ci
 
-    - name: 🔧 Configure comprehensive cross-compilation
+    - name: 🔧 Configure cross-compilation
       run: |
         # Create Cargo config
         mkdir -p .cargo
@@ -145,48 +62,32 @@ jobs:
         linker = "aarch64-linux-gnu-gcc"
         EOF
         
-        # Set up pkg-config wrapper for cross-compilation
-        sudo mkdir -p /usr/local/bin
-        sudo tee /usr/local/bin/aarch64-linux-gnu-pkg-config << 'EOF'
-        #!/bin/bash
-        export PKG_CONFIG_DIR=
-        export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-        export PKG_CONFIG_SYSROOT_DIR=/
-        export PKG_CONFIG_ALLOW_CROSS=1
-        exec pkg-config "$@"
-        EOF
-        sudo chmod +x /usr/local/bin/aarch64-linux-gnu-pkg-config
-        
-        # Verify pkg-config setup
-        echo "=== Testing pkg-config setup ==="
-        /usr/local/bin/aarch64-linux-gnu-pkg-config --version
-        /usr/local/bin/aarch64-linux-gnu-pkg-config --exists glib-2.0 && echo "✅ glib-2.0 found" || echo "❌ glib-2.0 not found"
-        /usr/local/bin/aarch64-linux-gnu-pkg-config --exists gtk+-3.0 && echo "✅ gtk+-3.0 found" || echo "❌ gtk+-3.0 not found"
+        echo "✅ Cross-compilation configured"
 
-    - name: 🍓 Cross-compile complete Tauri application (includes frontend build)
+    - name: 🍓 Cross-compile complete Tauri application using Docker
       run: |
-        npm run tauri build -- --target ${{ matrix.target }}
-      env:
-        # Cross-compilation toolchain
-        CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-        CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
-        AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar  
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        echo "🚀 Starting Docker-based cross-compilation..."
         
-        # pkg-config configuration for cross-compilation
-        PKG_CONFIG_aarch64_unknown_linux_gnu: /usr/local/bin/aarch64-linux-gnu-pkg-config
-        PKG_CONFIG_ALLOW_CROSS: 1
-        PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-        PKG_CONFIG_LIBDIR: /usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-        PKG_CONFIG_SYSROOT_DIR: /
+        # Build frontend first
+        npm run build
         
-        # Additional environment variables for glib-sys and gtk-rs
-        GLIB_2_0_LIBS: "-lglib-2.0"
-        GLIB_2_0_CFLAGS: "-I/usr/include/glib-2.0 -I/usr/lib/aarch64-linux-gnu/glib-2.0/include"
-        GTK_3_0_LIBS: "-lgtk-3"
-        GTK_3_0_CFLAGS: "-I/usr/include/gtk-3.0"
+        # Use cross-rs for reliable ARM64 cross-compilation
+        cd src-tauri
+        cross build --release --target aarch64-unknown-linux-gnu
         
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        echo "✅ Cross-compilation completed successfully"
+
+    - name: 📦 Generate packages with native Tauri CLI
+      run: |
+        echo "📦 Generating DEB, RPM packages..."
+        
+        # Install Tauri CLI
+        npm install -g @tauri-apps/cli
+        
+        # Generate packages using Tauri's native bundling
+        npm run tauri build -- --target aarch64-unknown-linux-gnu
+        
+        echo "✅ Package generation completed"
 
     - name: 🔧 Setup Bun runtime
       uses: oven-sh/setup-bun@v1
@@ -195,140 +96,97 @@ jobs:
 
     - name: 📋 Generate documentation
       run: |
+        echo "📚 Generating comprehensive documentation..."
         bun run generate-docs.ts
+        echo "✅ Documentation generated"
 
     - name: 📊 Check generated files
       run: |
-        echo "=== Main executable ==="
-        ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/
-        file src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
-        du -h src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
+        echo "📊 Verifying generated files..."
         
-        echo "=== DEB packages ==="
-        ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/ || echo "DEB not found"
+        # Check executable
+        if [ -f "src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido" ]; then
+          echo "✅ Executable found: $(ls -lh src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido)"
+        else
+          echo "❌ Executable not found"
+        fi
         
-        echo "=== RPM packages ==="
-        ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/ || echo "RPM not found"
+        # Check DEB package
+        if [ -f "src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb"/*.deb ]; then
+          echo "✅ DEB package found: $(ls -lh src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb)"
+        else
+          echo "⚠️ DEB package not found"
+        fi
         
-        echo "=== AppImage ==="
-        ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/appimage/ || echo "AppImage not found"
+        # Check RPM package
+        if [ -f "src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm"/*.rpm ]; then
+          echo "✅ RPM package found: $(ls -lh src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm)"
+        else
+          echo "⚠️ RPM package not found"
+        fi
+        
+        # Check documentation
+        if [ -f "RPi-Build-Documentation.md" ]; then
+          echo "✅ Documentation found: $(ls -lh RPi-Build-Documentation.md)"
+        else
+          echo "❌ Documentation not found"
+        fi
 
     - name: 📦 Upload complete RPi ARM64 build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: tpv-el-haido-rpi3-complete-build
+        name: rpi-arm64-build
         path: |
           src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
           src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb
           src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm
-          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/appimage/TPV El Haido.AppDir/
-        if-no-files-found: warn
+          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/appimage/
+        retention-days: 30
 
     - name: 📚 Upload documentation and MD files
       uses: actions/upload-artifact@v4
       with:
-        name: tpv-el-haido-rpi3-documentation
+        name: rpi-documentation
         path: |
           RPi-Build-Documentation.md
           README.md
-          generate-docs.ts
-        if-no-files-found: warn
+          releases/
+        retention-days: 30
 
-  create-release:
-    name: 🚀 Create GitHub Release  
-    needs: build-rpi
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: 📥 Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: 📦 Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
-
-    - name: 🔢 Generate release version
-      id: version
-      run: |
-        VERSION="v0.1.0-$(date +%Y%m%d)-$(echo $GITHUB_SHA | cut -c1-7)"
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "Generated version: $VERSION"
-
-    - name: 🏷️ Create Release Tag
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git tag -a ${{ steps.version.outputs.version }} -m "RPi ARM64 Release ${{ steps.version.outputs.version }}"
-        git push origin ${{ steps.version.outputs.version }}
-
-    - name: 🚀 Create GitHub Release
+    # Create release with all artifacts on tagged commits
+    - name: 🚀 Create Release
+      if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ steps.version.outputs.version }}
-        name: "🍓 TPV El Haido RPi3 Release ${{ steps.version.outputs.version }}"
+        files: |
+          src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
+          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb
+          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm
+          RPi-Build-Documentation.md
         body: |
-          # 🍓 TPV El Haido - Raspberry Pi 3 ARM64 Release
+          # 🍓 TPV El Haido - ARM64 Release for Raspberry Pi 3
           
-          ## 📱 Instalación en Raspberry Pi 3
+          ## 📦 Installation Options:
           
-          ### 🔧 Ejecutable ARM64 (Simplificado)
+          ### Option 1: DEB Package (Recommended)
           ```bash
-          # Descargar ejecutable
-          wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido
-          
-          # Dar permisos y ejecutar
-          chmod +x tpv-el-haido
-          ./tpv-el-haido
-          ```
-          
-          ## 📊 Artefactos Incluidos  
-          - **Ejecutable ARM64** (34.7MB) - Ejecutable directo para RPi3
-          - **Paquete DEB** (21MB) - Para instalación con dpkg
-          - **Paquete RPM** (21MB) - Para sistemas con rpm
-          - **AppImage** - Portable (si generación exitosa)
-          - **Documentación MD** - Guías completas
-          
-          ### 📦 Instalación Recomendada (DEB)
-          ```bash
-          # Descargar e instalar DEB
-          wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/TPV\ El\ Haido_0.1.0_arm64.deb
           sudo dpkg -i "TPV El Haido_0.1.0_arm64.deb"
-          sudo apt-get install -f
-          
-          # Ejecutar
-          tpv-el-haido
+          sudo apt-get install -f  # Fix dependencies if needed
           ```
           
-          ### 🔧 Ejecutable Directo
+          ### Option 2: Direct Executable
           ```bash
-          # Descargar y ejecutar
-          wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido
           chmod +x tpv-el-haido
           ./tpv-el-haido
           ```
           
-          ## 🎯 Compatibilidad
-          - ✅ Raspberry Pi 3 (ARM64)
-          - ✅ Raspberry Pi 4 (ARM64)  
-          - ✅ Debian/Ubuntu ARM64
+          ## 🎯 Files Included:
+          - **tpv-el-haido**: Direct ARM64 executable (portable)
+          - **TPV El Haido_0.1.0_arm64.deb**: Debian package (recommended)
+          - **TPV El Haido-0.1.0-1.aarch64.rpm**: RPM package
+          - **RPi-Build-Documentation.md**: Complete build documentation
           
           ---
-          *🤖 Compilación completa con cross-compilation en GitHub Actions*
-        files: |
-          artifacts/tpv-el-haido-rpi3-complete-build/*
-          artifacts/tpv-el-haido-rpi3-documentation/*
+          🍓 *Optimized for Raspberry Pi 3 ARM64* | 🤖 *Built with GitHub Actions*
         draft: false
         prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: 📢 Summary
-      run: |
-        echo "## 🎉 Release Created Successfully!" >> $GITHUB_STEP_SUMMARY
-        echo "### 🍓 RPi3 ARM64 Build: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Executables compiled for aarch64-unknown-linux-gnu" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ DEB and RPM packages generated" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Documentation included" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ GitHub Release created with artifacts" >> $GITHUB_STEP_SUMMARY
