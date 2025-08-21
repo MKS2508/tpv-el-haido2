@@ -60,19 +60,19 @@ jobs:
         echo "🔍 APT policy for libglib2.0-dev:arm64:"
         apt-cache policy libglib2.0-dev:arm64 | head -10
         
-        # Install Python dependencies first (architecture-independent)
-        echo "📦 Installing Python dependencies..."
-        sudo apt-get install -y --no-install-recommends \
-          python3-packaging \
-          python3-dev
-        
         # Install essential ARM64 libraries from ports.ubuntu.com
+        # Note: Skip -dev-bin packages as they have complex Python dependencies
         echo "📦 Installing ARM64 libraries..."
         sudo apt-get install -y --no-install-recommends \
-          libglib2.0-dev-bin:arm64 \
-          libglib2.0-dev-bin-linux:arm64 \
+          libglib2.0-0:arm64 \
           libglib2.0-dev:arm64 \
-          libssl-dev:arm64
+          libssl-dev:arm64 \
+          libssl3:arm64 || {
+            echo "⚠️ Some packages failed, trying alternative approach..."
+            # Fallback: install minimal required packages only
+            sudo apt-get install -y --no-install-recommends \
+              libssl-dev:arm64
+          }
         
         # Create pkg-config wrapper for cross-compilation
         sudo tee /usr/local/bin/aarch64-linux-gnu-pkg-config << 'EOF'
