@@ -32,27 +32,25 @@ jobs:
         # Add ARM64 architecture
         sudo dpkg --add-architecture arm64
         
-        # CRITICAL: Block security.ubuntu.com for ARM64 packages (it doesn't serve ARM64)
-        sudo tee /etc/apt/preferences.d/99-block-security-arm64 << EOF
-        # Block ARM64 packages from security.ubuntu.com (404 errors)
-        Package: *:arm64
-        Pin: origin security.ubuntu.com
-        Pin-Priority: -1
+        # CRITICAL: Replace sources.list to avoid security.ubuntu.com completely
+        sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
         
-        # Block ARM64 packages from archive.ubuntu.com (should use ports)  
-        Package: *:arm64
-        Pin: origin archive.ubuntu.com
-        Pin-Priority: -1
+        # Create clean sources.list with NO security.ubuntu.com references
+        sudo tee /etc/apt/sources.list << EOF
+        # AMD64 packages from archive.ubuntu.com (no security updates for now)
+        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs) main restricted universe multiverse
+        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe multiverse
+        deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-backports main restricted universe multiverse
         EOF
         
-        # Configure APT sources to use ONLY ports.ubuntu.com for ARM64
+        # ARM64 packages exclusively from ports.ubuntu.com 
         sudo tee /etc/apt/sources.list.d/ports-arm64.list << EOF
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe multiverse
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-updates main restricted universe multiverse
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-security main restricted universe multiverse
         EOF
         
-        # Update package lists
+        # Update package lists (should work now!)
         sudo apt-get update
         
         # Debug: Check if APT preferences are working
