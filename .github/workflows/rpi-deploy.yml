@@ -30,7 +30,10 @@ jobs:
     - name: 📦 Install cross-compilation dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-aarch64-linux-gnu
+        sudo apt-get install -y \
+          gcc-aarch64-linux-gnu \
+          g++-aarch64-linux-gnu \
+          libc6-dev-arm64-cross
 
     - name: ⚡ Setup Node.js
       uses: actions/setup-node@v4
@@ -40,9 +43,6 @@ jobs:
 
     - name: 🔧 Install Node dependencies
       run: npm ci
-
-    - name: 🎨 Install ImageMagick for icons
-      run: sudo apt-get install -y imagemagick
 
     - name: 🔧 Configure Cargo for cross-compilation
       run: |
@@ -55,11 +55,15 @@ jobs:
     - name: 🏗️ Build frontend
       run: npm run build
 
-    - name: 🍓 Cross-compile for ARM64/RPi3
+    - name: 🍓 Cross-compile Rust binary only (no GUI dependencies)
       run: |
-        npm run tauri build -- --target aarch64-unknown-linux-gnu
+        cd src-tauri
+        cargo build --release --target aarch64-unknown-linux-gnu --bin tpv-el-haido
       env:
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+        CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
+        AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
 
     - name: 🔧 Setup Bun runtime
       uses: oven-sh/setup-bun@v1
@@ -73,18 +77,16 @@ jobs:
     - name: 📊 Check generated files
       run: |
         ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/
-        ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/ || echo "DEB not found"
-        ls -la src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/ || echo "RPM not found"
+        file src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
+        du -h src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
 
-    - name: 📦 Upload RPi executables
+    - name: 📦 Upload RPi ARM64 executable
       uses: actions/upload-artifact@v4
       with:
-        name: tpv-el-haido-rpi3-executables
+        name: tpv-el-haido-rpi3-arm64-executable
         path: |
           src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
-          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb
-          src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/*.rpm
-        if-no-files-found: warn
+        if-no-files-found: error
 
     - name: 📚 Upload documentation and MD files
       uses: actions/upload-artifact@v4
@@ -133,37 +135,38 @@ jobs:
         body: |
           # 🍓 TPV El Haido - Raspberry Pi 3 ARM64 Release
           
-          ## 📱 Archivos para Raspberry Pi 3
+          ## 📱 Instalación en Raspberry Pi 3
           
-          ### 📦 Instalación (Recomendado)
+          ### 🔧 Ejecutable ARM64 (Simplificado)
           ```bash
-          # Descargar e instalar DEB
-          sudo dpkg -i TPV\ El\ Haido_0.1.0_arm64.deb
-          sudo apt-get install -f
-          ```
+          # Descargar ejecutable
+          wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido
           
-          ### 🔧 Ejecutable Directo  
-          ```bash
-          # Descargar y ejecutar
+          # Dar permisos y ejecutar
           chmod +x tpv-el-haido
           ./tpv-el-haido
           ```
           
           ## 📊 Artefactos Incluidos
-          - **DEB Package** (21MB) - Para instalación con dpkg
-          - **RPM Package** (21MB) - Para sistemas con rpm
-          - **Ejecutable ARM64** (34.7MB) - Ejecutable directo
-          - **Documentación** - Guía completa de compilación
+          - **Ejecutable ARM64** - Compilado para aarch64-unknown-linux-gnu
+          - **Documentación MD** - Guías de instalación y compilación
+          - **Scripts de generación** - Para compilación local completa
           
           ## 🎯 Compatibilidad
-          - ✅ Raspberry Pi 3 (ARM64)
+          - ✅ Raspberry Pi 3 (ARM64)  
           - ✅ Raspberry Pi 4 (ARM64)
-          - ✅ Otros sistemas ARM64 Linux
+          - ✅ Debian/Ubuntu ARM64
+          
+          ## 📝 Nota
+          Para paquetes DEB/RPM completos, compilar localmente con:
+          ```bash
+          npm run build:rpi-full
+          ```
           
           ---
-          *🤖 Generado automáticamente con GitHub Actions*
+          *🤖 Compilado automáticamente con GitHub Actions*
         files: |
-          artifacts/tpv-el-haido-rpi3-executables/*
+          artifacts/tpv-el-haido-rpi3-arm64-executable/*
           artifacts/tpv-el-haido-rpi3-documentation/*
         draft: false
         prerelease: false
