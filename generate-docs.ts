@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 
 import { spawn } from "bun";
-import fs from "fs";
 
 // Generate complete documentation and open file explorers
 async function generateDocsAndOpenExplorers() {

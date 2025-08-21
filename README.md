@@ -70,8 +70,6 @@ npm run deploy:rpi
 # Generar documentación
 npm run docs:rpi
 
-# Explorador CLI
-npm run explorer:rpi
 ```
 
 ### Compilación Manual

@@ -11,13 +11,10 @@
     "tauri:dev": "tauri dev",
     "deploy:rpi": "npm run build && npm run tauri build -- --target aarch64-unknown-linux-gnu",
     "docs:rpi": "node --loader tsx generate-docs.ts || bun run generate-docs.ts",
-    "build:rpi-full": "npm run deploy:rpi && npm run docs:rpi",
-    "explorer:rpi": "bun run rpi-explorer.ts"
+    "build:rpi-full": "npm run deploy:rpi && npm run docs:rpi"
   },
   "dependencies": {
     "@number-flow/react": "^0.5.10",
-    "@opentui/core": "^0.1.8",
-    "@opentui/react": "^0.1.8",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-dialog": "^1.1.1",

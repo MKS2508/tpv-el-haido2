@@ -298,6 +298,6 @@ cd "TPV El Haido.AppDir"
 - ✅ OpenTUI para interfaces de terminal (parcial)
 
 ---
-*📋 Documentación generada automáticamente el 8/21/2025, 3:11:36 AM*  
+*📋 Documentación generada automáticamente el 8/21/2025, 3:23:55 AM*  
 *🍓 TPV El Haido - ARM64 Build Documentation*  
 *🔧 Herramientas: Bun CLI Generator + OpenTUI Explorer*

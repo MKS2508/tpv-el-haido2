@@ -94,8 +94,6 @@ jobs:
           RPi-Build-Documentation.md
           README.md
           generate-docs.ts
-          rpi-explorer.ts
-          rpi-builder-cli.tsx
         if-no-files-found: warn
 
   create-release:
