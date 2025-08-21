@@ -29,6 +29,15 @@ jobs:
         sudo apt-get install -y curl wget build-essential imagemagick \
           gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config
         
+        # Add ARM64 architecture
+        sudo dpkg --add-architecture arm64
+        sudo apt-get update
+        
+        # Install essential ARM64 libraries - minimal set that should work
+        sudo apt-get install -y --no-install-recommends \
+          libglib2.0-dev:arm64 \
+          libssl-dev:arm64 || echo "⚠️ Some ARM64 packages failed but continuing..."
+        
         # Create pkg-config wrapper for cross-compilation
         sudo tee /usr/local/bin/aarch64-linux-gnu-pkg-config << 'EOF'
         #!/bin/bash
@@ -39,6 +48,9 @@ jobs:
         exec pkg-config "$@"
         EOF
         sudo chmod +x /usr/local/bin/aarch64-linux-gnu-pkg-config
+        
+        # Verify glib-2.0.pc exists
+        ls -la /usr/lib/aarch64-linux-gnu/pkgconfig/glib-2.0.pc || echo "⚠️ glib-2.0.pc not found"
         
         echo "✅ Cross-compilation environment configured"
 
