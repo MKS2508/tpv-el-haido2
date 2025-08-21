@@ -32,16 +32,35 @@ jobs:
         # Add ARM64 architecture
         sudo dpkg --add-architecture arm64
         
-        # Configure APT sources to use ONLY ports.ubuntu.com for ARM64 (avoid security.ubuntu.com 404)
+        # CRITICAL: Block security.ubuntu.com for ARM64 packages (it doesn't serve ARM64)
+        sudo tee /etc/apt/preferences.d/99-block-security-arm64 << EOF
+        # Block ARM64 packages from security.ubuntu.com (404 errors)
+        Package: *:arm64
+        Pin: origin security.ubuntu.com
+        Pin-Priority: -1
+        
+        # Block ARM64 packages from archive.ubuntu.com (should use ports)  
+        Package: *:arm64
+        Pin: origin archive.ubuntu.com
+        Pin-Priority: -1
+        EOF
+        
+        # Configure APT sources to use ONLY ports.ubuntu.com for ARM64
         sudo tee /etc/apt/sources.list.d/ports-arm64.list << EOF
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs) main restricted universe multiverse
         deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-updates main restricted universe multiverse
+        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -cs)-security main restricted universe multiverse
         EOF
         
         # Update package lists
         sudo apt-get update
         
+        # Debug: Check if APT preferences are working
+        echo "🔍 APT policy for libglib2.0-dev:arm64:"
+        apt-cache policy libglib2.0-dev:arm64 | head -10
+        
         # Install essential ARM64 libraries from ports.ubuntu.com
+        echo "📦 Installing ARM64 libraries..."
         sudo apt-get install -y --no-install-recommends \
           libglib2.0-dev:arm64 \
           libssl-dev:arm64
