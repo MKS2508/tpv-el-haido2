@@ -58,11 +58,12 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     const hardwareConcurrency = navigator.hardwareConcurrency || 1;
     const deviceMemory = (navigator as NavigatorWithExtensions).deviceMemory || 1; // GB, Chrome only
 
-    // Raspberry Pi detection
+    // Raspberry Pi detection - only use deviceMemory if API is actually available
+    const hasDeviceMemoryAPI = 'deviceMemory' in navigator;
     const isRaspberryPi =
       /raspberry/i.test(userAgent) ||
       /armv/i.test(userAgent) ||
-      (hardwareConcurrency <= 4 && deviceMemory <= 1);
+      (hasDeviceMemoryAPI && hardwareConcurrency <= 4 && deviceMemory <= 1);
 
     // Mobile detection
     const isMobile =

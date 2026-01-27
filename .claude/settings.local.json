@@ -7,7 +7,9 @@
       "Bash(npx tauri signer:*)",
       "Bash(bun run tauri:*)",
       "Bash(dir /s /b \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\tpv-soap-aeat\\\\*.ts\")",
-      "Bash(dir \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\tpv-soap-aeat\" /b)"
+      "Bash(dir \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\tpv-soap-aeat\" /b)",
+      "Bash(dir /B \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\tpv-el-haido2\\\\sidecars\")",
+      "Bash(npm view:*)"
     ]
   }
 }
