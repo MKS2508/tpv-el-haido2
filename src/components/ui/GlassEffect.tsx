@@ -73,7 +73,13 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
   return (
     <>
       {/* SVG Filter Definition */}
-      <svg className="absolute opacity-0 pointer-events-none" width="0" height="0">
+      <svg
+        className="absolute opacity-0 pointer-events-none"
+        width="0"
+        height="0"
+        aria-hidden="true"
+      >
+        <title>Glass Effect Filter</title>
         <defs>
           <filter id={filterId}>
             <feImage href={displacementUri} result="map" />

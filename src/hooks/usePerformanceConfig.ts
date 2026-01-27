@@ -1,5 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 
+// Browser API type extensions
+interface NavigatorWithMemory extends Navigator {
+  deviceMemory?: number;
+  connection?: NetworkInformation;
+  mozConnection?: NetworkInformation;
+  webkitConnection?: NetworkInformation;
+}
+
+interface NetworkInformation extends EventTarget {
+  effectiveType: string;
+}
+
+interface PerformanceWithMemory extends Performance {
+  memory?: {
+    usedJSHeapSize: number;
+    totalJSHeapSize: number;
+  };
+}
+
 interface PerformanceConfig {
   // Device detection
   isLowPerformance: boolean;
@@ -37,7 +56,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   const deviceInfo = useMemo(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     const hardwareConcurrency = navigator.hardwareConcurrency || 1;
-    const deviceMemory = (navigator as any).deviceMemory || 1; // GB, Chrome only
+    const deviceMemory = (navigator as NavigatorWithMemory).deviceMemory || 1; // GB, Chrome only
 
     // Raspberry Pi detection
     const isRaspberryPi =
@@ -74,7 +93,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     // Memory API (Chrome only)
     if ('memory' in performance) {
       const checkMemory = () => {
-        const memory = (performance as any).memory;
+        const memory = (performance as PerformanceWithMemory).memory!;
         const memoryUsage = memory.usedJSHeapSize / memory.totalJSHeapSize;
 
         if (memoryUsage > 0.8) {
@@ -122,10 +141,8 @@ export const usePerformanceConfig = (): PerformanceConfig => {
 
   useEffect(() => {
     // Network Information API con cleanup
-    const connection =
-      (navigator as any).connection ||
-      (navigator as any).mozConnection ||
-      (navigator as any).webkitConnection;
+    const nav = navigator as NavigatorWithMemory;
+    const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
 
     if (connection) {
       const updateNetworkInfo = () => {

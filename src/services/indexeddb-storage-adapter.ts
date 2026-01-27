@@ -1,311 +1,280 @@
-import type Category from '@/models/Category';
-import type Order from '@/models/Order';
-import type Product from '@/models/Product';
-import type Table from '@/models/Table';
-import type { IStorageAdapter } from './storage-adapter.interface';
+import { tryCatchAsync, ok, err, type ResultError } from '@mks2508/no-throw'
+import { IStorageAdapter, type StorageResult } from "./storage-adapter.interface"
+import { StorageErrorCode, type StorageErrorCode as StorageErrorCodeType } from "@/lib/error-codes"
+import Product from "@/models/Product"
+import Category from "@/models/Category"
+import Order from "@/models/Order"
+import Table from "@/models/Table"
 
 export class IndexedDbStorageAdapter implements IStorageAdapter {
-  private dbName = 'tpv-haido-db';
-  private dbVersion = 1;
-  private db: IDBDatabase | null = null;
+    private dbName = 'tpv-haido-db'
+    private dbVersion = 1
+    private db: IDBDatabase | null = null
 
-  constructor() {
-    this.initDB();
-  }
+    constructor() {
+        this.initDB()
+    }
 
-  private async initDB(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.dbVersion);
+    private async initDB(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.dbVersion)
 
-      request.onerror = () => {
-        console.error('Error opening IndexedDB:', request.error);
-        reject(request.error);
-      };
+            request.onerror = () => {
+                console.error('Error opening IndexedDB:', request.error)
+                reject(request.error)
+            }
 
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
+            request.onsuccess = () => {
+                this.db = request.result
+                resolve()
+            }
 
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
+            request.onupgradeneeded = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result
 
-        // Create object stores
-        if (!db.objectStoreNames.contains('products')) {
-          const productStore = db.createObjectStore('products', { keyPath: 'id' });
-          productStore.createIndex('category', 'category', { unique: false });
+                if (!db.objectStoreNames.contains('products')) {
+                    const productStore = db.createObjectStore('products', { keyPath: 'id' })
+                    productStore.createIndex('category', 'category', { unique: false })
+                }
+
+                if (!db.objectStoreNames.contains('categories')) {
+                    db.createObjectStore('categories', { keyPath: 'id' })
+                }
+
+                if (!db.objectStoreNames.contains('orders')) {
+                    const orderStore = db.createObjectStore('orders', { keyPath: 'id' })
+                    orderStore.createIndex('status', 'status', { unique: false })
+                    orderStore.createIndex('tableNumber', 'tableNumber', { unique: false })
+                }
+
+                if (!db.objectStoreNames.contains('tables')) {
+                    db.createObjectStore('tables', { keyPath: 'id' })
+                }
+            }
+        })
+    }
+
+    private async ensureDB(): Promise<IDBDatabase> {
+        if (!this.db) {
+            await this.initDB()
         }
-
-        if (!db.objectStoreNames.contains('categories')) {
-          db.createObjectStore('categories', { keyPath: 'id' });
+        if (!this.db) {
+            throw new Error('Failed to initialize IndexedDB')
         }
-
-        if (!db.objectStoreNames.contains('orders')) {
-          const orderStore = db.createObjectStore('orders', { keyPath: 'id' });
-          orderStore.createIndex('status', 'status', { unique: false });
-          orderStore.createIndex('tableNumber', 'tableNumber', { unique: false });
-        }
-
-        if (!db.objectStoreNames.contains('tables')) {
-          db.createObjectStore('tables', { keyPath: 'id' });
-        }
-      };
-    });
-  }
-
-  private async ensureDB(): Promise<IDBDatabase> {
-    if (!this.db) {
-      await this.initDB();
+        return this.db
     }
-    if (!this.db) {
-      throw new Error('Failed to initialize IndexedDB');
+
+    private async performTransaction<T>(
+        storeName: string,
+        mode: IDBTransactionMode,
+        operation: (store: IDBObjectStore) => IDBRequest<T>
+    ): Promise<T> {
+        const db = await this.ensureDB()
+        const transaction = db.transaction([storeName], mode)
+        const store = transaction.objectStore(storeName)
+        const request = operation(store)
+
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => resolve(request.result)
+            request.onerror = () => reject(request.error)
+            transaction.onerror = () => reject(transaction.error)
+        })
     }
-    return this.db;
-  }
 
-  private async performTransaction<T>(
-    storeName: string,
-    mode: IDBTransactionMode,
-    operation: (store: IDBObjectStore) => IDBRequest<T>
-  ): Promise<T> {
-    const db = await this.ensureDB();
-    const transaction = db.transaction([storeName], mode);
-    const store = transaction.objectStore(storeName);
-    const request = operation(store);
-
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-      transaction.onerror = () => reject(transaction.error);
-    });
-  }
-
-  private async performGetAll<T>(storeName: string): Promise<T[]> {
-    return this.performTransaction(storeName, 'readonly', (store) => store.getAll());
-  }
-
-  // Products
-  async getProducts(): Promise<Product[]> {
-    try {
-      return await this.performGetAll<Product>('products');
-    } catch (error) {
-      console.error('Failed to fetch products from IndexedDB:', error);
-      return [];
+    private async performGetAll<T>(storeName: string): Promise<T[]> {
+        return this.performTransaction(storeName, 'readonly', (store) => store.getAll())
     }
-  }
 
-  async createProduct(product: Product): Promise<void> {
-    try {
-      await this.performTransaction('products', 'readwrite', (store) => store.add(product));
-    } catch (error) {
-      console.error('Failed to create product in IndexedDB:', error);
+    // ==================== Products ====================
+
+    async getProducts(): Promise<StorageResult<Product[]>> {
+        return tryCatchAsync(
+            async () => this.performGetAll<Product>('products'),
+            StorageErrorCode.ReadFailed
+        )
     }
-  }
 
-  async updateProduct(product: Product): Promise<void> {
-    try {
-      await this.performTransaction('products', 'readwrite', (store) => store.put(product));
-    } catch (error) {
-      console.error('Failed to update product in IndexedDB:', error);
+    async createProduct(product: Product): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('products', 'readwrite', (store) => store.add(product)) },
+            StorageErrorCode.WriteFailed
+        )
     }
-  }
 
-  async deleteProduct(product: Product): Promise<void> {
-    try {
-      await this.performTransaction('products', 'readwrite', (store) => store.delete(product.id));
-    } catch (error) {
-      console.error('Failed to delete product from IndexedDB:', error);
+    async updateProduct(product: Product): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('products', 'readwrite', (store) => store.put(product)) },
+            StorageErrorCode.WriteFailed
+        )
     }
-  }
 
-  // Categories
-  async getCategories(): Promise<Category[]> {
-    try {
-      return await this.performGetAll<Category>('categories');
-    } catch (error) {
-      console.error('Failed to fetch categories from IndexedDB:', error);
-      return [];
+    async deleteProduct(product: Product): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('products', 'readwrite', (store) => store.delete(product.id)) },
+            StorageErrorCode.DeleteFailed
+        )
     }
-  }
 
-  async createCategory(category: Category): Promise<void> {
-    try {
-      await this.performTransaction('categories', 'readwrite', (store) => store.add(category));
-    } catch (error) {
-      console.error('Failed to create category in IndexedDB:', error);
+    // ==================== Categories ====================
+
+    async getCategories(): Promise<StorageResult<Category[]>> {
+        return tryCatchAsync(
+            async () => this.performGetAll<Category>('categories'),
+            StorageErrorCode.ReadFailed
+        )
     }
-  }
 
-  async updateCategory(category: Category): Promise<void> {
-    try {
-      await this.performTransaction('categories', 'readwrite', (store) => store.put(category));
-    } catch (error) {
-      console.error('Failed to update category in IndexedDB:', error);
+    async createCategory(category: Category): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('categories', 'readwrite', (store) => store.add(category)) },
+            StorageErrorCode.WriteFailed
+        )
     }
-  }
 
-  async deleteCategory(category: Category): Promise<void> {
-    try {
-      await this.performTransaction('categories', 'readwrite', (store) =>
-        store.delete(category.id)
-      );
-    } catch (error) {
-      console.error('Failed to delete category from IndexedDB:', error);
+    async updateCategory(category: Category): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('categories', 'readwrite', (store) => store.put(category)) },
+            StorageErrorCode.WriteFailed
+        )
     }
-  }
 
-  // Orders
-  async getOrders(): Promise<Order[]> {
-    try {
-      return await this.performGetAll<Order>('orders');
-    } catch (error) {
-      console.error('Failed to fetch orders from IndexedDB:', error);
-      return [];
+    async deleteCategory(category: Category): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('categories', 'readwrite', (store) => store.delete(category.id)) },
+            StorageErrorCode.DeleteFailed
+        )
     }
-  }
 
-  async createOrder(order: Order): Promise<void> {
-    try {
-      await this.performTransaction('orders', 'readwrite', (store) => store.add(order));
-    } catch (error) {
-      console.error('Failed to create order in IndexedDB:', error);
+    // ==================== Orders ====================
+
+    async getOrders(): Promise<StorageResult<Order[]>> {
+        return tryCatchAsync(
+            async () => this.performGetAll<Order>('orders'),
+            StorageErrorCode.ReadFailed
+        )
     }
-  }
 
-  async updateOrder(order: Order): Promise<void> {
-    try {
-      await this.performTransaction('orders', 'readwrite', (store) => store.put(order));
-    } catch (error) {
-      console.error('Failed to update order in IndexedDB:', error);
+    async createOrder(order: Order): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('orders', 'readwrite', (store) => store.add(order)) },
+            StorageErrorCode.WriteFailed
+        )
     }
-  }
 
-  async deleteOrder(order: Order): Promise<void> {
-    try {
-      await this.performTransaction('orders', 'readwrite', (store) => store.delete(order.id));
-    } catch (error) {
-      console.error('Failed to delete order from IndexedDB:', error);
+    async updateOrder(order: Order): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('orders', 'readwrite', (store) => store.put(order)) },
+            StorageErrorCode.WriteFailed
+        )
     }
-  }
 
-  // Tables (optional)
-  async getTables(): Promise<Table[]> {
-    try {
-      return await this.performGetAll<Table>('tables');
-    } catch (error) {
-      console.error('Failed to fetch tables from IndexedDB:', error);
-      return [];
+    async deleteOrder(order: Order): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('orders', 'readwrite', (store) => store.delete(order.id)) },
+            StorageErrorCode.DeleteFailed
+        )
     }
-  }
 
-  async createTable(table: Table): Promise<void> {
-    try {
-      await this.performTransaction('tables', 'readwrite', (store) => store.add(table));
-    } catch (error) {
-      console.error('Failed to create table in IndexedDB:', error);
+    // ==================== Tables ====================
+
+    async getTables(): Promise<StorageResult<Table[]>> {
+        return tryCatchAsync(
+            async () => this.performGetAll<Table>('tables'),
+            StorageErrorCode.ReadFailed
+        )
     }
-  }
 
-  async updateTable(table: Table): Promise<void> {
-    try {
-      await this.performTransaction('tables', 'readwrite', (store) => store.put(table));
-    } catch (error) {
-      console.error('Failed to update table in IndexedDB:', error);
+    async createTable(table: Table): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('tables', 'readwrite', (store) => store.add(table)) },
+            StorageErrorCode.WriteFailed
+        )
     }
-  }
 
-  async deleteTable(table: Table): Promise<void> {
-    try {
-      await this.performTransaction('tables', 'readwrite', (store) => store.delete(table.id));
-    } catch (error) {
-      console.error('Failed to delete table from IndexedDB:', error);
+    async updateTable(table: Table): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('tables', 'readwrite', (store) => store.put(table)) },
+            StorageErrorCode.WriteFailed
+        )
     }
-  }
 
-  // Utility methods
-  async clearAllData(): Promise<void> {
-    try {
-      const db = await this.ensureDB();
-      const transaction = db.transaction(
-        ['products', 'categories', 'orders', 'tables'],
-        'readwrite'
-      );
-
-      const promises = [
-        new Promise<void>((resolve, reject) => {
-          const request = transaction.objectStore('products').clear();
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        }),
-        new Promise<void>((resolve, reject) => {
-          const request = transaction.objectStore('categories').clear();
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        }),
-        new Promise<void>((resolve, reject) => {
-          const request = transaction.objectStore('orders').clear();
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        }),
-        new Promise<void>((resolve, reject) => {
-          const request = transaction.objectStore('tables').clear();
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        }),
-      ];
-
-      await Promise.all(promises);
-    } catch (error) {
-      console.error('Failed to clear IndexedDB data:', error);
+    async deleteTable(table: Table): Promise<StorageResult<void>> {
+        return tryCatchAsync(
+            async () => { await this.performTransaction('tables', 'readwrite', (store) => store.delete(table.id)) },
+            StorageErrorCode.DeleteFailed
+        )
     }
-  }
 
-  async exportData(): Promise<{ products: Product[]; categories: Category[]; orders: Order[] }> {
-    try {
-      const [products, categories, orders] = await Promise.all([
-        this.getProducts(),
-        this.getCategories(),
-        this.getOrders(),
-      ]);
+    // ==================== Utility ====================
 
-      return { products, categories, orders };
-    } catch (error) {
-      console.error('Failed to export data from IndexedDB:', error);
-      throw error;
+    async clearAllData(): Promise<StorageResult<void>> {
+        return tryCatchAsync(async () => {
+            const db = await this.ensureDB()
+            const transaction = db.transaction(['products', 'categories', 'orders', 'tables'], 'readwrite')
+
+            const promises = [
+                new Promise<void>((resolve, reject) => {
+                    const request = transaction.objectStore('products').clear()
+                    request.onsuccess = () => resolve()
+                    request.onerror = () => reject(request.error)
+                }),
+                new Promise<void>((resolve, reject) => {
+                    const request = transaction.objectStore('categories').clear()
+                    request.onsuccess = () => resolve()
+                    request.onerror = () => reject(request.error)
+                }),
+                new Promise<void>((resolve, reject) => {
+                    const request = transaction.objectStore('orders').clear()
+                    request.onsuccess = () => resolve()
+                    request.onerror = () => reject(request.error)
+                }),
+                new Promise<void>((resolve, reject) => {
+                    const request = transaction.objectStore('tables').clear()
+                    request.onsuccess = () => resolve()
+                    request.onerror = () => reject(request.error)
+                })
+            ]
+
+            await Promise.all(promises)
+        }, StorageErrorCode.DeleteFailed)
     }
-  }
 
-  async importData(data: {
-    products: Product[];
-    categories: Category[];
-    orders: Order[];
-  }): Promise<void> {
-    try {
-      // Clear existing data first
-      await this.clearAllData();
+    async exportData(): Promise<StorageResult<{products: Product[], categories: Category[], orders: Order[]}>> {
+        return tryCatchAsync(async () => {
+            const productsResult = await this.getProducts()
+            const categoriesResult = await this.getCategories()
+            const ordersResult = await this.getOrders()
 
-      // Import new data
-      const importPromises: Promise<void>[] = [];
+            // Extract values, defaulting to empty arrays on error
+            const products = productsResult.ok ? productsResult.value : []
+            const categories = categoriesResult.ok ? categoriesResult.value : []
+            const orders = ordersResult.ok ? ordersResult.value : []
 
-      // Import products
-      for (const product of data.products) {
-        importPromises.push(this.createProduct(product));
-      }
-
-      // Import categories
-      for (const category of data.categories) {
-        importPromises.push(this.createCategory(category));
-      }
-
-      // Import orders
-      for (const order of data.orders) {
-        importPromises.push(this.createOrder(order));
-      }
-
-      await Promise.all(importPromises);
-    } catch (error) {
-      console.error('Failed to import data to IndexedDB:', error);
-      throw error;
+            return { products, categories, orders }
+        }, StorageErrorCode.ReadFailed)
     }
-  }
+
+    async importData(data: {products: Product[], categories: Category[], orders: Order[]}): Promise<StorageResult<void>> {
+        return tryCatchAsync(async () => {
+            // Clear existing data first
+            await this.clearAllData()
+
+            // Import new data
+            const importPromises: Promise<StorageResult<void>>[] = []
+
+            for (const product of data.products) {
+                importPromises.push(this.createProduct(product))
+            }
+
+            for (const category of data.categories) {
+                importPromises.push(this.createCategory(category))
+            }
+
+            for (const order of data.orders) {
+                importPromises.push(this.createOrder(order))
+            }
+
+            await Promise.all(importPromises)
+        }, StorageErrorCode.WriteFailed)
+    }
 }

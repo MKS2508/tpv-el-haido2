@@ -27,3 +27,4 @@ dist-ssr
 .tauri/
 *.key
 !*.key.pub
+/target/rust-analyzer

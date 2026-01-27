@@ -31,6 +31,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({ tables, selectedOrder, onTabl
         >
           <span className="text-center flex items-center justify-center">Barra</span>
           <span
+            role="img"
             className={`absolute top-1 right-1 w-3 h-3 rounded-full ${
               tables.find((t) => t.id === 0)?.available !== false ? 'bg-primary' : 'bg-destructive'
             }`}
@@ -51,6 +52,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({ tables, selectedOrder, onTabl
             >
               <span className="text-center flex items-center justify-center">{table.name}</span>
               <span
+                role="img"
                 className={`absolute top-1 right-1 w-3 h-3 rounded-full ${
                   table.available ? 'bg-primary' : 'bg-destructive'
                 }`}

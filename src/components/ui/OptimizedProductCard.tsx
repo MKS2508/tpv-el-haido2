@@ -154,7 +154,19 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
   }, []);
 
   return (
-    <div className={getCardStyles()} onClick={handleClick} {...props}>
+    <div
+      className={getCardStyles()}
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      {...props}
+    >
       {/* Image Section */}
       <div
         className={cn(

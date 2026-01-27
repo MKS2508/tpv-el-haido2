@@ -6,7 +6,7 @@ import type User from '@/models/User';
 interface MenuItem {
   id: string;
   label: string;
-  icon: any; // Using any to match the existing menuItems structure from App.tsx
+  icon: React.ReactNode;
 }
 
 interface BottomNavigationProps {

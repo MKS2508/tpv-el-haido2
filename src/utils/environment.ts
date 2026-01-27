@@ -6,7 +6,7 @@
  * Detecta si la aplicación se está ejecutando en Tauri
  */
 export function isTauriEnvironment(): boolean {
-  return typeof window !== 'undefined' && !!(window as any).__TAURI__;
+  return typeof window !== 'undefined' && !!window.__TAURI__;
 }
 
 /**
@@ -68,6 +68,6 @@ export function runByEnvironment<T>(options: {
  */
 declare global {
   interface Window {
-    __TAURI__: any;
+    __TAURI__?: Record<string, unknown>;
   }
 }
