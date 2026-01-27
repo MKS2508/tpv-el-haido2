@@ -6,7 +6,6 @@ FROM rust:1.77-bookworm AS builder
 # Install system dependencies for Tauri
 RUN apt-get update && apt-get install -y \
     libwebkit2gtk-4.1-dev \
-    libappindicator3-dev \
     librsvg2-dev \
     patchelf \
     libssl-dev \
@@ -29,8 +28,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY bun.lock* ./
 
-# Install Node dependencies
-RUN npm ci
+# Install Node dependencies (force exact Tauri CLI version)
+RUN npm ci && npm install @tauri-apps/cli@2.9.6
 
 # Copy Rust files for dependency caching
 COPY src-tauri/Cargo.toml src-tauri/Cargo.lock ./src-tauri/
