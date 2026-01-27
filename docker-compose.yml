@@ -1,0 +1,35 @@
+# TPV El Haido - Docker Compose for local builds
+# Usage: docker-compose up --build
+
+version: '3.8'
+
+services:
+  build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - TAURI_SIGNING_PRIVATE_KEY=${TAURI_SIGNING_PRIVATE_KEY:-}
+        - TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}
+    volumes:
+      - ./build-output:/output-host
+    command: |
+      sh -c "cp -r /output/* /output-host/ 2>/dev/null || echo 'No artifacts to copy'"
+
+  # Development container with all tools
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/src-tauri/target
+    working_dir: /app
+    command: npm run dev
+    ports:
+      - "1420:1420"
+    environment:
+      - TAURI_SIGNING_PRIVATE_KEY=${TAURI_SIGNING_PRIVATE_KEY:-}
+      - TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}

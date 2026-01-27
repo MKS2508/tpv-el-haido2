@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+src-tauri/target/
+
+# Build outputs
+dist/
+build-output/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets (NEVER include in Docker context)
+.tauri/
+*.key
+!*.key.pub
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+*.test.*
+*.spec.*
+
+# Releases folder (large binaries)
+releases/
