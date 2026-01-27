@@ -51,7 +51,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk2NjI2RTc2NzQ2QzZCMDcKUldRSGEyeDBkbTVpbHZodVhYN0tiMVU0K1g3VUhaR2NLNkVNdktlNFZWZjdFeXVkQ1U1T2NLdnUK",
+      "pubkey": "untrusted comment: minisign public key CF5C37360EC34A45\nRWRFSsMONjdcz25guaB/ACfXn9NF3Vik3S2fGAKomeDL12ftu2EUXPxL",
       "endpoints": [
         "https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/latest.json"
       ]
