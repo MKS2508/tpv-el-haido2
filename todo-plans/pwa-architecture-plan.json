@@ -1,0 +1,238 @@
+{
+  "metadata": {
+    "title": "PWA Separation + Platform Abstraction",
+    "created": "2026-01-27T23:00:00Z",
+    "project": "TPV El Haido",
+    "status": "ready",
+    "estimatedTime": "3h 30m",
+    "author": "WAXIN MK1 (AI Agent)",
+    "user": "waxo (Marcos)"
+  },
+  "objectives": [
+    "Separar frontend como PWA web standalone",
+    "Abstraer APIs de Tauri detrás de PlatformService",
+    "Refactorizar servicios para usar UnifiedDataService",
+    "Mantener funcionalidad completa en ambas plataformas"
+  ],
+  "currentState": {
+    "storageAdapters": {
+      "status": "complete",
+      "implementations": ["IndexedDbStorageAdapter", "HttpStorageAdapter", "SqliteStorageAdapter"],
+      "interface": "IStorageAdapter"
+    },
+    "platformDetection": {
+      "status": "exists",
+      "location": "src/store/store.ts",
+      "function": "isTauri()"
+    },
+    "modeSwitching": {
+      "status": "exists",
+      "location": "src/store/store.ts",
+      "modes": ["sqlite", "http", "indexeddb"]
+    },
+    "issues": [
+      "Componentes llaman directamente a Tauri APIs en múltiples lugares",
+      "Servicios no usan los storage adapters",
+      "No hay capa de abstracción para platform-specific features",
+      "No hay PWA setup (service worker, manifest)"
+      "Lógica de negocio mezclada con infraestructura"
+    ]
+  },
+  "architecture": {
+    "diagram": "Components UI → Store (Zustand) → UnifiedDataService → IStorageAdapter → [IndexedDB (PWA) | SQLite (Tauri)]",
+    "platformAbstraction": "Components UI → PlatformService (Tauri APIs wrapper) → Platform implementations",
+    "phases": [
+      {
+        "id": "phase1",
+        "name": "Platform Abstraction",
+        "duration": "2h",
+        "status": "pending"
+      },
+      {
+        "id": "phase2",
+        "name": "Unified Data Layer",
+        "duration": "1h",
+        "status": "pending"
+      },
+      {
+        "id": "phase3",
+        "name": "PWA Setup",
+        "duration": "30m",
+        "status": "pending"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "id": "platform-interface",
+      "title": "Crear interfaz PlatformService",
+      "description": "Definir métodos para printer, updater, file dialogs",
+      "file": "src/services/platform/PlatformService.ts",
+      "phase": "phase1",
+      "dependencies": [],
+      "complexity": "easy",
+      "code": {
+        "language": "typescript",
+        "snippet": "export interface PlatformService { printTicket(order: Order): Promise<void>; printReceipt(order: Order): Promise<void>; openFileDialog(): Promise<string | null>; saveFileDialog(): Promise<string | null>; checkForUpdates(): Promise<void>; downloadAndInstall(): Promise<void>; isTauri(): boolean; getVersion(): string; }"
+      }
+    },
+    {
+      "id": "web-platform-service",
+      "title": "Implementar WebPlatformService",
+      "description": "Implementaciones de stub para PWA (alerts, window.open para impresión)",
+      "file": "src/services/platform/WebPlatformService.ts",
+      "phase": "phase1",
+      "dependencies": ["platform-interface"],
+      "complexity": "easy",
+      "code": {
+        "language": "typescript",
+        "snippet": "export class WebPlatformService implements PlatformService { async printTicket(order: Order): Promise<void> { window.open(`/ticket/${order.id}`, '_blank'); } async printReceipt(order: Order): Promise<void> { alert('Receipt printing not available in PWA version. Use the ticket instead.'); } async openFileDialog(): Promise<string | null> { return prompt('Enter file path for import:'); } async saveFileDialog(): Promise<string | null> { return prompt('Enter filename to save:'); } async checkForUpdates(): Promise<void> { return; // PWA updates via service worker } async downloadAndInstall(): Promise<void> { window.location.reload(); } isTauri(): boolean { return false; } getVersion(): string { return process.env.VITE_APP_VERSION || '1.0.0'; } }"
+      }
+    },
+    {
+      "id": "tauri-platform-service",
+      "title": "Implementar TauriPlatformService",
+      "description": "Wrapper real para @tauri-apps/plugin-thermal-printer, updater, dialogs",
+      "file": "src/services/platform/TauriPlatformService.ts",
+      "phase": "phase1",
+      "dependencies": ["platform-interface"],
+      "complexity": "medium",
+      "code": {
+        "language": "typescript",
+        "snippet": "import { invoke } from '@tauri-apps/core/tauri'; import { check } from '@tauri-apps/plugin-updater'; import type { PlatformService } from './index'; export class TauriPlatformService implements PlatformService { async printTicket(order: Order): Promise<void> { await invoke('print_ticket', { order }); } async printReceipt(order: Order): Promise<void> { await invoke('print_receipt', { order }); } async openFileDialog(): Promise<string | null> { return invoke('open_file_dialog'); } async saveFileDialog(): Promise<string | null> { return invoke('save_file_dialog'); } async checkForUpdates(): Promise<void> { const { check } = await import('@tauri-apps/plugin-updater'); const update = await check(); if (update) { await update.downloadAndInstall(); } } async downloadAndInstall(): Promise<void> { const { check } = await import('@tauri-apps/plugin-updater'); const update = await check(); if (update) { await update.downloadAndInstall(); } } isTauri(): boolean { return true; } getVersion(): string { return __APP_VERSION__; } }"
+      }
+    },
+    {
+      "id": "platform-index",
+      "title": "Crear índice de PlatformService",
+      "description": "Exportar PlatformService y PlatformDetector, función getPlatformService()",
+      "file": "src/services/platform/index.ts",
+      "phase": "phase1",
+      "dependencies": ["platform-interface", "web-platform-service", "tauri-platform-service"],
+      "complexity": "easy",
+      "code": {
+        "language": "typescript",
+        "snippet": "export * from './PlatformService'; export * from './PlatformDetector'; export function getPlatformService(): PlatformService { if (typeof window !== 'undefined' && '__TAURI__' in window) { return new TauriPlatformService(); } else { return new WebPlatformService(); } }"
+      }
+    },
+    {
+      "id": "platform-detector",
+      "title": "Crear PlatformDetector",
+      "description": "Función isTauri() reutilizada",
+      "file": "src/services/platform/PlatformDetector.ts",
+      "phase": "phase1",
+      "dependencies": [],
+      "complexity": "easy",
+      "code": {
+        "language": "typescript",
+        "snippet": "export function isTauri(): boolean { return typeof window !== 'undefined' && '__TAURI__' in window; }"
+      }
+    },
+    {
+      "id": "unified-data-service",
+      "title": "Crear UnifiedDataService",
+      "description": "Constructor que recibe IStorageAdapter, métodos getProducts(), syncWithRemote()",
+      "file": "src/services/data/UnifiedDataService.ts",
+      "phase": "phase2",
+      "dependencies": [],
+      "complexity": "easy",
+      "code": {
+        "language": "typescript",
+        "snippet": "import type { IStorageAdapter } from '../storage/storage-adapter.interface'; export class UnifiedDataService { constructor(private adapter: IStorageAdapter) {} async getAllProducts(): Promise<Product[]> { return this.adapter.getProducts(); } async syncWithRemote(): Promise<void> { if (this.adapter instanceof HttpStorageAdapter) { return; } const data = await this.adapter.exportData(); await this.httpAdapter.importData(data); } }"
+      }
+    },
+    {
+      "id": "refactor-product-service",
+      "title": "Refactorizar ProductService",
+      "description": "Eliminar llamadas HTTP directas, usar UnifiedDataService",
+      "file": "src/services/ProductService.ts",
+      "phase": "phase2",
+      "dependencies": ["unified-data-service"],
+      "complexity": "easy",
+      "code": {
+        "language": "typescript",
+        "snippet": "export class ProductService { constructor(private dataService: UnifiedDataService) {} async getAll(): Promise<Product[]> { return this.dataService.getAllProducts(); } }"
+      }
+    },
+    {
+      "id": "refactor-category-service",
+      "title": "Refactorizar CategoriesService",
+      "description": "Eliminar llamadas HTTP directas, usar UnifiedDataService",
+      "file": "src/services/CategoriesService.ts",
+      "phase": "phase2",
+      "dependencies": ["unified-data-service"],
+      "complexity": "easy",
+      "code": {
+        "language": "typescript",
+        "snippet": "export class CategoriesService { constructor(private dataService: UnifiedDataService) {} async getAll(): Promise<Category[]> { return this.dataService.getCategories(); } }"
+      }
+    },
+    {
+      "id": "refactor-order-service",
+      "title": "Refactorizar OrderService",
+      "description": "Eliminar llamadas HTTP directas, usar UnifiedDataService",
+      "file": "src/services/OrderService.ts",
+      "phase": "phase2",
+      "dependencies": ["unified-data-service"],
+      "complexity": "easy",
+      "code": {
+        "language": "typescript",
+        "snippet": "export class OrderService { constructor(private dataService: UnifiedDataService) {} async getAll(): Promise<Order[]> { return this.dataService.getOrders(); } }"
+      }
+    },
+    {
+      "id": "pwa-manifest",
+      "title": "Crear PWA manifest.json",
+      "description": "Manifest completo para PWA standalone con iconos, start_url",
+      "file": "public/manifest.json",
+      "phase": "phase3",
+      "dependencies": [],
+      "complexity": "easy",
+      "code": {
+        "language": "json",
+        "snippet": "{ \"name\": \"TPV El Haido\", \"short_name\": \"TPV\", \"start_url\": \"/\", \"display\": \"standalone\", \"background_color\": \"#ffffff\", \"theme_color\": \"#8b5cf6\", \"icons\": [{ \"src\": \"/icon-192.png\", \"sizes\": \"192x192\", \"type\": \"image/png\" }, { \"src\": \"/icon-512.png\", \"sizes\": \"512x512\", \"type\": \"image/png\" }], \"orientation\": \"portrait-primary\", \"scope\": \"/\" }"
+      }
+    },
+    {
+      "id": "service-worker-stub",
+      "title": "Crear service worker stub",
+      "description": "Skeleton básico con listeners (fetch, install, activate)",
+      "file": "public/sw.js",
+      "phase": "phase3",
+      "dependencies": ["pwa-manifest"],
+      "complexity": "medium",
+      "code": {
+        "language": "javascript",
+        "snippet": "self.addEventListener('fetch', (event) => { event.respondWith(new Response('Hello from service worker!', { headers: { 'Content-Type': 'text/plain' } })); }); self.addEventListener('install', (event) => { self.skipWaiting(); }); self.addEventListener('activate', (event) => { self.clients.claim(); });"
+      }
+    },
+    {
+      "id": "register-sw-vite",
+      "title": "Registrar service worker en vite.config.ts",
+      "description": "Configurar VitePWA plugin para sw.js",
+      "file": "vite.config.ts",
+      "phase": "phase3",
+      "dependencies": ["service-worker-stub"],
+      "complexity": "easy",
+      "code": {
+        "language": "typescript",
+        "snippet": "import { defineConfig } from 'vite'; import react from '@vitejs/plugin-react'; import { VitePWA } from 'vite-plugin-pwa'; export default defineConfig({ plugins: [react(), VitePWA({ registerType: 'autoUpdate', workbox: { globPatterns: ['**/*.{js,css,html,png,svg,ico}'], runtimeCaching: [/(.js|.css)$/, 'https://fonts.googleapis.com/(.*)'], navigateFallback: '/index.html', }, }), ], });"
+      }
+    }
+  ],
+  "parallelization": {
+    "canParallel": [
+      ["web-platform-service", "tauri-platform-service"],
+      ["pwa-manifest", "service-worker-stub"],
+      ["refactor-product-service", "refactor-category-service", "refactor-order-service"]
+    ],
+    "mustParallel": [
+      ["platform-interface", "platform-index", "platform-detector"]
+    ],
+    "dependencies": [
+      "refactor-product-service": ["unified-data-service"],
+      "refactor-category-service": ["unified-data-service"],
+      "refactor-order-service": ["unified-data-service"]
+    ]
+  }
+}
