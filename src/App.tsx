@@ -28,6 +28,7 @@ import Product from "@/models/Product.ts";
 import CategoriesService from "@/services/categories.service.ts";
 import OrderService from "@/services/orders.service.ts";
 import DebugIndicator from "@/components/DebugIndicator.tsx";
+import UpdateChecker from "@/components/UpdateChecker.tsx";
 
 function App() {
     const {
@@ -291,6 +292,7 @@ function App() {
             touchOptimizationsEnabled && "touch-optimized"
         )}>
             <Toaster/>
+            <UpdateChecker autoCheck={true} checkInterval={3600000} />
 
             {/* Main Content */}
             {!selectedUser ? <AnimatePresence>

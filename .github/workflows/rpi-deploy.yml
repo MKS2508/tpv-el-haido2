@@ -45,15 +45,18 @@ jobs:
       run: npm ci
 
     - name: 🍓 Build complete Tauri application natively
+      env:
+        TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
       run: |
         echo "🚀 Building complete Tauri application natively on ARM64..."
-        
+
         # Install Tauri CLI
         npm install -g @tauri-apps/cli
-        
+
         # Build everything with Tauri CLI (includes frontend and backend)
         npx tauri build
-        
+
         echo "✅ Complete Tauri build completed successfully"
 
     - name: 🔧 Setup Bun runtime
@@ -121,6 +124,45 @@ jobs:
           releases/
         retention-days: 30
 
+    # Generate latest.json for OTA updates
+    - name: 📝 Generate OTA update manifest
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        echo "📝 Generating latest.json for OTA updates..."
+
+        VERSION="${GITHUB_REF#refs/tags/v}"
+        DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+        # Find the signature file
+        SIG_FILE=$(find src-tauri/target/release/bundle -name "*.sig" -type f | head -1)
+        if [ -f "$SIG_FILE" ]; then
+          SIGNATURE=$(cat "$SIG_FILE")
+        else
+          SIGNATURE=""
+          echo "⚠️ Signature file not found"
+        fi
+
+        # Determine artifact URLs
+        REPO="${{ github.repository }}"
+        DEB_NAME=$(basename src-tauri/target/release/bundle/deb/*.deb 2>/dev/null || echo "")
+
+        cat > latest.json << EOF
+        {
+          "version": "${VERSION}",
+          "notes": "Release ${VERSION}",
+          "pub_date": "${DATE}",
+          "platforms": {
+            "linux-aarch64": {
+              "signature": "${SIGNATURE}",
+              "url": "https://github.com/${REPO}/releases/download/v${VERSION}/${DEB_NAME}"
+            }
+          }
+        }
+        EOF
+
+        echo "✅ latest.json generated:"
+        cat latest.json
+
     # Create release with all artifacts on tagged commits
     - name: 🚀 Create Release
       if: startsWith(github.ref, 'refs/tags/')
@@ -130,6 +172,8 @@ jobs:
           src-tauri/target/release/tpv-el-haido
           src-tauri/target/release/bundle/deb/*.deb
           src-tauri/target/release/bundle/rpm/*.rpm
+          src-tauri/target/release/bundle/**/*.sig
+          latest.json
           RPi-Build-Documentation.md
         body: |
           # 🍓 TPV El Haido - ARM64 Release for Raspberry Pi 3
