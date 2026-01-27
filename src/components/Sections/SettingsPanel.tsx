@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import User from "@/models/User.ts";
 import { Button } from "@/components/ui/button.tsx";
-import { Pencil, PlusCircle, Trash2, DollarSign, ShieldCheck, Database, Cloud } from "lucide-react";
+import { Pencil, PlusCircle, Trash2, DollarSign, ShieldCheck, Database, Cloud, HardDrive } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { Input } from "@/components/ui/input.tsx";
@@ -127,15 +127,24 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ selectedUser, setSelected
         }
     }
 
+    const getStorageModeDescription = (mode: StorageMode) => {
+        switch (mode) {
+            case 'sqlite': return 'SQLite nativo'
+            case 'http': return 'Base de datos externa HTTP'
+            case 'indexeddb': return 'IndexedDB local'
+            default: return mode
+        }
+    }
+
     const confirmStorageModeChange = () => {
         if (pendingStorageMode) {
             setStorageMode(pendingStorageMode)
             // Persist the setting
             localStorage.setItem('tpv-storage-mode', pendingStorageMode)
-            
+
             toast({
                 title: "Modo de almacenamiento cambiado",
-                description: `Ahora usando ${pendingStorageMode === 'http' ? 'Base de datos externa' : 'Almacenamiento local'}`,
+                description: `Ahora usando ${getStorageModeDescription(pendingStorageMode)}`,
                 duration: 3000,
             });
         }
@@ -151,7 +160,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ selectedUser, setSelected
     // Load storage mode and touch optimizations from localStorage on component mount
     useEffect(() => {
         const savedMode = localStorage.getItem('tpv-storage-mode') as StorageMode | null
-        if (savedMode && (savedMode === 'http' || savedMode === 'indexeddb')) {
+        if (savedMode && (savedMode === 'sqlite' || savedMode === 'http' || savedMode === 'indexeddb')) {
             setStorageMode(savedMode)
         }
 
@@ -198,22 +207,41 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ selectedUser, setSelected
                                     <div className="flex flex-col space-y-1">
                                         <Label htmlFor="storageMode" className="font-medium">Modo de Almacenamiento</Label>
                                         <p className="text-xs text-muted-foreground">
-                                            {storageMode === 'http' ? 'Usando base de datos externa' : 'Usando almacenamiento local'}
+                                            {storageMode === 'sqlite' && 'SQLite integrado (recomendado)'}
+                                            {storageMode === 'http' && 'Base de datos externa HTTP'}
+                                            {storageMode === 'indexeddb' && 'IndexedDB local (navegador)'}
                                         </p>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Cloud className="h-4 w-4 text-muted-foreground" />
-                                        <Switch 
-                                            id="storageMode" 
-                                            checked={storageMode === 'indexeddb'} 
-                                            onCheckedChange={(checked) => handleStorageModeToggle(checked ? 'indexeddb' : 'http')} 
-                                        />
-                                        <Database className="h-4 w-4 text-muted-foreground" />
-                                    </div>
+                                    <Select value={storageMode} onValueChange={(value) => handleStorageModeToggle(value as StorageMode)}>
+                                        <SelectTrigger className="w-[180px]">
+                                            <SelectValue placeholder="Selecciona modo" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="sqlite">
+                                                <span className="flex items-center gap-2">
+                                                    <HardDrive className="h-4 w-4" />
+                                                    SQLite (Nativo)
+                                                </span>
+                                            </SelectItem>
+                                            <SelectItem value="http">
+                                                <span className="flex items-center gap-2">
+                                                    <Cloud className="h-4 w-4" />
+                                                    HTTP API
+                                                </span>
+                                            </SelectItem>
+                                            <SelectItem value="indexeddb">
+                                                <span className="flex items-center gap-2">
+                                                    <Database className="h-4 w-4" />
+                                                    IndexedDB
+                                                </span>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                                <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
-                                    <strong>HTTP API:</strong> Datos centralizados, requiere servidor externo<br/>
-                                    <strong>Standalone:</strong> Datos locales, funciona sin conexión
+                                <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded space-y-1">
+                                    <div><strong><HardDrive className="h-3 w-3 inline mr-1" />SQLite:</strong> Base de datos nativa, mejor rendimiento, funciona sin conexión</div>
+                                    <div><strong><Cloud className="h-3 w-3 inline mr-1" />HTTP API:</strong> Datos centralizados, requiere servidor externo</div>
+                                    <div><strong><Database className="h-3 w-3 inline mr-1" />IndexedDB:</strong> Almacenamiento del navegador, fallback para desarrollo</div>
                                 </div>
                             </div>
 
@@ -474,12 +502,19 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ selectedUser, setSelected
                             ¿Cambiar modo de almacenamiento?
                         </DialogTitle>
                         <DialogDescription className="text-muted-foreground dark:text-muted-foreground">
-                            {pendingStorageMode === 'indexeddb' ? (
+                            {pendingStorageMode === 'sqlite' && (
                                 <>
-                                    Cambiar a <strong>modo standalone</strong> almacenará los datos localmente en tu dispositivo.
-                                    Esto permite funcionar sin conexión pero los datos no se sincronizarán con otros dispositivos.
+                                    Cambiar a <strong>SQLite nativo</strong> usará una base de datos integrada en la aplicación.
+                                    Es la opción más rápida y funciona completamente sin conexión. Recomendado para uso en producción.
                                 </>
-                            ) : (
+                            )}
+                            {pendingStorageMode === 'indexeddb' && (
+                                <>
+                                    Cambiar a <strong>IndexedDB</strong> almacenará los datos en el navegador.
+                                    Útil para desarrollo web pero los datos se pierden si se limpia el cache del navegador.
+                                </>
+                            )}
+                            {pendingStorageMode === 'http' && (
                                 <>
                                     Cambiar a <strong>modo HTTP API</strong> usará la base de datos externa.
                                     Requiere conexión al servidor pero permite sincronización entre dispositivos.

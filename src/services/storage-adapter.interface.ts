@@ -3,7 +3,7 @@ import Category from "@/models/Category"
 import Order from "@/models/Order"
 import Table from "@/models/Table"
 
-export type StorageMode = 'http' | 'indexeddb'
+export type StorageMode = 'sqlite' | 'http' | 'indexeddb'
 
 export interface IStorageAdapter {
     // Products

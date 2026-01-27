@@ -227,3 +227,66 @@ body {
   touch-action: manipulation;
   cursor: none;
 }
+
+/* ==================== Performance-based optimizations ==================== */
+
+/* Default animation/transition durations (can be overridden by JS) */
+:root {
+  --animation-duration: 0.3s;
+  --transition-duration: 0.15s;
+}
+
+/* Reduced motion - respects prefers-reduced-motion */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Low performance mode - simplified animations */
+.low-performance * {
+  transition-duration: var(--transition-duration) !important;
+  animation-duration: var(--animation-duration) !important;
+}
+
+.low-performance .animate-spin {
+  animation: none !important;
+}
+
+/* Very low performance mode - disable most visual effects */
+.very-low-performance * {
+  transition: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.very-low-performance .blur-sm,
+.very-low-performance .blur-md,
+.very-low-performance .blur-lg,
+.very-low-performance .blur-xl {
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* Animations disabled mode */
+.animations-disabled * {
+  animation: none !important;
+}
+
+.animations-disabled [class*="animate-"] {
+  animation: none !important;
+}
+
+/* Disable hover effects on low-performance touch devices */
+@media (hover: none) {
+  .low-performance *:hover {
+    transform: none !important;
+    box-shadow: inherit !important;
+  }
+}

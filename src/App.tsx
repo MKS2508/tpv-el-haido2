@@ -12,6 +12,7 @@ import Sidebar from "@/components/SideBar.tsx";
 import SidebarToggleButton from "@/components/SideBarToggleButton.tsx";
 import BottomNavigation from "@/components/BottomNavigation.tsx";
 import { useResponsive } from "@/hooks/useResponsive";
+import { usePerformanceConfig } from "@/hooks/usePerformanceConfig";
 //import productsJson from '@/assets/products.json';
 import iconOptions from "@/assets/utils/icons/iconOptions.ts";
 import Home from "@/components/Sections/Home.tsx";
@@ -58,6 +59,7 @@ function App() {
     // Use the perfect new theme system
     const { mode, setMode } = useAppTheme()
     const { isMobile, isTablet } = useResponsive()
+    const performanceConfig = usePerformanceConfig()
 
     const [activeSection, setActiveSection] = React.useState('home')
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(!isMobile && !isTablet) // Start closed on mobile/tablet
@@ -76,6 +78,40 @@ function App() {
     const _productService = new ProductService();
     const _categoryService = new CategoriesService();
     const _orderService = new OrderService();
+
+    // Apply performance-based CSS classes to root element
+    useEffect(() => {
+        const root = document.documentElement;
+
+        // Remove existing performance classes
+        root.classList.remove('low-performance', 'very-low-performance', 'reduced-motion', 'animations-disabled');
+
+        // Apply new classes based on performance config
+        if (performanceConfig.isVeryLowPerformance) {
+            root.classList.add('very-low-performance');
+        }
+        if (performanceConfig.isLowPerformance) {
+            root.classList.add('low-performance');
+        }
+        if (performanceConfig.reduceMotion) {
+            root.classList.add('reduced-motion');
+        }
+        if (!performanceConfig.enableAnimations) {
+            root.classList.add('animations-disabled');
+        }
+
+        // Set CSS custom properties for animation durations
+        root.style.setProperty('--animation-duration', `${performanceConfig.animationDuration}s`);
+        root.style.setProperty('--transition-duration', `${performanceConfig.transitionDuration}s`);
+
+        console.log('[Performance] Config applied:', {
+            isLowPerformance: performanceConfig.isLowPerformance,
+            isVeryLowPerformance: performanceConfig.isVeryLowPerformance,
+            enableAnimations: performanceConfig.enableAnimations,
+            animationDuration: performanceConfig.animationDuration
+        });
+    }, [performanceConfig]);
+
     // Initialize state if it's empty
     useEffect(() => {
         const initializeCategories = async () => {

@@ -13,6 +13,7 @@ import React from "react"
 import { StorageMode, IStorageAdapter } from "@/services/storage-adapter.interface"
 import { HttpStorageAdapter } from "@/services/http-storage-adapter"
 import { IndexedDbStorageAdapter } from "@/services/indexeddb-storage-adapter"
+import { SqliteStorageAdapter } from "@/services/sqlite-storage-adapter"
 
 // Debounce utility para localStorage
 const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number): T => {
@@ -82,16 +83,50 @@ export interface AppState {
 
 
 // Initialize storage adapters
+const sqliteAdapter = new SqliteStorageAdapter()
 const httpAdapter = new HttpStorageAdapter()
 const indexedDbAdapter = new IndexedDbStorageAdapter()
 
-// Get initial storage mode from localStorage or default to 'http'
+// Check if running in Tauri environment
+const isTauri = (): boolean => {
+    return typeof window !== 'undefined' && '__TAURI__' in window
+}
+
+// Get storage adapter based on mode
+const getStorageAdapterForMode = (mode: StorageMode): IStorageAdapter => {
+    switch (mode) {
+        case 'sqlite':
+            return sqliteAdapter
+        case 'http':
+            return httpAdapter
+        case 'indexeddb':
+        default:
+            return indexedDbAdapter
+    }
+}
+
+// Get initial storage mode: sqlite when in Tauri, otherwise from localStorage or default to 'indexeddb'
 const getInitialStorageMode = (): StorageMode => {
+    // When running in Tauri, default to sqlite
+    if (isTauri()) {
+        try {
+            const saved = localStorage.getItem('tpv-storage-mode') as StorageMode | null
+            // Only use saved value if explicitly set, otherwise default to sqlite
+            if (saved === 'sqlite' || saved === 'http' || saved === 'indexeddb') {
+                return saved
+            }
+        } catch {
+            // Ignore localStorage errors
+        }
+        return 'sqlite'
+    }
+
+    // When running in browser (development), use localStorage preference or indexeddb
     try {
         const saved = localStorage.getItem('tpv-storage-mode') as StorageMode | null
-        return (saved === 'http' || saved === 'indexeddb') ? saved : 'http'
+        return (saved === 'http' || saved === 'indexeddb') ? saved : 'indexeddb'
     } catch {
-        return 'http'
+        return 'indexeddb'
     }
 }
 
@@ -105,6 +140,8 @@ const getInitialUseStockImages = (): boolean => {
     }
 }
 
+const initialStorageMode = getInitialStorageMode()
+
 const useStore = create(immer<AppState>((set, get) => ({    users: [],
     selectedUser: null,
     selectedOrder: null,
@@ -113,8 +150,8 @@ const useStore = create(immer<AppState>((set, get) => ({    users: [],
     tables: [],
     categories: [],
     products: [],
-    storageMode: getInitialStorageMode(),
-    storageAdapter: getInitialStorageMode() === 'http' ? httpAdapter : indexedDbAdapter,
+    storageMode: initialStorageMode,
+    storageAdapter: getStorageAdapterForMode(initialStorageMode),
     useStockImages: getInitialUseStockImages(),
     debugMode: true, // Activado por defecto
     isBackendConnected: false,
@@ -193,9 +230,10 @@ const useStore = create(immer<AppState>((set, get) => ({    users: [],
     }),
     
     // Storage management methods
-    setStorageMode: (mode: StorageMode) => set((state) => { 
+    setStorageMode: (mode: StorageMode) => set((state) => {
         state.storageMode = mode
-        state.storageAdapter = mode === 'http' ? httpAdapter : indexedDbAdapter
+        state.storageAdapter = getStorageAdapterForMode(mode)
+        localStorage.setItem('tpv-storage-mode', mode)
     }),
     getStorageAdapter: () => {
         const state = get()
