@@ -1,112 +1,129 @@
-import { tryCatchAsync, unwrapOr, isErr, type Result, type ResultError } from "@mks2508/no-throw";
-import { getClient, ResponseType } from '@tauri-apps/api/http';
-import Order from "@/models/Order.ts";
-import { OrderErrorCode } from "@/lib/error-codes";
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import type Order from '@/models/Order.ts';
 
-type OrderResult<T> = Result<T, ResultError<typeof OrderErrorCode[keyof typeof OrderErrorCode]>>
+const DEFAULT_TIMEOUT = 10000;
 
 interface IOrderService {
-    getOrders(): Promise<OrderResult<Order[]>>;
-    createOrder(order: Order): Promise<OrderResult<void>>;
-    deleteOrder(order: Order): Promise<OrderResult<void>>;
-    updateOrder(order: Order): Promise<OrderResult<void>>;
+  getOrders(): Promise<Order[]>;
+  createOrder(order: Order): Promise<void>;
+  deleteOrder(order: Order): Promise<void>;
+  updateOrder(order: Order): Promise<void>;
 }
 
 export default class OrderService implements IOrderService {
-    public ENDPOINT: string = 'http://localhost:3000/api/orders';
+  public ENDPOINT: string = 'http://localhost:3000/api/orders';
+  private activeController: AbortController | null = null;
 
-    private async makeRequest<T>(
-        endpoint: string,
-        method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-        data?: unknown
-    ): Promise<T> {
-        // Check if we're running in Tauri environment
-        if (typeof window !== 'undefined' && '__TAURI_IPC__' in window) {
-            const client = await getClient();
+  private getFetchFn() {
+    return typeof window !== 'undefined' && '__TAURI_IPC__' in window ? tauriFetch : fetch;
+  }
 
-            switch (method) {
-                case 'GET': {
-                    const response = await client.get(endpoint, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    });
-                    return response.data as T;
-                }
-                case 'POST': {
-                    const response = await client.post(endpoint, data, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    });
-                    return response.data as T;
-                }
-                case 'PUT': {
-                    const response = await client.put(endpoint, data, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    });
-                    return response.data as T;
-                }
-                case 'DELETE': {
-                    const response = await client.delete(endpoint, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    });
-                    return response.data as T;
-                }
-            }
-        } else {
-            // Use native fetch for development/browser environment
-            const options: RequestInit = {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-            };
+  private createController(timeout = DEFAULT_TIMEOUT): AbortController {
+    this.cancelPendingRequest();
+    const controller = new AbortController();
+    this.activeController = controller;
 
-            if (data && (method === 'POST' || method === 'PUT')) {
-                options.body = JSON.stringify(data);
-            }
-
-            const response = await fetch(endpoint, options);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const text = await response.text();
-            if (!text) {
-                return undefined as T;
-            }
-
-            return JSON.parse(text) as T;
+    if (timeout > 0) {
+      setTimeout(() => {
+        if (this.activeController === controller) {
+          controller.abort(new Error(`Request timeout after ${timeout}ms`));
+          this.activeController = null;
         }
+      }, timeout);
     }
 
-    async getOrders(): Promise<OrderResult<Order[]>> {
-        return tryCatchAsync(
-            async () => this.makeRequest<Order[]>(this.ENDPOINT),
-            OrderErrorCode.LoadFailed
-        );
-    }
+    return controller;
+  }
 
-    async createOrder(order: Order): Promise<OrderResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(this.ENDPOINT, 'POST', order) },
-            OrderErrorCode.CreateFailed
-        );
+  cancelPendingRequest(): void {
+    if (this.activeController) {
+      this.activeController.abort(new Error('Request cancelled'));
+      this.activeController = null;
     }
+  }
 
-    async deleteOrder(order: Order): Promise<OrderResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`${this.ENDPOINT}/${order.id}`, 'DELETE') },
-            OrderErrorCode.DeleteFailed
-        );
-    }
+  async getOrders(): Promise<Order[]> {
+    const controller = this.createController();
+    try {
+      const response = await this.getFetchFn()(this.ENDPOINT, {
+        method: 'GET',
+        signal: controller.signal,
+      });
 
-    async updateOrder(order: Order): Promise<OrderResult<void>> {
-        console.log("Updating order:", order);
-        console.log("ID:", order.id);
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`${this.ENDPOINT}/${order.id}`, 'PUT', order) },
-            OrderErrorCode.UpdateFailed
-        );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return (await response.json()) as Order[];
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn('Orders fetch aborted');
+      } else {
+        console.error('Failed to fetch orders:', error);
+      }
+      return [];
+    } finally {
+      this.activeController = null;
     }
+  }
+
+  async createOrder(order: Order): Promise<void> {
+    const controller = this.createController();
+    try {
+      const response = await this.getFetchFn()(this.ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to create order:', error);
+    } finally {
+      this.activeController = null;
+    }
+  }
+
+  async deleteOrder(order: Order): Promise<void> {
+    const controller = this.createController();
+    try {
+      const response = await this.getFetchFn()(`${this.ENDPOINT}/${order.id}`, {
+        method: 'DELETE',
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+    } finally {
+      this.activeController = null;
+    }
+  }
+
+  async updateOrder(order: Order): Promise<void> {
+    console.log('Updating order:', order);
+    console.log('ID:', order.id);
+    const controller = this.createController();
+    try {
+      const response = await this.getFetchFn()(`${this.ENDPOINT}/${order.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to update order:', error);
+    } finally {
+      this.activeController = null;
+    }
+  }
 }

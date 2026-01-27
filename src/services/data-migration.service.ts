@@ -13,43 +13,52 @@ export class DataMigrationService {
     message: string;
     counts: { products: number; categories: number; orders: number };
   }> {
-    try {
-      console.log('[DataMigration] Starting HTTP to IndexedDB migration...');
+    console.log('[DataMigration] Starting HTTP to IndexedDB migration...');
 
-      // Exportar datos del HTTP adapter
-      const data = await this.httpAdapter.exportData();
+    // Exportar datos del HTTP adapter
+    const dataResult = await this.httpAdapter.exportData();
 
-      // Verificar que hay datos para migrar
-      const totalItems = data.products.length + data.categories.length + data.orders.length;
-      if (totalItems === 0) {
-        return {
-          success: true,
-          message: 'No hay datos que migrar desde la base de datos externa',
-          counts: { products: 0, categories: 0, orders: 0 },
-        };
-      }
-
-      // Importar datos al IndexedDB adapter
-      await this.indexedDbAdapter.importData(data);
-
-      console.log('[DataMigration] HTTP to IndexedDB migration completed successfully');
-      return {
-        success: true,
-        message: `Migración completada: ${data.products.length} productos, ${data.categories.length} categorías, ${data.orders.length} órdenes`,
-        counts: {
-          products: data.products.length,
-          categories: data.categories.length,
-          orders: data.orders.length,
-        },
-      };
-    } catch (error) {
-      console.error('[DataMigration] Error migrating from HTTP to IndexedDB:', error);
+    if (!dataResult.ok) {
       return {
         success: false,
-        message: `Error durante la migración: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        message: `Error obteniendo datos: ${dataResult.error.message}`,
         counts: { products: 0, categories: 0, orders: 0 },
       };
     }
+
+    const data = dataResult.value;
+
+    // Verificar que hay datos para migrar
+    const totalItems = data.products.length + data.categories.length + data.orders.length;
+    if (totalItems === 0) {
+      return {
+        success: true,
+        message: 'No hay datos que migrar desde la base de datos externa',
+        counts: { products: 0, categories: 0, orders: 0 },
+      };
+    }
+
+    // Importar datos al IndexedDB adapter
+    const importResult = await this.indexedDbAdapter.importData(data);
+
+    if (!importResult.ok) {
+      return {
+        success: false,
+        message: `Error importando datos: ${importResult.error.message}`,
+        counts: { products: 0, categories: 0, orders: 0 },
+      };
+    }
+
+    console.log('[DataMigration] HTTP to IndexedDB migration completed successfully');
+    return {
+      success: true,
+      message: `Migración completada: ${data.products.length} productos, ${data.categories.length} categorías, ${data.orders.length} órdenes`,
+      counts: {
+        products: data.products.length,
+        categories: data.categories.length,
+        orders: data.orders.length,
+      },
+    };
   }
 
   /**
@@ -60,60 +69,65 @@ export class DataMigrationService {
     message: string;
     counts: { products: number; categories: number; orders: number };
   }> {
-    try {
-      console.log('[DataMigration] Starting IndexedDB to HTTP migration...');
+    console.log('[DataMigration] Starting IndexedDB to HTTP migration...');
 
-      // Exportar datos del IndexedDB adapter
-      const data = await this.indexedDbAdapter.exportData();
+    // Exportar datos del IndexedDB adapter
+    const dataResult = await this.indexedDbAdapter.exportData();
 
-      // Verificar que hay datos para migrar
-      const totalItems = data.products.length + data.categories.length + data.orders.length;
-      if (totalItems === 0) {
-        return {
-          success: true,
-          message: 'No hay datos que migrar desde el almacenamiento local',
-          counts: { products: 0, categories: 0, orders: 0 },
-        };
-      }
-
-      // Importar datos al HTTP adapter (crear uno por uno)
-      const migrationPromises: Promise<void>[] = [];
-
-      // Migrar categorías primero (pueden ser referenciadas por productos)
-      for (const category of data.categories) {
-        migrationPromises.push(this.httpAdapter.createCategory(category));
-      }
-
-      // Migrar productos
-      for (const product of data.products) {
-        migrationPromises.push(this.httpAdapter.createProduct(product));
-      }
-
-      // Migrar órdenes
-      for (const order of data.orders) {
-        migrationPromises.push(this.httpAdapter.createOrder(order));
-      }
-
-      await Promise.all(migrationPromises);
-
-      console.log('[DataMigration] IndexedDB to HTTP migration completed successfully');
-      return {
-        success: true,
-        message: `Migración completada: ${data.products.length} productos, ${data.categories.length} categorías, ${data.orders.length} órdenes`,
-        counts: {
-          products: data.products.length,
-          categories: data.categories.length,
-          orders: data.orders.length,
-        },
-      };
-    } catch (error) {
-      console.error('[DataMigration] Error migrating from IndexedDB to HTTP:', error);
+    if (!dataResult.ok) {
       return {
         success: false,
-        message: `Error durante la migración: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        message: `Error obteniendo datos: ${dataResult.error.message}`,
         counts: { products: 0, categories: 0, orders: 0 },
       };
     }
+
+    const data = dataResult.value;
+
+    // Verificar que hay datos para migrar
+    const totalItems = data.products.length + data.categories.length + data.orders.length;
+    if (totalItems === 0) {
+      return {
+        success: true,
+        message: 'No hay datos que migrar desde el almacenamiento local',
+        counts: { products: 0, categories: 0, orders: 0 },
+      };
+    }
+
+    // Migrar categorías primero (pueden ser referenciadas por productos)
+    for (const category of data.categories) {
+      const result = await this.httpAdapter.createCategory(category);
+      if (!result.ok) {
+        console.warn(`[DataMigration] Failed to create category: ${result.error.message}`);
+      }
+    }
+
+    // Migrar productos
+    for (const product of data.products) {
+      const result = await this.httpAdapter.createProduct(product);
+      if (!result.ok) {
+        console.warn(`[DataMigration] Failed to create product: ${result.error.message}`);
+      }
+    }
+
+    // Migrar órdenes
+    for (const order of data.orders) {
+      const result = await this.httpAdapter.createOrder(order);
+      if (!result.ok) {
+        console.warn(`[DataMigration] Failed to create order: ${result.error.message}`);
+      }
+    }
+
+    console.log('[DataMigration] IndexedDB to HTTP migration completed successfully');
+    return {
+      success: true,
+      message: `Migración completada: ${data.products.length} productos, ${data.categories.length} categorías, ${data.orders.length} órdenes`,
+      counts: {
+        products: data.products.length,
+        categories: data.categories.length,
+        orders: data.orders.length,
+      },
+    };
   }
 
   /**
@@ -137,26 +151,16 @@ export class DataMigrationService {
    * Verificar conectividad con el servidor HTTP
    */
   async testHttpConnection(): Promise<boolean> {
-    try {
-      await this.httpAdapter.getProducts();
-      return true;
-    } catch (error) {
-      console.warn('[DataMigration] HTTP connection test failed:', error);
-      return false;
-    }
+    const result = await this.httpAdapter.getProducts();
+    return result.ok;
   }
 
   /**
    * Verificar funcionalidad de IndexedDB
    */
   async testIndexedDbConnection(): Promise<boolean> {
-    try {
-      await this.indexedDbAdapter.getProducts();
-      return true;
-    } catch (error) {
-      console.warn('[DataMigration] IndexedDB connection test failed:', error);
-      return false;
-    }
+    const result = await this.indexedDbAdapter.getProducts();
+    return result.ok;
   }
 
   /**
@@ -166,77 +170,72 @@ export class DataMigrationService {
     http: { products: number; categories: number; orders: number };
     indexeddb: { products: number; categories: number; orders: number };
   }> {
-    try {
-      const [httpData, indexedDbData] = await Promise.allSettled([
-        this.httpAdapter.exportData(),
-        this.indexedDbAdapter.exportData(),
-      ]);
+    const [httpDataResult, indexedDbDataResult] = await Promise.all([
+      this.httpAdapter.exportData(),
+      this.indexedDbAdapter.exportData(),
+    ]);
 
-      const httpCounts =
-        httpData.status === 'fulfilled'
-          ? {
-              products: httpData.value.products.length,
-              categories: httpData.value.categories.length,
-              orders: httpData.value.orders.length,
-            }
-          : { products: 0, categories: 0, orders: 0 };
+    const httpCounts = httpDataResult.ok
+      ? {
+          products: httpDataResult.value.products.length,
+          categories: httpDataResult.value.categories.length,
+          orders: httpDataResult.value.orders.length,
+        }
+      : { products: 0, categories: 0, orders: 0 };
 
-      const indexedDbCounts =
-        indexedDbData.status === 'fulfilled'
-          ? {
-              products: indexedDbData.value.products.length,
-              categories: indexedDbData.value.categories.length,
-              orders: indexedDbData.value.orders.length,
-            }
-          : { products: 0, categories: 0, orders: 0 };
+    const indexedDbCounts = indexedDbDataResult.ok
+      ? {
+          products: indexedDbDataResult.value.products.length,
+          categories: indexedDbDataResult.value.categories.length,
+          orders: indexedDbDataResult.value.orders.length,
+        }
+      : { products: 0, categories: 0, orders: 0 };
 
-      return {
-        http: httpCounts,
-        indexeddb: indexedDbCounts,
-      };
-    } catch (error) {
-      console.error('[DataMigration] Error getting data stats:', error);
-      return {
-        http: { products: 0, categories: 0, orders: 0 },
-        indexeddb: { products: 0, categories: 0, orders: 0 },
-      };
-    }
+    return {
+      http: httpCounts,
+      indexeddb: indexedDbCounts,
+    };
   }
 
   /**
    * Limpiar datos de un adapter específico
    */
   async clearData(adapter: 'http' | 'indexeddb'): Promise<{ success: boolean; message: string }> {
-    try {
-      if (adapter === 'http') {
-        // HTTP adapter no tiene clearAllData, necesitamos implementarlo manualmente
-        const data = await this.httpAdapter.exportData();
+    if (adapter === 'http') {
+      // HTTP adapter no tiene clearAllData, necesitamos implementarlo manualmente
+      const dataResult = await this.httpAdapter.exportData();
 
-        const deletePromises: Promise<void>[] = [];
-        for (const product of data.products) {
-          deletePromises.push(this.httpAdapter.deleteProduct(product));
-        }
-        for (const category of data.categories) {
-          deletePromises.push(this.httpAdapter.deleteCategory(category));
-        }
-        for (const order of data.orders) {
-          deletePromises.push(this.httpAdapter.deleteOrder(order));
-        }
-
-        await Promise.all(deletePromises);
-      } else {
-        await this.indexedDbAdapter.clearAllData?.();
+      if (!dataResult.ok) {
+        return {
+          success: false,
+          message: `Error obteniendo datos: ${dataResult.error.message}`,
+        };
       }
 
-      return {
-        success: true,
-        message: `Datos eliminados del ${adapter === 'http' ? 'servidor' : 'almacenamiento local'}`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Error eliminando datos: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-      };
+      const data = dataResult.value;
+
+      for (const product of data.products) {
+        await this.httpAdapter.deleteProduct(product);
+      }
+      for (const category of data.categories) {
+        await this.httpAdapter.deleteCategory(category);
+      }
+      for (const order of data.orders) {
+        await this.httpAdapter.deleteOrder(order);
+      }
+    } else {
+      const result = await this.indexedDbAdapter.clearAllData();
+      if (!result.ok) {
+        return {
+          success: false,
+          message: `Error eliminando datos: ${result.error.message}`,
+        };
+      }
     }
+
+    return {
+      success: true,
+      message: `Datos eliminados del ${adapter === 'http' ? 'servidor' : 'almacenamiento local'}`,
+    };
   }
 }

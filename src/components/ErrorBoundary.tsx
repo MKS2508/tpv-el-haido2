@@ -1,48 +1,50 @@
-import React, { Component, type ReactNode } from 'react'
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
+import React, { Component, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ErrorBoundaryProps {
-  children: ReactNode
-  level?: 'app' | 'section' | 'component'
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
-  fallbackTitle?: string
+  children: ReactNode;
+  fallback?: ReactNode;
+  level?: 'page' | 'section' | 'component';
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  fallbackTitle?: string;
+  fallbackMessage?: string;
 }
 
 interface ErrorBoundaryState {
-  hasError: boolean
-  error: Error | null
-  errorInfo: React.ErrorInfo | null
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: React.ErrorInfo | null;
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
-    super(props)
+    super(props);
     this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
-    }
+    };
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    return { hasError: true, error }
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    this.setState({ errorInfo })
+    this.setState({ errorInfo });
 
     // Log error for debugging
     console.error('[ErrorBoundary] Caught error:', {
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
-    })
+    });
 
     // Call optional onError callback for external error reporting
     if (this.props.onError) {
-      this.props.onError(error, errorInfo)
+      this.props.onError(error, errorInfo);
     }
   }
 
@@ -51,23 +53,28 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       hasError: false,
       error: null,
       errorInfo: null,
-    })
-  }
+    });
+  };
 
   handleReload = (): void => {
-    window.location.reload()
-  }
+    window.location.reload();
+  };
 
   render(): ReactNode {
-    const { hasError, error } = this.state
-    const { children, level = 'section', fallbackTitle } = this.props
+    const { hasError, error } = this.state;
+    const { children, fallback, level = 'section', fallbackTitle, fallbackMessage } = this.props;
 
     if (!hasError) {
-      return children
+      return children;
     }
 
-    // App-level: Full screen error with reload option
-    if (level === 'app') {
+    // If custom fallback is provided, use it
+    if (fallback) {
+      return fallback;
+    }
+
+    // Page-level: Full screen error with reload option
+    if (level === 'page') {
       return (
         <div className="fixed inset-0 flex items-center justify-center bg-background p-4">
           <Card className="w-full max-w-md shadow-xl">
@@ -75,13 +82,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
                 <AlertTriangle className="h-8 w-8 text-destructive" />
               </div>
-              <CardTitle className="text-xl">
-                {fallbackTitle || 'Ha ocurrido un error'}
-              </CardTitle>
+              <CardTitle className="text-xl">{fallbackTitle || 'Ha ocurrido un error'}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-center text-muted-foreground">
-                Lo sentimos, algo ha salido mal. Por favor, recarga la aplicacion para continuar.
+                {fallbackMessage ||
+                  'Lo sentimos, algo ha salido mal. Por favor, recarga la aplicacion para continuar.'}
               </p>
               {error && (
                 <div className="rounded-md bg-muted p-3">
@@ -103,7 +109,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </CardContent>
           </Card>
         </div>
-      )
+      );
     }
 
     // Section-level: Card with retry button
@@ -122,13 +128,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              No se ha podido cargar esta seccion. Puedes intentar de nuevo o navegar a otra parte de la aplicacion.
+              {fallbackMessage ||
+                'No se ha podido cargar esta seccion. Puedes intentar de nuevo o navegar a otra parte de la aplicacion.'}
             </p>
             {error && (
               <div className="rounded-md bg-muted p-2">
-                <p className="text-xs font-mono text-muted-foreground break-all">
-                  {error.message}
-                </p>
+                <p className="text-xs font-mono text-muted-foreground break-all">{error.message}</p>
               </div>
             )}
             <Button onClick={this.handleReset} size="sm">
@@ -137,16 +142,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </Button>
           </CardContent>
         </Card>
-      )
+      );
     }
 
     // Component-level: Inline minimal error
     return (
       <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm">
         <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-        <span className="text-destructive">
-          {fallbackTitle || 'Error al cargar'}
-        </span>
+        <span className="text-destructive">{fallbackTitle || 'Error al cargar'}</span>
         <Button
           variant="ghost"
           size="sm"
@@ -156,8 +159,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <RefreshCw className="h-3 w-3" />
         </Button>
       </div>
-    )
+    );
   }
 }
 
-export default ErrorBoundary
+export default ErrorBoundary;

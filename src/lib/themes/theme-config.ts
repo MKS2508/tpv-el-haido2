@@ -144,20 +144,7 @@ export function saveThemeSettings(settings: ThemeSettings) {
   }
 }
 
-interface TweakCNData {
-  name?: string;
-  description?: string;
-  cssVars?: {
-    light?: Record<string, string>;
-    dark?: Record<string, string>;
-  };
-  colors?: {
-    light?: Record<string, string>;
-    dark?: Record<string, string>;
-  };
-}
-
-export function createThemeFromTweakCN(tweakCNData: TweakCNData): ThemeConfig {
+export function createThemeFromTweakCN(tweakCNData: any): ThemeConfig {
   // Convert TweakCN theme data to our ThemeConfig format
   return {
     id: `custom-${Date.now()}`,
@@ -165,10 +152,8 @@ export function createThemeFromTweakCN(tweakCNData: TweakCNData): ThemeConfig {
     description: tweakCNData.description || 'Imported from TweakCN',
     category: 'custom',
     colors: {
-      light: (tweakCNData.cssVars?.light ||
-        tweakCNData.colors?.light ||
-        {}) as unknown as ThemeColors,
-      dark: (tweakCNData.cssVars?.dark || tweakCNData.colors?.dark || {}) as unknown as ThemeColors,
+      light: tweakCNData.cssVars?.light || tweakCNData.colors?.light || {},
+      dark: tweakCNData.cssVars?.dark || tweakCNData.colors?.dark || {},
     },
     preview: {
       primaryColor:

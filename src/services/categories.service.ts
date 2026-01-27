@@ -1,139 +1,150 @@
-import { tryCatchAsync, isErr, type Result, type ResultError } from "@mks2508/no-throw";
-import { getClient, ResponseType } from '@tauri-apps/api/http';
-import Category from "@/models/Category.ts";
-import { CategoryErrorCode } from "@/lib/error-codes";
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import fallbackProducts from '@/assets/products.json';
+import type Category from '@/models/Category.ts';
 
-type CategoryResult<T> = Result<T, ResultError<typeof CategoryErrorCode[keyof typeof CategoryErrorCode]>>
+const DEFAULT_TIMEOUT = 10000;
 
 interface ICategoryService {
-    getCategories(): Promise<Category[]>;
-    createCategory(category: Category): Promise<CategoryResult<void>>;
-    deleteCategory(category: Category): Promise<CategoryResult<void>>;
-    updateCategory(category: Category): Promise<CategoryResult<void>>;
+  getCategories(): Promise<Category[]>;
+  createCategory(category: Category): Promise<void>;
+  deleteCategory(category: Category): Promise<void>;
+  updateCategory(category: Category): Promise<void>;
 }
 
 export default class CategoriesService implements ICategoryService {
-    public ENDPOINT: string = 'http://localhost:3000/api/categories';
+  public ENDPOINT: string = 'http://localhost:3000/api/categories';
+  private activeController: AbortController | null = null;
 
-    private async makeRequest<T>(
-        endpoint: string,
-        method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-        data?: unknown
-    ): Promise<T> {
-        // Check if we're running in Tauri environment
-        if (typeof window !== 'undefined' && '__TAURI_IPC__' in window) {
-            const client = await getClient();
+  private getFetchFn() {
+    return typeof window !== 'undefined' && '__TAURI_IPC__' in window ? tauriFetch : fetch;
+  }
 
-            switch (method) {
-                case 'GET': {
-                    const response = await client.get(endpoint, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    });
-                    return response.data as T;
-                }
-                case 'POST': {
-                    const response = await client.post(endpoint, data, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    });
-                    return response.data as T;
-                }
-                case 'PUT': {
-                    const response = await client.put(endpoint, data, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    });
-                    return response.data as T;
-                }
-                case 'DELETE': {
-                    const response = await client.delete(endpoint, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    });
-                    return response.data as T;
-                }
-            }
-        } else {
-            // Use native fetch for development/browser environment
-            const options: RequestInit = {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-            };
+  private createController(timeout = DEFAULT_TIMEOUT): AbortController {
+    this.cancelPendingRequest();
+    const controller = new AbortController();
+    this.activeController = controller;
 
-            if (data && (method === 'POST' || method === 'PUT')) {
-                options.body = JSON.stringify(data);
-            }
-
-            const response = await fetch(endpoint, options);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const text = await response.text();
-            if (!text) {
-                return undefined as T;
-            }
-
-            return JSON.parse(text) as T;
+    if (timeout > 0) {
+      setTimeout(() => {
+        if (this.activeController === controller) {
+          controller.abort(new Error(`Request timeout after ${timeout}ms`));
+          this.activeController = null;
         }
+      }, timeout);
     }
 
-    async getCategories(): Promise<Category[]> {
-        const result = await tryCatchAsync(
-            async () => this.makeRequest<Category[]>(this.ENDPOINT),
-            CategoryErrorCode.LoadFailed
-        );
+    return controller;
+  }
 
-        if (isErr(result)) {
-            console.error("Failed to fetch categories from backend:", result.error.code, result.error.message);
-            console.log("Using fallback categories from products.json");
-            return this.getFallbackCategories();
-        }
-
-        return result.value;
+  cancelPendingRequest(): void {
+    if (this.activeController) {
+      this.activeController.abort(new Error('Request cancelled'));
+      this.activeController = null;
     }
+  }
 
-    private getFallbackCategories(): Category[] {
-        console.log("Extracting categories from products.json");
+  async getCategories(): Promise<Category[]> {
+    const controller = this.createController();
+    try {
+      const response = await this.getFetchFn()(this.ENDPOINT, {
+        method: 'GET',
+        signal: controller.signal,
+      });
 
-        // Extraer categorias unicas de los productos
-        const uniqueCategories = [...new Set(
-            fallbackProducts.map(product => product.category)
-        )].filter(Boolean);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-        // Generar objetos Category con IDs
-        const categories: Category[] = uniqueCategories.map((categoryName, index) => ({
-            id: index + 1,
-            name: categoryName,
-            description: `Categoria ${categoryName}`,
-            icon: undefined
-        }));
-
-        console.log(`Generated ${categories.length} fallback categories:`, categories.map(c => c.name));
-        return categories;
+      return (await response.json()) as Category[];
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn('Categories fetch aborted');
+        return this.getFallbackCategories();
+      }
+      console.error('Failed to fetch categories from backend:', error);
+      console.log('🔧 [DEBUG MODE] Using fallback categories from products.json');
+      return this.getFallbackCategories();
+    } finally {
+      this.activeController = null;
     }
+  }
 
-    async createCategory(category: Category): Promise<CategoryResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(this.ENDPOINT, 'POST', category) },
-            CategoryErrorCode.CreateFailed
-        );
-    }
+  private getFallbackCategories(): Category[] {
+    console.log('📦 Extracting categories from products.json');
 
-    async deleteCategory(category: Category): Promise<CategoryResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`${this.ENDPOINT}/${category.id}`, 'DELETE') },
-            CategoryErrorCode.DeleteFailed
-        );
-    }
+    const uniqueCategories = [
+      ...new Set(fallbackProducts.map((product) => product.category)),
+    ].filter(Boolean);
 
-    async updateCategory(category: Category): Promise<CategoryResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`${this.ENDPOINT}/${category.id}`, 'PUT', category) },
-            CategoryErrorCode.UpdateFailed
-        );
+    const categories: Category[] = uniqueCategories.map((categoryName, index) => ({
+      id: index + 1,
+      name: categoryName,
+      description: `Categoría ${categoryName}`,
+      icon: undefined,
+    }));
+
+    console.log(
+      `✅ Generated ${categories.length} fallback categories:`,
+      categories.map((c) => c.name)
+    );
+    return categories;
+  }
+
+  async createCategory(category: Category): Promise<void> {
+    const controller = this.createController();
+    try {
+      const response = await this.getFetchFn()(this.ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(category),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to create category:', error);
+    } finally {
+      this.activeController = null;
     }
+  }
+
+  async deleteCategory(category: Category): Promise<void> {
+    const controller = this.createController();
+    try {
+      const response = await this.getFetchFn()(`${this.ENDPOINT}/${category.id}`, {
+        method: 'DELETE',
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+    } finally {
+      this.activeController = null;
+    }
+  }
+
+  async updateCategory(category: Category): Promise<void> {
+    const controller = this.createController();
+    try {
+      const response = await this.getFetchFn()(`${this.ENDPOINT}/${category.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(category),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to update category:', error);
+    } finally {
+      this.activeController = null;
+    }
+  }
 }

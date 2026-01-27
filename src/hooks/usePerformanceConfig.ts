@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 // Browser API type extensions
-interface NavigatorWithMemory extends Navigator {
+interface NavigatorWithExtensions extends Navigator {
   deviceMemory?: number;
   connection?: NetworkInformation;
   mozConnection?: NetworkInformation;
@@ -56,7 +56,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   const deviceInfo = useMemo(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     const hardwareConcurrency = navigator.hardwareConcurrency || 1;
-    const deviceMemory = (navigator as NavigatorWithMemory).deviceMemory || 1; // GB, Chrome only
+    const deviceMemory = (navigator as NavigatorWithExtensions).deviceMemory || 1; // GB, Chrome only
 
     // Raspberry Pi detection
     const isRaspberryPi =
@@ -141,8 +141,10 @@ export const usePerformanceConfig = (): PerformanceConfig => {
 
   useEffect(() => {
     // Network Information API con cleanup
-    const nav = navigator as NavigatorWithMemory;
-    const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
+    const connection =
+      (navigator as NavigatorWithExtensions).connection ||
+      (navigator as NavigatorWithExtensions).mozConnection ||
+      (navigator as NavigatorWithExtensions).webkitConnection;
 
     if (connection) {
       const updateNetworkInfo = () => {

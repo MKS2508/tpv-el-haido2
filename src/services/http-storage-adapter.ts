@@ -1,189 +1,202 @@
-import { getClient, ResponseType } from '@tauri-apps/api/http'
-import { tryCatchAsync } from '@mks2508/no-throw'
-import { IStorageAdapter, type StorageResult } from "./storage-adapter.interface"
-import { StorageErrorCode } from "@/lib/error-codes"
-import Product from "@/models/Product"
-import Category from "@/models/Category"
-import Order from "@/models/Order"
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { tryCatchAsync, err, ok } from '@mks2508/no-throw';
+import type Category from '@/models/Category';
+import type Order from '@/models/Order';
+import type Product from '@/models/Product';
+import { StorageErrorCode } from '@/lib/error-codes';
+import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
+
+const DEFAULT_TIMEOUT = 10000; // 10 seconds
 
 export class HttpStorageAdapter implements IStorageAdapter {
-    private baseUrl = 'http://localhost:3000/api'
+  private baseUrl = 'http://localhost:3000/api';
+  private activeControllers = new Map<string, AbortController>();
 
-    private async makeRequest<T>(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', data?: unknown): Promise<T> {
-        // Check if we're running in Tauri environment
-        if (typeof window !== 'undefined' && '__TAURI_IPC__' in window) {
-            const client = await getClient()
-            const url = `${this.baseUrl}${endpoint}`
+  private getFetchFn() {
+    return typeof window !== 'undefined' && '__TAURI_IPC__' in window ? tauriFetch : fetch;
+  }
 
-            switch (method) {
-                case 'GET': {
-                    const getResponse = await client.get(url, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    })
-                    return getResponse.data as T
-                }
+  private createController(requestId: string, timeout = DEFAULT_TIMEOUT): AbortController {
+    this.cancelRequest(requestId);
 
-                case 'POST': {
-                    const postResponse = await client.post(url, data, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    })
-                    return postResponse.data as T
-                }
+    const controller = new AbortController();
+    this.activeControllers.set(requestId, controller);
 
-                case 'PUT': {
-                    const putResponse = await client.put(url, data, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    })
-                    return putResponse.data as T
-                }
-
-                case 'DELETE': {
-                    const deleteResponse = await client.delete(url, {
-                        timeout: 30,
-                        responseType: ResponseType.JSON
-                    })
-                    return deleteResponse.data as T
-                }
-
-                default:
-                    throw new Error(`Unsupported method: ${method}`)
-            }
-        } else {
-            // Use native fetch for development/browser environment
-            const url = `${this.baseUrl}${endpoint}`
-            const options: RequestInit = {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            }
-
-            if (data && (method === 'POST' || method === 'PUT')) {
-                options.body = JSON.stringify(data)
-            }
-
-            const response = await fetch(url, options)
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            // Handle empty responses (e.g., DELETE operations)
-            const text = await response.text()
-            if (!text) {
-                return undefined as T
-            }
-
-            return JSON.parse(text) as T
+    if (timeout > 0) {
+      setTimeout(() => {
+        if (this.activeControllers.has(requestId)) {
+          controller.abort(new Error(`Request timeout after ${timeout}ms`));
+          this.activeControllers.delete(requestId);
         }
+      }, timeout);
     }
 
-    // ==================== Products ====================
+    return controller;
+  }
 
-    async getProducts(): Promise<StorageResult<Product[]>> {
-        return tryCatchAsync(
-            async () => this.makeRequest<Product[]>('/products'),
-            StorageErrorCode.ReadFailed
-        )
+  cancelRequest(requestId: string): void {
+    const controller = this.activeControllers.get(requestId);
+    if (controller) {
+      controller.abort(new Error('Request cancelled'));
+      this.activeControllers.delete(requestId);
+    }
+  }
+
+  cancelPendingRequests(): void {
+    for (const [id, controller] of this.activeControllers) {
+      controller.abort(new Error('All requests cancelled'));
+      this.activeControllers.delete(id);
+    }
+  }
+
+  private async makeRequest<T>(
+    endpoint: string,
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+    data?: unknown,
+    timeout = DEFAULT_TIMEOUT
+  ): Promise<StorageResult<T>> {
+    const requestId = `${method}-${endpoint}-${Date.now()}`;
+    const controller = this.createController(requestId, timeout);
+
+    const result = await tryCatchAsync(
+      async () => {
+        const url = `${this.baseUrl}${endpoint}`;
+
+        const options: RequestInit = {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+        };
+
+        if (data && (method === 'POST' || method === 'PUT')) {
+          options.body = JSON.stringify(data);
+        }
+
+        const response = await this.getFetchFn()(url, options);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return (await response.json()) as T;
+      },
+      StorageErrorCode.ConnectionFailed
+    );
+
+    this.activeControllers.delete(requestId);
+    return result;
+  }
+
+  // Products
+  async getProducts(): Promise<StorageResult<Product[]>> {
+    return this.makeRequest<Product[]>('/products');
+  }
+
+  async createProduct(product: Product): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<Product>('/products', 'POST', product);
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  async updateProduct(product: Product): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<Product>(`/products/${product.id}`, 'PUT', product);
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  async deleteProduct(product: Product): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<void>(`/products/${product.id}`, 'DELETE');
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  // Categories
+  async getCategories(): Promise<StorageResult<Category[]>> {
+    return this.makeRequest<Category[]>('/categories');
+  }
+
+  async createCategory(category: Category): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<Category>('/categories', 'POST', category);
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  async updateCategory(category: Category): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<Category>(`/categories/${category.id}`, 'PUT', category);
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  async deleteCategory(category: Category): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<void>(`/categories/${category.id}`, 'DELETE');
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  // Orders
+  async getOrders(): Promise<StorageResult<Order[]>> {
+    return this.makeRequest<Order[]>('/orders');
+  }
+
+  async createOrder(order: Order): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<Order>('/orders', 'POST', order);
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  async updateOrder(order: Order): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<Order>(`/orders/${order.id}`, 'PUT', order);
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  async deleteOrder(order: Order): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<void>(`/orders/${order.id}`, 'DELETE');
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  // Utility methods
+  async exportData(): Promise<
+    StorageResult<{ products: Product[]; categories: Category[]; orders: Order[] }>
+  > {
+    const productsResult = await this.getProducts();
+    if (!productsResult.ok) {
+      return err({ code: StorageErrorCode.ReadFailed, message: productsResult.error.message });
     }
 
-    async createProduct(product: Product): Promise<StorageResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest('/products', 'POST', product) },
-            StorageErrorCode.WriteFailed
-        )
+    const categoriesResult = await this.getCategories();
+    if (!categoriesResult.ok) {
+      return err({ code: StorageErrorCode.ReadFailed, message: categoriesResult.error.message });
     }
 
-    async updateProduct(product: Product): Promise<StorageResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`/products/${product.id}`, 'PUT', product) },
-            StorageErrorCode.WriteFailed
-        )
+    const ordersResult = await this.getOrders();
+    if (!ordersResult.ok) {
+      return err({ code: StorageErrorCode.ReadFailed, message: ordersResult.error.message });
     }
 
-    async deleteProduct(product: Product): Promise<StorageResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`/products/${product.id}`, 'DELETE') },
-            StorageErrorCode.DeleteFailed
-        )
-    }
-
-    // ==================== Categories ====================
-
-    async getCategories(): Promise<StorageResult<Category[]>> {
-        return tryCatchAsync(
-            async () => this.makeRequest<Category[]>('/categories'),
-            StorageErrorCode.ReadFailed
-        )
-    }
-
-    async createCategory(category: Category): Promise<StorageResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest('/categories', 'POST', category) },
-            StorageErrorCode.WriteFailed
-        )
-    }
-
-    async updateCategory(category: Category): Promise<StorageResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`/categories/${category.id}`, 'PUT', category) },
-            StorageErrorCode.WriteFailed
-        )
-    }
-
-    async deleteCategory(category: Category): Promise<StorageResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`/categories/${category.id}`, 'DELETE') },
-            StorageErrorCode.DeleteFailed
-        )
-    }
-
-    // ==================== Orders ====================
-
-    async getOrders(): Promise<StorageResult<Order[]>> {
-        return tryCatchAsync(
-            async () => this.makeRequest<Order[]>('/orders'),
-            StorageErrorCode.ReadFailed
-        )
-    }
-
-    async createOrder(order: Order): Promise<StorageResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest('/orders', 'POST', order) },
-            StorageErrorCode.WriteFailed
-        )
-    }
-
-    async updateOrder(order: Order): Promise<StorageResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`/orders/${order.id}`, 'PUT', order) },
-            StorageErrorCode.WriteFailed
-        )
-    }
-
-    async deleteOrder(order: Order): Promise<StorageResult<void>> {
-        return tryCatchAsync(
-            async () => { await this.makeRequest(`/orders/${order.id}`, 'DELETE') },
-            StorageErrorCode.DeleteFailed
-        )
-    }
-
-    // ==================== Utility ====================
-
-    async exportData(): Promise<StorageResult<{products: Product[], categories: Category[], orders: Order[]}>> {
-        return tryCatchAsync(async () => {
-            const productsResult = await this.getProducts()
-            const categoriesResult = await this.getCategories()
-            const ordersResult = await this.getOrders()
-
-            const products = productsResult.ok ? productsResult.value : []
-            const categories = categoriesResult.ok ? categoriesResult.value : []
-            const orders = ordersResult.ok ? ordersResult.value : []
-
-            return { products, categories, orders }
-        }, StorageErrorCode.ReadFailed)
-    }
+    return ok({
+      products: productsResult.value,
+      categories: categoriesResult.value,
+      orders: ordersResult.value,
+    });
+  }
 }

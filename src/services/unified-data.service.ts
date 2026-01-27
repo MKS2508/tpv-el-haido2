@@ -1,25 +1,27 @@
+import { ok, err } from '@mks2508/no-throw';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
-import type { IStorageAdapter } from './storage-adapter.interface';
+import { StorageErrorCode } from '@/lib/error-codes';
+import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
 
 export class UnifiedDataService {
   constructor(private adapter: IStorageAdapter) {}
 
   // Products
-  async getProducts(): Promise<Product[]> {
+  async getProducts(): Promise<StorageResult<Product[]>> {
     return this.adapter.getProducts();
   }
 
-  async createProduct(product: Product): Promise<void> {
+  async createProduct(product: Product): Promise<StorageResult<void>> {
     return this.adapter.createProduct(product);
   }
 
-  async updateProduct(product: Product): Promise<void> {
+  async updateProduct(product: Product): Promise<StorageResult<void>> {
     return this.adapter.updateProduct(product);
   }
 
-  async deleteProduct(product: Product): Promise<void> {
+  async deleteProduct(product: Product): Promise<StorageResult<void>> {
     return this.adapter.deleteProduct(product);
   }
 
@@ -28,53 +30,70 @@ export class UnifiedDataService {
   }
 
   // Categories
-  async getCategories(): Promise<Category[]> {
+  async getCategories(): Promise<StorageResult<Category[]>> {
     return this.adapter.getCategories();
   }
 
-  async createCategory(category: Category): Promise<void> {
+  async createCategory(category: Category): Promise<StorageResult<void>> {
     return this.adapter.createCategory(category);
   }
 
-  async updateCategory(category: Category): Promise<void> {
+  async updateCategory(category: Category): Promise<StorageResult<void>> {
     return this.adapter.updateCategory(category);
   }
 
-  async deleteCategory(category: Category): Promise<void> {
+  async deleteCategory(category: Category): Promise<StorageResult<void>> {
     return this.adapter.deleteCategory(category);
   }
 
   // Orders
-  async getOrders(): Promise<Order[]> {
+  async getOrders(): Promise<StorageResult<Order[]>> {
     return this.adapter.getOrders();
   }
 
-  async createOrder(order: Order): Promise<void> {
+  async createOrder(order: Order): Promise<StorageResult<void>> {
     return this.adapter.createOrder(order);
   }
 
-  async updateOrder(order: Order): Promise<void> {
+  async updateOrder(order: Order): Promise<StorageResult<void>> {
     return this.adapter.updateOrder(order);
   }
 
-  async deleteOrder(order: Order): Promise<void> {
+  async deleteOrder(order: Order): Promise<StorageResult<void>> {
     return this.adapter.deleteOrder(order);
   }
 
   // Utility methods
-  async exportData(): Promise<{ products: Product[]; categories: Category[]; orders: Order[] }> {
-    return this.adapter.exportData?.() || { products: [], categories: [], orders: [] };
+  async exportData(): Promise<
+    StorageResult<{ products: Product[]; categories: Category[]; orders: Order[] }>
+  > {
+    if (this.adapter.exportData) {
+      return this.adapter.exportData();
+    }
+    return ok({ products: [], categories: [], orders: [] });
   }
 
   async importData(data: {
     products: Product[];
     categories: Category[];
     orders: Order[];
-  }): Promise<void> {
-    return this.adapter.importData?.(data);
+  }): Promise<StorageResult<void>> {
+    if (this.adapter.importData) {
+      return this.adapter.importData(data);
+    }
+    return err({
+      code: StorageErrorCode.WriteFailed,
+      message: 'Import not supported by this adapter',
+    });
   }
 
-  async clearAllData(): Promise<void> {
-    return this.adapter.clearAllData?.();
+  async clearAllData(): Promise<StorageResult<void>> {
+    if (this.adapter.clearAllData) {
+      return this.adapter.clearAllData();
+    }
+    return err({
+      code: StorageErrorCode.DeleteFailed,
+      message: 'Clear not supported by this adapter',
+    });
   }
 }
