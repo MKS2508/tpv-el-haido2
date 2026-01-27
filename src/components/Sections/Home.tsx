@@ -380,7 +380,7 @@ const PieChartCard = ({ title, data, index = 0 }: PieChartCardProps) => {
                                 outerRadius={90}
                                 fill="#8884d8"
                                 dataKey="value"
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                             >
                                 {data.map((_, entryIndex) => (
                                     <Cell key={`cell-${entryIndex}`} fill={COLORS[entryIndex % COLORS.length]} />

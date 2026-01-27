@@ -15,7 +15,7 @@ type SidebarProps = {
     setActiveSection: (section: string) => void,
     isDarkMode: boolean,
     toggleDarkMode: () => void,
-    menuItems: Array<{ id: string; icon: JSX.Element; label: string }>,
+    menuItems: Array<{ id: string; icon: React.ReactElement; label: string }>,
     loggedUser: User | null,
     onLogout?: () => void
 };
@@ -50,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             opacity: 1,
             x: 0,
             transition: {
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 400,
                 damping: 30,
                 duration: 0.2
@@ -61,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             opacity: isTablet ? (isSidebarOpen ? 1 : 0.95) : 1,
             x: 0,
             transition: {
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 400,
                 damping: 30,
                 duration: 0.2
@@ -130,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     onClick={() => setActiveSection(item.id)}
                                 >
                                     <div className="flex items-center">
-                                        {React.cloneElement(item.icon, {
+                                        {React.cloneElement(item.icon as React.ReactElement<{ className?: string }>, {
                                             className: `${isSidebarOpen ? 'h-5 w-5 mr-3' : 'h-4 w-4'} transition-all duration-200`
                                         })}
                                         <AnimatePresence>

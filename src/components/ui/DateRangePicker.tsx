@@ -1,4 +1,4 @@
-import { type FC, useState, useEffect, useRef } from 'react'
+import { type FC, useState, useEffect, useRef, type ReactElement } from 'react'
 import { Button } from './button'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
@@ -92,7 +92,7 @@ export const DateRangePicker: FC<DateRangePickerProps> & {
          align = 'end',
          locale = 'en-US',
          showCompare = true
-     }): JSX.Element => {
+     }): ReactElement => {
     const [isOpen, setIsOpen] = useState(false)
 
     const [range, setRange] = useState<DateRange>({
@@ -113,8 +113,8 @@ export const DateRangePicker: FC<DateRangePickerProps> & {
     )
 
     // Refs to store the values of range and rangeCompare when the date picker is opened
-    const openedRangeRef = useRef<DateRange | undefined>()
-    const openedRangeCompareRef = useRef<DateRange | undefined>()
+    const openedRangeRef = useRef<DateRange | undefined>(undefined)
+    const openedRangeCompareRef = useRef<DateRange | undefined>(undefined)
 
     const [selectedPreset, setSelectedPreset] = useState<string | undefined>(undefined)
 
@@ -291,7 +291,7 @@ export const DateRangePicker: FC<DateRangePickerProps> & {
         preset: string
         label: string
         isSelected: boolean
-    }): JSX.Element => (
+    }): ReactElement => (
         <Button
             className={cn(isSelected && 'pointer-events-none')}
             variant="ghost"

@@ -244,9 +244,9 @@ function App() {
 
     // Optimized transition - más simple y rápido
     const pageTransition = {
-        type: 'tween',
-        ease: 'easeOut', // Más simple que bezier curve
-        duration: isMobile ? 0.25 : 0.3, // Más rápido para mejor performance
+        type: 'tween' as const,
+        ease: 'easeOut' as const,
+        duration: isMobile ? 0.25 : 0.3,
     }
 
 

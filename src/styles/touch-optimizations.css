@@ -28,11 +28,23 @@
 .touch-target-lg {
   min-height: var(--touch-target-large);
   min-width: var(--touch-target-large);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .touch-target-xl {
   min-height: var(--touch-target-xl);
   min-width: var(--touch-target-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Touch Spacing Utilities */
@@ -107,8 +119,23 @@
 
 /* Product Buttons */
 .product-button {
-  @apply touch-target-lg touch-feedback touch-ripple;
-  min-width: 3.75rem; /* 60px for product grid */
+  /* touch-target-lg */
+  min-height: var(--touch-target-large);
+  min-width: var(--touch-target-large);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* touch-feedback */
+  transition: transform var(--touch-feedback-duration) ease-in-out;
+  cursor: pointer;
+  /* touch-ripple */
+  position: relative;
+  overflow: hidden;
+  /* custom */
+  min-width: 3.75rem;
   min-height: 3.75rem;
   padding: 0.75rem;
   border-radius: 0.75rem;
@@ -117,35 +144,120 @@
   line-height: 1.2;
 }
 
+.product-button:active {
+  transform: scale(var(--touch-feedback-scale));
+}
+
+.product-button:hover {
+  transform: scale(1.02);
+}
+
 /* Category Buttons */
 .category-button {
-  @apply touch-target-lg touch-feedback;
-  min-height: 3.5rem; /* 56px for category sidebar */
+  /* touch-target-lg */
+  min-height: var(--touch-target-large);
+  min-width: var(--touch-target-large);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* touch-feedback */
+  transition: transform var(--touch-feedback-duration) ease-in-out;
+  cursor: pointer;
+  /* custom */
+  min-height: 3.5rem;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   font-weight: 500;
 }
 
+.category-button:active {
+  transform: scale(var(--touch-feedback-scale));
+}
+
+.category-button:hover {
+  transform: scale(1.02);
+}
+
 /* Order Controls */
 .order-control {
-  @apply touch-target touch-feedback;
+  /* touch-target */
+  min-height: var(--touch-target-size);
+  min-width: var(--touch-target-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* touch-feedback */
+  transition: transform var(--touch-feedback-duration) ease-in-out;
+  cursor: pointer;
+  /* custom */
   border-radius: 0.5rem;
   font-weight: 600;
 }
 
+.order-control:active {
+  transform: scale(var(--touch-feedback-scale));
+}
+
+.order-control:hover {
+  transform: scale(1.02);
+}
+
 /* Payment Button */
 .payment-button {
-  @apply touch-target-xl touch-feedback touch-enhanced;
-  min-height: 4rem; /* 64px for payment actions */
+  /* touch-target-xl */
+  min-height: var(--touch-target-xl);
+  min-width: var(--touch-target-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* touch-feedback */
+  transition: transform var(--touch-feedback-duration) ease-in-out, all 0.15s ease;
+  cursor: pointer;
+  /* touch-enhanced */
+  position: relative;
+  border-radius: 0.5rem;
+  /* custom */
+  min-height: 4rem;
   padding: 1rem 2rem;
   border-radius: 0.75rem;
   font-size: 1.125rem;
   font-weight: 700;
 }
 
+.payment-button:active {
+  transform: scale(var(--touch-feedback-scale)) translateY(1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.payment-button:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 /* Table Selection Buttons */
 .table-button {
-  @apply touch-target touch-feedback;
+  /* touch-target */
+  min-height: var(--touch-target-size);
+  min-width: var(--touch-target-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* touch-feedback */
+  transition: transform var(--touch-feedback-duration) ease-in-out;
+  cursor: pointer;
+  /* custom */
   min-width: 4rem;
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
@@ -153,14 +265,42 @@
   font-size: 0.875rem;
 }
 
+.table-button:active {
+  transform: scale(var(--touch-feedback-scale));
+}
+
+.table-button:hover {
+  transform: scale(1.02);
+}
+
 /* Number Input Controls */
 .number-input-control {
-  @apply touch-target touch-feedback;
+  /* touch-target */
+  min-height: var(--touch-target-size);
+  min-width: var(--touch-target-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* touch-feedback */
+  transition: transform var(--touch-feedback-duration) ease-in-out;
+  cursor: pointer;
+  /* custom */
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 0.375rem;
   font-weight: 600;
   font-size: 1rem;
+}
+
+.number-input-control:active {
+  transform: scale(var(--touch-feedback-scale));
+}
+
+.number-input-control:hover {
+  transform: scale(1.02);
 }
 
 /* Toggle Switches - Larger for touch */
@@ -217,13 +357,13 @@
     --touch-target-large: 3.5rem;
     --touch-target-xl: 4rem;
   }
-  
+
   .product-button {
     min-width: 4rem;
     min-height: 4rem;
     font-size: 1rem;
   }
-  
+
   .category-button {
     min-height: 3.75rem;
     font-size: 1rem;
@@ -237,13 +377,13 @@
     --touch-target-large: 4rem;
     --touch-target-xl: 4.5rem;
   }
-  
+
   .product-button {
     min-width: 4.5rem;
     min-height: 4.5rem;
     font-size: 1.125rem;
   }
-  
+
   .payment-button {
     min-height: 5rem;
     font-size: 1.25rem;
@@ -254,14 +394,26 @@
 @media (prefers-reduced-motion: reduce) {
   .touch-feedback,
   .touch-enhanced,
-  .touch-ripple-enabled .touch-ripple::before {
+  .touch-ripple-enabled .touch-ripple::before,
+  .product-button,
+  .category-button,
+  .order-control,
+  .payment-button,
+  .table-button,
+  .number-input-control {
     transition: none;
   }
-  
-  .touch-feedback:active {
+
+  .touch-feedback:active,
+  .product-button:active,
+  .category-button:active,
+  .order-control:active,
+  .payment-button:active,
+  .table-button:active,
+  .number-input-control:active {
     transform: none;
   }
-  
+
   .touch-ripple-enabled .touch-ripple:active::before {
     width: 0;
     height: 0;
@@ -271,6 +423,8 @@
 /* High Contrast Mode */
 @media (prefers-contrast: high) {
   .touch-target,
+  .touch-target-lg,
+  .touch-target-xl,
   .product-button,
   .category-button,
   .order-control,
@@ -278,14 +432,17 @@
   .table-button {
     border: 2px solid currentColor;
   }
-  
-  .touch-enhanced:hover {
+
+  .touch-enhanced:hover,
+  .payment-button:hover {
     box-shadow: 0 0 0 3px currentColor;
   }
 }
 
 /* Focus Styles for Keyboard Navigation */
 .touch-target:focus-visible,
+.touch-target-lg:focus-visible,
+.touch-target-xl:focus-visible,
 .product-button:focus-visible,
 .category-button:focus-visible,
 .order-control:focus-visible,
