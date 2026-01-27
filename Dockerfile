@@ -1,7 +1,7 @@
 # TPV El Haido - Linux x64 Build Container
 # Multi-stage build for Tauri application
 
-FROM rust:1.77-bookworm AS builder
+FROM rust:1.80-bookworm AS builder
 
 # Install system dependencies for Tauri
 RUN apt-get update && apt-get install -y \
@@ -57,9 +57,9 @@ ARG TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
 ENV TAURI_SIGNING_PRIVATE_KEY=${TAURI_SIGNING_PRIVATE_KEY}
 ENV TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${TAURI_SIGNING_PRIVATE_KEY_PASSWORD}
 
-RUN npx tauri build
+RUN npx @tauri-apps/cli@2.9.6 build
 
-# Output stage - minimal image with just the artifacts
+# Output stage - minimal image with just artifacts
 FROM debian:bookworm-slim AS artifacts
 
 # Install runtime dependencies
