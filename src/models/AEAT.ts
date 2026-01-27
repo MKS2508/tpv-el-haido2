@@ -38,6 +38,22 @@ export interface AEATCertificateConfig {
 }
 
 /**
+ * Datos fiscales del negocio (obligado tributario)
+ */
+export interface AEATBusinessData {
+  /** NIF/CIF de la empresa */
+  nif: string;
+  /** Nombre o Razón Social */
+  nombreRazon: string;
+  /** Prefijo de serie para facturas (ej: "F", "TPV-") */
+  serieFactura: string;
+  /** Tipo de factura por defecto */
+  tipoFactura: 'F1' | 'F2';
+  /** Descripción por defecto de operaciones */
+  descripcionOperacion: string;
+}
+
+/**
  * Configuración completa de AEAT
  */
 export interface AEATConfig {
@@ -51,6 +67,8 @@ export interface AEATConfig {
   sidecarPort: number;
   /** Configuración del certificado */
   certificate?: AEATCertificateConfig;
+  /** Datos fiscales del negocio */
+  businessData: AEATBusinessData;
   /** Auto-iniciar sidecar al arrancar la app */
   autoStartSidecar: boolean;
   /** Enviar facturas automáticamente al completar pedidos */
@@ -66,6 +84,13 @@ export const DEFAULT_AEAT_CONFIG: AEATConfig = {
   mode: 'disabled',
   environment: 'test',
   sidecarPort: 3001,
+  businessData: {
+    nif: '',
+    nombreRazon: '',
+    serieFactura: 'TPV-',
+    tipoFactura: 'F1',
+    descripcionOperacion: 'Venta TPV',
+  },
   autoStartSidecar: false,
   autoSendInvoices: false,
   requestTimeout: 30000,

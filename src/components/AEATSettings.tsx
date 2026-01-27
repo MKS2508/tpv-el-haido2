@@ -7,9 +7,13 @@
 
 import {
   AlertCircle,
+  AlertTriangle,
+  Building2,
   Check,
   Cloud,
+  ExternalLink,
   FileText,
+  Key,
   Loader2,
   Play,
   RefreshCw,
@@ -442,6 +446,125 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
         </Card>
       )}
 
+      {/* Datos Fiscales del Negocio */}
+      {isEnabled && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Datos Fiscales
+            </CardTitle>
+            <CardDescription>Datos del obligado tributario para las facturas</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Aviso si faltan datos obligatorios */}
+            {(!config.businessData.nif || !config.businessData.nombreRazon) && (
+              <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-yellow-600">Configuración incompleta</p>
+                  <p className="text-muted-foreground">
+                    El NIF y Razón Social son obligatorios para enviar facturas a AEAT
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nif">NIF/CIF *</Label>
+                <Input
+                  id="nif"
+                  value={config.businessData.nif}
+                  onChange={(e) =>
+                    updateConfig({
+                      businessData: { ...config.businessData, nif: e.target.value.toUpperCase() },
+                    })
+                  }
+                  placeholder="B12345678"
+                  maxLength={9}
+                />
+                <p className="text-xs text-muted-foreground">NIF o CIF de la empresa</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="nombreRazon">Razón Social *</Label>
+                <Input
+                  id="nombreRazon"
+                  value={config.businessData.nombreRazon}
+                  onChange={(e) =>
+                    updateConfig({
+                      businessData: { ...config.businessData, nombreRazon: e.target.value },
+                    })
+                  }
+                  placeholder="Mi Empresa S.L."
+                />
+                <p className="text-xs text-muted-foreground">Nombre o razón social de la empresa</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="serieFactura">Serie de Factura</Label>
+                <Input
+                  id="serieFactura"
+                  value={config.businessData.serieFactura}
+                  onChange={(e) =>
+                    updateConfig({
+                      businessData: { ...config.businessData, serieFactura: e.target.value },
+                    })
+                  }
+                  placeholder="TPV-"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Prefijo para número de factura (ej: TPV-2024-001)
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tipoFactura">Tipo de Factura</Label>
+                <Select
+                  value={config.businessData.tipoFactura}
+                  onValueChange={(v) =>
+                    updateConfig({
+                      businessData: { ...config.businessData, tipoFactura: v as 'F1' | 'F2' },
+                    })
+                  }
+                >
+                  <SelectTrigger id="tipoFactura">
+                    <SelectValue placeholder="Selecciona tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="F1">F1 - Factura completa</SelectItem>
+                    <SelectItem value="F2">F2 - Factura simplificada (ticket)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  F2 para tickets, F1 para facturas con datos del cliente
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="descripcionOperacion">Descripción de Operaciones</Label>
+              <Input
+                id="descripcionOperacion"
+                value={config.businessData.descripcionOperacion}
+                onChange={(e) =>
+                  updateConfig({
+                    businessData: { ...config.businessData, descripcionOperacion: e.target.value },
+                  })
+                }
+                placeholder="Venta TPV"
+              />
+              <p className="text-xs text-muted-foreground">
+                Descripción por defecto en las facturas
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Opciones de Facturación */}
       {isEnabled && (
         <Card>
@@ -460,8 +583,15 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
                 id="autoSendInvoices"
                 checked={config.autoSendInvoices}
                 onCheckedChange={(checked) => updateConfig({ autoSendInvoices: checked })}
+                disabled={!config.businessData.nif || !config.businessData.nombreRazon}
               />
             </div>
+            {config.autoSendInvoices &&
+              (!config.businessData.nif || !config.businessData.nombreRazon) && (
+                <p className="text-xs text-yellow-600">
+                  Complete los datos fiscales para activar el envío automático
+                </p>
+              )}
 
             <div className="space-y-2">
               <Label htmlFor="requestTimeout">Timeout (ms)</Label>
@@ -476,6 +606,64 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
               />
               <p className="text-xs text-muted-foreground">
                 Tiempo máximo de espera para respuestas de AEAT
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Información de Certificados */}
+      {isEnabled && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Key className="h-4 w-4" />
+              Certificados Digitales
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-3 bg-muted/50 rounded-lg space-y-2">
+              <p className="text-sm">
+                Los certificados digitales se configuran en el servidor AEAT Bridge.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Para {config.mode === 'external' ? 'el servidor externo' : 'el sidecar'}, configure
+                las variables de entorno <code className="bg-muted px-1 rounded">PFX_PATH</code> y{' '}
+                <code className="bg-muted px-1 rounded">PFX_PASSWORD</code> en el archivo{' '}
+                <code className="bg-muted px-1 rounded">.env</code>
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <a
+                href="https://www.sede.fnmt.gob.es/certificados"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Obtener certificado FNMT
+              </a>
+              <a
+                href="https://www.agenciatributaria.es/AEAT.desarrolladores"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Portal desarrolladores AEAT
+              </a>
+            </div>
+
+            <div className="text-xs text-muted-foreground space-y-1 border-t pt-3">
+              <p>
+                <strong>Entorno actual:</strong>{' '}
+                {config.environment === 'test'
+                  ? 'Pruebas (prewww1.aeat.es)'
+                  : 'Producción (www1.agenciatributaria.gob.es)'}
+              </p>
+              <p>
+                <strong>Tipo recomendado:</strong> Certificado de sello para TPV automatizado
               </p>
             </div>
           </CardContent>
