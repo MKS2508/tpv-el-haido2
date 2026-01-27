@@ -5,13 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsgo --noEmit && vite build",
+    "build:tsc": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "deploy:rpi": "npm run build && npm run tauri build -- --target aarch64-unknown-linux-gnu",
     "docs:rpi": "node --loader tsx generate-docs.ts || bun run generate-docs.ts",
-    "build:rpi-full": "npm run deploy:rpi && npm run docs:rpi"
+    "build:rpi-full": "npm run deploy:rpi && npm run docs:rpi",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write src",
+    "lint:ox": "oxlint src",
+    "format": "biome format --write src",
+    "check": "biome check --write src && oxlint src",
+    "typecheck": "tsgo --noEmit",
+    "typecheck:tsc": "tsc --noEmit"
   },
   "dependencies": {
     "@number-flow/react": "^0.5.11",
@@ -29,7 +37,7 @@
     "@radix-ui/react-switch": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.1",
-    "@tauri-apps/api": "^2.9.1",
+    "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-http": "^2.5.6",
     "@tauri-apps/plugin-opener": "^2.5.3",
     "@tauri-apps/plugin-process": "^2.3.1",
@@ -53,21 +61,18 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@biomejs/biome": "^2.3.13",
     "@tailwindcss/vite": "^4.1.18",
     "@tauri-apps/cli": "^2.9.6",
     "@types/esc-pos-encoder": "^1.3.4",
     "@types/node": "^25.0.10",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
+    "@typescript/native-preview": "^7.0.0-dev.20260127.1",
     "@vitejs/plugin-react": "^5.1.2",
-    "eslint": "^9.39.2",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.26",
-    "globals": "^17.2.0",
+    "oxlint": "^1.42.0",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0",
     "vite": "^7.3.1"
   }
 }

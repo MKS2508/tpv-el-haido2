@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface PerformanceConfig {
   // Device detection
@@ -6,25 +6,25 @@ interface PerformanceConfig {
   isVeryLowPerformance: boolean;
   isRaspberryPi: boolean;
   isMobile: boolean;
-  
+
   // Performance settings
   enableAnimations: boolean;
   enableHoverEffects: boolean;
   enableTransitions: boolean;
   reduceMotion: boolean;
-  
+
   // Animation configurations
   animationDuration: number;
   transitionDuration: number;
-  
+
   // Virtualization settings
   virtualizeThreshold: number;
   overscanCount: number;
-  
+
   // Memory management
   enableLazyLoading: boolean;
   enableImageOptimization: boolean;
-  
+
   // CPU optimizations
   debounceDelay: number;
   throttleDelay: number;
@@ -38,29 +38,23 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     const userAgent = navigator.userAgent.toLowerCase();
     const hardwareConcurrency = navigator.hardwareConcurrency || 1;
     const deviceMemory = (navigator as any).deviceMemory || 1; // GB, Chrome only
-    
+
     // Raspberry Pi detection
-    const isRaspberryPi = 
+    const isRaspberryPi =
       /raspberry/i.test(userAgent) ||
       /armv/i.test(userAgent) ||
       (hardwareConcurrency <= 4 && deviceMemory <= 1);
-    
+
     // Mobile detection
-    const isMobile = 
+    const isMobile =
       /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) ||
       window.innerWidth <= 768;
-    
+
     // Performance tiers
-    const isVeryLowPerformance = 
-      isRaspberryPi || 
-      hardwareConcurrency <= 1 || 
-      deviceMemory < 1;
-    
-    const isLowPerformance = 
-      isVeryLowPerformance ||
-      hardwareConcurrency <= 2 ||
-      deviceMemory <= 2 ||
-      isMobile;
+    const isVeryLowPerformance = isRaspberryPi || hardwareConcurrency <= 1 || deviceMemory < 1;
+
+    const isLowPerformance =
+      isVeryLowPerformance || hardwareConcurrency <= 2 || deviceMemory <= 2 || isMobile;
 
     return {
       isRaspberryPi,
@@ -68,7 +62,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
       isLowPerformance,
       isVeryLowPerformance,
       hardwareConcurrency,
-      deviceMemory
+      deviceMemory,
     };
   }, []);
 
@@ -82,7 +76,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
       const checkMemory = () => {
         const memory = (performance as any).memory;
         const memoryUsage = memory.usedJSHeapSize / memory.totalJSHeapSize;
-        
+
         if (memoryUsage > 0.8) {
           setMemoryPressure('critical');
         } else {
@@ -109,7 +103,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
         });
 
         performanceObserver.observe({ entryTypes: ['longtask'] });
-      } catch (error) {
+      } catch (_error) {
         // PerformanceObserver not supported
         console.warn('PerformanceObserver not supported');
       }
@@ -128,8 +122,11 @@ export const usePerformanceConfig = (): PerformanceConfig => {
 
   useEffect(() => {
     // Network Information API con cleanup
-    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
-    
+    const connection =
+      (navigator as any).connection ||
+      (navigator as any).mozConnection ||
+      (navigator as any).webkitConnection;
+
     if (connection) {
       const updateNetworkInfo = () => {
         const effectiveType = connection.effectiveType;
@@ -150,18 +147,18 @@ export const usePerformanceConfig = (): PerformanceConfig => {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
     };
 
     setPrefersReducedMotion(mediaQuery.matches);
-    
+
     // Modern browsers
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
-    } 
+    }
     // Legacy browsers
     else {
       mediaQuery.addListener(handleChange);
@@ -171,12 +168,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
 
   // Generate performance configuration
   const performanceConfig = useMemo((): PerformanceConfig => {
-    const {
-      isRaspberryPi,
-      isMobile,
-      isLowPerformance,
-      isVeryLowPerformance
-    } = deviceInfo;
+    const { isRaspberryPi, isMobile, isLowPerformance, isVeryLowPerformance } = deviceInfo;
 
     const isMemoryConstrained = memoryPressure === 'critical';
     const isNetworkConstrained = networkSpeed === 'slow';
@@ -219,7 +211,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
         performance: isVeryLowPerformance ? 'Very Low' : isLowPerformance ? 'Low' : 'Normal',
         memory: memoryPressure,
         network: networkSpeed,
-        config
+        config,
       });
     }
 
@@ -232,16 +224,19 @@ export const usePerformanceConfig = (): PerformanceConfig => {
 // Hook para aplicar clases CSS basadas en performance
 export const usePerformanceClasses = () => {
   const config = usePerformanceConfig();
-  
-  return useMemo(() => ({
-    'reduced-motion': config.reduceMotion,
-    'low-performance': config.isLowPerformance,
-    'very-low-performance': config.isVeryLowPerformance,
-    'raspberry-pi': config.isRaspberryPi,
-    'mobile-device': config.isMobile,
-    'animations-disabled': !config.enableAnimations,
-    'hover-disabled': !config.enableHoverEffects,
-  }), [config]);
+
+  return useMemo(
+    () => ({
+      'reduced-motion': config.reduceMotion,
+      'low-performance': config.isLowPerformance,
+      'very-low-performance': config.isVeryLowPerformance,
+      'raspberry-pi': config.isRaspberryPi,
+      'mobile-device': config.isMobile,
+      'animations-disabled': !config.enableAnimations,
+      'hover-disabled': !config.enableHoverEffects,
+    }),
+    [config]
+  );
 };
 
 export default usePerformanceConfig;

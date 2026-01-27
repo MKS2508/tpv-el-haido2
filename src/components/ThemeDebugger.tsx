@@ -1,112 +1,115 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { useAppTheme } from "@/lib/theme-context"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { useCallback, useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAppTheme } from '@/lib/theme-context';
 
 interface CSSVariable {
-  name: string
-  value: string
-  computed: string
+  name: string;
+  value: string;
+  computed: string;
 }
 
+const THEME_VARS = [
+  '--background',
+  '--foreground',
+  '--card',
+  '--card-foreground',
+  '--primary',
+  '--primary-foreground',
+  '--secondary',
+  '--secondary-foreground',
+  '--muted',
+  '--muted-foreground',
+  '--accent',
+  '--accent-foreground',
+  '--destructive',
+  '--destructive-foreground',
+  '--border',
+  '--input',
+  '--ring',
+  '--popover',
+  '--popover-foreground',
+  '--sidebar',
+  '--sidebar-foreground',
+  '--sidebar-primary',
+  '--sidebar-primary-foreground',
+  '--sidebar-accent',
+  '--sidebar-accent-foreground',
+  '--sidebar-border',
+  '--sidebar-ring',
+  '--success',
+  '--warning',
+  '--chart-1',
+  '--chart-2',
+  '--chart-3',
+  '--chart-4',
+  '--chart-5',
+];
+
 export function ThemeDebugger() {
-  const { colorTheme, mode, resolvedTheme, isLoaded } = useAppTheme()
-  const [cssVariables, setCssVariables] = useState<CSSVariable[]>([])
+  const { colorTheme, mode, resolvedTheme, isLoaded } = useAppTheme();
+  const [cssVariables, setCssVariables] = useState<CSSVariable[]>([]);
   const [domInfo, setDomInfo] = useState({
     dataTheme: '',
     darkClass: false,
     htmlClasses: '',
-  })
+  });
 
-  const [copyStatus, setCopyStatus] = useState('')
+  const [copyStatus, setCopyStatus] = useState('');
 
-  const themeVars = [
-    '--background',
-    '--foreground', 
-    '--card',
-    '--card-foreground',
-    '--primary',
-    '--primary-foreground',
-    '--secondary',
-    '--secondary-foreground',
-    '--muted',
-    '--muted-foreground',
-    '--accent',
-    '--accent-foreground',
-    '--destructive',
-    '--destructive-foreground',
-    '--border',
-    '--input',
-    '--ring',
-    '--popover',
-    '--popover-foreground',
-    '--sidebar',
-    '--sidebar-foreground',
-    '--sidebar-primary',
-    '--sidebar-primary-foreground',
-    '--sidebar-accent',
-    '--sidebar-accent-foreground',
-    '--sidebar-border',
-    '--sidebar-ring',
-    '--success',
-    '--warning',
-    '--chart-1',
-    '--chart-2',
-    '--chart-3',
-    '--chart-4',
-    '--chart-5',
-  ]
-
-  const refreshDebugInfo = () => {
-    if (typeof window === 'undefined') return
+  const refreshDebugInfo = useCallback(() => {
+    if (typeof window === 'undefined') return;
 
     // Get DOM info
-    const html = document.documentElement
-    const dataTheme = html.getAttribute('data-theme') || 'none'
-    const darkClass = html.classList.contains('dark')
-    const htmlClasses = html.className
+    const html = document.documentElement;
+    const dataTheme = html.getAttribute('data-theme') || 'none';
+    const darkClass = html.classList.contains('dark');
+    const htmlClasses = html.className;
 
     setDomInfo({
       dataTheme,
       darkClass,
       htmlClasses,
-    })
+    });
 
     // Get CSS variables
-    const computedStyle = window.getComputedStyle(html)
-    const variables: CSSVariable[] = []
+    const computedStyle = window.getComputedStyle(html);
+    const variables: CSSVariable[] = [];
 
-    themeVars.forEach(varName => {
-      const value = computedStyle.getPropertyValue(varName).trim()
+    THEME_VARS.forEach((varName) => {
+      const value = computedStyle.getPropertyValue(varName).trim();
       // Try to get the raw value from CSS
-      const rawValue = html.style.getPropertyValue(varName) || 'inherited'
-      
+      const rawValue = html.style.getPropertyValue(varName) || 'inherited';
+
       variables.push({
         name: varName,
         value: rawValue,
         computed: value || 'undefined',
-      })
-    })
+      });
+    });
 
-    setCssVariables(variables)
-  }
+    setCssVariables(variables);
+  }, []);
 
   const handleCopyAll = () => {
-    const textToCopy = cssVariables.map(v => `${v.name}: ${v.computed}`).join('\n')
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      setCopyStatus('Copied!')
-      setTimeout(() => setCopyStatus(''), 2000)
-    }).catch(() => {
-      setCopyStatus('Failed to copy!')
-      setTimeout(() => setCopyStatus(''), 2000)
-    })
-  }
+    const textToCopy = cssVariables.map((v) => `${v.name}: ${v.computed}`).join('\n');
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => {
+        setCopyStatus('Copied!');
+        setTimeout(() => setCopyStatus(''), 2000);
+      })
+      .catch(() => {
+        setCopyStatus('Failed to copy!');
+        setTimeout(() => setCopyStatus(''), 2000);
+      });
+  };
 
   const handleCopyTestColors = () => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') return;
 
     const testColors = [
       { name: 'background', className: 'bg-background' },
@@ -134,36 +137,39 @@ export function ThemeDebugger() {
       { name: 'sidebar-accent', className: 'bg-sidebar-accent' },
       { name: 'success', className: 'bg-success' },
       { name: 'warning', className: 'bg-warning' },
-    ]
+    ];
 
-    const computedColors: string[] = []
-    testColors.forEach(color => {
-      const element = document.createElement('div')
-      element.className = color.className
-      document.body.appendChild(element)
-      const computedStyle = window.getComputedStyle(element)
-      computedColors.push(`${color.name}: ${computedStyle.backgroundColor}`)
-      document.body.removeChild(element)
-    })
+    const computedColors: string[] = [];
+    testColors.forEach((color) => {
+      const element = document.createElement('div');
+      element.className = color.className;
+      document.body.appendChild(element);
+      const computedStyle = window.getComputedStyle(element);
+      computedColors.push(`${color.name}: ${computedStyle.backgroundColor}`);
+      document.body.removeChild(element);
+    });
 
-    const textToCopy = computedColors.join('\n')
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      setCopyStatus('Test colors copied!')
-      setTimeout(() => setCopyStatus(''), 2000)
-    }).catch(() => {
-      setCopyStatus('Failed to copy test colors!')
-      setTimeout(() => setCopyStatus(''), 2000)
-    })
-  }
+    const textToCopy = computedColors.join('\n');
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => {
+        setCopyStatus('Test colors copied!');
+        setTimeout(() => setCopyStatus(''), 2000);
+      })
+      .catch(() => {
+        setCopyStatus('Failed to copy test colors!');
+        setTimeout(() => setCopyStatus(''), 2000);
+      });
+  };
 
   useEffect(() => {
-    refreshDebugInfo()
-    
+    refreshDebugInfo();
+
     // Refresh on theme changes
-    const interval = setInterval(refreshDebugInfo, 1000)
-    
-    return () => clearInterval(interval)
-  }, [colorTheme, mode, resolvedTheme])
+    const interval = setInterval(refreshDebugInfo, 1000);
+
+    return () => clearInterval(interval);
+  }, [refreshDebugInfo]);
 
   return (
     <Card className="w-full">
@@ -197,9 +203,7 @@ export function ThemeDebugger() {
           </div>
           <div>
             <div className="text-sm font-medium">Loaded:</div>
-            <Badge variant={isLoaded ? "default" : "destructive"}>
-              {isLoaded ? "Yes" : "No"}
-            </Badge>
+            <Badge variant={isLoaded ? 'default' : 'destructive'}>{isLoaded ? 'Yes' : 'No'}</Badge>
           </div>
         </div>
 
@@ -207,15 +211,26 @@ export function ThemeDebugger() {
         <div className="border rounded p-3 bg-muted/50">
           <div className="text-sm font-medium mb-2">DOM State:</div>
           <div className="space-y-1 text-xs font-mono">
-            <div>data-theme: <span className="bg-primary/10 px-1 rounded">{domInfo.dataTheme}</span></div>
-            <div>dark class: <span className="bg-primary/10 px-1 rounded">{domInfo.darkClass.toString()}</span></div>
-            <div>html classes: <span className="bg-primary/10 px-1 rounded">{domInfo.htmlClasses || 'none'}</span></div>
+            <div>
+              data-theme: <span className="bg-primary/10 px-1 rounded">{domInfo.dataTheme}</span>
+            </div>
+            <div>
+              dark class:{' '}
+              <span className="bg-primary/10 px-1 rounded">{domInfo.darkClass.toString()}</span>
+            </div>
+            <div>
+              html classes:{' '}
+              <span className="bg-primary/10 px-1 rounded">{domInfo.htmlClasses || 'none'}</span>
+            </div>
           </div>
         </div>
 
         {/* CSS Variables Table */}
         <div>
-          <div className="text-sm font-medium mb-2">CSS Variables: {copyStatus && <span className="text-green-500 text-xs ml-2">{copyStatus}</span>}</div>
+          <div className="text-sm font-medium mb-2">
+            CSS Variables:{' '}
+            {copyStatus && <span className="text-green-500 text-xs ml-2">{copyStatus}</span>}
+          </div>
           <div className="border rounded overflow-hidden">
             <div className="bg-muted p-2 grid grid-cols-3 gap-2 text-xs font-medium">
               <div>Variable</div>
@@ -223,19 +238,17 @@ export function ThemeDebugger() {
               <div>Preview</div>
             </div>
             <div className="divide-y">
-              {cssVariables.map((variable, index) => (
-                <div key={index} className="p-2 grid grid-cols-3 gap-2 text-xs">
+              {cssVariables.map((variable) => (
+                <div key={variable.name} className="p-2 grid grid-cols-3 gap-2 text-xs">
                   <div className="font-mono">{variable.name}</div>
-                  <div className="font-mono break-all">
-                    {variable.computed || 'undefined'}
-                  </div>
+                  <div className="font-mono break-all">{variable.computed || 'undefined'}</div>
                   <div className="flex items-center gap-1">
-                    <div 
+                    <div
                       className="w-4 h-4 border rounded"
                       style={{ backgroundColor: `hsl(${variable.computed})` }}
                       title={`hsl(${variable.computed})`}
                     />
-                    <div 
+                    <div
                       className="w-4 h-4 border rounded"
                       style={{ backgroundColor: variable.computed }}
                       title={variable.computed}
@@ -393,11 +406,16 @@ export function ThemeDebugger() {
         <div>
           <div className="text-sm font-medium mb-2">LocalStorage:</div>
           <div className="bg-muted/50 p-2 rounded text-xs font-mono space-y-1">
-            <div>color-theme: {typeof window !== 'undefined' ? localStorage.getItem('color-theme') : 'N/A'}</div>
-            <div>theme: {typeof window !== 'undefined' ? localStorage.getItem('theme') : 'N/A'}</div>
+            <div>
+              color-theme:{' '}
+              {typeof window !== 'undefined' ? localStorage.getItem('color-theme') : 'N/A'}
+            </div>
+            <div>
+              theme: {typeof window !== 'undefined' ? localStorage.getItem('theme') : 'N/A'}
+            </div>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

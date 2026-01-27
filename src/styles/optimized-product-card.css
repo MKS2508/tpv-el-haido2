@@ -7,13 +7,15 @@
 .product-card {
   will-change: transform;
   transform: scale(1) translateZ(0); /* Hardware acceleration */
-  transition: 
+  transition:
     transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
     border-color 0.15s ease-out,
     box-shadow 0.15s ease-out;
   backface-visibility: hidden; /* Reduce repaints */
   /* Default shadow */
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.1),
+    0 1px 2px -1px rgb(0 0 0 / 0.1);
   border-color: hsl(var(--border));
 }
 
@@ -21,14 +23,18 @@
 @media (hover: hover) and (pointer: fine) {
   .product-card:hover {
     transform: scale(1.02) translateZ(0);
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 0.1),
+      0 4px 6px -4px rgb(0 0 0 / 0.1);
     border-color: hsl(var(--primary) / 0.4);
   }
-  
+
   .product-card.manage-mode:hover {
     transform: scale(1.01) translateZ(0);
     border-color: hsl(var(--primary) / 0.3);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    box-shadow:
+      0 4px 6px -1px rgb(0 0 0 / 0.1),
+      0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
 }
 
@@ -42,9 +48,9 @@
 .product-card.adding {
   transform: scale(1.03) translateZ(0);
   border-color: hsl(var(--success));
-  box-shadow: 
+  box-shadow:
     0 0 0 2px hsl(var(--success) / 0.3),
-    0 20px 25px -5px rgb(0 0 0 / 0.1), 
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
     0 8px 10px -6px rgb(0 0 0 / 0.1),
     0 0 20px hsl(var(--success) / 0.4);
   animation: pulse-success 0.3s ease-out;
@@ -52,8 +58,8 @@
 
 .product-card.success {
   border-color: hsl(var(--success) / 0.6);
-  box-shadow: 
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1),
     0 0 15px hsl(var(--success) / 0.3);
 }
@@ -90,7 +96,9 @@
 
 /* Product price animations */
 .product-price {
-  transition: transform 0.15s ease-out, color 0.15s ease-out;
+  transition:
+    transform 0.15s ease-out,
+    color 0.15s ease-out;
 }
 
 .product-price.adding {
@@ -101,32 +109,37 @@
 
 /* Keyframes optimizados */
 @keyframes pulse-success {
-  0% { 
-    transform: scale(1.03) translateZ(0); 
+  0% {
+    transform: scale(1.03) translateZ(0);
     box-shadow: 0 0 0 0 hsl(var(--success) / 0.7);
   }
-  50% { 
-    transform: scale(1.05) translateZ(0); 
+  50% {
+    transform: scale(1.05) translateZ(0);
     box-shadow: 0 0 0 8px hsl(var(--success) / 0);
   }
-  100% { 
-    transform: scale(1.03) translateZ(0); 
+  100% {
+    transform: scale(1.03) translateZ(0);
     box-shadow: 0 0 0 0 hsl(var(--success) / 0);
   }
 }
 
 @keyframes bounce-icon {
-  0%, 100% { transform: scale(1.08) translateZ(0); }
-  50% { transform: scale(1.12) translateZ(0); }
+  0%,
+  100% {
+    transform: scale(1.08) translateZ(0);
+  }
+  50% {
+    transform: scale(1.12) translateZ(0);
+  }
 }
 
 @keyframes success-spin {
-  from { 
-    transform: scale(1) rotateZ(0); 
+  from {
+    transform: scale(1) rotateZ(0);
     opacity: 0.8;
   }
-  to { 
-    transform: scale(1.1) rotateZ(180deg); 
+  to {
+    transform: scale(1.1) rotateZ(180deg);
     opacity: 1;
   }
 }
@@ -137,11 +150,11 @@
     /* Reduce animations on mobile for performance */
     transition-duration: 0.1s;
   }
-  
+
   .product-card:hover {
     transform: scale(1.01) translateZ(0);
   }
-  
+
   .product-card.adding {
     transform: scale(1.02) translateZ(0);
   }
@@ -156,7 +169,7 @@
     transition: none;
     animation: none;
   }
-  
+
   .product-card:hover,
   .product-card:active,
   .product-card.adding {
@@ -195,7 +208,7 @@
   .product-card {
     border-width: 2px;
   }
-  
+
   .product-card.adding {
     border-width: 3px;
   }

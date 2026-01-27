@@ -1,63 +1,68 @@
-import { useEffect, useState } from 'react'
-import { ThemeSettings, applyTheme, loadThemeSettings, saveThemeSettings } from '@/lib/themes/theme-config'
-import { getThemeById } from '@/lib/themes/preset-themes'
+import { useEffect, useState } from 'react';
+import { getThemeById } from '@/lib/themes/preset-themes';
+import {
+  applyTheme,
+  loadThemeSettings,
+  saveThemeSettings,
+  type ThemeSettings,
+} from '@/lib/themes/theme-config';
 
 export function useTheme() {
-  const [settings, setSettings] = useState<ThemeSettings>(loadThemeSettings())
+  const [settings, setSettings] = useState<ThemeSettings>(loadThemeSettings());
 
   // Apply theme when settings change
   useEffect(() => {
-    const theme = getThemeById(settings.currentTheme)
+    const theme = getThemeById(settings.currentTheme);
     if (theme) {
-      applyTheme(theme, settings.darkMode)
-      
+      applyTheme(theme, settings.darkMode);
+
       // Update documentElement class for dark mode
       if (settings.darkMode) {
-        document.documentElement.classList.add('dark')
+        document.documentElement.classList.add('dark');
       } else {
-        document.documentElement.classList.remove('dark')
+        document.documentElement.classList.remove('dark');
       }
-      
+
       // Update touch mode
-      const root = document.documentElement
+      const root = document.documentElement;
       if (settings.touchMode) {
-        root.classList.add('touch-mode')
+        root.classList.add('touch-mode');
       } else {
-        root.classList.remove('touch-mode')
+        root.classList.remove('touch-mode');
       }
     }
-    
+
     // Save settings
-    saveThemeSettings(settings)
-  }, [settings])
+    saveThemeSettings(settings);
+  }, [settings]);
 
   const setTheme = (themeId: string) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      currentTheme: themeId
-    }))
-  }
+      currentTheme: themeId,
+    }));
+  };
 
   const toggleDarkMode = () => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      darkMode: !prev.darkMode
-    }))
-  }
+      darkMode: !prev.darkMode,
+    }));
+  };
 
   const toggleTouchMode = () => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      touchMode: !prev.touchMode
-    }))
-  }
+      touchMode: !prev.touchMode,
+    }));
+  };
 
   const setFontSize = (fontSize: ThemeSettings['fontSize']) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      fontSize
-    }))
-  }
+      fontSize,
+    }));
+  };
 
   return {
     settings,
@@ -65,6 +70,6 @@ export function useTheme() {
     setTheme,
     toggleDarkMode,
     toggleTouchMode,
-    setFontSize
-  }
+    setFontSize,
+  };
 }

@@ -24,7 +24,7 @@
   --chart-3: 188 94% 42%;
   --chart-4: 43 96% 56%;
   --chart-5: 142 76% 36%;
-  
+
   /* Sidebar colors */
   --sidebar: #fdfdfe;
   --sidebar-foreground: #7c3aed;
@@ -38,8 +38,9 @@
   /* Typography */
   --font-sans: system-ui, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-  
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+
   /* Status colors */
   --success: hsl(142 76% 36%);
   --success-foreground: hsl(0 0% 100%);
@@ -47,11 +48,11 @@
   --warning-foreground: hsl(0 0% 0%);
   --info: hsl(221 83% 53%);
   --info-foreground: hsl(0 0% 100%);
-  
+
   /* Layout and spacing */
   --spacing: 0.25rem;
   --tracking-normal: 0em;
-  
+
   /* Shadow variables */
   --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
@@ -89,7 +90,7 @@
   --chart-3: 188 94% 42%;
   --chart-4: 43 96% 56%;
   --chart-5: 142 70% 45%;
-  
+
   /* Sidebar colors */
   --sidebar: #0f0a1a;
   --sidebar-foreground: #e9d5ff;
@@ -103,8 +104,9 @@
   /* Typography */
   --font-sans: system-ui, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-  
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+
   /* Status colors */
   --success: hsl(142 70% 45%);
   --success-foreground: hsl(0 0% 100%);
@@ -112,11 +114,11 @@
   --warning-foreground: hsl(0 0% 0%);
   --info: hsl(221 76% 48%);
   --info-foreground: hsl(0 0% 100%);
-  
+
   /* Layout and spacing */
   --spacing: 0.25rem;
   --tracking-normal: 0em;
-  
+
   /* Shadow variables */
   --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.1);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.1);

@@ -30,11 +30,11 @@
   --warning-foreground: 0 0% 0%;
   --info: 221 83% 53%;
   --info-foreground: 0 0% 100%;
-  
+
   /* Layout and spacing */
   --spacing: 0.25rem;
   --tracking-normal: 0em;
-  
+
   /* Shadow variables */
   --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
@@ -77,11 +77,11 @@
   --warning-foreground: 0 0% 0%;
   --info: 221 76% 48%;
   --info-foreground: 0 0% 100%;
-  
+
   /* Layout and spacing */
   --spacing: 0.25rem;
   --tracking-normal: 0em;
-  
+
   /* Shadow variables */
   --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.1);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.1);

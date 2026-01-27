@@ -4,7 +4,8 @@
       "WebSearch",
       "WebFetch(domain:v2.tauri.app)",
       "Bash(npx tauri:*)",
-      "Bash(npx tauri signer:*)"
+      "Bash(npx tauri signer:*)",
+      "Bash(bun run tauri:*)"
     ]
   }
 }

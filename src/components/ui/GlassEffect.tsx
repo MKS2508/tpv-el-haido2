@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 interface GlassEffectProps {
   children: React.ReactNode;
@@ -31,10 +32,10 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
   lightness = 50,
   scale = -180,
   displace = 0.5,
-  
+
   g = 10,
   b = 20,
-  className = ''
+  className = '',
 }) => {
   const [displacementUri, setDisplacementUri] = useState('');
   const filterId = `glass-filter-${Math.random().toString(36).substr(2, 9)}`;
@@ -42,7 +43,7 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
   useEffect(() => {
     const buildDisplacementImage = () => {
       const borderSize = Math.min(width, height) * (border * 0.5);
-      
+
       const svgContent = `
         <svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -75,49 +76,49 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
       <svg className="absolute opacity-0 pointer-events-none" width="0" height="0">
         <defs>
           <filter id={filterId}>
-            <feImage href={displacementUri} result="map"/>
-            <feDisplacementMap 
-              in="SourceGraphic" 
-              in2="map" 
-              xChannelSelector="R" 
-              yChannelSelector="B" 
-              scale={scale} 
+            <feImage href={displacementUri} result="map" />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="map"
+              xChannelSelector="R"
+              yChannelSelector="B"
+              scale={scale}
               result="dispRed"
             />
-            <feColorMatrix 
-              in="dispRed" 
-              values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" 
+            <feColorMatrix
+              in="dispRed"
+              values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
               result="red"
             />
-            <feDisplacementMap 
-              in="SourceGraphic" 
-              in2="map" 
-              xChannelSelector="G" 
-              yChannelSelector="B" 
-              scale={scale + g} 
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="map"
+              xChannelSelector="G"
+              yChannelSelector="B"
+              scale={scale + g}
               result="dispGreen"
             />
-            <feColorMatrix 
-              in="dispGreen" 
-              values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" 
+            <feColorMatrix
+              in="dispGreen"
+              values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
               result="green"
             />
-            <feDisplacementMap 
-              in="SourceGraphic" 
-              in2="map" 
-              xChannelSelector="B" 
-              yChannelSelector="R" 
-              scale={scale + b} 
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="map"
+              xChannelSelector="B"
+              yChannelSelector="R"
+              scale={scale + b}
               result="dispBlue"
             />
-            <feColorMatrix 
-              in="dispBlue" 
-              values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" 
+            <feColorMatrix
+              in="dispBlue"
+              values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
               result="blue"
             />
-            <feBlend in="red" in2="green" mode="screen" result="rg"/>
-            <feBlend in="rg" in2="blue" mode="screen" result="output"/>
-            <feGaussianBlur in="output" stdDeviation={displace}/>
+            <feBlend in="red" in2="green" mode="screen" result="rg" />
+            <feBlend in="rg" in2="blue" mode="screen" result="output" />
+            <feGaussianBlur in="output" stdDeviation={displace} />
           </filter>
         </defs>
       </svg>
@@ -142,15 +143,13 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
             0px 4px 16px rgba(17, 17, 26, 0.05) inset,
             0px 8px 24px rgba(17, 17, 26, 0.05) inset,
             0px 16px 56px rgba(17, 17, 26, 0.05) inset
-          `
+          `,
         }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        <div className="relative z-10 w-full h-full p-6">
-          {children}
-        </div>
+        <div className="relative z-10 w-full h-full p-6">{children}</div>
       </motion.div>
     </>
   );

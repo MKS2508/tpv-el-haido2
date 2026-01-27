@@ -7,7 +7,7 @@
 .user-card {
   will-change: transform;
   transform: scale(1) translateZ(0);
-  transition: 
+  transition:
     transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
     background-color 0.2s ease-out;
   backface-visibility: hidden;
@@ -21,7 +21,7 @@
     transform: scale(1.02) translateZ(0);
     background-color: rgb(255 255 255 / 0.3);
   }
-  
+
   .dark .user-card:hover {
     background-color: rgb(31 41 55 / 0.3);
   }
@@ -39,7 +39,7 @@
     transition: background-color 0.1s ease-out;
     animation: none;
   }
-  
+
   .user-card:hover,
   .user-card:active {
     transform: none;

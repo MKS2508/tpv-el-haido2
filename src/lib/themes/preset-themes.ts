@@ -1,4 +1,4 @@
-import { ThemeConfig } from './theme-config'
+import type { ThemeConfig } from './theme-config';
 
 // Tema Amethyst Haze (basado en haze1.css)
 export const amethystHazeTheme: ThemeConfig = {
@@ -39,7 +39,7 @@ export const amethystHazeTheme: ThemeConfig = {
       'sidebar-accent': '#e6a5b8',
       'sidebar-accent-foreground': '#4b2e36',
       'sidebar-border': '#d7d2e0',
-      'sidebar-ring': '#8a79ab'
+      'sidebar-ring': '#8a79ab',
     },
     dark: {
       background: '#1a1823',
@@ -73,25 +73,25 @@ export const amethystHazeTheme: ThemeConfig = {
       'sidebar-accent': '#372e3f',
       'sidebar-accent-foreground': '#f2b8c6',
       'sidebar-border': '#2a273a',
-      'sidebar-ring': '#a995c9'
-    }
+      'sidebar-ring': '#a995c9',
+    },
   },
   touchOptimizations: {
     buttonMinSize: '2.75rem',
     touchSpacing: '0.5rem',
     rippleEffects: true,
-    hoverFeedback: true
+    hoverFeedback: true,
   },
   typography: {
     baseFontSize: '16px',
-    fontFamily: 'Geist, sans-serif'
+    fontFamily: 'Geist, sans-serif',
   },
   preview: {
     primaryColor: '#8a79ab',
     secondaryColor: '#e6a5b8',
-    backgroundColor: '#f8f7fa'
-  }
-}
+    backgroundColor: '#f8f7fa',
+  },
+};
 
 // Tema Bubble (basado en bubble.css)
 export const bubbleTheme: ThemeConfig = {
@@ -132,7 +132,7 @@ export const bubbleTheme: ThemeConfig = {
       'sidebar-accent': '#f9a8d4',
       'sidebar-accent-foreground': '#333333',
       'sidebar-border': '#f3e8ff',
-      'sidebar-ring': '#ec4899'
+      'sidebar-ring': '#ec4899',
     },
     dark: {
       background: '#12242e',
@@ -166,25 +166,25 @@ export const bubbleTheme: ThemeConfig = {
       'sidebar-accent': '#f9a8d4',
       'sidebar-accent-foreground': '#1f2937',
       'sidebar-border': '#374151',
-      'sidebar-ring': '#ec4899'
-    }
+      'sidebar-ring': '#ec4899',
+    },
   },
   touchOptimizations: {
     buttonMinSize: '2.75rem',
     touchSpacing: '0.5rem',
     rippleEffects: true,
-    hoverFeedback: true
+    hoverFeedback: true,
   },
   typography: {
     baseFontSize: '16px',
-    fontFamily: 'Poppins, sans-serif'
+    fontFamily: 'Poppins, sans-serif',
   },
   preview: {
     primaryColor: '#d04f99',
     secondaryColor: '#8acfd1',
-    backgroundColor: '#f6e6ee'
-  }
-}
+    backgroundColor: '#f6e6ee',
+  },
+};
 
 // Tema Restaurant Professional - Cálido y profesional
 export const restaurantProfessionalTheme: ThemeConfig = {
@@ -225,7 +225,7 @@ export const restaurantProfessionalTheme: ThemeConfig = {
       'sidebar-accent': '#cd853f',
       'sidebar-accent-foreground': '#ffffff',
       'sidebar-border': '#e8e0d4',
-      'sidebar-ring': '#b8860b'
+      'sidebar-ring': '#b8860b',
     },
     dark: {
       background: '#1a1815',
@@ -259,21 +259,21 @@ export const restaurantProfessionalTheme: ThemeConfig = {
       'sidebar-accent': '#f4a460',
       'sidebar-accent-foreground': '#1a1815',
       'sidebar-border': '#2a271f',
-      'sidebar-ring': '#daa520'
-    }
+      'sidebar-ring': '#daa520',
+    },
   },
   touchOptimizations: {
     buttonMinSize: '3rem',
     touchSpacing: '0.75rem',
     rippleEffects: true,
-    hoverFeedback: true
+    hoverFeedback: true,
   },
   preview: {
     primaryColor: '#b8860b',
     secondaryColor: '#cd853f',
-    backgroundColor: '#faf9f6'
-  }
-}
+    backgroundColor: '#faf9f6',
+  },
+};
 
 // Tema Modern Cafe - Minimalista y fresco
 export const modernCafeTheme: ThemeConfig = {
@@ -314,7 +314,7 @@ export const modernCafeTheme: ThemeConfig = {
       'sidebar-accent': '#059669',
       'sidebar-accent-foreground': '#ffffff',
       'sidebar-border': '#e5e7eb',
-      'sidebar-ring': '#16a34a'
+      'sidebar-ring': '#16a34a',
     },
     dark: {
       background: '#0f172a',
@@ -348,21 +348,21 @@ export const modernCafeTheme: ThemeConfig = {
       'sidebar-accent': '#10b981',
       'sidebar-accent-foreground': '#0f172a',
       'sidebar-border': '#1e293b',
-      'sidebar-ring': '#22c55e'
-    }
+      'sidebar-ring': '#22c55e',
+    },
   },
   touchOptimizations: {
     buttonMinSize: '2.75rem',
     touchSpacing: '1rem',
     rippleEffects: false,
-    hoverFeedback: true
+    hoverFeedback: true,
   },
   preview: {
     primaryColor: '#16a34a',
     secondaryColor: '#059669',
-    backgroundColor: '#fcfcfc'
-  }
-}
+    backgroundColor: '#fcfcfc',
+  },
+};
 
 // Tema Night Bar - Oscuro con acentos neón
 export const nightBarTheme: ThemeConfig = {
@@ -403,7 +403,7 @@ export const nightBarTheme: ThemeConfig = {
       'sidebar-accent': '#8b5cf6',
       'sidebar-accent-foreground': '#ffffff',
       'sidebar-border': '#e5e7eb',
-      'sidebar-ring': '#3b82f6'
+      'sidebar-ring': '#3b82f6',
     },
     dark: {
       background: '#080808',
@@ -437,21 +437,21 @@ export const nightBarTheme: ThemeConfig = {
       'sidebar-accent': '#a855f7',
       'sidebar-accent-foreground': '#080808',
       'sidebar-border': '#161616',
-      'sidebar-ring': '#0ea5e9'
-    }
+      'sidebar-ring': '#0ea5e9',
+    },
   },
   touchOptimizations: {
     buttonMinSize: '3.5rem',
     touchSpacing: '0.75rem',
     rippleEffects: true,
-    hoverFeedback: true
+    hoverFeedback: true,
   },
   preview: {
     primaryColor: '#0ea5e9',
     secondaryColor: '#a855f7',
-    backgroundColor: '#080808'
-  }
-}
+    backgroundColor: '#080808',
+  },
+};
 
 // Tema High Contrast Accessibility
 export const accessibilityTheme: ThemeConfig = {
@@ -492,7 +492,7 @@ export const accessibilityTheme: ThemeConfig = {
       'sidebar-accent': '#ff6600',
       'sidebar-accent-foreground': '#ffffff',
       'sidebar-border': '#cccccc',
-      'sidebar-ring': '#0066cc'
+      'sidebar-ring': '#0066cc',
     },
     dark: {
       background: '#000000',
@@ -526,21 +526,21 @@ export const accessibilityTheme: ThemeConfig = {
       'sidebar-accent': '#ff9933',
       'sidebar-accent-foreground': '#000000',
       'sidebar-border': '#333333',
-      'sidebar-ring': '#4d9fff'
-    }
+      'sidebar-ring': '#4d9fff',
+    },
   },
   touchOptimizations: {
     buttonMinSize: '3.5rem',
     touchSpacing: '1rem',
     rippleEffects: false,
-    hoverFeedback: true
+    hoverFeedback: true,
   },
   preview: {
     primaryColor: '#0066cc',
     secondaryColor: '#ff6600',
-    backgroundColor: '#ffffff'
-  }
-}
+    backgroundColor: '#ffffff',
+  },
+};
 
 // Array con todos los temas predefinidos
 export const PRESET_THEMES: ThemeConfig[] = [
@@ -549,15 +549,15 @@ export const PRESET_THEMES: ThemeConfig[] = [
   restaurantProfessionalTheme,
   modernCafeTheme,
   nightBarTheme,
-  accessibilityTheme
-]
+  accessibilityTheme,
+];
 
 // Helper para obtener un tema por ID
 export function getThemeById(id: string): ThemeConfig | undefined {
-  return PRESET_THEMES.find(theme => theme.id === id)
+  return PRESET_THEMES.find((theme) => theme.id === id);
 }
 
 // Helper para obtener temas por categoría
 export function getThemesByCategory(category: ThemeConfig['category']): ThemeConfig[] {
-  return PRESET_THEMES.filter(theme => theme.category === category)
+  return PRESET_THEMES.filter((theme) => theme.category === category);
 }

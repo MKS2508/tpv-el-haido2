@@ -7,7 +7,7 @@
 .order-card {
   will-change: transform;
   transform: translateZ(0); /* Hardware acceleration */
-  transition: 
+  transition:
     transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.2s ease-out;
   backface-visibility: hidden;
@@ -15,7 +15,9 @@
 
 .order-card:hover {
   transform: translateY(-2px) translateZ(0);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
 .order-card:active {
@@ -71,7 +73,7 @@
     /* Reduce animations on mobile */
     transition-duration: 0.1s;
   }
-  
+
   .order-card:hover {
     transform: translateY(-1px) translateZ(0);
   }
@@ -84,12 +86,12 @@
     transition: none;
     animation: none;
   }
-  
+
   .order-card:hover,
   .order-card:active {
     transform: none;
   }
-  
+
   .virtualized-order-list {
     scroll-behavior: auto;
   }

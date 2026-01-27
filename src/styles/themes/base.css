@@ -23,7 +23,7 @@
   --info-foreground: hsl(0 0% 100%);
 
   /* Default Light Theme Colors (from your computed output) */
-  --background: hsl(204.0 12.20% 91.96%);
+  --background: hsl(204 12.20% 91.96%);
   --foreground: hsl(0 0% 20%);
   --card: hsl(0 0% 100%);
   --card-foreground: hsl(0 0% 20%);
@@ -31,7 +31,7 @@
   --popover-foreground: hsl(0 0% 20%);
   --primary: hsl(13.21 73.04% 54.90%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(220.0 14.29% 95.88%);
+  --secondary: hsl(220 14.29% 95.88%);
   --secondary-foreground: hsl(215 13.79% 34.12%);
   --muted: hsl(210 20.00% 98.04%);
   --muted-foreground: hsl(220 8.94% 46.08%);
@@ -58,13 +58,14 @@
   --font-sans: Inter, sans-serif;
   --font-serif: Source Serif 4, serif;
   --font-mono: JetBrains Mono, monospace;
-  
+
   /* Layout and spacing - Universal */
   --spacing: 0.25rem;
   --tracking-normal: 0em;
 }
 
-.dark { /* Changed from .dark:not([data-theme]) to just .dark */
+.dark {
+  /* Changed from .dark:not([data-theme]) to just .dark */
   --background: hsl(222.2 84% 4.9%);
   --foreground: hsl(210 40% 98%);
   --card: hsl(222.2 84% 4.9%);
@@ -106,10 +107,8 @@
   --warning-foreground: hsl(0 0% 0%);
   --info: hsl(221 76% 48%);
   --info-foreground: hsl(0 0% 100%);
-  
+
   /* Layout and spacing - Universal */
   --spacing: 0.25rem;
   --tracking-normal: 0em;
 }
-
-

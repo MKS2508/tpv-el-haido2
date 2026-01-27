@@ -3,11 +3,11 @@
 /* CSS Custom Properties for Touch */
 :root {
   --touch-target-size: 2.75rem; /* 44px - Apple HIG minimum */
-  --touch-target-large: 3rem;   /* 48px - Larger targets for primary actions */
-  --touch-target-xl: 3.5rem;    /* 56px - Extra large for critical actions */
-  --touch-spacing: 0.5rem;      /* 8px - Minimum spacing between touch targets */
-  --touch-spacing-md: 0.75rem;  /* 12px - Medium spacing */
-  --touch-spacing-lg: 1rem;     /* 16px - Large spacing */
+  --touch-target-large: 3rem; /* 48px - Larger targets for primary actions */
+  --touch-target-xl: 3.5rem; /* 56px - Extra large for critical actions */
+  --touch-spacing: 0.5rem; /* 8px - Minimum spacing between touch targets */
+  --touch-spacing-md: 0.75rem; /* 12px - Medium spacing */
+  --touch-spacing-lg: 1rem; /* 16px - Large spacing */
   --touch-feedback-scale: 0.95; /* Scale down on touch */
   --touch-feedback-duration: 0.1s;
   --touch-ripple-duration: 0.6s;
@@ -81,7 +81,7 @@
 }
 
 .touch-ripple-enabled .touch-ripple::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -91,7 +91,9 @@
   background: currentColor;
   opacity: 0.15;
   transform: translate(-50%, -50%);
-  transition: width var(--touch-ripple-duration) ease, height var(--touch-ripple-duration) ease;
+  transition:
+    width var(--touch-ripple-duration) ease,
+    height var(--touch-ripple-duration) ease;
 }
 
 .touch-ripple-enabled .touch-ripple:active::before {
@@ -220,7 +222,9 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   /* touch-feedback */
-  transition: transform var(--touch-feedback-duration) ease-in-out, all 0.15s ease;
+  transition:
+    transform var(--touch-feedback-duration) ease-in-out,
+    all 0.15s ease;
   cursor: pointer;
   /* touch-enhanced */
   position: relative;
@@ -460,7 +464,7 @@
 }
 
 .touch-loading::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;

@@ -1,166 +1,191 @@
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { toast } from "@/components/ui/use-toast"
-import { Palette, Download, Upload, Check, Moon, Sun } from "lucide-react"
-import { ThemeConfig, ThemeSettings, applyTheme, loadThemeSettings, saveThemeSettings, createThemeFromTweakCN } from "@/lib/themes/theme-config"
-import { PRESET_THEMES, getThemeById } from "@/lib/themes/preset-themes"
+import { Check, Download, Moon, Palette, Sun, Upload } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { toast } from '@/components/ui/use-toast';
+import { getThemeById, PRESET_THEMES } from '@/lib/themes/preset-themes';
+import {
+  applyTheme,
+  createThemeFromTweakCN,
+  loadThemeSettings,
+  saveThemeSettings,
+  type ThemeConfig,
+  type ThemeSettings,
+} from '@/lib/themes/theme-config';
 
 interface ThemeSelectorProps {
-  className?: string
+  className?: string;
 }
 
 const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
-  const [settings, setSettings] = useState<ThemeSettings>(loadThemeSettings())
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
-  const [importUrl, setImportUrl] = useState('')
-  const [isImporting, setIsImporting] = useState(false)
-  const [previewTheme, setPreviewTheme] = useState<string | null>(null)
+  const [settings, setSettings] = useState<ThemeSettings>(loadThemeSettings());
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [previewTheme, setPreviewTheme] = useState<string | null>(null);
 
   // Apply theme on settings change
   useEffect(() => {
-    const theme = getThemeById(settings.currentTheme)
+    const theme = getThemeById(settings.currentTheme);
     if (theme) {
-      applyTheme(theme, settings.darkMode)
-      
+      applyTheme(theme, settings.darkMode);
+
       // Update documentElement class for dark mode
       if (settings.darkMode) {
-        document.documentElement.classList.add('dark')
+        document.documentElement.classList.add('dark');
       } else {
-        document.documentElement.classList.remove('dark')
+        document.documentElement.classList.remove('dark');
       }
     }
-    
+
     // Save settings
-    saveThemeSettings(settings)
-  }, [settings])
+    saveThemeSettings(settings);
+  }, [settings]);
 
   const handleThemeSelect = (themeId: string) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      currentTheme: themeId
-    }))
-  }
+      currentTheme: themeId,
+    }));
+  };
 
   const handleDarkModeToggle = (enabled: boolean) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      darkMode: enabled
-    }))
-  }
+      darkMode: enabled,
+    }));
+  };
 
   const handleTouchModeToggle = (enabled: boolean) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      touchMode: enabled
-    }))
-    
+      touchMode: enabled,
+    }));
+
     // Toggle touch class on root element
-    const root = document.documentElement
+    const root = document.documentElement;
     if (enabled) {
-      root.classList.add('touch-mode')
+      root.classList.add('touch-mode');
     } else {
-      root.classList.remove('touch-mode')
+      root.classList.remove('touch-mode');
     }
-  }
+  };
 
   const handlePreviewTheme = (themeId: string) => {
-    setPreviewTheme(themeId)
-    const theme = getThemeById(themeId)
+    setPreviewTheme(themeId);
+    const theme = getThemeById(themeId);
     if (theme) {
-      applyTheme(theme, settings.darkMode)
+      applyTheme(theme, settings.darkMode);
     }
-  }
+  };
 
   const handleCancelPreview = () => {
-    setPreviewTheme(null)
+    setPreviewTheme(null);
     // Restore current theme
-    const currentTheme = getThemeById(settings.currentTheme)
+    const currentTheme = getThemeById(settings.currentTheme);
     if (currentTheme) {
-      applyTheme(currentTheme, settings.darkMode)
+      applyTheme(currentTheme, settings.darkMode);
     }
-  }
+  };
 
   const handleConfirmPreview = () => {
     if (previewTheme) {
-      handleThemeSelect(previewTheme)
+      handleThemeSelect(previewTheme);
     }
-    setPreviewTheme(null)
-  }
+    setPreviewTheme(null);
+  };
 
   const handleImportFromTweakCN = async () => {
     if (!importUrl) {
       toast({
-        title: "Error",
-        description: "Por favor, ingresa una URL válida de TweakCN",
-        variant: "destructive"
-      })
-      return
+        title: 'Error',
+        description: 'Por favor, ingresa una URL válida de TweakCN',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    setIsImporting(true)
+    setIsImporting(true);
     try {
       // Convert TweakCN URL to JSON URL if needed
-      let jsonUrl = importUrl
+      let jsonUrl = importUrl;
       if (importUrl.includes('tweakcn.com/') && !importUrl.endsWith('.json')) {
-        jsonUrl = importUrl.replace('/themes/', '/r/themes/') + '.json'
+        jsonUrl = `${importUrl.replace('/themes/', '/r/themes/')}.json`;
       }
 
-      const response = await fetch(jsonUrl)
+      const response = await fetch(jsonUrl);
       if (!response.ok) {
-        throw new Error('Failed to fetch theme data')
+        throw new Error('Failed to fetch theme data');
       }
 
-      const themeData = await response.json()
-      const customTheme = createThemeFromTweakCN(themeData)
-      
+      const themeData = await response.json();
+      const customTheme = createThemeFromTweakCN(themeData);
+
       // For now, we'll just apply the theme directly
       // In a full implementation, you'd save it to local storage or state
-      applyTheme(customTheme, settings.darkMode)
-      
+      applyTheme(customTheme, settings.darkMode);
+
       toast({
-        title: "Tema importado",
+        title: 'Tema importado',
         description: `Tema "${customTheme.name}" importado exitosamente`,
-      })
-      
-      setIsImportDialogOpen(false)
-      setImportUrl('')
+      });
+
+      setIsImportDialogOpen(false);
+      setImportUrl('');
     } catch (error) {
-      console.error('Error importing theme:', error)
+      console.error('Error importing theme:', error);
       toast({
-        title: "Error al importar tema",
-        description: "No se pudo importar el tema. Verifica la URL e inténtalo de nuevo.",
-        variant: "destructive"
-      })
+        title: 'Error al importar tema',
+        description: 'No se pudo importar el tema. Verifica la URL e inténtalo de nuevo.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsImporting(false)
+      setIsImporting(false);
     }
-  }
+  };
 
   const getCategoryIcon = (category: ThemeConfig['category']) => {
     switch (category) {
-      case 'restaurant': return '🍽️'
-      case 'cafe': return '☕'
-      case 'bar': return '🍸'
-      case 'accessibility': return '♿'
-      default: return '🎨'
+      case 'restaurant':
+        return '🍽️';
+      case 'cafe':
+        return '☕';
+      case 'bar':
+        return '🍸';
+      case 'accessibility':
+        return '♿';
+      default:
+        return '🎨';
     }
-  }
+  };
 
   const getCategoryColor = (category: ThemeConfig['category']) => {
     switch (category) {
-      case 'restaurant': return 'bg-accent/20 text-accent-foreground border-accent/20'
-      case 'cafe': return 'bg-secondary/20 text-secondary-foreground border-secondary/20'
-      case 'bar': return 'bg-primary/20 text-primary-foreground border-primary/20'
-      case 'accessibility': return 'bg-muted/20 text-muted-foreground border-muted/20'
-      default: return 'bg-muted/20 text-muted-foreground border-muted/20'
+      case 'restaurant':
+        return 'bg-accent/20 text-accent-foreground border-accent/20';
+      case 'cafe':
+        return 'bg-secondary/20 text-secondary-foreground border-secondary/20';
+      case 'bar':
+        return 'bg-primary/20 text-primary-foreground border-primary/20';
+      case 'accessibility':
+        return 'bg-muted/20 text-muted-foreground border-muted/20';
+      default:
+        return 'bg-muted/20 text-muted-foreground border-muted/20';
     }
-  }
+  };
 
   return (
     <div className={className}>
@@ -183,9 +208,9 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
                 Activa el tema oscuro para ambientes con poca luz
               </p>
             </div>
-            <Switch 
-              id="darkMode" 
-              checked={settings.darkMode} 
+            <Switch
+              id="darkMode"
+              checked={settings.darkMode}
               onCheckedChange={handleDarkModeToggle}
             />
           </div>
@@ -197,17 +222,17 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
                 Aumenta el tamaño de botones y mejora la respuesta táctil
               </p>
             </div>
-            <Switch 
-              id="touchMode" 
-              checked={settings.touchMode} 
+            <Switch
+              id="touchMode"
+              checked={settings.touchMode}
               onCheckedChange={handleTouchModeToggle}
             />
           </div>
 
           {/* Import Theme */}
           <div className="space-y-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsImportDialogOpen(true)}
               className="w-full touch-target touch-feedback"
             >
@@ -225,7 +250,12 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
                   <Check className="mr-1 h-3 w-3" />
                   Aplicar
                 </Button>
-                <Button size="sm" variant="outline" onClick={handleCancelPreview} className="touch-target">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCancelPreview}
+                  className="touch-target"
+                >
                   Cancelar
                 </Button>
               </div>
@@ -237,14 +267,16 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
             <h4 className="font-medium">Temas Disponibles</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {PRESET_THEMES.map((theme) => (
-                <Card 
+                <Card
                   key={theme.id}
                   className={`cursor-pointer transition-all touch-enhanced ${
-                    settings.currentTheme === theme.id 
-                      ? 'ring-2 ring-primary shadow-md' 
+                    settings.currentTheme === theme.id
+                      ? 'ring-2 ring-primary shadow-md'
                       : 'hover:shadow-md'
                   } ${previewTheme === theme.id ? 'ring-2 ring-accent' : ''}`}
-                  onClick={() => previewTheme ? handleConfirmPreview() : handlePreviewTheme(theme.id)}
+                  onClick={() =>
+                    previewTheme ? handleConfirmPreview() : handlePreviewTheme(theme.id)
+                  }
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
@@ -259,25 +291,25 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <p className="text-xs text-muted-foreground">{theme.description}</p>
-                    
+
                     <Badge variant="secondary" className={getCategoryColor(theme.category)}>
                       {theme.category}
                     </Badge>
-                    
+
                     {/* Color Preview */}
                     {theme.preview && (
                       <div className="flex gap-1">
-                        <div 
+                        <div
                           className="w-4 h-4 rounded-full border border-border"
                           style={{ backgroundColor: theme.preview.primaryColor }}
                           title="Color primario"
                         />
-                        <div 
+                        <div
                           className="w-4 h-4 rounded-full border border-border"
                           style={{ backgroundColor: theme.preview.secondaryColor }}
                           title="Color secundario"
                         />
-                        <div 
+                        <div
                           className="w-4 h-4 rounded-full border border-border"
                           style={{ backgroundColor: theme.preview.backgroundColor }}
                           title="Color de fondo"
@@ -298,8 +330,8 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
           <DialogHeader>
             <DialogTitle>Importar Tema desde TweakCN</DialogTitle>
             <DialogDescription>
-              Ingresa la URL del tema de TweakCN que deseas importar.
-              Ejemplo: https://tweakcn.com/themes/theme-name
+              Ingresa la URL del tema de TweakCN que deseas importar. Ejemplo:
+              https://tweakcn.com/themes/theme-name
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -311,14 +343,14 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
             />
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsImportDialogOpen(false)}
               className="touch-target"
             >
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleImportFromTweakCN}
               disabled={isImporting || !importUrl}
               className="touch-target"
@@ -339,7 +371,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
+  );
+};
 
-export default ThemeSelector
+export default ThemeSelector;
