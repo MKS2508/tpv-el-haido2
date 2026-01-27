@@ -9,8 +9,8 @@ import {
   SettingsIcon,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef } from 'react';
-//import productsJson from '@/assets/products.json';
 import iconOptions from '@/assets/utils/icons/iconOptions.ts';
+import fallbackProducts from '@/assets/products.json';
 import BottomNavigation from '@/components/BottomNavigation.tsx';
 import DebugIndicator from '@/components/DebugIndicator.tsx';
 import ErrorBoundary from '@/components/ErrorBoundary.tsx';
@@ -29,7 +29,7 @@ import { Toaster } from '@/components/ui/toaster.tsx';
 import { useSectionTitle } from '@/hooks/useDocumentTitle';
 import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
 import { useResponsive } from '@/hooks/useResponsive';
-import { useAppTheme } from '@/lib/theme-context';
+import { useTheme } from '@mks2508/theme-manager-react';
 import { cn } from '@/lib/utils';
 import type Product from '@/models/Product.ts';
 import {
@@ -38,9 +38,6 @@ import {
   PrinterTypes,
   type ThermalPrinterServiceOptions,
 } from '@/models/ThermalPrinter.ts';
-import CategoriesService from '@/services/categories.service.ts';
-import OrderService from '@/services/orders.service.ts';
-import ProductService from '@/services/products.service.ts';
 import { useAppData } from '@/store/selectors';
 
 function App() {
@@ -52,8 +49,9 @@ function App() {
     tables,
     categories,
     products,
-    touchOptimizationsEnabled, // New property
+    touchOptimizationsEnabled,
     debugMode,
+    storageAdapter,
     setBackendConnected,
 
     setUsers,
@@ -69,7 +67,7 @@ function App() {
   } = useAppData();
 
   // Use the perfect new theme system
-  const { mode, setMode } = useAppTheme();
+  const { currentMode, setTheme, currentTheme } = useTheme();
   const { isMobile, isTablet } = useResponsive();
   const performanceConfig = usePerformanceConfig();
 
@@ -81,15 +79,37 @@ function App() {
   useSectionTitle(activeSection);
 
   const toggleDarkMode = () => {
-    setMode(mode === 'dark' ? 'light' : 'dark');
+    setTheme(currentTheme, currentMode === 'dark' ? 'light' : 'dark');
   };
 
   const handleThermalPrinterOptionsChange = (options: ThermalPrinterServiceOptions | null) => {
     setThermalPrinterOptions(options);
   };
-  const _productService = new ProductService();
-  const _categoryService = new CategoriesService();
-  const _orderService = new OrderService();
+
+  // Helper function to get fallback products when backend is unavailable
+  const getFallbackProducts = (): Product[] => {
+    console.log('[App] Loading fallback products from products.json');
+    const productsWithIcons = fallbackProducts.map((product) => ({
+      ...product,
+      icon: React.createElement(
+        iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
+      ),
+    }));
+    console.log(`[App] Loaded ${productsWithIcons.length} fallback products`);
+    return productsWithIcons;
+  };
+
+  // Helper function to get fallback categories from products
+  const getFallbackCategories = () => {
+    console.log('[App] Extracting fallback categories from products.json');
+    const uniqueCategories = [...new Set(fallbackProducts.map((product) => product.category))].filter(Boolean);
+    return uniqueCategories.map((categoryName, index) => ({
+      id: index + 1,
+      name: categoryName,
+      description: `Categoria ${categoryName}`,
+      icon: undefined,
+    }));
+  };
 
   // Apply performance-based CSS classes to root element
   useEffect(() => {
@@ -133,72 +153,67 @@ function App() {
   useEffect(() => {
     const initializeCategories = async () => {
       if (categories.length === 0) {
-        try {
-          const categories_from_service = await _categoryService.getCategories();
-          setCategories(categories_from_service);
+        const result = await storageAdapter.getCategories();
 
-          // Si recibimos categorías, verificar si el backend responde
-          if (categories_from_service.length > 0) {
+        if (result.ok) {
+          setCategories(result.value);
+          if (result.value.length > 0) {
             setBackendConnected(true);
           }
-        } catch (error) {
-          console.error('Error initializing categories:', error);
+          console.log('[App] Categories loaded:', result.value.length);
+        } else {
+          console.error('[App] Error loading categories:', result.error.code, result.error.message);
+          // Use fallback categories
+          const fallbackCats = getFallbackCategories();
+          setCategories(fallbackCats);
           setBackendConnected(false);
         }
       }
     };
-    const initializeProduts = async (products: Product[]) => {
+
+    const initializeProducts = async () => {
       if (products.length === 0) {
-        try {
-          const products_from_service = await _productService.getProducts();
-          const productsWithIcons = products_from_service.map((product) => ({
+        const result = await storageAdapter.getProducts();
+
+        if (result.ok) {
+          const productsWithIcons = result.value.map((product) => ({
             ...product,
             icon: React.createElement(
               iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
             ),
           }));
           setProducts(productsWithIcons);
-
-          // Si recibimos productos, es que el backend está conectado
-          if (products_from_service.length > 0) {
+          if (result.value.length > 0) {
             setBackendConnected(true);
           }
-        } catch (error) {
-          console.error('Error initializing products:', error);
+          console.log('[App] Products loaded:', result.value.length);
+        } else {
+          console.error('[App] Error loading products:', result.error.code, result.error.message);
+          // Use fallback products
+          setProducts(getFallbackProducts());
           setBackendConnected(false);
         }
       }
     };
+
     const initializeOrderHistory = async () => {
-      const orderHistory_from_service = await _orderService.getOrders();
-      setOrderHistory(orderHistory_from_service);
+      const result = await storageAdapter.getOrders();
+
+      if (result.ok) {
+        // Filter to only include paid orders for history
+        const paidOrders = result.value.filter((order) => order.status === 'paid');
+        setOrderHistory(paidOrders);
+        console.log('[App] Order history loaded:', paidOrders.length);
+      } else {
+        console.error('[App] Error loading orders:', result.error.code, result.error.message);
+        // Keep existing order history on error
+      }
     };
-    initializeProduts(products)
-      .then((products) => {
-        console.log('result');
-        console.log(products);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
 
-    initializeCategories()
-      .then((categories) => {
-        console.log('result');
-        console.log(categories);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    initializeProducts();
+    initializeCategories();
+    initializeOrderHistory();
 
-    initializeOrderHistory()
-      .then((orderHistory) => {
-        console.log('result');
-        console.log(orderHistory);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
     if (users.length === 0) {
       setUsers([
         {
@@ -245,11 +260,9 @@ function App() {
       });
     }
   }, [
-    _categoryService.getCategories,
-    _orderService.getOrders,
-    _productService.getProducts,
     categories.length,
-    products,
+    products.length,
+    storageAdapter,
     setBackendConnected,
     setCategories,
     setOrderHistory,
@@ -409,7 +422,7 @@ function App() {
             isSidebarOpen={isSidebarOpen}
             activeSection={activeSection}
             setActiveSection={setActiveSection}
-            isDarkMode={mode === 'dark'}
+            isDarkMode={currentMode === 'dark'}
             toggleDarkMode={toggleDarkMode}
             menuItems={menuItems}
             loggedUser={selectedUser}
@@ -523,7 +536,7 @@ function App() {
                               thermalPrinterOptions={
                                 thermalPrinterOptions as ThermalPrinterServiceOptions
                               }
-                              isDarkMode={mode === 'dark'}
+                              isDarkMode={currentMode === 'dark'}
                               toggleDarkMode={toggleDarkMode}
                               isSidebarOpen={isSidebarOpen}
                               setSelectedUser={setSelectedUser}

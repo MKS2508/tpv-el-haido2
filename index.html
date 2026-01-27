@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
@@ -11,49 +11,28 @@
     <meta name="keywords" content="TPV, punto de venta, restaurante, bar, El Haido, POS, sistema de gestión" />
     <meta name="author" content="El Haido" />
     <meta name="theme-color" content="#000000" />
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="El Haido TPV - Sistema de Punto de Venta" />
     <meta property="og:description" content="Sistema de Punto de Venta moderno y eficiente para restaurantes y bares" />
     <meta property="og:image" content="/logo.svg" />
-    
+
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:title" content="El Haido TPV - Sistema de Punto de Venta" />
     <meta property="twitter:description" content="Sistema de Punto de Venta moderno y eficiente para restaurantes y bares" />
     <meta property="twitter:image" content="/logo.svg" />
-    
+
     <title>El Haido TPV - Sistema de Punto de Venta</title>
-    
-    <!-- Anti-flash theme script - MUST be before any other scripts -->
-    <script>
-      (function() {
-        try {
-          // Color theme (data-theme attribute)
-          var savedColorTheme = localStorage.getItem('color-theme') || 'default';
-          document.documentElement.setAttribute('data-theme', savedColorTheme);
-          
-          // Dark/light mode (class attribute) - next-themes uses 'theme' key by default
-          var savedMode = localStorage.getItem('theme');
-          
-          if (savedMode === 'dark') {
-            document.documentElement.classList.add('dark');
-          } else if (savedMode === 'light') {
-            document.documentElement.classList.remove('dark');
-          } else if (savedMode === 'system' || !savedMode) {
-            // Check system preference
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-              document.documentElement.classList.add('dark');
-            } else {
-              document.documentElement.classList.remove('dark');
-            }
-          }
-        } catch (e) {
-          console.error('Theme initialization error:', e);
-        }
-      })();
-    </script>
+
+    <!-- Hide body until ThemeCore loads CSS to prevent flash -->
+    <style>
+      body {
+        visibility: hidden;
+        opacity: 0;
+      }
+    </style>
   </head>
 
   <body>

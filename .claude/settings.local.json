@@ -9,7 +9,9 @@
       "Bash(dir /s /b \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\tpv-soap-aeat\\\\*.ts\")",
       "Bash(dir \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\tpv-soap-aeat\" /b)",
       "Bash(dir /B \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\tpv-el-haido2\\\\sidecars\")",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\shadcn-basecoat-theming\" -Recurse -Filter \"*.css\" -Name)",
+      "Bash(Select-Object -First 30)"
     ]
   }
 }

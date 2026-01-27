@@ -7,6 +7,7 @@
 
 import { err, type Result, tryCatchAsync } from '@mks2508/no-throw';
 import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
+import { config } from '@/lib/config';
 import type {
   AEATApiResponse,
   AEATConfig,
@@ -27,20 +28,20 @@ export type AEATResult<T> = Result<T, AEATResultError>;
 
 class AEATService {
   private baseUrl: string = '';
-  private timeout: number = 30000;
+  private timeout: number = config.aeat.timeout;
 
   /**
    * Configura el servicio con los parámetros de conexión
    */
-  configure(config: AEATConfig): void {
-    if (config.mode === 'external' && config.externalUrl) {
-      this.baseUrl = config.externalUrl.replace(/\/$/, '');
-    } else if (config.mode === 'sidecar') {
-      this.baseUrl = `http://localhost:${config.sidecarPort}`;
+  configure(aeatConfig: AEATConfig): void {
+    if (aeatConfig.mode === 'external' && aeatConfig.externalUrl) {
+      this.baseUrl = aeatConfig.externalUrl.replace(/\/$/, '');
+    } else if (aeatConfig.mode === 'sidecar') {
+      this.baseUrl = `http://localhost:${aeatConfig.sidecarPort}`;
     } else {
       this.baseUrl = '';
     }
-    this.timeout = config.requestTimeout || 30000;
+    this.timeout = aeatConfig.requestTimeout || config.aeat.timeout;
   }
 
   /**

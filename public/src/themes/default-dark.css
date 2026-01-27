@@ -1,0 +1,26 @@
+/* Default Dark Theme */
+:root {
+  --background: oklch(0.0980 0 0);
+  --foreground: oklch(0.9804 0 0);
+  --card: oklch(0.0980 0 0);
+  --card-foreground: oklch(0.9804 0 0);
+  --popover: oklch(0.0980 0 0);
+  --popover-foreground: oklch(0.9804 0 0);
+  --primary: oklch(0.7020 0.1722 263.94);
+  --primary-foreground: oklch(0.0980 0 0);
+  --secondary: oklch(0.1451 0 0);
+  --secondary-foreground: oklch(0.9804 0 0);
+  --muted: oklch(0.1451 0 0);
+  --muted-foreground: oklch(0.6549 0 0);
+  --accent: oklch(0.1451 0 0);
+  --accent-foreground: oklch(0.9804 0 0);
+  --destructive: oklch(0.6276 0.2387 28.4765);
+  --destructive-foreground: oklch(0.9804 0 0);
+  --border: oklch(0.1451 0 0);
+  --input: oklch(0.1451 0 0);
+  --ring: oklch(0.8392 0.1215 252.44);
+  --radius: 0.5rem;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: "Fira Code", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}

@@ -12,6 +12,7 @@ import { err, isErr, ok, type Result, tryCatchAsync } from '@mks2508/no-throw';
 import { type Child, Command } from '@tauri-apps/plugin-shell';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
+import { config } from '@/lib/config';
 import type { AEATSidecarState } from '@/models/AEAT';
 
 // ==================== Types ====================
@@ -33,12 +34,12 @@ interface UseAEATSidecarReturn {
   isAvailable: boolean;
 }
 
-// ==================== Constants ====================
+// ==================== Constants (from config) ====================
 
-const DEFAULT_PORT = 3001;
-const DEFAULT_HEALTH_CHECK_INTERVAL = 10000; // 10 seconds
-const DEFAULT_MAX_RESTART_ATTEMPTS = 3;
-const STARTUP_TIMEOUT = 15000; // 15 seconds
+const DEFAULT_PORT = config.aeat.port;
+const DEFAULT_HEALTH_CHECK_INTERVAL = config.aeat.healthCheckInterval;
+const DEFAULT_MAX_RESTART_ATTEMPTS = config.aeat.maxRestartAttempts;
+const STARTUP_TIMEOUT = config.aeat.startupTimeout;
 
 // ==================== Utilities ====================
 

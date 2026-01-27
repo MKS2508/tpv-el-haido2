@@ -6,8 +6,7 @@
 /* Import TPV-specific optimizations */
 @import './styles/tpv-optimizations.css';
 
-/* Import theme styles - complete theme system */
-@import './styles/themes/index.css';
+/* Base styles for theme transitions - themes are loaded dynamically by ThemeCore */
 
 /* Tailwind v4 Theme Configuration */
 @theme {

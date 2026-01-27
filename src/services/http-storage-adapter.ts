@@ -4,19 +4,19 @@ import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import { StorageErrorCode } from '@/lib/error-codes';
+import { config } from '@/lib/config';
 import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
 
-const DEFAULT_TIMEOUT = 10000; // 10 seconds
-
 export class HttpStorageAdapter implements IStorageAdapter {
-  private baseUrl = 'http://localhost:3000/api';
+  private baseUrl = `${config.api.baseUrl}/api`;
+  private timeout = config.api.timeout;
   private activeControllers = new Map<string, AbortController>();
 
   private getFetchFn() {
     return typeof window !== 'undefined' && '__TAURI_IPC__' in window ? tauriFetch : fetch;
   }
 
-  private createController(requestId: string, timeout = DEFAULT_TIMEOUT): AbortController {
+  private createController(requestId: string, timeout = this.timeout): AbortController {
     this.cancelRequest(requestId);
 
     const controller = new AbortController();
@@ -53,7 +53,7 @@ export class HttpStorageAdapter implements IStorageAdapter {
     endpoint: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
     data?: unknown,
-    timeout = DEFAULT_TIMEOUT
+    timeout = this.timeout
   ): Promise<StorageResult<T>> {
     const requestId = `${method}-${endpoint}-${Date.now()}`;
     const controller = this.createController(requestId, timeout);

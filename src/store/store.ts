@@ -3,6 +3,7 @@ import React from 'react';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import iconOptions from '@/assets/utils/icons/iconOptions';
+import { config } from '@/lib/config';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type { OrderItem } from '@/models/Order';
@@ -106,29 +107,31 @@ const getStorageAdapterForMode = (mode: StorageMode): IStorageAdapter => {
   }
 };
 
-// Get initial storage mode: sqlite when in Tauri, otherwise from localStorage or default to 'indexeddb'
+// Get initial storage mode from env, localStorage, or smart defaults
 const getInitialStorageMode = (): StorageMode => {
-  // When running in Tauri, default to sqlite
-  if (isTauri()) {
-    try {
-      const saved = localStorage.getItem('tpv-storage-mode') as StorageMode | null;
-      // Only use saved value if explicitly set, otherwise default to sqlite
-      if (saved === 'sqlite' || saved === 'http' || saved === 'indexeddb') {
-        return saved;
-      }
-    } catch {
-      // Ignore localStorage errors
+  // First, check if there's a saved preference in localStorage
+  try {
+    const saved = localStorage.getItem('tpv-storage-mode') as StorageMode | null;
+    if (saved === 'sqlite' || saved === 'http' || saved === 'indexeddb') {
+      return saved;
     }
+  } catch {
+    // Ignore localStorage errors
+  }
+
+  // If env variable is set, use that as default
+  if (config.storage.defaultMode) {
+    return config.storage.defaultMode;
+  }
+
+  // Otherwise, use smart defaults based on environment
+  if (isTauri()) {
+    // When running in Tauri, default to sqlite
     return 'sqlite';
   }
 
-  // When running in browser (development), use localStorage preference or indexeddb
-  try {
-    const saved = localStorage.getItem('tpv-storage-mode') as StorageMode | null;
-    return saved === 'http' || saved === 'indexeddb' ? saved : 'indexeddb';
-  } catch {
-    return 'indexeddb';
-  }
+  // When running in browser (development), default to indexeddb
+  return 'indexeddb';
 };
 
 // Get initial stock images setting from localStorage or default to true

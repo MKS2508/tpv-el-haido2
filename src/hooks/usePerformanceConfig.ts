@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
+// Environment variable to force high performance mode
+const FORCE_HIGH_PERFORMANCE = import.meta.env.VITE_FORCE_HIGH_PERFORMANCE === 'true';
+
 // Browser API type extensions
 interface NavigatorWithExtensions extends Navigator {
   deviceMemory?: number;
@@ -49,32 +52,77 @@ interface PerformanceConfig {
   throttleDelay: number;
 }
 
+// High performance config (used when VITE_FORCE_HIGH_PERFORMANCE=true)
+const HIGH_PERFORMANCE_CONFIG: PerformanceConfig = {
+  isLowPerformance: false,
+  isVeryLowPerformance: false,
+  isRaspberryPi: false,
+  isMobile: false,
+  enableAnimations: true,
+  enableHoverEffects: true,
+  enableTransitions: true,
+  reduceMotion: false,
+  animationDuration: 0.3,
+  transitionDuration: 0.15,
+  virtualizeThreshold: 25,
+  overscanCount: 5,
+  enableLazyLoading: false,
+  enableImageOptimization: false,
+  debounceDelay: 150,
+  throttleDelay: 16,
+};
+
 export const usePerformanceConfig = (): PerformanceConfig => {
   const [memoryPressure, setMemoryPressure] = useState<'normal' | 'critical'>('normal');
+
+  // If forced high performance, return early with optimal config
+  if (FORCE_HIGH_PERFORMANCE) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Performance Configuration: FORCED HIGH PERFORMANCE MODE (VITE_FORCE_HIGH_PERFORMANCE=true)');
+    }
+    return HIGH_PERFORMANCE_CONFIG;
+  }
 
   // Device detection con cleanup adecuado
   const deviceInfo = useMemo(() => {
     const userAgent = navigator.userAgent.toLowerCase();
-    const hardwareConcurrency = navigator.hardwareConcurrency || 1;
-    const deviceMemory = (navigator as NavigatorWithExtensions).deviceMemory || 1; // GB, Chrome only
+    const hardwareConcurrency = navigator.hardwareConcurrency || 4;
+    const deviceMemoryRaw = (navigator as NavigatorWithExtensions).deviceMemory;
+    const hasDeviceMemoryAPI = deviceMemoryRaw !== undefined;
+    const deviceMemory = deviceMemoryRaw || 4;
 
-    // Raspberry Pi detection - only use deviceMemory if API is actually available
-    const hasDeviceMemoryAPI = 'deviceMemory' in navigator;
+    // Raspberry Pi detection - only detect by user agent
     const isRaspberryPi =
       /raspberry/i.test(userAgent) ||
-      /armv/i.test(userAgent) ||
-      (hasDeviceMemoryAPI && hardwareConcurrency <= 4 && deviceMemory <= 1);
+      /armv[67]/i.test(userAgent);
 
     // Mobile detection
     const isMobile =
       /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) ||
       window.innerWidth <= 768;
 
-    // Performance tiers
-    const isVeryLowPerformance = isRaspberryPi || hardwareConcurrency <= 1 || deviceMemory < 1;
+    // Very low: only Raspberry Pi or single-core with <1GB confirmed
+    const isVeryLowPerformance =
+      isRaspberryPi ||
+      (hardwareConcurrency === 1 && hasDeviceMemoryAPI && deviceMemory < 1);
 
+    // Low performance: only truly constrained devices
+    // Removed deviceMemory < 2 check as Chrome often misreports this
     const isLowPerformance =
-      isVeryLowPerformance || hardwareConcurrency <= 2 || deviceMemory <= 2 || isMobile;
+      isVeryLowPerformance ||
+      isRaspberryPi;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Device Detection:', {
+        hardwareConcurrency,
+        deviceMemory: hasDeviceMemoryAPI ? deviceMemory : 'N/A',
+        hasDeviceMemoryAPI,
+        isRaspberryPi,
+        isMobile,
+        isLowPerformance,
+        isVeryLowPerformance,
+      });
+    }
 
     return {
       isRaspberryPi,
@@ -86,62 +134,32 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     };
   }, []);
 
-  // Memory pressure detection con cleanup
+  // Memory pressure detection - only check actual heap usage, not long tasks
   useEffect(() => {
-    // let memoryObserver: any = null;
-    let performanceObserver: PerformanceObserver | null = null;
+    if (!('memory' in performance)) return;
 
-    // Memory API (Chrome only)
-    if ('memory' in performance) {
-      const checkMemory = () => {
-        const memory = (performance as PerformanceWithMemory).memory!;
-        const memoryUsage = memory.usedJSHeapSize / memory.totalJSHeapSize;
+    const checkMemory = () => {
+      const memory = (performance as PerformanceWithMemory).memory!;
+      const memoryUsage = memory.usedJSHeapSize / memory.totalJSHeapSize;
 
-        if (memoryUsage > 0.8) {
-          setMemoryPressure('critical');
-        } else {
-          setMemoryPressure('normal');
-        }
-      };
-
-      // Check memory every 30 seconds
-      const memoryInterval = setInterval(checkMemory, 30000);
-      checkMemory(); // Initial check
-
-      return () => clearInterval(memoryInterval);
-    }
-
-    // Performance Observer para long tasks
-    if (typeof PerformanceObserver !== 'undefined') {
-      try {
-        performanceObserver = new PerformanceObserver((list) => {
-          const longTasks = list.getEntries();
-          if (longTasks.length > 0) {
-            console.warn('Long tasks detected, reducing performance');
-            setMemoryPressure('critical');
-          }
-        });
-
-        performanceObserver.observe({ entryTypes: ['longtask'] });
-      } catch (_error) {
-        // PerformanceObserver not supported
-        console.warn('PerformanceObserver not supported');
-      }
-    }
-
-    // Cleanup
-    return () => {
-      if (performanceObserver) {
-        performanceObserver.disconnect();
+      // Only trigger critical at 90% (was 80%)
+      if (memoryUsage > 0.9) {
+        setMemoryPressure('critical');
+      } else {
+        setMemoryPressure('normal');
       }
     };
+
+    const memoryInterval = setInterval(checkMemory, 30000);
+    checkMemory();
+
+    return () => clearInterval(memoryInterval);
   }, []);
 
   // Network-based performance adjustments
   const [networkSpeed, setNetworkSpeed] = useState<'slow' | 'fast'>('fast');
 
   useEffect(() => {
-    // Network Information API con cleanup
     const connection =
       (navigator as NavigatorWithExtensions).connection ||
       (navigator as NavigatorWithExtensions).mozConnection ||
@@ -150,7 +168,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     if (connection) {
       const updateNetworkInfo = () => {
         const effectiveType = connection.effectiveType;
-        setNetworkSpeed(['slow-2g', '2g', '3g'].includes(effectiveType) ? 'slow' : 'fast');
+        setNetworkSpeed(['slow-2g', '2g'].includes(effectiveType) ? 'slow' : 'fast');
       };
 
       updateNetworkInfo();
@@ -162,7 +180,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     }
   }, []);
 
-  // Prefers-reduced-motion detection con cleanup
+  // Prefers-reduced-motion detection
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -174,13 +192,10 @@ export const usePerformanceConfig = (): PerformanceConfig => {
 
     setPrefersReducedMotion(mediaQuery.matches);
 
-    // Modern browsers
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-    // Legacy browsers
-    else {
+    } else {
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
@@ -193,38 +208,31 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     const isMemoryConstrained = memoryPressure === 'critical';
     const isNetworkConstrained = networkSpeed === 'slow';
 
-    // Base configuration
     const config: PerformanceConfig = {
-      // Device info
       isLowPerformance,
       isVeryLowPerformance,
       isRaspberryPi,
       isMobile,
 
-      // Animation settings
-      enableAnimations: !isVeryLowPerformance && !prefersReducedMotion && !isMemoryConstrained,
-      enableHoverEffects: !isLowPerformance && !isMobile && !isMemoryConstrained,
-      enableTransitions: !isVeryLowPerformance && !isMemoryConstrained,
-      reduceMotion: prefersReducedMotion || isVeryLowPerformance || isMemoryConstrained,
+      // Note: Memory pressure is ignored for animations as it gives too many false positives
+      enableAnimations: !isVeryLowPerformance && !prefersReducedMotion,
+      enableHoverEffects: !isVeryLowPerformance && !isMobile,
+      enableTransitions: !isVeryLowPerformance,
+      reduceMotion: prefersReducedMotion || isVeryLowPerformance,
 
-      // Timing settings
       animationDuration: isVeryLowPerformance ? 0.1 : isLowPerformance ? 0.2 : 0.3,
       transitionDuration: isVeryLowPerformance ? 0.05 : isLowPerformance ? 0.1 : 0.15,
 
-      // Virtualization settings
       virtualizeThreshold: isVeryLowPerformance ? 5 : isLowPerformance ? 10 : 25,
       overscanCount: isVeryLowPerformance ? 1 : isLowPerformance ? 2 : 5,
 
-      // Feature toggles
       enableLazyLoading: isLowPerformance || isNetworkConstrained,
       enableImageOptimization: isLowPerformance || isNetworkConstrained,
 
-      // Timing optimizations
       debounceDelay: isVeryLowPerformance ? 300 : isLowPerformance ? 200 : 150,
       throttleDelay: isVeryLowPerformance ? 100 : isLowPerformance ? 50 : 16,
     };
 
-    // Log performance config para debugging
     if (process.env.NODE_ENV === 'development') {
       console.log('Performance Configuration:', {
         device: isRaspberryPi ? 'Raspberry Pi' : isMobile ? 'Mobile' : 'Desktop',
