@@ -39,7 +39,7 @@ npm run preview      # Preview production build locally
 
 ### Backend (src-tauri/)
 - **Rust** with **Tauri 2.0**
-- Plugins: tauri-plugin-opener, tauri-plugin-http, tauri-plugin-shell
+- Plugins: tauri-plugin-opener, tauri-plugin-http, tauri-plugin-shell, tauri-plugin-updater, tauri-plugin-process
 
 ### Key Directories
 ```
@@ -67,13 +67,30 @@ src/
 
 ## Build Targets
 
-- **Primary**: ARM64 Linux (Raspberry Pi 3)
+- **ARM64 Linux** (Raspberry Pi 3): `aarch64-unknown-linux-gnu`
+- **x64 Linux**: native build
 - **Formats**: DEB, RPM, AppImage, executable
-- **Cross-compilation targets**: `aarch64-unknown-linux-gnu`, `armv7-unknown-linux-gnueabihf`
+
+### Docker Build (Linux x64)
+```bash
+docker-compose up --build          # Build and extract artifacts
+docker-compose run dev             # Development container
+```
 
 ## CI/CD
 
-GitHub Actions workflow (`.github/workflows/rpi-deploy.yml`) handles:
-- Automatic ARM64 compilation on push to main
-- Multi-format packaging
-- Release artifact creation
+GitHub Actions workflows:
+- `.github/workflows/rpi-deploy.yml` - ARM64 builds for Raspberry Pi
+- `.github/workflows/linux-x64-deploy.yml` - x64 builds + Docker
+
+## OTA Updates
+
+Auto-updates via `tauri-plugin-updater`:
+- **Hook**: `src/hooks/useUpdater.ts`
+- **Component**: `src/components/UpdateChecker.tsx`
+- **Config**: `src-tauri/tauri.conf.json` (plugins.updater)
+
+### Setup for releases:
+1. Add `TAURI_SIGNING_PRIVATE_KEY` to GitHub secrets
+2. Tag releases with `vX.Y.Z` format
+3. Workflow generates `latest.json` automatically
