@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import {
   Cloud,
   Database,
@@ -15,8 +16,8 @@ import {
 import { type Component, createSignal, For, Match, onMount, Show, Switch } from 'solid-js';
 import AEATSettings from '@/components/AEATSettings';
 import DemoDataLoader from '@/components/DemoDataLoader';
-import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
 import LicenseStatusCard from '@/components/LicenseStatus';
+import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
 import { ThemeDebugger } from '@/components/ThemeDebugger';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import ThermalPrinterSettings from '@/components/ThermalPrinterSettings.tsx';
@@ -52,7 +53,6 @@ import {
   runThermalPrinterCommand,
 } from '@/services/thermal-printer.service.ts';
 import useStore from '@/store/store';
-import { invoke } from '@tauri-apps/api/core';
 
 type SettingsPanelProps = {
   isSidebarOpen: boolean;
@@ -91,7 +91,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   const refreshLicenseStatus = async () => {
     try {
       const status = await invoke('check_license_status');
-      useStore().setLicenseStatus(status as any);
+      useStore().setLicenseStatus(status as LicenseStatus);
     } catch (error) {
       console.error('Error refreshing license status:', error);
     }
@@ -480,11 +480,18 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
             onClearLicense={() => {
               invoke('clear_license')
                 .then(() => {
-                  toast({ title: 'Licencia eliminada', description: 'La licencia ha sido eliminada correctamente' });
+                  toast({
+                    title: 'Licencia eliminada',
+                    description: 'La licencia ha sido eliminada correctamente',
+                  });
                   refreshLicenseStatus();
                 })
                 .catch((error) => {
-                  toast({ title: 'Error', description: 'No se pudo eliminar la licencia', variant: 'destructive' });
+                  toast({
+                    title: 'Error',
+                    description: 'No se pudo eliminar la licencia',
+                    variant: 'destructive',
+                  });
                   console.error('Error clearing license:', error);
                 });
             }}

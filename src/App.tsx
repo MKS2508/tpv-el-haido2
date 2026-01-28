@@ -1,5 +1,6 @@
 import './App.css';
 import { Motion, Presence } from '@motionone/solid';
+import { invoke } from '@tauri-apps/api/core';
 import {
   BeerIcon,
   ClipboardListIcon,
@@ -15,6 +16,7 @@ import fallbackProducts from '@/assets/products.json';
 import iconOptions from '@/assets/utils/icons/iconOptions';
 import BottomNavigation from '@/components/BottomNavigation';
 import DebugIndicator from '@/components/DebugIndicator';
+import LicenseSplashScreen from '@/components/LicenseSplashScreen';
 import ScreenshotOverlay from '@/components/ScreenshotOverlay';
 import AEATInvoices from '@/components/Sections/AEATInvoices';
 import Customers from '@/components/Sections/Customers';
@@ -28,7 +30,6 @@ import SettingsPanel from '@/components/Sections/SettingsPanel';
 import Sidebar from '@/components/SideBar';
 import SidebarToggleButton from '@/components/SideBarToggleButton';
 import UpdateChecker from '@/components/UpdateChecker';
-import LicenseSplashScreen from '@/components/LicenseSplashScreen';
 import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,6 @@ import {
   type ThermalPrinterServiceOptions,
 } from '@/models/ThermalPrinter';
 import useStore from '@/store/store';
-import { invoke } from '@tauri-apps/api/core';
 import type { LicenseStatus } from '@/types/license';
 
 function App() {
@@ -69,7 +69,7 @@ function App() {
 
   // Section state
   const [activeSection, setActiveSection] = createSignal('home');
-  const [isSidebarOpen, setIsSidebarOpen] = createSignal(!isMobile() && !isTablet());
+  const [isSidebarOpen, setIsSidebarOpen] = createSignal(true);
   let prevSection = 'home';
 
   // Handle window resize for responsive
@@ -169,7 +169,7 @@ function App() {
   };
 
   // Refresh license status
-  const refreshLicenseStatus = async () => {
+  const _refreshLicenseStatus = async () => {
     await checkLicense();
   };
 

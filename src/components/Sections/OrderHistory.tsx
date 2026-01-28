@@ -1,4 +1,3 @@
-import { Motion, Presence } from '@motionone/solid';
 import {
   ArrowUpDown,
   Banknote,
@@ -17,7 +16,6 @@ import {
   createSignal,
   For,
   onCleanup,
-  onMount,
   Show,
 } from 'solid-js';
 import { renderTicketPreview } from '@/assets/utils/utils.ts';
@@ -384,7 +382,10 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
       </div>
 
       <div
-        class={cn('flex items-center', responsive.isMobile() ? 'flex-col gap-3' : 'justify-between')}
+        class={cn(
+          'flex items-center',
+          responsive.isMobile() ? 'flex-col gap-3' : 'justify-between'
+        )}
       >
         <Select value={filterStatus()} onChange={setFilterStatus}>
           <SelectTrigger
@@ -574,7 +575,9 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                     )}
                   >
                     <div class="space-y-4">
-                      <div class={cn(responsive.isMobile() ? 'grid grid-cols-2 gap-2' : 'space-y-4')}>
+                      <div
+                        class={cn(responsive.isMobile() ? 'grid grid-cols-2 gap-2' : 'space-y-4')}
+                      >
                         <div>
                           <Label class="text-sm">Fecha</Label>
                           <Input
@@ -732,10 +735,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
             <Show when={props.selectedOrder?.status === 'paid' && isAEATEnabled()}>
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger
-                    as="div"
-                    class={cn(responsive.isMobile() ? 'w-full' : '')}
-                  >
+                  <TooltipTrigger as="div" class={cn(responsive.isMobile() ? 'w-full' : '')}>
                     <Button
                       variant="outline"
                       onClick={handleEmitInvoice}

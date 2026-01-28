@@ -4,7 +4,10 @@ import { splitProps } from 'solid-js';
 
 import { cn } from '@/lib/utils';
 
-const TooltipProvider = (props: { children: JSX.Element }) => props.children;
+const TooltipProvider = (props: { children: JSX.Element }) => {
+  const children = () => props.children;
+  return children();
+};
 
 const Tooltip = KobalteTooltip;
 

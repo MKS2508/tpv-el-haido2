@@ -1,4 +1,3 @@
-import { Motion } from '@motionone/solid';
 import { PaletteIcon, SparklesIcon } from 'lucide-solid';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Button } from '@/components/ui/button';

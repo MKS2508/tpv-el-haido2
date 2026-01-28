@@ -244,7 +244,8 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     return config;
   });
 
-  return performanceConfig();
+  const result = performanceConfig();
+  return result;
 };
 
 // Hook para aplicar clases CSS basadas en performance

@@ -1,4 +1,4 @@
-import { Motion, Presence } from '@motionone/solid';
+import { Motion } from '@motionone/solid';
 import {
   AwardIcon,
   CalendarIcon,
@@ -6,7 +6,7 @@ import {
   ShoppingCartIcon,
   TrendingUpIcon,
 } from 'lucide-solid';
-import { type Component, createMemo, createSignal, For, type JSX, Show } from 'solid-js';
+import { type Component, createMemo, createSignal, For, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 // TODO: recharts is React-specific and needs a SolidJS alternative
 // import {

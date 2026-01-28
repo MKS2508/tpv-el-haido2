@@ -35,7 +35,9 @@ function TableHeader(props: TableHeaderProps) {
           <span
             role="img"
             class={`absolute top-1 right-1 w-3 h-3 rounded-full ${
-              props.tables.find((t) => t.id === 0)?.available !== false ? 'bg-primary' : 'bg-destructive'
+              props.tables.find((t) => t.id === 0)?.available !== false
+                ? 'bg-primary'
+                : 'bg-destructive'
             }`}
             aria-label={
               props.tables.find((t) => t.id === 0)?.available !== false ? 'Disponible' : 'Ocupado'

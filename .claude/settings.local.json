@@ -33,7 +33,12 @@
       "Bash(bun pm ls:*)",
       "Bash(npm search:*)",
       "Bash(bun run type-check:*)",
-      "Bash(bunx tsc --noEmit)"
+      "Bash(bunx tsc --noEmit)",
+      "Bash(bun run lint)",
+      "Bash(bun run lint:*)",
+      "Bash(bun biome lint --help:*)",
+      "Bash(bun run lint:solid)",
+      "Bash(git checkout:*)"
     ]
   }
 }

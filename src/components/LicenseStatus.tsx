@@ -1,10 +1,10 @@
-import { Show, For } from 'solid-js';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { invoke } from '@tauri-apps/api/core';
+import { AlertCircle, CheckCircle, Key, XCircle } from 'lucide-solid';
+import { Show } from 'solid-js';
+import { toast } from 'solid-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, AlertCircle, Key } from 'lucide-solid';
-import { invoke } from '@tauri-apps/api/core';
-import { toast } from 'solid-sonner';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { LicenseStatus } from '@/types/license';
 
 interface LicenseStatusCardProps {
@@ -114,9 +114,7 @@ export default function LicenseStatusCard(props: LicenseStatusCardProps) {
             <span class="text-sm text-muted-foreground">{getStatusText()}</span>
           </div>
         </div>
-        <CardDescription>
-          Estado de la licencia de TPV El Haido
-        </CardDescription>
+        <CardDescription>Estado de la licencia de TPV El Haido</CardDescription>
       </CardHeader>
 
       <CardContent class="space-y-4">
@@ -125,9 +123,7 @@ export default function LicenseStatusCard(props: LicenseStatusCardProps) {
           fallback={
             <div class="text-center py-8 text-muted-foreground">
               <p>No hay una licencia activa</p>
-              <p class="text-sm mt-2">
-                Contacta con soporte para obtener una licencia
-              </p>
+              <p class="text-sm mt-2">Contacta con soporte para obtener una licencia</p>
             </div>
           }
         >
@@ -148,22 +144,20 @@ export default function LicenseStatusCard(props: LicenseStatusCardProps) {
               </div>
             </Show>
 
-            <Show when={props.licenseStatus?.expires_at !== null && props.licenseStatus?.expires_at !== undefined}>
+            <Show
+              when={
+                props.licenseStatus?.expires_at !== null &&
+                props.licenseStatus?.expires_at !== undefined
+              }
+            >
               <div class="flex justify-between items-center">
                 <span class="text-sm text-muted-foreground">Expiración</span>
-                <span class="text-sm font-medium">
-                  {getExpiryText()}
-                </span>
+                <span class="text-sm font-medium">{getExpiryText()}</span>
               </div>
             </Show>
 
             <div class="pt-4 border-t">
-              <Button
-                variant="destructive"
-                size="sm"
-                class="w-full"
-                onClick={handleClearLicense}
-              >
+              <Button variant="destructive" size="sm" class="w-full" onClick={handleClearLicense}>
                 Eliminar Licencia
               </Button>
             </div>

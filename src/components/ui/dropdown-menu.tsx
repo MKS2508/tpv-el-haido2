@@ -13,7 +13,10 @@ type DropdownMenuContentProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, 'sideOf
 type DropdownMenuItemProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, 'onSelect'> & {
   onSelect?: () => void;
 };
-type DropdownMenuCheckboxItemProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, 'onChange' | 'onSelect'> & {
+type DropdownMenuCheckboxItemProps = Omit<
+  JSX.HTMLAttributes<HTMLDivElement>,
+  'onChange' | 'onSelect'
+> & {
   checked?: boolean;
   onChange?: (checked: boolean) => void;
   onSelect?: () => void;
@@ -108,7 +111,13 @@ const DropdownMenuItem = (props: DropdownMenuItemProps & { inset?: boolean }) =>
 };
 
 const DropdownMenuCheckboxItem = (props: DropdownMenuCheckboxItemProps) => {
-  const [local, others] = splitProps(props, ['class', 'children', 'checked', 'onChange', 'onSelect']);
+  const [local, others] = splitProps(props, [
+    'class',
+    'children',
+    'checked',
+    'onChange',
+    'onSelect',
+  ]);
   return (
     <KobalteDropdownMenu.CheckboxItem
       class={cn(

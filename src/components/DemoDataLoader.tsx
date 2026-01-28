@@ -27,7 +27,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { getDemoStats } from '@/data/demo-seed';
-import { clearDemoData, hasDemoData, loadDemoData } from '@/services/demo-seed.service';
+import { clearDemoData, loadDemoData } from '@/services/demo-seed.service';
 
 export function DemoDataLoader() {
   const [isLoading, setIsLoading] = createSignal(false);

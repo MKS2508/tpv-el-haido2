@@ -138,12 +138,13 @@ export function useBreakpoint(breakpoint: BreakpointSize): Accessor<boolean> {
     'ultraWide',
   ];
 
-  return createMemo(() => {
+  const result = createMemo(() => {
     const currentBreakpoint = responsive.breakpoint();
     const currentIndex = breakpointOrder.indexOf(currentBreakpoint);
     const targetIndex = breakpointOrder.indexOf(breakpoint);
     return currentIndex >= targetIndex;
   });
+  return result;
 }
 
 // Utility function for media queries

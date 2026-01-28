@@ -1,5 +1,5 @@
 import { Package } from 'lucide-solid';
-import { createEffect, createMemo, createSignal, For, onMount, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, Show } from 'solid-js';
 import { connectToThermalPrinter } from '@/assets/utils/utils';
 import CategorySidebar from '@/components/CategorySidebar';
 import OrderPanel from '@/components/OrderPanel';
@@ -242,9 +242,8 @@ function NewOrder() {
                   <span class="whitespace-nowrap">
                     {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
                   </span>
-                  <span
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCloseTab(order.id);
@@ -262,7 +261,7 @@ function NewOrder() {
                     title="Cerrar comanda"
                   >
                     x
-                  </span>
+                  </button>
                 </button>
               )}
             </For>

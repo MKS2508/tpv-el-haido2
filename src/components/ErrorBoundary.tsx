@@ -346,9 +346,58 @@ function ErrorFallback(props: {
     window.location.reload();
   };
 
-  // Page-level: Full screen error with reload option
-  if (props.level === 'page') {
-    return (
+  return (
+    <Show
+      when={props.level === 'page'}
+      fallback={
+        <Show
+          when={props.level === 'section'}
+          fallback={
+            <div class="rounded-md bg-destructive/10 px-3 py-2 text-sm">
+              <div class="flex items-center gap-2">
+                <AlertTriangle class="h-4 w-4 text-destructive flex-shrink-0" />
+                <span class="text-destructive">{props.fallbackTitle || 'Error al cargar'}</span>
+                <Button variant="ghost" size="sm" onClick={props.reset} class="ml-auto h-6 px-2 text-xs">
+                  <RefreshCw class="h-3 w-3" />
+                </Button>
+              </div>
+              <Show when={isDev}>
+                <TechnicalDetails errorDetails={errorDetails} />
+              </Show>
+            </div>
+          }
+        >
+          <Card class="m-4 border-destructive/50">
+            <CardHeader class="pb-3">
+              <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+                  <AlertTriangle class="h-5 w-5 text-destructive" />
+                </div>
+                <CardTitle class="text-base">
+                  {props.fallbackTitle || 'Error en esta seccion'}
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent class="space-y-3">
+              <p class="text-sm text-muted-foreground">
+                {props.fallbackMessage ||
+                  'No se ha podido cargar esta seccion. Puedes intentar de nuevo o navegar a otra parte de la aplicacion.'}
+              </p>
+              <Show when={props.error && !isDev}>
+                <div class="rounded-md bg-muted p-2">
+                  <p class="text-xs font-mono text-muted-foreground break-all">{props.error.message}</p>
+                </div>
+              </Show>
+              <Button onClick={props.reset} size="sm">
+                <RefreshCw class="mr-2 h-3 w-3" />
+                Reintentar
+              </Button>
+              <TechnicalDetails errorDetails={errorDetails} />
+            </CardContent>
+          </Card>
+        </Show>
+      }
+    >
       <div class="fixed inset-0 flex items-center justify-center bg-background p-4">
         <Card class="w-full max-w-lg shadow-xl">
           <CardHeader class="text-center">
@@ -383,91 +432,43 @@ function ErrorFallback(props: {
           </CardContent>
         </Card>
       </div>
-    );
-  }
-
-  // Section-level: Card with retry button
-  if (props.level === 'section') {
-    return (
-      <Card class="m-4 border-destructive/50">
-        <CardHeader class="pb-3">
-          <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-              <AlertTriangle class="h-5 w-5 text-destructive" />
-            </div>
-            <CardTitle class="text-base">
-              {props.fallbackTitle || 'Error en esta seccion'}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent class="space-y-3">
-          <p class="text-sm text-muted-foreground">
-            {props.fallbackMessage ||
-              'No se ha podido cargar esta seccion. Puedes intentar de nuevo o navegar a otra parte de la aplicacion.'}
-          </p>
-          <Show when={props.error && !isDev}>
-            <div class="rounded-md bg-muted p-2">
-              <p class="text-xs font-mono text-muted-foreground break-all">{props.error.message}</p>
-            </div>
-          </Show>
-          <Button onClick={props.reset} size="sm">
-            <RefreshCw class="mr-2 h-3 w-3" />
-            Reintentar
-          </Button>
-          <TechnicalDetails errorDetails={errorDetails} />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Component-level: Inline minimal error
-  return (
-    <div class="rounded-md bg-destructive/10 px-3 py-2 text-sm">
-      <div class="flex items-center gap-2">
-        <AlertTriangle class="h-4 w-4 text-destructive flex-shrink-0" />
-        <span class="text-destructive">{props.fallbackTitle || 'Error al cargar'}</span>
-        <Button variant="ghost" size="sm" onClick={props.reset} class="ml-auto h-6 px-2 text-xs">
-          <RefreshCw class="h-3 w-3" />
-        </Button>
-      </div>
-      <Show when={isDev}>
-        <TechnicalDetails errorDetails={errorDetails} />
-      </Show>
-    </div>
+    </Show>
   );
 }
 
 export function ErrorBoundary(props: ErrorBoundaryProps) {
-  const level = props.level || 'section';
-
-  // If custom fallback is provided, use it
-  if (props.fallback) {
-    return <SolidErrorBoundary fallback={props.fallback}>{props.children}</SolidErrorBoundary>;
-  }
+  const level = () => props.level || 'section';
 
   return (
-    <SolidErrorBoundary
-      fallback={(err, reset) => {
-        const error = err instanceof Error ? err : new Error(String(err));
+    <Show
+      when={props.fallback}
+      fallback={
+        <SolidErrorBoundary
+          fallback={(err, reset) => {
+            const error = err instanceof Error ? err : new Error(String(err));
 
-        // Call optional onError callback
-        if (props.onError) {
-          props.onError(error, reset);
-        }
+            // Call optional onError callback
+            if (props.onError) {
+              props.onError(error, reset);
+            }
 
-        return (
-          <ErrorFallback
-            error={error}
-            reset={reset}
-            level={level}
-            fallbackTitle={props.fallbackTitle}
-            fallbackMessage={props.fallbackMessage}
-          />
-        );
-      }}
+            return (
+              <ErrorFallback
+                error={error}
+                reset={reset}
+                level={level()}
+                fallbackTitle={props.fallbackTitle}
+                fallbackMessage={props.fallbackMessage}
+              />
+            );
+          }}
+        >
+          {props.children}
+        </SolidErrorBoundary>
+      }
     >
-      {props.children}
-    </SolidErrorBoundary>
+      <SolidErrorBoundary fallback={props.fallback}>{props.children}</SolidErrorBoundary>
+    </Show>
   );
 }
 

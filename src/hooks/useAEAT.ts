@@ -96,13 +96,13 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
   let connectionCheckIntervalRef: ReturnType<typeof setInterval> | null = null;
   let previousConnectionStatus = false;
 
-  // Sidecar hook
-  const sidecar = useAEATSidecar({
+  // Sidecar hook - wrap in createEffect to track reactive config
+  const sidecar = createMemo(() => useAEATSidecar({
     port: config().sidecarPort,
     autoStart: config().mode === 'sidecar' && config().autoStartSidecar,
     healthCheckInterval: 10000,
     maxRestartAttempts: 3,
-  });
+  }));
 
   // Derived state
   const isEnabled = () => config().mode !== 'disabled';
@@ -291,10 +291,7 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
     refreshConnectionStatus();
 
     // Configurar verificación periódica
-    connectionCheckIntervalRef = setInterval(
-      refreshConnectionStatus,
-      CONNECTION_CHECK_INTERVAL
-    );
+    connectionCheckIntervalRef = setInterval(refreshConnectionStatus, CONNECTION_CHECK_INTERVAL);
   });
 
   /**

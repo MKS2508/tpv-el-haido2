@@ -1,6 +1,6 @@
 import { Motion, Presence } from '@motionone/solid';
 import { BeerIcon, FilterIcon, PlusIcon } from 'lucide-solid';
-import { createEffect, createMemo, createSignal, For, onMount, Show } from 'solid-js';
+import { createMemo, createSignal, For, onMount } from 'solid-js';
 import iconOptions from '@/assets/utils/icons/iconOptions.ts';
 import ProductDialog, { ProductDialogContent } from '@/components/ProductDialog';
 import { Badge } from '@/components/ui/badge';
@@ -317,7 +317,7 @@ function Products() {
           </div>
           <div class="flex flex-wrap gap-2">
             <For each={selectedCategories()}>
-              {(category, index) => (
+              {(category, _index) => (
                 <Badge variant="secondary" class="px-2 py-1">
                   {category}
                   <Button
@@ -333,7 +333,7 @@ function Products() {
               )}
             </For>
             <For each={selectedBrands()}>
-              {(brand, index) => (
+              {(brand, _index) => (
                 <Badge variant="secondary" class="px-2 py-1">
                   {brand}
                   <Button

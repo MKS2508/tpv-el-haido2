@@ -1,5 +1,5 @@
 import { Check, Plus, Star } from 'lucide-solid';
-import { createSignal, type JSX, onCleanup, onMount } from 'solid-js';
+import { createSignal, onCleanup, onMount } from 'solid-js';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
 import stockImagesService from '@/services/stock-images.service';
@@ -151,7 +151,8 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
   });
 
   return (
-    <div
+    <button
+      type="button"
       class={getCardStyles()}
       onClick={handleClick}
       onKeyDown={(e) => {
@@ -160,8 +161,6 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
           handleClick();
         }
       }}
-      role="button"
-      tabIndex={0}
     >
       {/* Image Section */}
       <div
@@ -188,7 +187,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
               isAdding() && 'adding'
             )}
           >
-            {props.product.icon || '🍽️' as any}
+            {props.product.icon || '🍽️'}
           </div>
         )}
 
@@ -302,7 +301,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 

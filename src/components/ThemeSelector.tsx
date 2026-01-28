@@ -207,11 +207,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                 Activa el tema oscuro para ambientes con poca luz
               </p>
             </div>
-            <Switch
-              id="darkMode"
-              checked={settings().darkMode}
-              onChange={handleDarkModeToggle}
-            />
+            <Switch id="darkMode" checked={settings().darkMode} onChange={handleDarkModeToggle} />
           </div>
 
           <div class="flex items-center justify-between">

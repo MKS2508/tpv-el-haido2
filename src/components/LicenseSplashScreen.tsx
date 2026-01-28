@@ -1,12 +1,12 @@
-import { Show, createSignal, onMount } from 'solid-js';
 import { Motion } from '@motionone/solid';
+import { invoke } from '@tauri-apps/api/core';
+import { Key, Loader2 } from 'lucide-solid';
+import { createSignal, onMount, Show } from 'solid-js';
+import { toast } from 'solid-sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'solid-sonner';
-import { invoke } from '@tauri-apps/api/core';
-import { Key, Loader2 } from 'lucide-solid';
-import type { LicenseStatus, LicenseActivationRequest } from '@/types/license';
+import type { LicenseActivationRequest, LicenseStatus } from '@/types/license';
 
 interface LicenseSplashScreenProps {
   onComplete: (status: LicenseStatus) => void;
@@ -108,9 +108,7 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
                 </div>
               </div>
               <h1 class="text-3xl font-bold">TPV El Haido</h1>
-              <p class="text-muted-foreground">
-                Activa tu licencia para comenzar
-              </p>
+              <p class="text-muted-foreground">Activa tu licencia para comenzar</p>
             </div>
 
             <div class="space-y-4">
@@ -143,12 +141,7 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
                 </p>
               </div>
 
-              <Button
-                onClick={handleActivate}
-                disabled={isLoading()}
-                class="w-full"
-                size="lg"
-              >
+              <Button onClick={handleActivate} disabled={isLoading()} class="w-full" size="lg">
                 <Show when={isLoading()} fallback="Activar Licencia">
                   <Loader2 class="mr-2 h-4 w-4 animate-spin" />
                   Activando...
@@ -158,10 +151,7 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
 
             <div class="text-center text-sm text-muted-foreground">
               <p>¿No tienes una licencia?</p>
-              <a
-                href="mailto:soporte@elhaido.com"
-                class="text-primary hover:underline"
-              >
+              <a href="mailto:soporte@elhaido.com" class="text-primary hover:underline">
                 Contacta con soporte
               </a>
             </div>

@@ -57,6 +57,7 @@ export function StorageModeStep(props: StorageModeStepProps) {
           <For each={modes}>
             {(mode) => (
               <button
+                type="button"
                 onClick={() => props.onSelectMode(mode.id)}
                 class={cn(
                   'flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-all hover:bg-accent',

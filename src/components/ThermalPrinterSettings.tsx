@@ -36,29 +36,24 @@ const defaultOptions: ThermalPrinterServiceOptions = {
   options: { timeout: 3000 },
 };
 
-export default function ThermalPrinterSettings({
-  options = defaultOptions,
-  onOptionsChange,
-  onPrintTestTicket,
-  onTestConnection,
-}: ThermalPrinterSettingsProps) {
+export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProps) {
   const [isDialogOpen, setIsDialogOpen] = createSignal(false);
   const [testTicketDialogOpen, setTestTicketDialogOpen] = createSignal(false);
   const [connectionStatus, setConnectionStatus] = createSignal<boolean | null>(null);
   const [testTicketResult, setTestTicketResult] = createSignal('');
 
   const handleChange = (field: keyof ThermalPrinterServiceOptions, value: unknown): void => {
-    onOptionsChange({ ...options, [field]: value });
+    props.onOptionsChange({ ...props.options, [field]: value });
   };
 
   const handleTestTicket = async () => {
     setTestTicketDialogOpen(true);
-    const result = await onPrintTestTicket();
+    const result = await props.onPrintTestTicket();
     setTestTicketResult(result);
   };
   const handleTestConnection = async () => {
     setIsDialogOpen(true);
-    const result = await onTestConnection();
+    const result = await props.onTestConnection();
     setConnectionStatus(result.toLowerCase().indexOf('true') !== -1);
   };
 
@@ -68,7 +63,7 @@ export default function ThermalPrinterSettings({
         <div class="space-y-2">
           <Label for="printerType">Tipo de Impresora</Label>
           <Select
-            value={options.type}
+            value={props.options.type}
             onValueChange={(value) => handleChange('type', value as PrinterTypes)}
           >
             <SelectTrigger id="printerType">
@@ -76,11 +71,7 @@ export default function ThermalPrinterSettings({
             </SelectTrigger>
             <SelectContent>
               <For each={Object.values(PrinterTypes)}>
-                {(type: PrinterTypes) => (
-                  <SelectItem value={type}>
-                    {type}
-                  </SelectItem>
-                )}
+                {(type: PrinterTypes) => <SelectItem value={type}>{type}</SelectItem>}
               </For>
             </SelectContent>
           </Select>
@@ -108,11 +99,7 @@ export default function ThermalPrinterSettings({
             </SelectTrigger>
             <SelectContent>
               <For each={Object.values(CharacterSet)}>
-                {(set: CharacterSet) => (
-                  <SelectItem value={set}>
-                    {set}
-                  </SelectItem>
-                )}
+                {(set: CharacterSet) => <SelectItem value={set}>{set}</SelectItem>}
               </For>
             </SelectContent>
           </Select>
@@ -129,11 +116,7 @@ export default function ThermalPrinterSettings({
             </SelectTrigger>
             <SelectContent>
               <For each={Object.values(BreakLine)}>
-                {(mode: BreakLine) => (
-                  <SelectItem value={mode}>
-                    {mode}
-                  </SelectItem>
-                )}
+                {(mode: BreakLine) => <SelectItem value={mode}>{mode}</SelectItem>}
               </For>
             </SelectContent>
           </Select>
@@ -151,11 +134,7 @@ export default function ThermalPrinterSettings({
             </SelectTrigger>
             <SelectContent>
               <For each={['-', '_', '=', '*']}>
-                {(char: string) => (
-                  <SelectItem value={char}>
-                    {char}
-                  </SelectItem>
-                )}
+                {(char: string) => <SelectItem value={char}>{char}</SelectItem>}
               </For>
             </SelectContent>
           </Select>
@@ -173,7 +152,10 @@ export default function ThermalPrinterSettings({
             step={100}
             value={(options.options as { timeout: number }).timeout}
             onInput={(e: InputEvent) =>
-              handleChange('options', { ...options.options, timeout: Number((e.currentTarget as HTMLInputElement).value) })
+              handleChange('options', {
+                ...options.options,
+                timeout: Number((e.currentTarget as HTMLInputElement).value),
+              })
             }
             class="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
           />

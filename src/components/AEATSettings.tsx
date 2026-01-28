@@ -81,7 +81,9 @@ export default function AEATSettings(props: AEATSettingsProps) {
     },
   });
 
-  const [externalUrl, setExternalUrl] = createSignal(config().externalUrl || 'http://localhost:3001');
+  const [externalUrl, setExternalUrl] = createSignal(
+    config().externalUrl || 'http://localhost:3001'
+  );
 
   // ==================== Handlers ====================
 
@@ -394,7 +396,9 @@ export default function AEATSettings(props: AEATSettingsProps) {
               <Button
                 variant="outline"
                 onClick={handleStartSidecar}
-                disabled={sidecarState().status === 'running' || sidecarState().status === 'starting'}
+                disabled={
+                  sidecarState().status === 'running' || sidecarState().status === 'starting'
+                }
                 class="flex-1"
               >
                 <Play class="mr-2 h-4 w-4" />
@@ -403,7 +407,9 @@ export default function AEATSettings(props: AEATSettingsProps) {
               <Button
                 variant="outline"
                 onClick={handleStopSidecar}
-                disabled={sidecarState().status === 'stopped' || sidecarState().status === 'stopping'}
+                disabled={
+                  sidecarState().status === 'stopped' || sidecarState().status === 'stopping'
+                }
                 class="flex-1"
               >
                 <Square class="mr-2 h-4 w-4" />
@@ -507,7 +513,10 @@ export default function AEATSettings(props: AEATSettingsProps) {
                   value={config().businessData.nombreRazon}
                   onInput={(e) =>
                     updateConfig({
-                      businessData: { ...config().businessData, nombreRazon: e.currentTarget.value },
+                      businessData: {
+                        ...config().businessData,
+                        nombreRazon: e.currentTarget.value,
+                      },
                     })
                   }
                   placeholder="Mi Empresa S.L."
@@ -649,8 +658,9 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 Los certificados digitales se configuran en el servidor AEAT Bridge.
               </p>
               <p class="text-xs text-muted-foreground">
-                Para {config().mode === 'external' ? 'el servidor externo' : 'el sidecar'}, configure
-                las variables de entorno <code class="bg-muted px-1 rounded">PFX_PATH</code> y{' '}
+                Para {config().mode === 'external' ? 'el servidor externo' : 'el sidecar'},
+                configure las variables de entorno{' '}
+                <code class="bg-muted px-1 rounded">PFX_PATH</code> y{' '}
                 <code class="bg-muted px-1 rounded">PFX_PASSWORD</code> en el archivo{' '}
                 <code class="bg-muted px-1 rounded">.env</code>
               </p>

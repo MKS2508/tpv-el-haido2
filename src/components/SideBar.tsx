@@ -29,7 +29,13 @@ interface AvatarImageProps extends JSX.ImgHTMLAttributes<HTMLImageElement> {}
 
 function AvatarImage(props: AvatarImageProps) {
   const [local, others] = splitProps(props, ['class']);
-  return <img class={cn('aspect-square h-full w-full object-cover', local.class)} {...others} />;
+  return (
+    <img
+      alt={local.alt || ''}
+      class={cn('aspect-square h-full w-full object-cover', local.class)}
+      {...others}
+    />
+  );
 }
 
 interface AvatarFallbackProps extends JSX.HTMLAttributes<HTMLSpanElement> {

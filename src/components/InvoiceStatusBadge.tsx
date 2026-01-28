@@ -128,16 +128,16 @@ function getTooltipContent(aeat?: OrderAEATInfo): string {
 // ==================== Component ====================
 
 export function InvoiceStatusBadge(props: InvoiceStatusBadgeProps) {
-  const status = getInvoiceStatus(props.aeat);
-  const config = statusConfig[status];
-  const Icon = config.icon;
+  const status = () => getInvoiceStatus(props.aeat);
+  const config = () => statusConfig[status()];
+  const Icon = () => config().icon;
 
   const badge = (
     <Badge
-      variant={config.variant}
+      variant={config().variant}
       class={cn(
         'flex items-center gap-1 font-medium border',
-        config.className,
+        config().className,
         props.compact ? 'px-1.5 py-0.5' : 'px-2 py-1',
         props.class
       )}

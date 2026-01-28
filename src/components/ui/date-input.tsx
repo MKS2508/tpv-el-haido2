@@ -5,23 +5,17 @@ interface DateInputProps {
   onChange: (date: Date) => void;
 }
 
-interface DateParts {
-  day: number;
-  month: number;
-  year: number;
-}
-
 function DateInput(props: DateInputProps) {
   const { value, onChange } = props;
 
-  const [day, setDay] = createSignal(value ? value.getDate() : new Date().getDate());
-  const [month, setMonth] = createSignal(value ? value.getMonth() + 1 : new Date().getMonth() + 1);
-  const [year, setYear] = createSignal(value ? value.getFullYear() : new Date().getFullYear());
+  const [day, setDay] = createSignal(() => value ? value.getDate() : new Date().getDate());
+  const [month, setMonth] = createSignal(() => value ? value.getMonth() + 1 : new Date().getMonth() + 1);
+  const [year, setYear] = createSignal(() => value ? value.getFullYear() : new Date().getFullYear());
 
   const handleDayChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
     const newDay = parseInt(target.value, 10);
-    if (!isNaN(newDay) && newDay >= 1 && newDay <= 31) {
+    if (!Number.isNaN(newDay) && newDay >= 1 && newDay <= 31) {
       setDay(newDay);
       updateDate(newDay, month(), year());
     }
@@ -30,7 +24,7 @@ function DateInput(props: DateInputProps) {
   const handleMonthChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
     const newMonth = parseInt(target.value, 10);
-    if (!isNaN(newMonth) && newMonth >= 1 && newMonth <= 12) {
+    if (!Number.isNaN(newMonth) && newMonth >= 1 && newMonth <= 12) {
       setMonth(newMonth);
       updateDate(day(), newMonth, year());
     }
@@ -39,7 +33,7 @@ function DateInput(props: DateInputProps) {
   const handleYearChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
     const newYear = parseInt(target.value, 10);
-    if (!isNaN(newYear) && newYear >= 1900 && newYear <= 2100) {
+    if (!Number.isNaN(newYear) && newYear >= 1900 && newYear <= 2100) {
       setYear(newYear);
       updateDate(day(), month(), newYear);
     }

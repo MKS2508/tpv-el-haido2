@@ -86,7 +86,8 @@ export function FileImporter(props: FileImporterProps) {
       when={props.importedData}
       fallback={
         <div class="space-y-3">
-          <div
+          <button
+            type="button"
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -116,7 +117,7 @@ export function FileImporter(props: FileImporterProps) {
               class="hidden"
               disabled={isLoading()}
             />
-          </div>
+          </button>
           <Show when={error()}>
             <p class="text-sm text-destructive text-center">{error()}</p>
           </Show>

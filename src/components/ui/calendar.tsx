@@ -136,7 +136,7 @@ function Calendar(props: CalendarProps) {
     const days = [];
 
     for (let i = 0; i < firstDay; i++) {
-      const prevMonthDate = new Date(
+      const _prevMonthDate = new Date(
         year(),
         currentMonth() - 1,
         daysInMonth(new Date(year(), currentMonth() - 1, 1)) - firstDay + i + 1

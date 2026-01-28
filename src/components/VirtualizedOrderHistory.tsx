@@ -1,7 +1,7 @@
 import { createVirtualizer } from '@tanstack/solid-virtual';
-import { CheckCircle, CreditCard, HandCoins, Loader2, XCircle } from 'lucide-solid';
+import { CheckCircle, CreditCard, Loader2, XCircle } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { createMemo, For, Show } from 'solid-js';
+import { For, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -21,7 +21,7 @@ interface RowProps {
 
 // Row component
 const OrderRow = (props: RowProps & { order: Order }) => {
-  const { order, orders, onOrderSelect, isMobile } = props;
+  const { order, onOrderSelect, isMobile } = props;
 
   const getStatusIcon = () => {
     if (order.status === 'completed') {

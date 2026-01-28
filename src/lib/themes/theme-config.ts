@@ -144,7 +144,18 @@ export function saveThemeSettings(settings: ThemeSettings) {
   }
 }
 
-export function createThemeFromTweakCN(tweakCNData: any): ThemeConfig {
+export function createThemeFromTweakCN(tweakCNData: {
+  name?: string;
+  description?: string;
+  cssVars?: {
+    light?: Record<string, string>;
+    dark?: Record<string, string>;
+  };
+  colors?: {
+    light?: Record<string, string>;
+    dark?: Record<string, string>;
+  };
+}): ThemeConfig {
   // Convert TweakCN theme data to our ThemeConfig format
   return {
     id: `custom-${Date.now()}`,

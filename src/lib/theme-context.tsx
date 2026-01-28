@@ -5,12 +5,12 @@
  * This file provides SolidJS-friendly wrappers.
  */
 
-import { createEffect, onCleanup, createContext, useContext, createSignal, Accessor } from 'solid-js';
 import {
   ThemeCore,
+  type ThemeCoreConfig,
   type ThemeCoreInstance,
-  type ThemeCoreConfig
 } from '@mks2508/shadcn-basecoat-theme-manager';
+import { type Accessor, createContext, createSignal, onCleanup, useContext } from 'solid-js';
 
 // ==================== Types ====================
 
@@ -27,17 +27,19 @@ const ThemeContext = createContext<ThemeContextValue>();
 
 interface ThemeProviderProps {
   config?: ThemeCoreConfig;
-  children: any;
+  children: JSX.Element;
 }
 
 export function ThemeProvider(props: ThemeProviderProps) {
   const [themeCore, setThemeCore] = createSignal<ThemeCoreInstance | null>(null);
   const [isReady, setIsReady] = createSignal(false);
 
-  // Initialize ThemeCore on mount
-  ThemeCore.init(props.config).then((instance) => {
-    setThemeCore(() => instance);
-    setIsReady(true);
+  // Initialize ThemeCore on mount - wrap in createEffect for reactivity
+  createEffect(() => {
+    ThemeCore.init(props.config).then((instance) => {
+      setThemeCore(() => instance);
+      setIsReady(true);
+    });
   });
 
   // Cleanup on unmount
@@ -50,11 +52,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
     isReady,
   };
 
-  return (
-    <ThemeContext.Provider value={contextValue}>
-      {props.children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={contextValue}>{props.children}</ThemeContext.Provider>;
 }
 
 // ==================== Hooks ====================

@@ -55,6 +55,7 @@ async function initializeApp() {
               <h1 class="text-xl font-bold text-destructive">Error critico en la aplicacion</h1>
               <p class="text-muted-foreground mt-2">{err.message}</p>
               <button
+                type="button"
                 class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
                 onClick={() => window.location.reload()}
               >

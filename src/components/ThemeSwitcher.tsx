@@ -1,9 +1,9 @@
-import { ModeToggle } from './ModeToggleSolid';
 import { Palette, Settings } from 'lucide-solid';
 import { createSignal } from 'solid-js';
 import { Button } from '@/components/ui/button';
-import ThemeSelector from './ThemeSelector';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModeToggle } from './ModeToggleSolid';
+import ThemeSelector from './ThemeSelector';
 
 export function ThemeSwitcher() {
   const [showThemeManagement, setShowThemeManagement] = createSignal(false);
@@ -23,7 +23,7 @@ export function ThemeSwitcher() {
           Fuentes
         </Button>
       </div>
-      
+
       <Dialog open={showThemeManagement()} onOpenChange={setShowThemeManagement}>
         <DialogContent>
           <DialogHeader>

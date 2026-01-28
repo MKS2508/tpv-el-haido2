@@ -1,8 +1,9 @@
+import type { JSX } from 'solid-js';
 import { type Component, Show, splitProps } from 'solid-js';
 
 interface MenuItem {
   id: string;
-  icon: Component<any>;
+  icon: Component<JSX.IntrinsicElements>;
   label: string;
 }
 

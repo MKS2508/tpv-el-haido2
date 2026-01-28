@@ -41,6 +41,7 @@ const ProductCard = (props: ProductCardProps) => {
   const [isAdding, setIsAdding] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
   const state = useStore();
+  const localClass = () => local.class;
 
   const getProductImage = () => {
     if (product.uploadedImage) {
@@ -158,8 +159,8 @@ const ProductCard = (props: ProductCardProps) => {
   return (
     <Motion.div
       class={cn(getCardStyles(), className)}
-      onClick={handleClick as any}
-      style={others.style as any}
+      onClick={handleClick as (e: MouseEvent) => void}
+      style={others.style as JSX.CSSProperties}
       animate={{
         scale: isAdding() ? 1.03 : 1,
       }}
@@ -191,7 +192,7 @@ const ProductCard = (props: ProductCardProps) => {
             }}
             transition={{ duration: 0.15, easing: 'ease-out' }}
           >
-            {product.icon || '🍽️' as any}
+            {product.icon || '🍽️'}
           </Motion.div>
         )}
 

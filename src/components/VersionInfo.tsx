@@ -29,7 +29,7 @@ export function VersionInfo(props: VersionInfoProps) {
     try {
       const version = await getVersion();
       setCurrentVersion(version);
-    } catch (e) {
+    } catch (_e) {
       // En desarrollo web, no hay versión de Tauri
       setCurrentVersion('dev');
     }
@@ -239,9 +239,7 @@ export function VersionInfo(props: VersionInfoProps) {
           <div class="rounded-md bg-muted/50 px-3 py-2">
             <span class="text-muted-foreground">Plataforma</span>
             <p class="font-medium text-foreground">
-              {typeof window !== 'undefined' && (window as any).__TAURI__
-                ? 'Desktop (Tauri)'
-                : 'Web'}
+              {typeof window !== 'undefined' && '__TAURI__' in window ? 'Desktop (Tauri)' : 'Web'}
             </p>
           </div>
           <div class="rounded-md bg-muted/50 px-3 py-2">

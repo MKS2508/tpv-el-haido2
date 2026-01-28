@@ -2,11 +2,11 @@ declare module '@motionone/solid' {
   import { Component, JSX } from 'solid-js';
 
   export interface MotionComponentProps {
-    initial?: Record<string, any>;
-    animate?: Record<string, any>;
-    exit?: Record<string, any>;
-    hover?: Record<string, any>;
-    press?: Record<string, any>;
+    initial?: Record<string, unknown>;
+    animate?: Record<string, unknown>;
+    exit?: Record<string, unknown>;
+    hover?: Record<string, unknown>;
+    press?: Record<string, unknown>;
     transition?: {
       duration?: number;
       delay?: number;

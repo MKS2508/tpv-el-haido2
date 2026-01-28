@@ -1,8 +1,8 @@
-import { useAppTheme } from '@/lib/theme-context';
 import { createEffect, createSignal, For, onCleanup } from 'solid-js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAppTheme } from '@/lib/theme-context';
 
 interface CSSVariable {
   name: string;
@@ -159,7 +159,9 @@ export function ThemeDebugger() {
           </div>
           <div>
             <div class="text-sm font-medium">Loading:</div>
-            <Badge variant={!initialized() ? 'secondary' : 'outline'}>{!initialized() ? 'Yes' : 'No'}</Badge>
+            <Badge variant={!initialized() ? 'secondary' : 'outline'}>
+              {!initialized() ? 'Yes' : 'No'}
+            </Badge>
           </div>
         </div>
 

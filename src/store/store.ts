@@ -1,4 +1,4 @@
-import { batch, createMemo, createRoot, createSignal } from 'solid-js';
+import { batch, createRoot, createSignal } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
 import { config } from '@/lib/config';
 import type Category from '@/models/Category';
@@ -9,16 +9,16 @@ import type Product from '@/models/Product';
 import type ITable from '@/models/Table';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter';
 import type User from '@/models/User';
-import type { LicenseStatus } from '@/types/license';
 import { HttpStorageAdapter } from '@/services/http-storage-adapter';
 import { IndexedDbStorageAdapter } from '@/services/indexeddb-storage-adapter';
 import { SqliteStorageAdapter } from '@/services/sqlite-storage-adapter';
 import type { IStorageAdapter, StorageMode } from '@/services/storage-adapter.interface';
+import type { LicenseStatus } from '@/types/license';
 
 // Debounce utility for localStorage
-const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number): T => {
+const debounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number): T => {
   let timeoutId: ReturnType<typeof setTimeout>;
-  return ((...args: any[]) => {
+  return ((...args: unknown[]) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   }) as T;
