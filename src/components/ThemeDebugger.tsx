@@ -1,6 +1,4 @@
-'use client';
-
-import { useTheme } from '@mks2508/theme-manager-react';
+import { useAppTheme } from '@/lib/theme-context';
 import { createEffect, createSignal, For, onCleanup } from 'solid-js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -50,10 +48,11 @@ const THEME_VARS = [
 ];
 
 export function ThemeDebugger() {
-  const themeContext = useTheme();
-  const { currentTheme, currentMode, themes, initialized } = themeContext;
-  const loading = 'loading' in themeContext ? (themeContext as any).loading : false;
-  const error = 'error' in themeContext ? (themeContext as any).error : null;
+  const themeContext = useAppTheme();
+  const currentTheme = () => themeContext.currentTheme();
+  const currentMode = () => themeContext.currentMode();
+  const themes = () => themeContext.availableThemes();
+  const initialized = () => themeContext.isReady();
   const [cssVariables, setCssVariables] = createSignal<CSSVariable[]>([]);
   const [domInfo, setDomInfo] = createSignal({
     dataTheme: '',
@@ -142,33 +141,27 @@ export function ThemeDebugger() {
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div>
             <div class="text-sm font-medium">Theme:</div>
-            <Badge variant="outline">{currentTheme}</Badge>
+            <Badge variant="outline">{currentTheme()}</Badge>
           </div>
           <div>
             <div class="text-sm font-medium">Mode:</div>
-            <Badge variant="outline">{currentMode}</Badge>
+            <Badge variant="outline">{currentMode()}</Badge>
           </div>
           <div>
             <div class="text-sm font-medium">Initialized:</div>
-            <Badge variant={initialized ? 'default' : 'destructive'}>
-              {initialized ? 'Yes' : 'No'}
+            <Badge variant={initialized() ? 'default' : 'destructive'}>
+              {initialized() ? 'Yes' : 'No'}
             </Badge>
           </div>
           <div>
             <div class="text-sm font-medium">Themes:</div>
-            <Badge variant="outline">{themes?.length || 0}</Badge>
+            <Badge variant="outline">{themes().length || 0}</Badge>
           </div>
           <div>
             <div class="text-sm font-medium">Loading:</div>
-            <Badge variant={loading ? 'secondary' : 'outline'}>{loading ? 'Yes' : 'No'}</Badge>
+            <Badge variant={!initialized() ? 'secondary' : 'outline'}>{!initialized() ? 'Yes' : 'No'}</Badge>
           </div>
         </div>
-
-        {error && (
-          <div class="border border-destructive rounded p-3 bg-destructive/10">
-            <div class="text-sm font-medium text-destructive">Error: {error}</div>
-          </div>
-        )}
 
         {/* DOM State Info */}
         <div class="border rounded p-3 bg-muted/50">

@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { createSignal, Show } from 'solid-js';
-import { toast } from 'sonner';
+import { toast } from 'solid-sonner';
 import { Button } from '@/components/ui/button';
 import {
   Card,

@@ -3,7 +3,7 @@ import { Motion } from '@motionone/solid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
+import { toast } from 'solid-sonner';
 import { invoke } from '@tauri-apps/api/core';
 import { Key, Loader2 } from 'lucide-solid';
 import type { LicenseStatus, LicenseActivationRequest } from '@/types/license';

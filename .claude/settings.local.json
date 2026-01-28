@@ -27,7 +27,11 @@
       "WebFetch(domain:bun.com)",
       "Bash(bun run dev:*)",
       "Bash(PRO_LICENSE=\"M8R8-4KWA-9EFJ-9N27\")",
-      "Bash(__NEW_LINE_a869e5064bea5c17__ echo \"=== TEST: Validate license \\(first time\\) ===\")"
+      "Bash(__NEW_LINE_a869e5064bea5c17__ echo \"=== TEST: Validate license \\(first time\\) ===\")",
+      "Bash(__NEW_LINE_5b1c6fc2c4ea33c8__ echo \"=== ENVIRONMENT VARIABLES SUMMARY ===\")",
+      "Bash(bun run build)",
+      "Bash(bun pm ls:*)",
+      "Bash(npm search:*)"
     ]
   }
 }

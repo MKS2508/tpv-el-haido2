@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { createEffect, createSignal } from 'solid-js';
 import { getThemeById } from '@/lib/themes/preset-themes';
 import {
   applyTheme,
@@ -8,16 +8,17 @@ import {
 } from '@/lib/themes/theme-config';
 
 export function useTheme() {
-  const [settings, setSettings] = useState<ThemeSettings>(loadThemeSettings());
+  const [settings, setSettings] = createSignal<ThemeSettings>(loadThemeSettings());
 
   // Apply theme when settings change
-  useEffect(() => {
-    const theme = getThemeById(settings.currentTheme);
+  createEffect(() => {
+    const currentSettings = settings();
+    const theme = getThemeById(currentSettings.currentTheme);
     if (theme) {
-      applyTheme(theme, settings.darkMode);
+      applyTheme(theme, currentSettings.darkMode);
 
       // Update documentElement class for dark mode
-      if (settings.darkMode) {
+      if (currentSettings.darkMode) {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
@@ -25,7 +26,7 @@ export function useTheme() {
 
       // Update touch mode
       const root = document.documentElement;
-      if (settings.touchMode) {
+      if (currentSettings.touchMode) {
         root.classList.add('touch-mode');
       } else {
         root.classList.remove('touch-mode');
@@ -33,8 +34,8 @@ export function useTheme() {
     }
 
     // Save settings
-    saveThemeSettings(settings);
-  }, [settings]);
+    saveThemeSettings(currentSettings);
+  });
 
   const setTheme = (themeId: string) => {
     setSettings((prev) => ({

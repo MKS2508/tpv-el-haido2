@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, AlertCircle, Key } from 'lucide-solid';
 import { invoke } from '@tauri-apps/api/core';
-import { toast } from 'sonner';
+import { toast } from 'solid-sonner';
 import type { LicenseStatus } from '@/types/license';
 
 interface LicenseStatusCardProps {

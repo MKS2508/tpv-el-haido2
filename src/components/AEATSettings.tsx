@@ -81,7 +81,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
     },
   });
 
-  const [externalUrl, setExternalUrl] = createSignal(config.externalUrl || 'http://localhost:3001');
+  const [externalUrl, setExternalUrl] = createSignal(config().externalUrl || 'http://localhost:3001');
 
   // ==================== Handlers ====================
 
@@ -167,22 +167,22 @@ export default function AEATSettings(props: AEATSettingsProps) {
   };
 
   const getStatusColor = (): string => {
-    if (!isEnabled) return 'bg-gray-400';
-    if (isConnected) return 'bg-green-500';
-    if (connectionStatus.error) return 'bg-red-500';
+    if (!isEnabled()) return 'bg-gray-400';
+    if (isConnected()) return 'bg-green-500';
+    if (connectionStatus().error) return 'bg-red-500';
     return 'bg-yellow-500';
   };
 
   const getStatusText = (): string => {
-    if (!isEnabled) return 'Deshabilitado';
-    if (isLoading) return 'Verificando...';
-    if (isConnected) return 'Conectado';
-    if (connectionStatus.error) return 'Error';
+    if (!isEnabled()) return 'Deshabilitado';
+    if (isLoading()) return 'Verificando...';
+    if (isConnected()) return 'Conectado';
+    if (connectionStatus().error) return 'Error';
     return 'Desconectado';
   };
 
   const getSidecarStatusColor = (): string => {
-    switch (sidecarState.status) {
+    switch (sidecarState().status) {
       case 'running':
         return 'text-green-500';
       case 'starting':
@@ -196,7 +196,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
   };
 
   const getSidecarStatusText = (): string => {
-    switch (sidecarState.status) {
+    switch (sidecarState().status) {
       case 'running':
         return 'En ejecución';
       case 'starting':
@@ -204,7 +204,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
       case 'stopping':
         return 'Deteniendo...';
       case 'error':
-        return sidecarState.error || 'Error';
+        return sidecarState().error || 'Error';
       default:
         return 'Detenido';
     }
@@ -236,7 +236,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
           <div class="space-y-2">
             <Label>Modo de Conexion</Label>
             <Select
-              value={config.mode}
+              value={config().mode}
               onChange={(v: string | null) => v && handleModeChange(v as AEATMode)}
             >
               <SelectTrigger>
@@ -266,22 +266,22 @@ export default function AEATSettings(props: AEATSettingsProps) {
               </SelectContent>
             </Select>
             <p class="text-xs text-muted-foreground">
-              <Show when={config.mode === 'disabled'}>Las facturas no se enviaran a AEAT</Show>
-              <Show when={config.mode === 'external'}>
+              <Show when={config().mode === 'disabled'}>Las facturas no se enviaran a AEAT</Show>
+              <Show when={config().mode === 'external'}>
                 Conecta a un servidor AEAT Bridge ejecutandose externamente
               </Show>
-              <Show when={config.mode === 'sidecar'}>
+              <Show when={config().mode === 'sidecar'}>
                 El servicio se ejecuta integrado con la aplicacion
               </Show>
             </p>
           </div>
 
           {/* Selector de Entorno */}
-          <Show when={isEnabled}>
+          <Show when={isEnabled()}>
             <div class="space-y-2">
               <Label>Entorno</Label>
               <Select
-                value={config.environment}
+                value={config().environment}
                 onChange={(v: string | null) => v && handleEnvironmentChange(v as AEATEnvironment)}
               >
                 <SelectTrigger>
@@ -303,10 +303,10 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 </SelectContent>
               </Select>
               <p class="text-xs text-muted-foreground">
-                <Show when={config.environment === 'test'}>
+                <Show when={config().environment === 'test'}>
                   Los datos enviados NO tienen trascendencia tributaria
                 </Show>
-                <Show when={config.environment !== 'test'}>
+                <Show when={config().environment !== 'test'}>
                   Los datos enviados SI tienen trascendencia tributaria
                 </Show>
               </p>
@@ -316,7 +316,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
       </Card>
 
       {/* Configuracion Modo Externo */}
-      <Show when={config.mode === 'external'}>
+      <Show when={config().mode === 'external'}>
         <Card>
           <CardHeader class="pb-3">
             <CardTitle class="text-base flex items-center gap-2">
@@ -344,22 +344,22 @@ export default function AEATSettings(props: AEATSettingsProps) {
               </p>
             </div>
 
-            <Button onClick={handleTestConnection} disabled={isLoading} class="w-full">
-              <Show when={isLoading}>
+            <Button onClick={handleTestConnection} disabled={isLoading()} class="w-full">
+              <Show when={isLoading()}>
                 <Loader2 class="mr-2 h-4 w-4 animate-spin" />
               </Show>
-              <Show when={!isLoading && isConnected}>
+              <Show when={!isLoading() && isConnected()}>
                 <Wifi class="mr-2 h-4 w-4" />
               </Show>
-              <Show when={!isLoading && !isConnected}>
+              <Show when={!isLoading() && !isConnected()}>
                 <WifiOff class="mr-2 h-4 w-4" />
               </Show>
               Probar Conexion
             </Button>
 
-            <Show when={connectionStatus.lastCheck}>
+            <Show when={connectionStatus().lastCheck}>
               <p class="text-xs text-muted-foreground text-center">
-                Ultima verificacion: {connectionStatus.lastCheck?.toLocaleTimeString()}
+                Ultima verificacion: {connectionStatus().lastCheck?.toLocaleTimeString()}
               </p>
             </Show>
           </CardContent>
@@ -367,7 +367,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
       </Show>
 
       {/* Configuracion Modo Sidecar */}
-      <Show when={config.mode === 'sidecar' && isSidecarAvailable}>
+      <Show when={config().mode === 'sidecar' && isSidecarAvailable()}>
         <Card>
           <CardHeader class="pb-3">
             <CardTitle class="text-base flex items-center gap-2">
@@ -384,8 +384,8 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 />
                 <span class="text-sm font-medium">{getSidecarStatusText()}</span>
               </div>
-              <Show when={sidecarState.pid}>
-                <span class="text-xs text-muted-foreground">PID: {sidecarState.pid}</span>
+              <Show when={sidecarState().pid}>
+                <span class="text-xs text-muted-foreground">PID: {sidecarState().pid}</span>
               </Show>
             </div>
 
@@ -394,7 +394,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
               <Button
                 variant="outline"
                 onClick={handleStartSidecar}
-                disabled={sidecarState.status === 'running' || sidecarState.status === 'starting'}
+                disabled={sidecarState().status === 'running' || sidecarState().status === 'starting'}
                 class="flex-1"
               >
                 <Play class="mr-2 h-4 w-4" />
@@ -403,7 +403,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
               <Button
                 variant="outline"
                 onClick={handleStopSidecar}
-                disabled={sidecarState.status === 'stopped' || sidecarState.status === 'stopping'}
+                disabled={sidecarState().status === 'stopped' || sidecarState().status === 'stopping'}
                 class="flex-1"
               >
                 <Square class="mr-2 h-4 w-4" />
@@ -412,7 +412,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
               <Button
                 variant="outline"
                 onClick={handleRestartSidecar}
-                disabled={sidecarState.status === 'stopped'}
+                disabled={sidecarState().status === 'stopped'}
               >
                 <RefreshCw class="mr-2 h-4 w-4" />
               </Button>
@@ -424,12 +424,12 @@ export default function AEATSettings(props: AEATSettingsProps) {
               <Input
                 id="sidecarPort"
                 type="number"
-                value={config.sidecarPort}
+                value={config().sidecarPort}
                 onInput={(e) =>
                   updateConfig({ sidecarPort: parseInt(e.currentTarget.value, 10) || 3001 })
                 }
                 placeholder="3001"
-                disabled={sidecarState.status === 'running'}
+                disabled={sidecarState().status === 'running'}
               />
               <p class="text-xs text-muted-foreground">
                 Puerto en el que se ejecuta el servicio (reiniciar si se cambia)
@@ -447,7 +447,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 </div>
                 <Switch
                   id="autoStartSidecar"
-                  checked={config.autoStartSidecar}
+                  checked={config().autoStartSidecar}
                   onChange={(checked: boolean) => updateConfig({ autoStartSidecar: checked })}
                 />
               </div>
@@ -457,7 +457,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
       </Show>
 
       {/* Datos Fiscales del Negocio */}
-      <Show when={isEnabled}>
+      <Show when={isEnabled()}>
         <Card>
           <CardHeader class="pb-3">
             <CardTitle class="text-base flex items-center gap-2">
@@ -468,7 +468,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
           </CardHeader>
           <CardContent class="space-y-4">
             {/* Aviso si faltan datos obligatorios */}
-            <Show when={!config.businessData.nif || !config.businessData.nombreRazon}>
+            <Show when={!config().businessData.nif || !config().businessData.nombreRazon}>
               <div class="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                 <AlertTriangle class="h-4 w-4 text-yellow-500 mt-0.5" />
                 <div class="text-sm">
@@ -485,11 +485,11 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 <Label for="nif">NIF/CIF *</Label>
                 <Input
                   id="nif"
-                  value={config.businessData.nif}
+                  value={config().businessData.nif}
                   onInput={(e) =>
                     updateConfig({
                       businessData: {
-                        ...config.businessData,
+                        ...config().businessData,
                         nif: e.currentTarget.value.toUpperCase(),
                       },
                     })
@@ -504,10 +504,10 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 <Label for="nombreRazon">Razon Social *</Label>
                 <Input
                   id="nombreRazon"
-                  value={config.businessData.nombreRazon}
+                  value={config().businessData.nombreRazon}
                   onInput={(e) =>
                     updateConfig({
-                      businessData: { ...config.businessData, nombreRazon: e.currentTarget.value },
+                      businessData: { ...config().businessData, nombreRazon: e.currentTarget.value },
                     })
                   }
                   placeholder="Mi Empresa S.L."
@@ -521,11 +521,11 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 <Label for="serieFactura">Serie de Factura</Label>
                 <Input
                   id="serieFactura"
-                  value={config.businessData.serieFactura}
+                  value={config().businessData.serieFactura}
                   onInput={(e) =>
                     updateConfig({
                       businessData: {
-                        ...config.businessData,
+                        ...config().businessData,
                         serieFactura: e.currentTarget.value,
                       },
                     })
@@ -540,11 +540,11 @@ export default function AEATSettings(props: AEATSettingsProps) {
               <div class="space-y-2">
                 <Label for="tipoFactura">Tipo de Factura</Label>
                 <Select
-                  value={config.businessData.tipoFactura}
+                  value={config().businessData.tipoFactura}
                   onChange={(v: string | null) =>
                     v &&
                     updateConfig({
-                      businessData: { ...config.businessData, tipoFactura: v as 'F1' | 'F2' },
+                      businessData: { ...config().businessData, tipoFactura: v as 'F1' | 'F2' },
                     })
                   }
                 >
@@ -566,11 +566,11 @@ export default function AEATSettings(props: AEATSettingsProps) {
               <Label for="descripcionOperacion">Descripcion de Operaciones</Label>
               <Input
                 id="descripcionOperacion"
-                value={config.businessData.descripcionOperacion}
+                value={config().businessData.descripcionOperacion}
                 onInput={(e) =>
                   updateConfig({
                     businessData: {
-                      ...config.businessData,
+                      ...config().businessData,
                       descripcionOperacion: e.currentTarget.value,
                     },
                   })
@@ -584,7 +584,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
       </Show>
 
       {/* Opciones de Facturacion */}
-      <Show when={isEnabled}>
+      <Show when={isEnabled()}>
         <Card>
           <CardHeader class="pb-3">
             <CardTitle class="text-base">Opciones de Facturacion</CardTitle>
@@ -599,15 +599,15 @@ export default function AEATSettings(props: AEATSettingsProps) {
               </div>
               <Switch
                 id="autoSendInvoices"
-                checked={config.autoSendInvoices}
+                checked={config().autoSendInvoices}
                 onChange={(checked: boolean) => updateConfig({ autoSendInvoices: checked })}
-                disabled={!config.businessData.nif || !config.businessData.nombreRazon}
+                disabled={!config().businessData.nif || !config().businessData.nombreRazon}
               />
             </div>
             <Show
               when={
-                config.autoSendInvoices &&
-                (!config.businessData.nif || !config.businessData.nombreRazon)
+                config().autoSendInvoices &&
+                (!config().businessData.nif || !config().businessData.nombreRazon)
               }
             >
               <p class="text-xs text-yellow-600">
@@ -620,7 +620,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
               <Input
                 id="requestTimeout"
                 type="number"
-                value={config.requestTimeout}
+                value={config().requestTimeout}
                 onInput={(e) =>
                   updateConfig({ requestTimeout: parseInt(e.currentTarget.value, 10) || 30000 })
                 }
@@ -635,7 +635,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
       </Show>
 
       {/* Informacion de Certificados */}
-      <Show when={isEnabled}>
+      <Show when={isEnabled()}>
         <Card>
           <CardHeader class="pb-3">
             <CardTitle class="text-base flex items-center gap-2">
@@ -649,7 +649,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 Los certificados digitales se configuran en el servidor AEAT Bridge.
               </p>
               <p class="text-xs text-muted-foreground">
-                Para {config.mode === 'external' ? 'el servidor externo' : 'el sidecar'}, configure
+                Para {config().mode === 'external' ? 'el servidor externo' : 'el sidecar'}, configure
                 las variables de entorno <code class="bg-muted px-1 rounded">PFX_PATH</code> y{' '}
                 <code class="bg-muted px-1 rounded">PFX_PASSWORD</code> en el archivo{' '}
                 <code class="bg-muted px-1 rounded">.env</code>
@@ -680,7 +680,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
             <div class="text-xs text-muted-foreground space-y-1 border-t pt-3">
               <p>
                 <strong>Entorno actual:</strong>{' '}
-                {config.environment === 'test'
+                {config().environment === 'test'
                   ? 'Pruebas (prewww1.aeat.es)'
                   : 'Produccion (www1.agenciatributaria.gob.es)'}
               </p>
@@ -693,7 +693,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
       </Show>
 
       {/* Informacion del Circuit Breaker */}
-      <Show when={isEnabled && connectionStatus.circuitBreaker}>
+      <Show when={isEnabled() && connectionStatus().circuitBreaker}>
         <Card>
           <CardHeader class="pb-3">
             <CardTitle class="text-base">Estado del Sistema</CardTitle>
@@ -704,28 +704,28 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 <span class="text-muted-foreground">Circuit Breaker:</span>
                 <span
                   class={`ml-2 font-medium ${
-                    connectionStatus.circuitBreaker?.state === 'CLOSED'
+                    connectionStatus().circuitBreaker?.state === 'CLOSED'
                       ? 'text-green-500'
-                      : connectionStatus.circuitBreaker?.state === 'OPEN'
+                      : connectionStatus().circuitBreaker?.state === 'OPEN'
                         ? 'text-red-500'
                         : 'text-yellow-500'
                   }`}
                 >
-                  {connectionStatus.circuitBreaker?.state}
+                  {connectionStatus().circuitBreaker?.state}
                 </span>
               </div>
               <div>
                 <span class="text-muted-foreground">Fallos:</span>
-                <span class="ml-2 font-medium">{connectionStatus.circuitBreaker?.failures}</span>
+                <span class="ml-2 font-medium">{connectionStatus().circuitBreaker?.failures}</span>
               </div>
               <div>
                 <span class="text-muted-foreground">Exitos:</span>
-                <span class="ml-2 font-medium">{connectionStatus.circuitBreaker?.successes}</span>
+                <span class="ml-2 font-medium">{connectionStatus().circuitBreaker?.successes}</span>
               </div>
               <div>
                 <span class="text-muted-foreground">Endpoint:</span>
                 <span class="ml-2 font-medium text-xs truncate">
-                  {connectionStatus.endpoint.substring(0, 30)}...
+                  {connectionStatus().endpoint.substring(0, 30)}...
                 </span>
               </div>
             </div>

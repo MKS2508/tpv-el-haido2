@@ -1,4 +1,4 @@
-import { toast as sonnerToast } from 'sonner';
+import { toast as sonnerToast } from 'solid-sonner';
 
 interface ToastOptions {
   title?: string;
