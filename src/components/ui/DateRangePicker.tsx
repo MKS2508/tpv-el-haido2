@@ -1,4 +1,4 @@
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-solid';
+import { CheckIcon, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-solid';
 import {
   type Component,
   createEffect,
@@ -10,7 +10,7 @@ import {
   Show,
 } from 'solid-js';
 import { Calendar } from '@/components/ui/calendar.tsx';
-import { DateInput } from '@/components/ui/date-input.tsx';
+import DateInput from '@/components/ui/date-input.tsx';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
 import { Label } from './label';
@@ -320,30 +320,31 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
       }}
     >
       <PopoverTrigger as="div">
-        {(triggerProps: Record<string, unknown>) => (
-          <Button size="lg" variant="outline" {...triggerProps}>
-            <div class="text-right">
-              <div class="py-1">
-                <div>{`${formatDate(range().from, locale())}${
-                  range().to != null ? ` - ${formatDate(range().to!, locale())}` : ''
-                }`}</div>
-              </div>
-              <Show when={rangeCompare() != null}>
-                <div class="opacity-60 text-xs -mt-1">
-                  vs. {formatDate(rangeCompare()!.from, locale())}
-                  {rangeCompare()!.to != null
-                    ? ` - ${formatDate(rangeCompare()!.to!, locale())}`
-                    : ''}
-                </div>
-              </Show>
+        <Button size="lg" variant="outline">
+          <div class="text-right">
+            <div class="py-1">
+              <div>{`${formatDate(range().from, locale())}${
+                range().to ? ` - ${formatDate(range().to, locale())}` : ''
+              }`}</div>
             </div>
-            <div class="pl-1 opacity-60 -mr-2 scale-125">
-              <Show when={isOpen()} fallback={<ChevronDownIcon width={24} />}>
-                <ChevronUpIcon width={24} />
-              </Show>
+            <div class="text-xs text-muted-foreground flex items-center justify-end gap-1">
+              {showCompare() && rangeCompare() ? (
+                <>
+                  <ChevronLeft width={18} height={18} />
+                  <span>{`${formatDate(rangeCompare().from, locale())} - ${formatDate(
+                    rangeCompare().to ?? range().from,
+                    locale()
+                  )}`}</span>
+                  <ChevronRight width={18} height={18} />
+                </>
+              ) : (
+                <Show when={isOpen()} fallback={<ChevronDown width={24} />}>
+                  <ChevronUp width={24} />
+                </Show>
+              )}
             </div>
-          </Button>
-        )}
+          </div>
+        </Button>
       </PopoverTrigger>
       <PopoverContent align={align()} class="w-auto">
         <div class="flex py-2">
@@ -432,16 +433,16 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
                               currentRangeCompare.to == null || date > currentRangeCompare.to
                                 ? date
                                 : currentRangeCompare.to;
-                            setRangeCompare((prevRangeCompare) => ({
-                              ...prevRangeCompare!,
+                            setRangeCompare(() => ({
+                              ...currentRangeCompare,
                               from: date,
                               to: compareToDate,
                             }));
                           } else {
-                            setRangeCompare({
+                            setRangeCompare(() => ({
                               from: date,
                               to: new Date(),
-                            });
+                            }));
                           }
                         }}
                       />
@@ -453,11 +454,11 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
                           if (currentRangeCompare?.from) {
                             const compareFromDate =
                               date < currentRangeCompare.from ? date : currentRangeCompare.from;
-                            setRangeCompare({
+                            setRangeCompare(() => ({
                               ...currentRangeCompare,
                               from: compareFromDate,
                               to: date,
-                            });
+                            }));
                           }
                         }}
                       />

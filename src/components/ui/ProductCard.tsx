@@ -1,8 +1,7 @@
 import { Motion, Presence } from '@motionone/solid';
 import { Check, Plus, Star } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { createSignal } from 'solid-js';
-import { splitProps } from 'solid-js';
+import { createSignal, splitProps } from 'solid-js';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
 import stockImagesService from '@/services/stock-images.service';
@@ -41,14 +40,14 @@ const ProductCard = (props: ProductCardProps) => {
 
   const [isAdding, setIsAdding] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
-  const { useStockImages } = useStore();
+  const state = useStore();
 
   const getProductImage = () => {
     if (product.uploadedImage) {
       return product.uploadedImage;
     }
 
-    if (useStockImages) {
+    if (state.useStockImages) {
       const stockImage = stockImagesService.getConsistentStockImage(
         product.id,
         product.name,
@@ -98,7 +97,7 @@ const ProductCard = (props: ProductCardProps) => {
     }, 200);
   };
 
-  const handleFavoriteClick = (e: JSX.MouseEvent) => {
+  const handleFavoriteClick = (e: Event) => {
     e.stopPropagation();
     onFavoriteToggle?.(product.id);
   };
@@ -166,8 +165,8 @@ const ProductCard = (props: ProductCardProps) => {
         scale: isAdding() ? 1.03 : 1,
       }}
       transition={{
-        scale: { duration: 0.2, easing: 'spring', stiffness: 300, damping: 25 },
-        opacity: { duration: 0.15, easing: 'ease-out' },
+        duration: 0.2,
+        easing: [0.25, 0.1, 0.25, 1],
       }}
       {...others}
     >
@@ -221,7 +220,7 @@ const ProductCard = (props: ProductCardProps) => {
                     opacity: 1,
                   }}
                   exit={{ scale: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, easing: 'spring', stiffness: 300 }}
+                  transition={{ duration: 0.2, easing: [0.25, 0.1, 0.25, 1] }}
                 >
                   <Plus class="w-4 h-4" strokeWidth={2.5} />
                 </Motion.div>
@@ -231,7 +230,7 @@ const ProductCard = (props: ProductCardProps) => {
                   initial={{ scale: 0, opacity: 0, rotate: -90 }}
                   animate={{ scale: 1, opacity: 1, rotate: 0 }}
                   exit={{ scale: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, easing: 'spring', stiffness: 300 }}
+                  transition={{ duration: 0.3, easing: [0.25, 0.1, 0.25, 1] }}
                 >
                   <Check class="w-4 h-4" strokeWidth={3} />
                 </Motion.div>
@@ -254,4 +253,94 @@ const ProductCard = (props: ProductCardProps) => {
               </Button>
             )
           )}
-    
+        </div>
+      </div>
+      {/* Product Info Section */}
+      <div
+        class={cn(
+          'flex-1 flex flex-col justify-between bg-gradient-to-b from-card/50 to-card border-t border-border/20',
+          mode === 'order' ? 'p-3' : 'p-2'
+        )}
+      >
+        {/* Product Name */}
+        <div class={cn(mode === 'order' ? 'mb-2' : 'mb-1')}>
+          <h3
+            class={cn(
+              'font-extrabold line-clamp-2 leading-tight',
+              mode === 'order' ? 'text-sm mb-0.5' : 'text-xs',
+              isAdding() ? 'text-primary' : 'text-foreground'
+            )}
+          >
+            {product.name}
+          </h3>
+          {product.brand && (
+            <p
+              class={cn(
+                'text-muted-foreground font-medium opacity-90',
+                mode === 'order' ? 'text-xs' : 'text-[10px]'
+              )}
+            >
+              {product.brand}
+            </p>
+          )}
+        </div>
+
+        {/* Price Section */}
+        <div class="flex items-end justify-between">
+          <Motion.div
+            class="flex flex-col"
+            animate={{
+              scale: isAdding() ? 1.08 : 1,
+            }}
+            transition={{ duration: 0.15 }}
+          >
+            <span
+              class={cn(
+                'font-black tracking-tight',
+                mode === 'order' ? 'text-2xl' : 'text-lg',
+                isAdding() ? 'text-success drop-shadow-md' : 'text-primary'
+              )}
+            >
+              {product.price.toFixed(2)}€
+            </span>
+            {mode === 'order' && (
+              <span class="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
+                unidad
+              </span>
+            )}
+          </Motion.div>
+
+          {/* Stock indicator para mode order */}
+          {mode === 'order' && product.stock !== undefined && product.stock < 10 && (
+            <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
+              <span class="text-xs font-bold text-warning">Quedan {product.stock}</span>
+            </div>
+          )}
+
+          {/* Category info para mode manage */}
+          {mode === 'manage' && product.category && (
+            <div class="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
+              {product.category}
+            </div>
+          )}
+        </div>
+      </div>
+      {/* Loading overlay solo para mode order */}
+      {mode === 'order' && (
+        <Presence>
+          {isAdding() && !showSuccess() && (
+            <Motion.div
+              class="absolute inset-0 bg-primary/10 backdrop-blur-[2px] rounded-xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            />
+          )}
+        </Presence>
+      )}
+    </Motion.div>
+  );
+};
+
+export default ProductCard;

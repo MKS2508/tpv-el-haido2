@@ -1,39 +1,38 @@
-import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
+import type { JSX } from 'solid-js';
+import { splitProps } from 'solid-js';
 
 import { cn } from '@/lib/utils';
 
-const ScrollArea = React.forwardRef<
-  React.ElementRef<typeof ScrollAreaPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
->(({ className, children, ...props }, ref) => (
-  <ScrollAreaPrimitive.Root ref={ref} class={cn('relative overflow-hidden', className)} {...props}>
-    <ScrollAreaPrimitive.Viewport class="h-full w-full rounded-[inherit]">
-      {children}
-    </ScrollAreaPrimitive.Viewport>
-    <ScrollBar />
-    <ScrollAreaPrimitive.Corner />
-  </ScrollAreaPrimitive.Root>
-));
-ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
+type ScrollAreaProps = JSX.HTMLAttributes<HTMLDivElement>;
 
-const ScrollBar = React.forwardRef<
-  React.ElementRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>,
-  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>
->(({ className, orientation = 'vertical', ...props }, ref) => (
-  <ScrollAreaPrimitive.ScrollAreaScrollbar
-    ref={ref}
-    orientation={orientation}
-    class={cn(
-      'flex touch-none select-none transition-colors',
-      orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent p-[1px]',
-      orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent p-[1px]',
-      className
-    )}
-    {...props}
-  >
-    <ScrollAreaPrimitive.ScrollAreaThumb class="relative flex-1 rounded-full bg-border" />
-  </ScrollAreaPrimitive.ScrollAreaScrollbar>
-));
-ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;
+const ScrollArea = (props: ScrollAreaProps) => {
+  const [local, others] = splitProps(props, ['class', 'children']);
+  return (
+    <div class={cn('relative overflow-hidden', local.class)} {...others}>
+      <div class="h-full w-full overflow-y-auto overflow-x-hidden rounded-[inherit]">
+        {local.children}
+      </div>
+    </div>
+  );
+};
+
+const ScrollBar = (props: { orientation?: 'vertical' | 'horizontal' } & ScrollAreaProps) => {
+  const [local, others] = splitProps(props, ['class', 'orientation']);
+  return (
+    <div
+      class={cn(
+        'absolute z-10 touch-none select-none transition-colors',
+        local.orientation === 'vertical' &&
+          'right-0 top-0 h-full w-2.5 border-l border-l-transparent p-[1px]',
+        local.orientation === 'horizontal' &&
+          'bottom-0 left-0 h-2.5 w-full border-t border-t-transparent p-[1px]',
+        local.class
+      )}
+      {...others}
+    >
+      <div class="relative h-full w-full rounded-full bg-border" />
+    </div>
+  );
+};
 
 export { ScrollArea, ScrollBar };

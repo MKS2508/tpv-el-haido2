@@ -1,7 +1,7 @@
+import { createVirtualizer } from '@tanstack/solid-virtual';
 import { CheckCircle, CreditCard, HandCoins, Loader2, XCircle } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createMemo, For, Show } from 'solid-js';
-import { useVirtualizer } from '@tanstack/solid-virtual';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -73,7 +73,7 @@ const OrderRow = (props: RowProps & { order: Order }) => {
     <div class="px-3">
       <table class="w-full">
         <tbody>
-          <tr 
+          <tr
             class="cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
             onClick={() => onOrderSelect(order)}
           >
@@ -118,7 +118,7 @@ const VirtualizedOrderHistory = (props: VirtualizedOrderHistoryProps): JSX.Eleme
 
   let parentRef: HTMLDivElement | undefined;
 
-  const rowVirtualizer = useVirtualizer({
+  const rowVirtualizer = createVirtualizer({
     get count() {
       return orders.length;
     },
@@ -153,11 +153,11 @@ const VirtualizedOrderHistory = (props: VirtualizedOrderHistoryProps): JSX.Eleme
           </table>
         </div>
       </Show>
-      
+
       {/* Virtualized list with @tanstack/solid-virtual */}
       <div
         ref={parentRef}
-        style={{ height: containerHeight - (isMobile() ? 0 : 50), overflow: 'auto' }}
+        style={{ height: `${containerHeight - (isMobile() ? 0 : 50)}px`, overflow: 'auto' }}
         class="virtualized-order-list"
       >
         <div

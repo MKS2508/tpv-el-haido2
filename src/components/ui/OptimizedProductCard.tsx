@@ -16,13 +16,13 @@ interface OptimizedProductCardProps {
   class?: string;
 }
 
-function OptimizedProductCard(props: OptimizedProductCardProps): JSX.Element {
+function OptimizedProductCard(props: OptimizedProductCardProps) {
   const mode = () => props.mode ?? 'order';
   const isPinned = () => props.isPinned ?? false;
   const showCategory = () => props.showCategory ?? true;
   const [isAdding, setIsAdding] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
-  const { useStockImages } = useStore();
+  const state = useStore();
 
   // Obtener imagen: personalizada > stock > fallback
   const getProductImage = () => {
@@ -30,7 +30,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps): JSX.Element {
       return props.product.uploadedImage;
     }
 
-    if (useStockImages) {
+    if (state.useStockImages) {
       const stockImage = stockImagesService.getConsistentStockImage(
         props.product.id,
         props.product.name,
@@ -89,7 +89,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps): JSX.Element {
     return () => clearTimeout(successTimer);
   };
 
-  const handleFavoriteClick = (e: MouseEvent) => {
+  const handleFavoriteClick = (e: Event) => {
     e.stopPropagation();
     props.onFavoriteToggle?.(props.product.id);
   };

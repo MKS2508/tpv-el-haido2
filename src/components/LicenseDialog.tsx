@@ -1,4 +1,6 @@
-import { Show, createSignal } from 'solid-js';
+import { invoke } from '@tauri-apps/api/core';
+import { createSignal, Show } from 'solid-js';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,8 +12,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { invoke } from '@tauri-apps/api/core';
 import type { LicenseActivationRequest, LicenseStatus } from '@/types/license';
 
 interface LicenseDialogProps {
@@ -89,7 +89,7 @@ export default function LicenseDialog(props: LicenseDialogProps) {
   };
 
   return (
-    <Show when={props.isOpen()}>
+    <Show when={props.isOpen}>
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <Card class="w-full max-w-md mx-4 shadow-lg">
           <CardHeader>
@@ -126,9 +126,7 @@ export default function LicenseDialog(props: LicenseDialogProps) {
                 class="uppercase font-mono"
                 maxlength={19}
               />
-              <p class="text-xs text-muted-foreground">
-                Formato: XXXX-XXXX-XXXX-XXXX
-              </p>
+              <p class="text-xs text-muted-foreground">Formato: XXXX-XXXX-XXXX-XXXX</p>
             </div>
 
             <Show when={isLoading()}>
@@ -139,17 +137,10 @@ export default function LicenseDialog(props: LicenseDialogProps) {
           </CardContent>
 
           <CardFooter class="flex justify-between">
-            <Button
-              variant="ghost"
-              onClick={props.onClose}
-              disabled={isLoading()}
-            >
+            <Button variant="ghost" onClick={props.onClose} disabled={isLoading()}>
               Cancelar
             </Button>
-            <Button
-              onClick={handleActivate}
-              disabled={isLoading()}
-            >
+            <Button onClick={handleActivate} disabled={isLoading()}>
               Activar
             </Button>
           </CardFooter>

@@ -4,11 +4,11 @@ import { splitProps } from 'solid-js';
 
 import { cn } from '@/lib/utils';
 
-export interface SwitchProps extends JSX.HTMLAttributes<HTMLDivElement> {
+export interface SwitchProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   ref?: HTMLDivElement | ((el: HTMLDivElement) => void);
   checked?: boolean;
   defaultChecked?: boolean;
-  onChange?: (checked: boolean) => void;
+  onChange?: (value: boolean) => void;
   disabled?: boolean;
   required?: boolean;
   name?: string;
