@@ -319,7 +319,7 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
         setIsOpen(open);
       }}
     >
-      <PopoverTrigger asChild>
+      <PopoverTrigger as="div">
         {(triggerProps: Record<string, unknown>) => (
           <Button size="lg" variant="outline" {...triggerProps}>
             <div class="text-right">
@@ -354,7 +354,7 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
                   <div class="flex items-center space-x-2 pr-4 py-1">
                     <Switch
                       defaultChecked={Boolean(rangeCompare())}
-                      onCheckedChange={(checked: boolean) => {
+                      onChange={(checked: boolean) => {
                         if (checked) {
                           const currentRange = range();
                           if (!currentRange.to) {

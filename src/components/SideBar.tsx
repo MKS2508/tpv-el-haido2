@@ -116,7 +116,7 @@ function Sidebar(props: SidebarProps) {
   return (
     <Show when={!isMobile()}>
       <Motion.div
-        initial={false}
+        initial={{ opacity: 1 }}
         animate={{
           width: getWidth(),
           opacity: getOpacity(),

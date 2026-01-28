@@ -11,8 +11,8 @@ interface DateParts {
   year: number;
 }
 
-const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
-  const [date, setDate] = React.useState<DateParts>(() => {
+const DateInput: Component<DateInputProps> = ({ value, onChange }) => {
+  const [date, setDate] = createSignal<DateParts>(() => {
     const d = value ? new Date(value) : new Date();
     return {
       day: d.getDate(),
@@ -21,9 +21,9 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
     };
   });
 
-  const monthRef = useRef<HTMLInputElement | null>(null);
-  const dayRef = useRef<HTMLInputElement | null>(null);
-  const yearRef = useRef<HTMLInputElement | null>(null);
+  const monthRef = let<HTMLInputElement | null>(null);
+  const dayRef = let<HTMLInputElement | null>(null);
+  const yearRef = let<HTMLInputElement | null>(null);
 
   createEffect(() => {
     const d = value ? new Date(value) : new Date();
@@ -68,7 +68,7 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
       }
     };
 
-  const initialDate = useRef<DateParts>(date);
+  const initialDate = let<DateParts>(date);
 
   const handleBlur =
     (field: keyof DateParts) =>

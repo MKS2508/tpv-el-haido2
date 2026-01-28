@@ -56,7 +56,6 @@ function ProductGrid(props: ProductGridProps) {
                     ${isMobile() ? 'grid-cols-2' : 'grid-cols-3'}
                 `}
         >
-              mode="order"
           <For each={props.products}>
             {(product) => (
               <OptimizedProductCard

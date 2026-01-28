@@ -256,7 +256,7 @@ function Products() {
               class="flex-grow border border-input"
             />
             <Sheet open={isFilterSheetOpen()} onOpenChange={setIsFilterSheetOpen}>
-              <SheetTrigger asChild>
+              <SheetTrigger as="div">
                 <Button variant="outline">
                   <FilterIcon class="mr-2 h-4 w-4" /> Filtros
                 </Button>

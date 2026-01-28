@@ -102,7 +102,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
 
   const handleConfirmPreview = () => {
     if (previewTheme()) {
-      handleThemeSelect(previewTheme());
+      handleThemeSelect(previewTheme()!);
     }
     setPreviewTheme(null);
   };

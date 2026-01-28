@@ -1,6 +1,7 @@
 import { CheckCircle, CreditCard, HandCoins, Loader2, XCircle } from 'lucide-solid';
-import type { CSSProperties } from 'react';
-import { List } from 'react-window';
+import type { JSX } from 'solid-js';
+import { createMemo, For, Show } from 'solid-js';
+import { useVirtualizer } from '@tanstack/solid-virtual';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -18,175 +19,87 @@ interface RowProps {
   isMobile: boolean;
 }
 
-// Row component for react-window v2
-const OrderRow = ({
-  index,
-  style,
-  orders,
-  onOrderSelect,
-  isMobile,
-}: {
-  index: number;
-  style: CSSProperties;
-  ariaAttributes: {
-    'aria-posinset': number;
-    'aria-setsize': number;
-    role: 'listitem';
-  };
-} & RowProps) => {
-  const order = orders[index];
-
-  if (!order) return null;
+// Row component
+const OrderRow = (props: RowProps & { order: Order }) => {
+  const { order, orders, onOrderSelect, isMobile } = props;
 
   const getStatusIcon = () => {
-    switch (order.status) {
-      case 'paid':
-        if (order.paymentMethod === 'efectivo') {
-          return (
-            <div class="flex items-center gap-1">
-              <HandCoins class="w-4 h-4 text-warning" />
-              <CheckCircle class="w-4 h-4 text-success" />
-            </div>
-          );
-        }
-        return (
-          <div class="flex items-center gap-1">
-            <CreditCard class="w-4 h-4 text-info" />
-            <CheckCircle class="w-4 h-4 text-success" />
-          </div>
-        );
-      case 'unpaid':
-        return <XCircle class="w-4 h-4 text-destructive" />;
-      case 'canceled':
-        return <XCircle class="w-4 h-4 text-muted-foreground" />;
-      case 'inProgress':
-        return <Loader2 class="w-4 h-4 animate-spin text-info" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusText = () => {
-    switch (order.status) {
-      case 'paid':
-        return order.paymentMethod === 'efectivo' ? 'Pagado - Efectivo' : 'Pagado - Tarjeta';
-      case 'unpaid':
-        return 'No pagado';
-      case 'canceled':
-        return 'Cancelado';
-      case 'inProgress':
-        return 'En progreso';
-      default:
-        return order.status;
+    if (order.status === 'completed') {
+      return <CheckCircle class="h-4 w-4 text-success" />;
+    } else if (order.status === 'cancelled') {
+      return <XCircle class="h-4 w-4 text-destructive" />;
+    } else {
+      return <Loader2 class="h-4 w-4 text-primary" />;
     }
   };
 
   if (isMobile) {
     return (
-      <div style={style} class="px-3">
-        <div class="pb-3">
-          <Card
-            class="order-card cursor-pointer hover:shadow-md"
-            onClick={() => onOrderSelect(order)}
-          >
-            <CardHeader class="pb-3">
-              <div class="flex items-center justify-between">
-                <CardTitle class="text-base font-semibold">Pedido #{order.id}</CardTitle>
-                <div class="flex items-center gap-2">{getStatusIcon()}</div>
+      <div class="px-3 py-2">
+        <Card
+          class="order-card cursor-pointer hover:shadow-md"
+          onClick={() => onOrderSelect(order)}
+        >
+          <CardHeader class="pb-3">
+            <div class="flex items-center justify-between">
+              <CardTitle class="text-base font-semibold">Pedido #{order.id}</CardTitle>
+              <div class="flex items-center gap-2">{getStatusIcon()}</div>
+            </div>
+            <div class="flex items-center justify-between text-sm text-muted-foreground">
+              <span>{new Date(order.date).toLocaleDateString()}</span>
+              <span class="font-medium text-primary">
+                {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-muted-foreground">Total:</span>
+                <span class="font-bold text-lg text-success">{order.total.toFixed(2)}€</span>
               </div>
-              <div class="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{new Date(order.date).toLocaleDateString()}</span>
-                <span class="font-medium text-primary">
-                  {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
-                </span>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-muted-foreground">Elementos:</span>
+                <span class="font-medium">{order.items.length}</span>
               </div>
-            </CardHeader>
-            <CardContent class="pt-0">
-              <div class="space-y-2">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm text-muted-foreground">Total:</span>
-                  <span class="font-bold text-lg text-success">{order.total.toFixed(2)}€</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-sm text-muted-foreground">Artículos:</span>
-                  <span class="text-sm font-medium">{order.itemCount}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-sm text-muted-foreground">Estado:</span>
-                  <span class="text-sm font-medium">{getStatusText()}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div style={style} class="w-full">
-      <table class="w-full border-collapse">
+    <div class="px-3">
+      <table class="w-full">
         <tbody>
-          <tr
-            class="order-row hover:bg-muted/50 cursor-pointer"
+          <tr 
+            class="cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
             onClick={() => onOrderSelect(order)}
           >
-            <td class="border border-border px-4 py-3">{order.date}</td>
-            <td class="border border-border px-4 py-3">{order.total.toFixed(2)}€</td>
-            <td class="border border-border px-4 py-3">{order.itemCount}</td>
-            <td class="border border-border px-4 py-3">
-              {order.tableNumber === 0 ? 'Barra' : order.tableNumber}
-            </td>
-            <td class="border border-border px-4 py-3">
-              <div class="flex flex-col items-center">
-                {order.status === 'paid' && order.paymentMethod === 'efectivo' && (
-                  <>
-                    <div class="flex items-center gap-2">
-                      <HandCoins class="text-warning" />
-                      <CheckCircle class="text-success" />
-                    </div>
-                    <span class="text-xs">Pagado con Efectivo</span>
-                  </>
-                )}
-                {order.status === 'paid' && order.paymentMethod === 'tarjeta' && (
-                  <>
-                    <div class="flex items-center gap-2">
-                      <CreditCard class="text-info" />
-                      <CheckCircle class="text-success" />
-                    </div>
-                    <span class="text-xs">Pagado con Tarjeta</span>
-                  </>
-                )}
-                {order.status === 'unpaid' && (
-                  <>
-                    <XCircle class="text-destructive" />
-                    <span class="text-xs">No pagado</span>
-                  </>
-                )}
-                {order.status === 'canceled' && (
-                  <>
-                    <XCircle class="text-muted-foreground" />
-                    <span class="text-xs">Cancelado</span>
-                  </>
-                )}
-                {order.status === 'inProgress' && (
-                  <>
-                    <Loader2 class="animate-spin text-info" />
-                    <span class="text-xs">En progreso</span>
-                  </>
-                )}
+            <td class="border border-border p-3">
+              <div class="flex items-center gap-2">
+                {getStatusIcon()}
+                <span class="font-medium">Pedido #{order.id}</span>
               </div>
             </td>
-            <td class="border border-border px-4 py-3">
-              <Button
-                variant="outline"
-                class="bg-background text-foreground border-border hover:bg-muted w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOrderSelect(order);
-                }}
-              >
-                Detalles
+            <td class="border border-border p-3">
+              <span class="text-sm">{new Date(order.date).toLocaleString()}</span>
+            </td>
+            <td class="border border-border p-3 text-right">
+              <span class="font-bold text-success">{order.total.toFixed(2)}€</span>
+            </td>
+            <td class="border border-border p-3 text-center">
+              <span class="text-sm">
+                {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
+              </span>
+            </td>
+            <td class="border border-border p-3 text-center">
+              <span class="text-sm font-medium">{order.items.length}</span>
+            </td>
+            <td class="border border-border p-3 text-center">
+              <Button variant="ghost" size="sm" class="h-auto">
+                <CreditCard class="h-4 w-4" />
               </Button>
             </td>
           </tr>
@@ -196,58 +109,87 @@ const OrderRow = ({
   );
 };
 
-const VirtualizedOrderHistory: React.FC<VirtualizedOrderHistoryProps> = ({
-  orders,
-  onOrderSelect,
-  height,
-}) => {
+const VirtualizedOrderHistory = (props: VirtualizedOrderHistoryProps): JSX.Element => {
   const { isMobile } = useResponsive();
+  const { orders, onOrderSelect, height } = props;
 
   const containerHeight = height || window.innerHeight - 240;
-  const itemHeight = isMobile ? 140 : 80;
+  const itemHeight = isMobile() ? 140 : 80;
+
+  let parentRef: HTMLDivElement | undefined;
+
+  const rowVirtualizer = useVirtualizer({
+    get count() {
+      return orders.length;
+    },
+    getScrollElement: () => parentRef,
+    estimateSize: () => itemHeight,
+    overscan: 5,
+  });
 
   // Si no hay órdenes
   if (orders.length === 0) {
     return <div class="text-center text-muted-foreground py-8">No hay pedidos que mostrar</div>;
   }
 
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
   return (
     <div class="h-full">
       {/* Header solo para desktop */}
-      {!isMobile && (
+      <Show when={!isMobile()}>
         <div class="sticky top-0 z-10 bg-background border-b border-border mb-4">
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-muted">
+                <th class="border border-border p-3 text-left font-semibold">ID</th>
                 <th class="border border-border p-3 text-left font-semibold">Fecha</th>
-                <th class="border border-border p-3 text-left font-semibold">Total</th>
-                <th class="border border-border p-3 text-left font-semibold">Elementos</th>
-                <th class="border border-border p-3 text-left font-semibold">Mesa</th>
-                <th class="border border-border p-3 text-left font-semibold">Estado</th>
-                <th class="border border-border p-3 text-left font-semibold">Acciones</th>
+                <th class="border border-border p-3 text-right font-semibold">Total</th>
+                <th class="border border-border p-3 text-center font-semibold">Mesa</th>
+                <th class="border border-border p-3 text-center font-semibold">Elementos</th>
+                <th class="border border-border p-3 text-center font-semibold">Acciones</th>
               </tr>
             </thead>
           </table>
         </div>
-      )}
-      {/* Virtualized List - react-window v2 */}
-      <List<RowProps>
-        rowComponent={OrderRow}
-        rowProps={{
-          orders,
-          onOrderSelect,
-          isMobile,
-        }}
-        rowCount={orders.length}
-        rowHeight={itemHeight}
-        overscanCount={5}
-        style={{
-          height: containerHeight - (isMobile ? 0 : 50),
-          scrollbarWidth: 'thin',
-          overflowX: 'hidden',
-        }}
+      </Show>
+      
+      {/* Virtualized list with @tanstack/solid-virtual */}
+      <div
+        ref={parentRef}
+        style={{ height: containerHeight - (isMobile() ? 0 : 50), overflow: 'auto' }}
         class="virtualized-order-list"
-      />
+      >
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          <For each={virtualItems}>
+            {(virtualRow) => (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <OrderRow
+                  order={orders[virtualRow.index]!}
+                  orders={orders}
+                  onOrderSelect={onOrderSelect}
+                  isMobile={isMobile()}
+                />
+              </div>
+            )}
+          </For>
+        </div>
+      </div>
     </div>
   );
 };
