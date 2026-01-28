@@ -128,7 +128,7 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
     isStarting = true;
     setState((prev) => ({ ...prev, status: 'starting', error: undefined }));
 
-    const result = await tryCatchAsync(async () => {
+    const startSidecar = async () => {
       // Crear comando del sidecar
       const command = Command.sidecar('sidecars/aeat-bridge', ['--port', port.toString()]);
 
@@ -196,7 +196,9 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
         port,
         startedAt: new Date(),
       });
-    }, AEATErrorCode.SidecarStartFailed);
+    };
+
+    const result = await tryCatchAsync(startSidecar, AEATErrorCode.SidecarStartFailed);
 
     isStarting = false;
 

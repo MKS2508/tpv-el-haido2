@@ -591,22 +591,25 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                 </div>
                 <Button
                   id="openCashDrawer"
-                  onClick={async () => {
-                    try {
-                      await openCashDrawerOnly();
-                      toast({
-                        title: 'Caja abierta',
-                        description: 'El cajon de efectivo se ha abierto correctamente.',
-                        duration: 3000,
-                      });
-                    } catch (_error) {
-                      toast({
-                        title: 'Error al abrir caja',
-                        description:
-                          'No se pudo abrir el cajon. Verifica la conexion de la impresora.',
-                        duration: 3000,
-                      });
-                    }
+                  onClick={() => {
+                    const openCashDrawer = async () => {
+                      try {
+                        await openCashDrawerOnly();
+                        toast({
+                          title: 'Caja abierta',
+                          description: 'El cajon de efectivo se ha abierto correctamente.',
+                          duration: 3000,
+                        });
+                      } catch (_error) {
+                        toast({
+                          title: 'Error al abrir caja',
+                          description:
+                            'No se pudo abrir el cajon. Verifica la conexion de la impresora.',
+                          duration: 3000,
+                        });
+                      }
+                    };
+                    void openCashDrawer();
                   }}
                 >
                   <DollarSign class="mr-2 h-4 w-4" /> Abrir Caja

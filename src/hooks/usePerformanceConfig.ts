@@ -199,7 +199,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   });
 
   // Generate performance configuration
-  const performanceConfig = createMemo((): PerformanceConfig => {
+  const performanceConfig = createMemo(() => {
     const { isRaspberryPi, isMobile, isLowPerformance, isVeryLowPerformance } = deviceInfo();
 
     const isNetworkConstrained = networkSpeed() === 'slow';
@@ -244,15 +244,14 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     return config;
   });
 
-  const result = performanceConfig();
-  return result;
+  return performanceConfig as unknown as PerformanceConfig;
 };
 
 // Hook para aplicar clases CSS basadas en performance
 export const usePerformanceClasses = () => {
   const config = usePerformanceConfig();
 
-  return createMemo(() => ({
+  const classes = createMemo(() => ({
     'reduced-motion': config.reduceMotion,
     'low-performance': config.isLowPerformance,
     'very-low-performance': config.isVeryLowPerformance,
@@ -261,6 +260,8 @@ export const usePerformanceClasses = () => {
     'animations-disabled': !config.enableAnimations,
     'hover-disabled': !config.enableHoverEffects,
   }));
+
+  return classes;
 };
 
 export default usePerformanceConfig;

@@ -6,7 +6,7 @@
  */
 
 import { isErr } from '@mks2508/no-throw';
-import { createEffect, createSignal } from 'solid-js';
+import { createMemo, createEffect, createSignal } from 'solid-js';
 import type {
   AEATConfig,
   AEATConnectionStatus,

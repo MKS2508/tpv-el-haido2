@@ -28,31 +28,20 @@ const ProductCard = (props: ProductCardProps) => {
     'class',
   ]);
 
-  const {
-    product,
-    mode = 'order',
-    onAction,
-    onFavoriteToggle,
-    isPinned = false,
-    showCategory = true,
-    class: className,
-  } = local;
-
   const [isAdding, setIsAdding] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
   const state = useStore();
-  const localClass = () => local.class;
 
   const getProductImage = () => {
-    if (product.uploadedImage) {
-      return product.uploadedImage;
+    if (local.product.uploadedImage) {
+      return local.product.uploadedImage;
     }
 
     if (state.state.useStockImages) {
       const stockImage = stockImagesService.getConsistentStockImage(
-        product.id,
-        product.name,
-        product.category
+        local.product.id,
+        local.product.name,
+        local.product.category
       );
       if (stockImage) {
         return stockImage;
@@ -63,31 +52,31 @@ const ProductCard = (props: ProductCardProps) => {
             <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
                 <rect width="80" height="80" fill="hsl(var(--muted))"/>
                 <text x="40" y="45" text-anchor="middle" font-size="24" fill="hsl(var(--muted-foreground))">
-                    ${product.icon || '🍽️'}
+                    ${local.product.icon || '🍽️'}
                 </text>
             </svg>
         `)}`;
   };
 
-  const productImage = getProductImage();
-  const isRealImage = productImage && !productImage.startsWith('data:');
+  const productImage = () => getProductImage();
+  const isRealImage = () => productImage() && !productImage().startsWith('data:');
 
-  const imageStyle = {
-    'background-image': `url(${productImage})`,
+  const imageStyle = () => ({
+    'background-image': `url(${productImage()})`,
     'background-size': 'cover',
     'background-position': 'center',
-  };
+  });
 
   const handleClick = async () => {
-    if (mode === 'manage') {
-      onAction?.(product);
+    if (local.mode === 'manage') {
+      onAction?.(local.product);
       return;
     }
 
     if (isAdding()) return;
 
     setIsAdding(true);
-    onAction?.(product);
+    onAction?.(local.product);
 
     setTimeout(() => {
       setShowSuccess(true);
@@ -100,7 +89,7 @@ const ProductCard = (props: ProductCardProps) => {
 
   const handleFavoriteClick = (e: Event) => {
     e.stopPropagation();
-    onFavoriteToggle?.(product.id);
+    onFavoriteToggle?.(local.product.id);
   };
 
   const getCategoryColors = (category: string | undefined) => {
@@ -137,7 +126,7 @@ const ProductCard = (props: ProductCardProps) => {
     const baseStyles =
       'relative flex flex-col overflow-hidden rounded-xl cursor-pointer transition-all duration-200';
 
-    if (mode === 'order') {
+    if (local.mode === 'order') {
       return cn(
         baseStyles,
         'border-2 touch-enhanced bg-gradient-to-b from-background to-card',
@@ -158,7 +147,7 @@ const ProductCard = (props: ProductCardProps) => {
 
   return (
     <Motion.div
-      class={cn(getCardStyles(), className)}
+      class={cn(getCardStyles(), props.class)}
       onClick={handleClick as (e: MouseEvent) => void}
       style={others.style as JSX.CSSProperties}
       animate={{
@@ -172,10 +161,10 @@ const ProductCard = (props: ProductCardProps) => {
       <div
         class={cn(
           'relative overflow-hidden',
-          mode === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
-          !isRealImage ? `bg-gradient-to-br ${getCategoryColors(product.category)}` : 'bg-muted/10'
+          local.mode === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
+          !isRealImage ? `bg-gradient-to-br ${getCategoryColors(local.product.category)}` : 'bg-muted/10'
         )}
-        style={isRealImage ? imageStyle : {}}
+        style={isRealImage() ? imageStyle() : {}}
       >
         {isRealImage && (
           <div class="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
@@ -185,25 +174,25 @@ const ProductCard = (props: ProductCardProps) => {
           <Motion.div
             class={cn(
               'flex items-center justify-center h-full',
-              mode === 'order' ? 'text-4xl sm:text-5xl' : 'text-3xl'
+              local.mode === 'order' ? 'text-4xl sm:text-5xl' : 'text-3xl'
             )}
             animate={{
               scale: isAdding() ? 1.08 : 1,
             }}
             transition={{ duration: 0.15, easing: 'ease-out' }}
           >
-            {product.icon || '🍽️'}
+            {local.product.icon || '🍽️'}
           </Motion.div>
         )}
 
-        {showCategory && product.category && (
+        {local.showCategory && local.product.category && (
           <div class="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
-            {product.category}
+            {local.product.category}
           </div>
         )}
 
         <div class="absolute top-2 right-2">
-          {mode === 'order' ? (
+          {local.mode === 'order' ? (
             <Presence>
               {!showSuccess() ? (
                 <Motion.div
@@ -258,28 +247,28 @@ const ProductCard = (props: ProductCardProps) => {
       <div
         class={cn(
           'flex-1 flex flex-col justify-between bg-gradient-to-b from-card/50 to-card border-t border-border/20',
-          mode === 'order' ? 'p-3' : 'p-2'
+          local.mode === 'order' ? 'p-3' : 'p-2'
         )}
       >
         {/* Product Name */}
-        <div class={cn(mode === 'order' ? 'mb-2' : 'mb-1')}>
+        <div class={cn(local.mode === 'order' ? 'mb-2' : 'mb-1')}>
           <h3
             class={cn(
               'font-extrabold line-clamp-2 leading-tight',
-              mode === 'order' ? 'text-sm mb-0.5' : 'text-xs',
+              local.mode === 'order' ? 'text-sm mb-0.5' : 'text-xs',
               isAdding() ? 'text-primary' : 'text-foreground'
             )}
           >
-            {product.name}
+            {local.product.name}
           </h3>
-          {product.brand && (
+          {local.product.brand && (
             <p
               class={cn(
                 'text-muted-foreground font-medium opacity-90',
-                mode === 'order' ? 'text-xs' : 'text-[10px]'
+                local.mode === 'order' ? 'text-xs' : 'text-[10px]'
               )}
             >
-              {product.brand}
+              {local.product.brand}
             </p>
           )}
         </div>
@@ -296,13 +285,13 @@ const ProductCard = (props: ProductCardProps) => {
             <span
               class={cn(
                 'font-black tracking-tight',
-                mode === 'order' ? 'text-2xl' : 'text-lg',
+                local.mode === 'order' ? 'text-2xl' : 'text-lg',
                 isAdding() ? 'text-success drop-shadow-md' : 'text-primary'
               )}
             >
-              {product.price.toFixed(2)}€
+              {local.product.price.toFixed(2)}€
             </span>
-            {mode === 'order' && (
+            {local.mode === 'order' && (
               <span class="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
                 unidad
               </span>
@@ -310,22 +299,22 @@ const ProductCard = (props: ProductCardProps) => {
           </Motion.div>
 
           {/* Stock indicator para mode order */}
-          {mode === 'order' && product.stock !== undefined && product.stock < 10 && (
+          {local.mode === 'order' && local.product.stock !== undefined && local.product.stock < 10 && (
             <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
-              <span class="text-xs font-bold text-warning">Quedan {product.stock}</span>
+              <span class="text-xs font-bold text-warning">Quedan {local.product.stock}</span>
             </div>
           )}
 
           {/* Category info para mode manage */}
-          {mode === 'manage' && product.category && (
+          {local.mode === 'manage' && local.product.category && (
             <div class="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
-              {product.category}
+              {local.product.category}
             </div>
           )}
         </div>
       </div>
       {/* Loading overlay solo para mode order */}
-      {mode === 'order' && (
+      {local.mode === 'order' && (
         <Presence>
           {isAdding() && !showSuccess() && (
             <Motion.div

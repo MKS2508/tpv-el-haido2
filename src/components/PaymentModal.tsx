@@ -64,17 +64,18 @@ function PaymentModal(props: PaymentModalProps) {
   };
 
   const calculateLocalChange = createMemo(() => {
-    const change = parseFloat(localCashAmount()) - props.newOrder.total;
+    const change = parseFloat(localCashAmount() || '0') - props.newOrder.total;
     return change > 0 ? change.toFixed(2) : '0.00';
   });
 
   const handleConfirmPayment = () => {
     props.setShowTicketDialog(true);
     console.log('handleConfirmPayment');
+    const paymentMethod = localPaymentMethod();
     toast({
-      title: localPaymentMethod() === 'pagar_luego' ? 'Pago Pendiente' : 'Pago Confirmado!',
+      title: paymentMethod === 'pagar_luego' ? 'Pago Pendiente' : 'Pago Confirmado!',
       description:
-        localPaymentMethod() === 'pagar_luego'
+        paymentMethod === 'pagar_luego'
           ? 'La orden se ha registrado como pendiente de pago.'
           : 'El pago ha sido procesado exitosamente.',
       duration: 3000,
@@ -82,13 +83,17 @@ function PaymentModal(props: PaymentModalProps) {
   };
 
   const handleCompleteTransaction = async (shouldPrintTicket: boolean) => {
+    const paymentMethod = localPaymentMethod();
+    const cashAmount = localCashAmount();
+    const change = calculateLocalChange();
+
     const updatedOrder: Order = {
       ...props.newOrder,
-      paymentMethod: localPaymentMethod(),
+      paymentMethod: paymentMethod,
       ticketPath: 'ticket.pdf',
-      status: localPaymentMethod() === 'pagar_luego' ? 'unpaid' : 'paid',
-      totalPaid: parseFloat(localCashAmount()) || 0,
-      change: parseFloat(calculateLocalChange()),
+      status: paymentMethod === 'pagar_luego' ? 'unpaid' : 'paid',
+      totalPaid: parseFloat(cashAmount) || 0,
+      change: parseFloat(change),
       items: props.newOrder.items,
     };
     props.handleCompleteOrder(updatedOrder);
@@ -106,7 +111,7 @@ function PaymentModal(props: PaymentModalProps) {
       toast({
         title: 'Orden completada',
         description:
-          localPaymentMethod() === 'pagar_luego'
+          paymentMethod === 'pagar_luego'
             ? 'La orden ha sido registrada como pendiente de pago.'
             : 'La orden ha sido completada sin imprimir ticket.',
         duration: 3000,
@@ -141,7 +146,8 @@ function PaymentModal(props: PaymentModalProps) {
   const numpadButtons = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'C'];
 
   const handleKeyPress = (event: KeyboardEvent) => {
-    if (localPaymentMethod() !== 'efectivo') return;
+    const paymentMethod = localPaymentMethod();
+    if (paymentMethod !== 'efectivo') return;
 
     const key = event.key;
     if (/^[0-9.]$/.test(key) || key === 'Backspace') {
@@ -157,9 +163,9 @@ function PaymentModal(props: PaymentModalProps) {
   createEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
 
-    onCleanup(() => {
+    return () => {
       window.removeEventListener('keydown', handleKeyPress);
-    });
+    };
   });
 
   return (
@@ -182,7 +188,7 @@ function PaymentModal(props: PaymentModalProps) {
               <div class={cn('flex items-center gap-3', isMobile() ? 'flex-col' : 'flex-row')}>
                 <Button
                   variant={localPaymentMethod() === 'efectivo' ? 'default' : 'outline'}
-                  onClick={() => setLocalPaymentMethod('efectivo')}
+                  onClick={() => setLocalPaymentMethod(() => 'efectivo')}
                   class={cn(
                     'flex-1 touch-manipulation',
                     isMobile() ? 'h-14 w-full text-lg' : 'h-16 text-xl'
@@ -193,7 +199,7 @@ function PaymentModal(props: PaymentModalProps) {
                 </Button>
                 <Button
                   variant={localPaymentMethod() === 'tarjeta' ? 'default' : 'outline'}
-                  onClick={() => setLocalPaymentMethod('tarjeta')}
+                  onClick={() => setLocalPaymentMethod(() => 'tarjeta')}
                   class={cn(
                     'flex-1 touch-manipulation',
                     isMobile() ? 'h-14 w-full text-lg' : 'h-16 text-xl'
@@ -204,7 +210,7 @@ function PaymentModal(props: PaymentModalProps) {
                 </Button>
                 <Button
                   variant={localPaymentMethod() === 'pagar_luego' ? 'default' : 'outline'}
-                  onClick={() => setLocalPaymentMethod('pagar_luego')}
+                  onClick={() => setLocalPaymentMethod(() => 'pagar_luego')}
                   class={cn(
                     'flex-1 touch-manipulation',
                     isMobile() ? 'h-14 w-full text-lg' : 'h-16 text-xl'
@@ -288,7 +294,7 @@ function PaymentModal(props: PaymentModalProps) {
                               )}
                               style={{ 'font-variant-numeric': 'tabular-nums' }}
                             >
-                              {currencyFormatter.format(parseFloat(localCashAmount()) || 0)}
+                              {currencyFormatter.format(parseFloat(localCashAmount() || '0') || 0)}
                             </span>
                           </div>
                           <div class="flex justify-between items-center">
@@ -338,7 +344,7 @@ function PaymentModal(props: PaymentModalProps) {
                             isMobile() ? 'text-lg' : 'text-2xl'
                           )}
                         >
-                          {localCashAmount()}
+                          {localCashAmount() || '0'}
                         </span>
                       </div>
                       <div class="flex justify-between items-center">

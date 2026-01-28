@@ -175,14 +175,17 @@ const AEATInvoices: Component = () => {
     }
 
     // Ordenar
+    const sortKey = sortConfig().key;
+    const sortDirection = sortConfig().direction;
+
     result.sort((a, b) => {
       let comparison = 0;
-      if (sortConfig().key === 'date') {
+      if (sortKey === 'date') {
         comparison = new Date(a.order.date).getTime() - new Date(b.order.date).getTime();
-      } else if (sortConfig().key === 'total') {
+      } else if (sortKey === 'total') {
         comparison = a.order.total - b.order.total;
       }
-      return sortConfig().direction === 'asc' ? comparison : -comparison;
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
 
     return result;
@@ -212,9 +215,12 @@ const AEATInvoices: Component = () => {
     setIsDetailsOpen(true);
   };
 
-  const handleRetryInvoice = async (order: Order) => {
-    await emitInvoice(order);
-    setIsDetailsOpen(false);
+  const handleRetryInvoice = (order: Order) => {
+    const emit = async () => {
+      await emitInvoice(order);
+      setIsDetailsOpen(false);
+    };
+    void emit();
   };
 
   // Si AEAT no esta habilitado

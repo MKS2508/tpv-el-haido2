@@ -6,11 +6,10 @@ interface DateInputProps {
 }
 
 function DateInput(props: DateInputProps) {
-  const { value, onChange } = props;
-
-  const [day, setDay] = createSignal(() => value ? value.getDate() : new Date().getDate());
-  const [month, setMonth] = createSignal(() => value ? value.getMonth() + 1 : new Date().getMonth() + 1);
-  const [year, setYear] = createSignal(() => value ? value.getFullYear() : new Date().getFullYear());
+  const initialValue = props.value;
+  const [day, setDay] = createSignal(initialValue ? initialValue.getDate() : new Date().getDate());
+  const [month, setMonth] = createSignal(initialValue ? initialValue.getMonth() + 1 : new Date().getMonth() + 1);
+  const [year, setYear] = createSignal(initialValue ? initialValue.getFullYear() : new Date().getFullYear());
 
   const handleDayChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
@@ -41,7 +40,7 @@ function DateInput(props: DateInputProps) {
 
   const updateDate = (d: number, m: number, y: number) => {
     const newDate = new Date(y, m - 1, d);
-    onChange(newDate);
+    props.onChange(newDate);
   };
 
   return (

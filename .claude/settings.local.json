@@ -38,7 +38,8 @@
       "Bash(bun run lint:*)",
       "Bash(bun biome lint --help:*)",
       "Bash(bun run lint:solid)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(bun run lint:solid:*)"
     ]
   }
 }

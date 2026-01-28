@@ -11,8 +11,8 @@ type CategoryFormProps = {
 };
 
 const CategoryForm = (props: CategoryFormProps) => {
-  const [name, setName] = createSignal(() => props.category?.name || '');
-  const [description, setDescription] = createSignal(() => props.category?.description || '');
+  const [name, setName] = createSignal(props.category?.name || '');
+  const [description, setDescription] = createSignal(props.category?.description || '');
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();

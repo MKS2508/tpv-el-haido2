@@ -220,43 +220,43 @@ export function ThemeDebugger() {
           <div class="text-sm font-medium mb-2">Theme Test Colors:</div>
           <div class="grid grid-cols-5 md:grid-cols-10 gap-2">
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-background border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-background border mx-auto mb-1" />
               <div class="text-[10px]">bg</div>
             </div>
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-foreground border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-foreground border mx-auto mb-1" />
               <div class="text-[10px]">fg</div>
             </div>
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-primary border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-primary border mx-auto mb-1" />
               <div class="text-[10px]">primary</div>
             </div>
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-secondary border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-secondary border mx-auto mb-1" />
               <div class="text-[10px]">sec</div>
             </div>
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-muted border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-muted border mx-auto mb-1" />
               <div class="text-[10px]">muted</div>
             </div>
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-accent border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-accent border mx-auto mb-1" />
               <div class="text-[10px]">accent</div>
             </div>
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-destructive border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-destructive border mx-auto mb-1" />
               <div class="text-[10px]">dest</div>
             </div>
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-card border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-card border mx-auto mb-1" />
               <div class="text-[10px]">card</div>
             </div>
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-border border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-border border mx-auto mb-1" />
               <div class="text-[10px]">border</div>
             </div>
             <div class="text-center">
-              <div class="w-8 h-8 rounded bg-ring border mx-auto mb-1"></div>
+              <div class="w-8 h-8 rounded bg-ring border mx-auto mb-1" />
               <div class="text-[10px]">ring</div>
             </div>
           </div>

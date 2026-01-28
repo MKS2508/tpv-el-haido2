@@ -196,7 +196,7 @@ function NewOrder() {
                   isMobile() ? 'px-2 py-1 gap-1.5 text-[0.7rem]' : 'px-3 py-1.5 gap-1.5 text-xs'
                 )}
               >
-                <span class="w-2 h-2 bg-sidebar-accent-foreground rounded-full animate-pulse"></span>
+                <span class="w-2 h-2 bg-sidebar-accent-foreground rounded-full animate-pulse" />
                 Barra
               </button>
             </Show>
@@ -212,7 +212,7 @@ function NewOrder() {
                     isMobile() ? 'px-2 py-1 gap-1.5 text-[0.7rem]' : 'px-3 py-1.5 gap-1.5 text-xs'
                   )}
                 >
-                  <span class="w-2 h-2 bg-sidebar-accent-foreground rounded-full animate-pulse"></span>
+                  <span class="w-2 h-2 bg-sidebar-accent-foreground rounded-full animate-pulse" />
                   {table.name}
                 </button>
               )}
@@ -238,7 +238,7 @@ function NewOrder() {
                         ? 'bg-sidebar-primary-foreground animate-pulse'
                         : 'bg-muted-foreground'
                     }`}
-                  ></span>
+                   />
                   <span class="whitespace-nowrap">
                     {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
                   </span>

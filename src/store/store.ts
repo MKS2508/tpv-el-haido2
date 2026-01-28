@@ -18,7 +18,7 @@ import type { LicenseStatus } from '@/types/license';
 // Debounce utility for localStorage
 const debounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number): T => {
   let timeoutId: ReturnType<typeof setTimeout>;
-  return ((...args: unknown[]) => {
+  return ((...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   }) as T;
@@ -321,7 +321,7 @@ function createAppStore() {
   const setStorageMode = (mode: StorageMode) => {
     batch(() => {
       setState('storageMode', mode);
-      setStorageAdapterInternal(getStorageAdapterForMode(mode));
+      setStorageAdapterInternal(getStorageAdapterForMode(mode) as IStorageAdapter);
     });
     localStorage.setItem('tpv-storage-mode', mode);
   };

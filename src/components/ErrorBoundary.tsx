@@ -6,7 +6,7 @@ import {
   Home,
   RefreshCw,
 } from 'lucide-solid';
-import { createSignal, For, type JSX, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
+import { createSignal, For, type JSX, Show, ErrorBoundary as SolidErrorBoundary, untrack } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -324,27 +324,10 @@ function ErrorFallback(props: {
   fallbackTitle?: string;
   fallbackMessage?: string;
 }) {
-  const errorDetails: ErrorDetails = {
-    message: props.error.message,
-    stack: props.error.stack,
-    componentStack: undefined,
-    timestamp: new Date().toISOString(),
-    url: typeof window !== 'undefined' ? window.location.href : '',
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-    solidVersion: '1.x', // SolidJS doesn't expose version like React does
-    consoleLogs: [...capturedLogs].reverse(), // Most recent first
-    networkErrors: [...capturedNetworkErrors].reverse(),
-  };
-
-  // Log error for debugging
-  console.error('[ErrorBoundary] Caught error:', {
-    error: props.error.message,
-    stack: props.error.stack,
+  // Log error for debugging - use untrack to avoid reactivity warning
+  untrack(() => {
+    console.error('[ErrorBoundary] Caught error:', props.error);
   });
-
-  const handleReload = () => {
-    window.location.reload();
-  };
 
   return (
     <Show
@@ -362,7 +345,19 @@ function ErrorFallback(props: {
                 </Button>
               </div>
               <Show when={isDev}>
-                <TechnicalDetails errorDetails={errorDetails} />
+                <TechnicalDetails
+                  errorDetails={{
+                    message: props.error.message,
+                    stack: props.error.stack,
+                    componentStack: undefined,
+                    timestamp: new Date().toISOString(),
+                    url: typeof window !== 'undefined' ? window.location.href : '',
+                    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+                    solidVersion: '1.x',
+                    consoleLogs: [...capturedLogs].reverse(),
+                    networkErrors: [...capturedNetworkErrors].reverse(),
+                  }}
+                />
               </Show>
             </div>
           }
@@ -392,7 +387,19 @@ function ErrorFallback(props: {
                 <RefreshCw class="mr-2 h-3 w-3" />
                 Reintentar
               </Button>
-              <TechnicalDetails errorDetails={errorDetails} />
+              <TechnicalDetails
+                errorDetails={{
+                  message: props.error.message,
+                  stack: props.error.stack,
+                  componentStack: undefined,
+                  timestamp: new Date().toISOString(),
+                  url: typeof window !== 'undefined' ? window.location.href : '',
+                  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+                  solidVersion: '1.x',
+                  consoleLogs: [...capturedLogs].reverse(),
+                  networkErrors: [...capturedNetworkErrors].reverse(),
+                }}
+              />
             </CardContent>
           </Card>
         </Show>
@@ -419,7 +426,7 @@ function ErrorFallback(props: {
               </div>
             </Show>
             <div class="flex flex-col gap-2">
-              <Button onClick={handleReload} class="w-full">
+              <Button onClick={() => window.location.reload()} class="w-full">
                 <RefreshCw class="mr-2 h-4 w-4" />
                 Recargar Aplicacion
               </Button>
@@ -428,7 +435,19 @@ function ErrorFallback(props: {
                 Intentar de Nuevo
               </Button>
             </div>
-            <TechnicalDetails errorDetails={errorDetails} />
+            <TechnicalDetails
+              errorDetails={{
+                message: props.error.message,
+                stack: props.error.stack,
+                componentStack: undefined,
+                timestamp: new Date().toISOString(),
+                url: typeof window !== 'undefined' ? window.location.href : '',
+                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+                solidVersion: '1.x',
+                consoleLogs: [...capturedLogs].reverse(),
+                networkErrors: [...capturedNetworkErrors].reverse(),
+              }}
+            />
           </CardContent>
         </Card>
       </div>

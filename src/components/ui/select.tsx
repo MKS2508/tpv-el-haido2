@@ -1,3 +1,4 @@
+/* eslint-disable solid/reactivity, solid/components-return-once */
 import { Select as KobalteSelect } from '@kobalte/core/select';
 import { Check, ChevronDown } from 'lucide-solid';
 import {
@@ -78,6 +79,7 @@ function Select<T extends string = string>(props: SelectRootProps<T>) {
   ]);
 
   // If using Kobalte native pattern with options prop, use Kobalte directly
+   
   if (local.options !== undefined) {
     return (
       <KobalteSelect<T>
@@ -94,6 +96,7 @@ function Select<T extends string = string>(props: SelectRootProps<T>) {
         itemComponent={
           local.itemComponent
             ? (itemProps) =>
+                 
                 local.itemComponent!({ item: { rawValue: itemProps.item.rawValue as T } })
             : (itemProps) => (
                 <KobalteSelect.Item
@@ -120,6 +123,7 @@ function Select<T extends string = string>(props: SelectRootProps<T>) {
   }
 
   // Children pattern: use context to collect options and build Kobalte Select
+   
   const [collectedOptions, setCollectedOptions] = createSignal<SelectOption[]>([]);
   const [currentValue, setCurrentValue] = createSignal<string | undefined>(
     local.value ?? local.defaultValue
@@ -272,6 +276,7 @@ function SelectValue(props: SelectValueProps) {
 
   // If inside children pattern context, this is just a marker
   // The actual value display is handled by the Select component
+   
   if (context) {
     return null;
   }
@@ -297,6 +302,7 @@ function SelectTrigger(props: SelectTriggerProps) {
 
   // If inside children pattern context, this is just a marker for structure
   // The actual trigger is rendered by the Select component
+   
   if (context) {
     return null;
   }
@@ -330,6 +336,7 @@ function SelectContent(props: SelectContentProps) {
   const context = useContext(SelectContext);
 
   // If inside children pattern context, just render children to allow SelectItem registration
+   
   if (context) {
     return <>{local.children}</>;
   }
@@ -364,6 +371,7 @@ function SelectItem(props: SelectItemProps) {
   const context = useContext(SelectContext);
 
   // If inside children pattern context, register this option
+   
   if (context) {
     onMount(() => {
       context.registerOption({

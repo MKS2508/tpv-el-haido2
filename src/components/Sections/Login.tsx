@@ -500,12 +500,15 @@ const Login = (props: LoginProps) => {
             >
               <Button
                 variant="secondary"
-                onClick={async () => {
-                  if (document.fullscreenElement) {
-                    await document.exitFullscreen();
-                  } else {
-                    await document.documentElement.requestFullscreen();
-                  }
+                onClick={() => {
+                  const toggleFullscreen = async () => {
+                    if (document.fullscreenElement) {
+                      await document.exitFullscreen();
+                    } else {
+                      await document.documentElement.requestFullscreen();
+                    }
+                  };
+                  void toggleFullscreen();
                 }}
                 class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 shadow-lg border border-white/20"
               >
