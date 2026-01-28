@@ -1,4 +1,4 @@
-import { createEffect, createSignal, onCleanup, onMount } from 'solid-js';
+import { createSignal, onCleanup, onMount, type JSX } from 'solid-js';
 import { Check, Plus, Star } from 'lucide-solid';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
@@ -6,40 +6,35 @@ import stockImagesService from '@/services/stock-images.service';
 import useStore from '@/store/store';
 import { Button } from './button';
 
-interface OptimizedProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface OptimizedProductCardProps {
   product: Product;
   mode: 'order' | 'manage';
   onAction?: (product: Product) => void;
   onFavoriteToggle?: (productId: number) => void;
   isPinned?: boolean;
   showCategory?: boolean;
+  class?: string;
 }
 
-const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
-  product,
-  mode = 'order',
-  onAction,
-  onFavoriteToggle,
-  isPinned = false,
-  showCategory = true,
-  className,
-  ...props
-}) => {
+function OptimizedProductCard(props: OptimizedProductCardProps): JSX.Element {
+  const mode = () => props.mode ?? 'order';
+  const isPinned = () => props.isPinned ?? false;
+  const showCategory = () => props.showCategory ?? true;
   const [isAdding, setIsAdding] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
   const { useStockImages } = useStore();
 
   // Obtener imagen: personalizada > stock > fallback
   const getProductImage = () => {
-    if (product.uploadedImage) {
-      return product.uploadedImage;
+    if (props.product.uploadedImage) {
+      return props.product.uploadedImage;
     }
 
     if (useStockImages) {
       const stockImage = stockImagesService.getConsistentStockImage(
-        product.id,
-        product.name,
-        product.category
+        props.product.id,
+        props.product.name,
+        props.product.category
       );
       if (stockImage) {
         return stockImage;
@@ -50,24 +45,27 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
             <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
                 <rect width="80" height="80" fill="hsl(var(--muted))"/>
                 <text x="40" y="45" text-anchor="middle" font-size="24" fill="hsl(var(--muted-foreground))">
-                    ${product.icon || '🍽️'}
+                    ${props.product.icon || '🍽️'}
                 </text>
             </svg>
         `)}`;
   };
 
-  const productImage = getProductImage();
-  const isRealImage = productImage && !productImage.startsWith('data:');
-
-  const imageStyle = {
-    backgroundImage: `url(${productImage})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
+  const productImage = () => getProductImage();
+  const isRealImage = () => {
+    const img = productImage();
+    return img && !img.startsWith('data:');
   };
 
+  const imageStyle = () => ({
+    'background-image': `url(${productImage()})`,
+    'background-size': 'cover',
+    'background-position': 'center',
+  });
+
   const handleClick = async () => {
-    if (mode === 'manage') {
-      onAction?.(product);
+    if (mode() === 'manage') {
+      props.onAction?.(props.product);
       return;
     }
 
@@ -75,7 +73,7 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
     if (isAdding()) return;
 
     setIsAdding(true);
-    onAction?.(product);
+    props.onAction?.(props.product);
 
     // Show success feedback - sin setTimeout anidados
     const successTimer = setTimeout(() => {
@@ -91,9 +89,9 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
     return () => clearTimeout(successTimer);
   };
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = (e: MouseEvent) => {
     e.stopPropagation();
-    onFavoriteToggle?.(product.id);
+    props.onFavoriteToggle?.(props.product.id);
   };
 
   // Colores por categoría usando tokens semánticos
@@ -131,18 +129,18 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
     const baseStyles =
       'product-card relative flex flex-col overflow-hidden rounded-xl cursor-pointer';
 
-    if (mode === 'order') {
+    if (mode() === 'order') {
       return cn(
         baseStyles,
         'border-2 touch-enhanced bg-gradient-to-b from-background to-card',
         isAdding() && 'adding',
         showSuccess() && 'success',
-        className
+        props.class
       );
     }
 
     // Mode 'manage'
-    return cn(baseStyles, 'border bg-card', 'border-border shadow-sm manage-mode', className);
+    return cn(baseStyles, 'border bg-card', 'border-border shadow-sm manage-mode', props.class);
   };
 
   // Cleanup effect para timers
@@ -164,45 +162,44 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
       }}
       role="button"
       tabIndex={0}
-      {...props}
     >
       {/* Image Section */}
       <div
         class={cn(
           'relative overflow-hidden',
-          mode === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
-          !isRealImage ? `bg-gradient-to-br ${getCategoryColors(product.category)}` : 'bg-muted/10'
+          mode() === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
+          !isRealImage() ? `bg-gradient-to-br ${getCategoryColors(props.product.category)}` : 'bg-muted/10'
         )}
-        style={isRealImage ? imageStyle : {}}
+        style={isRealImage() ? imageStyle() : {}}
       >
         {/* Overlay para mejor legibilidad en imágenes reales */}
-        {isRealImage && (
+        {isRealImage() && (
           <div class="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
         )}
 
         {/* Emoji/Icon si es imagen SVG fallback */}
-        {!isRealImage && (
+        {!isRealImage() && (
           <div
             class={cn(
               'product-icon flex items-center justify-center h-full',
-              mode === 'order' ? 'text-4xl sm:text-5xl' : 'text-3xl',
+              mode() === 'order' ? 'text-4xl sm:text-5xl' : 'text-3xl',
               isAdding() && 'adding'
             )}
           >
-            {product.icon || '🍽️'}
+            {props.product.icon || '🍽️'}
           </div>
         )}
 
         {/* Category badge */}
-        {showCategory && product.category && (
+        {showCategory() && props.product.category && (
           <div class="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
-            {product.category}
+            {props.product.category}
           </div>
         )}
 
         {/* Action button - top right */}
         <div class="absolute top-2 right-2">
-          {mode === 'order' ? (
+          {mode() === 'order' ? (
             <div
               class={cn(
                 'action-btn rounded-full p-2 shadow-2xl',
@@ -221,7 +218,7 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
             </div>
           ) : (
             // Mode 'manage' - show favorite star
-            (onFavoriteToggle && (<Button
+            (props.onFavoriteToggle && (<Button
               variant="ghost"
               size="sm"
               class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
@@ -230,7 +227,7 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
               <Star
                 class={cn(
                   'h-4 w-4',
-                  isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
+                  isPinned() ? 'text-warning fill-warning' : 'text-muted-foreground'
                 )}
               />
             </Button>))
@@ -241,28 +238,28 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
       <div
         class={cn(
           'flex-1 flex flex-col justify-between bg-gradient-to-b from-card/50 to-card border-t border-border/20',
-          mode === 'order' ? 'p-3' : 'p-2'
+          mode() === 'order' ? 'p-3' : 'p-2'
         )}
       >
         {/* Product Name */}
-        <div class={cn(mode === 'order' ? 'mb-2' : 'mb-1')}>
+        <div class={cn(mode() === 'order' ? 'mb-2' : 'mb-1')}>
           <h3
             class={cn(
               'font-extrabold line-clamp-2 leading-tight',
-              mode === 'order' ? 'text-sm mb-0.5' : 'text-xs',
+              mode() === 'order' ? 'text-sm mb-0.5' : 'text-xs',
               isAdding() ? 'text-primary' : 'text-foreground'
             )}
           >
-            {product.name}
+            {props.product.name}
           </h3>
-          {product.brand && (
+          {props.product.brand && (
             <p
               class={cn(
                 'text-muted-foreground font-medium opacity-90',
-                mode === 'order' ? 'text-xs' : 'text-[10px]'
+                mode() === 'order' ? 'text-xs' : 'text-[10px]'
               )}
             >
-              {product.brand}
+              {props.product.brand}
             </p>
           )}
         </div>
@@ -273,13 +270,13 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
             <span
               class={cn(
                 'font-black tracking-tight',
-                mode === 'order' ? 'text-2xl' : 'text-lg',
+                mode() === 'order' ? 'text-2xl' : 'text-lg',
                 isAdding() ? 'text-success drop-shadow-md' : 'text-primary'
               )}
             >
-              {product.price.toFixed(2)}€
+              {props.product.price.toFixed(2)}€
             </span>
-            {mode === 'order' && (
+            {mode() === 'order' && (
               <span class="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
                 unidad
               </span>
@@ -287,22 +284,22 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
           </div>
 
           {/* Stock indicator para mode order */}
-          {mode === 'order' && product.stock !== undefined && product.stock < 10 && (
+          {mode() === 'order' && props.product.stock !== undefined && props.product.stock < 10 && (
             <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
-              <span class="text-xs font-bold text-warning">Quedan {product.stock}</span>
+              <span class="text-xs font-bold text-warning">Quedan {props.product.stock}</span>
             </div>
           )}
 
           {/* Category info para mode manage */}
-          {mode === 'manage' && product.category && (
+          {mode() === 'manage' && props.product.category && (
             <div class="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
-              {product.category}
+              {props.product.category}
             </div>
           )}
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default OptimizedProductCard;

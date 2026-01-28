@@ -28,20 +28,11 @@ export function ThemeStep(props: ThemeStepProps) {
             </CardHeader>
             <CardContent class="space-y-8 py-8">
                 <div class="flex flex-col items-center justify-center text-center space-y-6">
-                    <Motion.div
-                        animate={{
-                            scale: [1, 1.05, 1],
-                            rotate: [0, 5, -5, 0]
-                        }}
-                        transition={{
-                            duration: 5,
-                            repeat: Infinity,
-                            easing: "ease-in-out"
-                        }}
-                        class="w-24 h-24 rounded-2xl bg-gradient-to-tr from-primary to-pink-500 flex items-center justify-center shadow-lg shadow-primary/20"
+                    <div
+                        class="w-24 h-24 rounded-2xl bg-gradient-to-tr from-primary to-pink-500 flex items-center justify-center shadow-lg shadow-primary/20 animate-pulse"
                     >
                         <SparklesIcon class="h-12 w-12 text-white" />
-                    </Motion.div>
+                    </div>
 
                     <div class="space-y-2">
                         <h3 class="font-semibold text-lg">Prueba diferentes temas</h3>

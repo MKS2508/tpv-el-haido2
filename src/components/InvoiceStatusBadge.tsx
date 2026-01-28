@@ -4,9 +4,8 @@
  * Muestra el estado de facturación AEAT de un pedido
  */
 
-import type { Component } from 'solid-js';
 import { Show } from 'solid-js';
-import { AlertCircle, Check, Clock, FileX, Receipt } from 'lucide-solid';
+import { AlertCircle, Check, Clock, FileX, Receipt, type LucideIcon } from 'lucide-solid';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -33,7 +32,7 @@ const statusConfig: Record<
   InvoiceStatus,
   {
     label: string;
-    icon: Component;
+    icon: LucideIcon;
     variant: 'default' | 'secondary' | 'destructive' | 'outline';
     className: string;
   }
@@ -154,13 +153,9 @@ export function InvoiceStatusBadge(props: InvoiceStatusBadgeProps) {
     <Show when={props.showTooltip !== false} fallback={badge}>
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger
-            as={(triggerProps) => (
-              <span {...triggerProps} class="inline-flex cursor-default">
-                {badge}
-              </span>
-            )}
-          />
+          <TooltipTrigger as="span" class="inline-flex cursor-default">
+            {badge}
+          </TooltipTrigger>
           <TooltipContent class="max-w-xs">
             <p class="font-medium">{config.label}</p>
             <p class="text-xs text-muted-foreground">{getTooltipContent(props.aeat)}</p>

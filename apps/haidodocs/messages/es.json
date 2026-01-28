@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "gettingStarted": "Introducción",
+    "coreConcepts": "Conceptos Clave",
+    "libraryReference": "Referencia de Biblioteca",
+    "cliReference": "Referencia de CLI",
+    "guides": "Guías"
+  },
+  "actions": {
+    "copyMarkdown": "Copiar como Markdown",
+    "openMarkdown": "Abrir como Markdown",
+    "copied": "¡Copiado!"
+  }
+}

@@ -30,7 +30,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -323,7 +322,7 @@ const AEATInvoices: Component = () => {
           <Show
             when={responsive.isMobile()}
             fallback={
-              <ScrollArea class="h-[calc(100vh-380px)]">
+              <div class="h-[calc(100vh-380px)] overflow-auto">
                 <Table class="border-collapse border border-border">
                   <TableHeader>
                     <TableRow class="bg-muted">
@@ -410,10 +409,10 @@ const AEATInvoices: Component = () => {
                     </Show>
                   </TableBody>
                 </Table>
-              </ScrollArea>
+              </div>
             }
           >
-            <ScrollArea class="h-[calc(100vh-380px)]">
+            <div class="h-[calc(100vh-380px)] overflow-auto">
               <div class="space-y-3 pr-4">
                 <Show
                   when={filteredInvoices().length > 0}
@@ -438,7 +437,7 @@ const AEATInvoices: Component = () => {
                   </For>
                 </Show>
               </div>
-            </ScrollArea>
+            </div>
           </Show>
         </div>
 
@@ -525,17 +524,16 @@ const AEATInvoices: Component = () => {
 
             <DialogFooter class="gap-2">
               <Show when={selectedInvoice()?.csv}>
-                <Button variant="outline" as="a">
-                  <a
-                    href={`https://www2.agenciatributaria.gob.es/wlpl/inwinvoc/es.aeat.dit.adu.eeca.catalogo.vis.VisualizaSVInternacional?csv=${selectedInvoice()!.csv}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="flex items-center"
-                  >
+                <a
+                  href={`https://www2.agenciatributaria.gob.es/wlpl/inwinvoc/es.aeat.dit.adu.eeca.catalogo.vis.VisualizaSVInternacional?csv=${selectedInvoice()!.csv}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline">
                     <ExternalLink class="h-4 w-4 mr-2" />
                     Verificar en AEAT
-                  </a>
-                </Button>
+                  </Button>
+                </a>
               </Show>
               <Show
                 when={

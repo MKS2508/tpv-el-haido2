@@ -28,3 +28,4 @@ dist-ssr
 *.key
 !*.key.pub
 /target/rust-analyzer
+/apps/haidodocs/.source

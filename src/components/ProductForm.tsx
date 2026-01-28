@@ -1,5 +1,6 @@
-import { BeerIcon } from 'lucide-react';
-import React, { useState } from 'react';
+import { BeerIcon } from 'lucide-solid';
+import { createSignal, For, Show, type Component } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import iconOptions from '@/assets/utils/icons/iconOptions.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
@@ -32,130 +33,136 @@ const BlobToBase64 = (file: Blob | null) => {
   }
 };
 
-const ProductForm = ({ product, onSave, onCancel, categories }: ProductFormProps) => {
-  const [name, setName] = useState(product?.name || '');
-  const [price, setPrice] = useState(product?.price ? product.price : 0);
-  const [category, setCategory] = useState(product?.category || '');
-  const [brand, setBrand] = useState(product?.brand || '');
-  const [iconType, setIconType] = useState(product?.iconType || 'preset');
-  const [selectedIcon, setSelectedIcon] = useState(product?.selectedIcon || '');
-  const [uploadedImage, setUploadedImage] = useState(product?.uploadedImage || null);
+const ProductForm: Component<ProductFormProps> = (props) => {
+  const [name, setName] = createSignal(props.product?.name || '');
+  const [price, setPrice] = createSignal(props.product?.price ? props.product.price : 0);
+  const [category, setCategory] = createSignal(props.product?.category || '');
+  const [brand, setBrand] = createSignal(props.product?.brand || '');
+  const [iconType, setIconType] = createSignal(props.product?.iconType || 'preset');
+  const [selectedIcon, setSelectedIcon] = createSignal(props.product?.selectedIcon || '');
+  const [uploadedImage, setUploadedImage] = createSignal<string | null>(props.product?.uploadedImage || null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
+    const iconOption = iconOptions.find((option) => option.value === selectedIcon());
     const icon =
-      iconType === 'preset' ? (
-        iconOptions.find((option) => option.value === selectedIcon)?.icon
-      ) : uploadedImage ? (
-        <img src={uploadedImage} alt={name} className="w-6 h-6 object-cover" />
-      ) : null;
-    onSave({
-      id: product?.id,
-      name,
-      price: price,
-      category,
-      brand,
-      icon: React.isValidElement(icon) ? icon : <BeerIcon />,
-      iconType,
-      selectedIcon,
-      uploadedImage,
+      iconType() === 'preset'
+        ? iconOption?.icon
+        : uploadedImage()
+          ? () => <img src={uploadedImage()!} alt={name()} class="w-6 h-6 object-cover" />
+          : null;
+    props.onSave({
+      id: props.product?.id,
+      name: name(),
+      price: price(),
+      category: category(),
+      brand: brand(),
+      icon: icon || BeerIcon,
+      iconType: iconType(),
+      selectedIcon: selectedIcon(),
+      uploadedImage: uploadedImage(),
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} class="space-y-4">
       <div>
-        <Label htmlFor="name">Nombre</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <Label for="name">Nombre</Label>
+        <Input id="name" value={name()} onInput={(e) => setName(e.currentTarget.value)} required />
       </div>
       <div>
-        <Label htmlFor="price">Precio</Label>
+        <Label for="price">Precio</Label>
         <Input
           id="price"
           type="number"
           step="0.01"
-          value={price}
-          onChange={(e) => setPrice(parseFloat(e.target.value))}
+          value={price()}
+          onInput={(e) => setPrice(parseFloat(e.currentTarget.value))}
           required
         />
       </div>
       <div>
-        <Label htmlFor="category">Categoría</Label>
-        <Select value={category} onValueChange={setCategory}>
+        <Label for="category">Categoria</Label>
+        <Select value={category()} onValueChange={setCategory}>
           <SelectTrigger>
-            <SelectValue placeholder="Selecciona una categoría" />
+            <SelectValue placeholder="Selecciona una categoria" />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.name}>
-                {cat.name}
-              </SelectItem>
-            ))}
+            <For each={props.categories}>
+              {(cat) => (
+                <SelectItem value={cat.name}>
+                  {cat.name}
+                </SelectItem>
+              )}
+            </For>
           </SelectContent>
         </Select>
       </div>
       <div>
-        <Label htmlFor="brand">Marca</Label>
-        <Input id="brand" value={brand} onChange={(e) => setBrand(e.target.value)} />
+        <Label for="brand">Marca</Label>
+        <Input id="brand" value={brand()} onInput={(e) => setBrand(e.currentTarget.value)} />
       </div>
       <div>
         <Label>Icono</Label>
-        <div className="flex space-x-2">
+        <div class="flex space-x-2">
           <Button
             type="button"
-            variant={iconType === 'preset' ? 'default' : 'outline'}
+            variant={iconType() === 'preset' ? 'default' : 'outline'}
             onClick={() => setIconType('preset')}
           >
             Preestablecido
           </Button>
           <Button
             type="button"
-            variant={iconType === 'upload' ? 'default' : 'outline'}
+            variant={iconType() === 'upload' ? 'default' : 'outline'}
             onClick={() => setIconType('upload')}
           >
             Subir Imagen
           </Button>
         </div>
       </div>
-      {iconType === 'preset' && (
+      <Show when={iconType() === 'preset'}>
         <div>
-          <Label htmlFor="icon">Seleccionar Icono</Label>
-          <Select value={selectedIcon} onValueChange={setSelectedIcon}>
+          <Label for="icon">Seleccionar Icono</Label>
+          <Select value={selectedIcon()} onValueChange={setSelectedIcon}>
             <SelectTrigger>
               <SelectValue placeholder="Selecciona un icono" />
             </SelectTrigger>
             <SelectContent>
-              {iconOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  <div className="flex items-center">
-                    {React.createElement(option.icon)}
-                    <span className="ml-2">{option.label}</span>
-                  </div>
-                </SelectItem>
-              ))}
+              <For each={iconOptions}>
+                {(option) => (
+                  <SelectItem value={option.value}>
+                    <div class="flex items-center">
+                      <Dynamic component={option.icon} />
+                      <span class="ml-2">{option.label}</span>
+                    </div>
+                  </SelectItem>
+                )}
+              </For>
             </SelectContent>
           </Select>
         </div>
-      )}
-      {iconType === 'upload' && (
+      </Show>
+      <Show when={iconType() === 'upload'}>
         <div>
-          <Label htmlFor="icon-upload">Subir Imagen</Label>
+          <Label for="icon-upload">Subir Imagen</Label>
           <Input
             id="icon-upload"
             type="file"
             accept="image/*"
-            onChange={(e) =>
+            onInput={(e) => {
+              const target = e.currentTarget as HTMLInputElement;
               setUploadedImage(
-                e.target.files !== null
-                  ? `data:image/png;base64,${BlobToBase64(e.target.files[0])}`
+                target.files !== null
+                  ? `data:image/png;base64,${BlobToBase64(target.files[0])}`
                   : null
-              )
-            }
+              );
+            }}
           />
         </div>
-      )}
-      <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      </Show>
+      <div class="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={props.onCancel}>
           Cancelar
         </Button>
         <Button type="submit">Guardar</Button>

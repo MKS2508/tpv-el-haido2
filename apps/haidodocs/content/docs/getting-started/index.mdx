@@ -1,0 +1,89 @@
+---
+title: Introducción
+description: 'Introducción a haidodocs -  Sistema TPV (Terminal Punto de Venta) de escritorio para hostelería. Construido con Tauri, SolidJS y SQL         ite.'
+---
+
+# Introducción
+
+Bienvenido a la documentación de **haidodocs**.
+
+## ¿Qué es haidodocs?
+
+<Callout type="info">
+  <p><strong> Sistema TPV (Terminal Punto de Venta) de escritorio para hostelería. Construido con Tauri, SolidJS y SQL         ite.</strong></p>
+</Callout>
+
+Este template está diseñado para proporcionarte una base sólida para documentar tus proyectos usando Fumadocs.
+
+## Requisitos Previos
+
+Antes de comenzar, asegúrate de tener instalado:
+
+- **Bun** v1.1.43 o superior
+- **Node.js** v20 o superior (compatibilidad)
+
+## Instalación Rápida
+
+<Steps>
+### 1. Clona o crea tu proyecto
+
+```bash
+# Si usas mks-scaffolder
+bunx mks-scaffolder create mi-proyecto --template fumadocs
+
+# O si clonas directamente
+git clone https://github.com/MKS2508/tpv-el-haido2.git
+cd mi-proyecto
+```
+
+### 2. Instala dependencias
+
+```bash
+bun install
+```
+
+### 3. Configura las variables de entorno
+
+```bash
+cp .env.example .env.local
+# Edita .env.local con tus valores
+```
+
+### 4. Inicia el servidor de desarrollo
+
+```bash
+bun run dev
+```
+
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+
+</Steps>
+
+## Estructura del Proyecto
+
+```
+.
+├── content/              # Tu documentación en MDX
+│   ├── docs/            # Versión en español
+│   └── en/docs/         # Versión en inglés
+├── messages/            # Traducciones de la UI
+│   ├── es.json
+│   └── en.json
+├── src/
+│   ├── app/            # Páginas de Next.js
+│   ├── components/     # Componentes React
+│   ├── lib/            # Utilidades
+│   └── config/         # Configuración del sitio
+├── public/             # Archivos estáticos
+└── .env.local          # Variables de entorno (no en git)
+```
+
+## Próximos Pasos
+
+- [Configuración](/docs/getting-started/installation) - Configura tu entorno
+- [Quick Start](/docs/getting-started/quick-start) - Comienza rápidamente
+- [Características](/docs/features) - Descubre lo que puedes hacer
+
+<Callout type="tip">
+  Usa <code>content-template/</code> como referencia para crear tu propia estructura de documentación.
+</Callout>

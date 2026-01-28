@@ -1,0 +1,165 @@
+---
+title: Installation
+description: 'Installation and configuration of haidodocs'
+---
+
+# Installation
+
+Complete installation guide for haidodocs.
+
+## Installation Options
+
+<Tabs items={['Using mks-scaffolder', 'Manual', 'GitHub Clone']}>
+  <Tab value="Using mks-scaffolder">
+    <Steps>
+    ### Create a new project
+
+    ```bash
+    bunx mks-scaffolder create my-project --template fumadocs
+    ```
+
+    Answer the interactive questions:
+    - **Project name**: `my-project`
+    - **Description**: Your project description
+    - **Author**: Your name
+    - **Base path**: `/my-project` (for GitHub Pages)
+
+    ### Enter the directory
+
+    ```bash
+    cd my-project
+    ```
+
+    ### Install dependencies and start
+
+    ```bash
+    bun install
+    bun run dev
+    ```
+
+    </Steps>
+  </Tab>
+
+  <Tab value="Manual">
+    <Steps>
+    ### Create the project
+
+    ```bash
+    mkdir my-project && cd my-project
+    bun init -y
+    ```
+
+    ### Install dependencies
+
+    ```bash
+    bun add next fumadocs-ui fumadocs-mdx next-intl lucide-react
+    bun add -d @types/node @types/react @types/react-dom
+    ```
+
+    ### Copy template files
+
+    Copy the content from `mks-fumadocs-template/` to your project.
+
+    ### Configure .env.local
+
+    ```bash
+    PROJECT_NAME=My Project
+    DESCRIPTION=Description
+    AUTHOR=Your Name
+    BASE_PATH=/my-project
+    ```
+
+    </Steps>
+  </Tab>
+
+  <Tab value="GitHub Clone">
+    <Steps>
+    ### Clone the repository
+
+    ```bash
+    git clone https://github.com/MKS2508/tpv-el-haido2.git my-project
+    cd my-project
+    ```
+
+    ### Install dependencies
+
+    ```bash
+    bun install
+    ```
+
+    ### Configure the project
+
+    Edit `.env.local` with your values.
+
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Verification
+
+<Callout type="success">
+  To verify everything works correctly, run:
+
+  ```bash
+  bun run build
+  bun run start
+  ```
+
+  You should see the documentation at <code>http://localhost:3000</code>
+</Callout>
+
+## Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```bash
+# Project information
+PROJECT_NAME=My Project
+DESCRIPTION=My project description
+AUTHOR=Your Name
+KEYWORDS=docs,documentation
+
+# Deployment
+BASE_PATH=/my-project
+NEXT_PUBLIC_SITE_URL=https://your-username.github.io/my-project
+
+# i18n
+DEFAULT_LOCALE=en
+NEXT_PUBLIC_SUPPORTED_LOCALES=en,es
+
+# URLs
+TRAILING_SLASH=true
+```
+
+<Callout type="warning">
+  <strong>Important</strong>: The <code>.env.local</code> file should not be committed to git. Make sure it's in your <code>.gitignore</code>.
+</Callout>
+
+## Troubleshooting
+
+### Dependency errors
+
+```bash
+# Clean cache and reinstall
+rm -rf node_modules bun.lockb
+bun install
+```
+
+### Build error
+
+```bash
+# Clean .next and rebuild
+rm -rf .next out
+bun run build
+```
+
+### Port in use
+
+```bash
+# Use a different port
+bun run dev --port 3001
+```
+
+## Next Step
+
+Once installed, see [Quick Start](/en/docs/getting-started/quick-start) to start writing your documentation.

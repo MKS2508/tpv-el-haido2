@@ -1,44 +1,57 @@
-import * as AvatarPrimitive from '@radix-ui/react-avatar';
+import { Image as KobalteImage } from '@kobalte/core/image';
+import type { JSX } from 'solid-js';
+import { splitProps } from 'solid-js';
 
 import { cn } from '@/lib/utils';
 
-const Avatar = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Root
-    ref={ref}
-    class={cn('relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full', className)}
-    {...props}
-  />
-));
-Avatar.displayName = AvatarPrimitive.Root.displayName;
+interface AvatarProps extends JSX.HTMLAttributes<HTMLSpanElement> {
+  ref?: HTMLSpanElement | ((el: HTMLSpanElement) => void);
+  fallbackDelay?: number;
+}
 
-const AvatarImage = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    class={cn('aspect-square h-full w-full', className)}
-    {...props}
-  />
-));
-AvatarImage.displayName = AvatarPrimitive.Image.displayName;
+function Avatar(props: AvatarProps) {
+  const [local, others] = splitProps(props, ['class', 'ref', 'fallbackDelay']);
+  return (
+    <KobalteImage
+      ref={local.ref}
+      fallbackDelay={local.fallbackDelay}
+      class={cn('relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full', local.class)}
+      {...others}
+    />
+  );
+}
 
-const AvatarFallback = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Fallback>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Fallback
-    ref={ref}
-    class={cn(
-      'flex h-full w-full items-center justify-center rounded-full bg-muted',
-      className
-    )}
-    {...props}
-  />
-));
-AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
+interface AvatarImageProps extends JSX.ImgHTMLAttributes<HTMLImageElement> {
+  ref?: HTMLImageElement | ((el: HTMLImageElement) => void);
+}
+
+function AvatarImage(props: AvatarImageProps) {
+  const [local, others] = splitProps(props, ['class', 'ref']);
+  return (
+    <KobalteImage.Img
+      ref={local.ref}
+      class={cn('aspect-square h-full w-full', local.class)}
+      {...others}
+    />
+  );
+}
+
+interface AvatarFallbackProps extends JSX.HTMLAttributes<HTMLSpanElement> {
+  ref?: HTMLSpanElement | ((el: HTMLSpanElement) => void);
+}
+
+function AvatarFallback(props: AvatarFallbackProps) {
+  const [local, others] = splitProps(props, ['class', 'ref']);
+  return (
+    <KobalteImage.Fallback
+      ref={local.ref}
+      class={cn(
+        'flex h-full w-full items-center justify-center rounded-full bg-muted',
+        local.class
+      )}
+      {...others}
+    />
+  );
+}
 
 export { Avatar, AvatarImage, AvatarFallback };

@@ -1,22 +1,25 @@
+import type { JSX } from 'solid-js';
+import { splitProps } from 'solid-js';
 import OptimizedProductCard from '@/components/ui/OptimizedProductCard';
 import type Product from '@/models/Product.ts';
 
-interface ProductButtonProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ProductButtonProps extends JSX.HTMLAttributes<HTMLDivElement> {
   product: Product;
   handleAddToOrder: (product: Product) => void;
-  key?: number;
 }
 
-const ProductButton: React.FC<ProductButtonProps> = ({ product, handleAddToOrder, ...props }) => {
+function ProductButton(props: ProductButtonProps) {
+  const [local, others] = splitProps(props, ['product', 'handleAddToOrder']);
+
   return (
     <OptimizedProductCard
-      product={product}
+      product={local.product}
       mode="order"
-      onAction={handleAddToOrder}
+      onAction={local.handleAddToOrder}
       showCategory={true}
-      {...props}
+      {...others}
     />
   );
-};
+}
 
 export default ProductButton;

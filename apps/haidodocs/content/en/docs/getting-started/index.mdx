@@ -1,0 +1,89 @@
+---
+title: Introduction
+description: 'Introduction to haidodocs -  Sistema TPV (Terminal Punto de Venta) de escritorio para hostelería. Construido con Tauri, SolidJS y SQL         ite.'
+---
+
+# Introduction
+
+Welcome to the **haidodocs** documentation.
+
+## What is haidodocs?
+
+<Callout type="info">
+  <p><strong> Sistema TPV (Terminal Punto de Venta) de escritorio para hostelería. Construido con Tauri, SolidJS y SQL         ite.</strong></p>
+</Callout>
+
+This template is designed to provide you with a solid foundation for documenting your projects using Fumadocs.
+
+## Prerequisites
+
+Before you begin, make sure you have installed:
+
+- **Bun** v1.1.43 or higher
+- **Node.js** v20 or higher (for compatibility)
+
+## Quick Installation
+
+<Steps>
+### 1. Clone or create your project
+
+```bash
+# If using mks-scaffolder
+bunx mks-scaffolder create my-project --template fumadocs
+
+# Or if cloning directly
+git clone https://github.com/MKS2508/tpv-el-haido2.git
+cd my-project
+```
+
+### 2. Install dependencies
+
+```bash
+bun install
+```
+
+### 3. Configure environment variables
+
+```bash
+cp .env.example .env.local
+# Edit .env.local with your values
+```
+
+### 4. Start the development server
+
+```bash
+bun run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+</Steps>
+
+## Project Structure
+
+```
+.
+├── content/              # Your documentation in MDX
+│   ├── docs/            # Spanish version
+│   └── en/docs/         # English version
+├── messages/            # UI translations
+│   ├── es.json
+│   └── en.json
+├── src/
+│   ├── app/            # Next.js pages
+│   ├── components/     # React components
+│   ├── lib/            # Utilities
+│   └── config/         # Site configuration
+├── public/             # Static files
+└── .env.local          # Environment variables (not in git)
+```
+
+## Next Steps
+
+- [Installation](/en/docs/getting-started/installation) - Set up your environment
+- [Quick Start](/en/docs/getting-started/quick-start) - Get started quickly
+- [Features](/en/docs/features) - Discover what you can do
+
+<Callout type="tip">
+  Use <code>content-template/</code> as a reference to create your own documentation structure.
+</Callout>

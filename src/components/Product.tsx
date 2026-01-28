@@ -1,3 +1,4 @@
+import { For } from 'solid-js';
 import OptimizedProductCard from '@/components/ui/OptimizedProductCard.tsx';
 import { useResponsive } from '@/hooks/useResponsive';
 import type { OrderItem } from '@/models/Order.ts';
@@ -9,15 +10,11 @@ type ProductGridProps = {
   selectedOrderId?: number | null;
 };
 
-const ProductGrid: React.FC<ProductGridProps> = ({
-  products,
-  handleAddToOrder,
-  selectedOrderId,
-}) => {
+function ProductGrid(props: ProductGridProps) {
   const { isMobile } = useResponsive();
 
   // Si no hay selectedOrderId, mostrar mensaje pero mantener estructura de scroll
-  if (!selectedOrderId) {
+  if (!props.selectedOrderId) {
     return (
       <div class="h-full w-full overflow-hidden bg-background">
         <div class="h-full overflow-y-auto overflow-x-hidden">
@@ -34,7 +31,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   }
 
   // Si no hay productos
-  if (products.length === 0) {
+  if (props.products.length === 0) {
     return (
       <div class="h-full w-full overflow-hidden bg-background">
         <div class="h-full overflow-y-auto overflow-x-hidden">
@@ -42,7 +39,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
             <div class="text-center text-muted-foreground">
               <div class="text-4xl mb-3">📦</div>
               <p class="text-lg font-medium">No hay productos disponibles</p>
-              <p class="text-sm">Esta categoría no tiene productos</p>
+              <p class="text-sm">Esta categoria no tiene productos</p>
             </div>
           </div>
         </div>
@@ -56,23 +53,25 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         <div
           class={`
                     grid gap-3 w-full
-                    ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}
+                    ${isMobile() ? 'grid-cols-2' : 'grid-cols-3'}
                 `}
         >
-          {products.map((product) => (
-            <OptimizedProductCard
-              key={product.id}
-              product={product}
               mode="order"
-              onAction={handleAddToOrder}
-              showCategory={true}
-              class="w-full"
-            />
-          ))}
+          <For each={props.products}>
+            {(product) => (
+              <OptimizedProductCard
+                product={product}
+                mode="order"
+                onAction={props.handleAddToOrder}
+                showCategory={true}
+                class="w-full"
+              />
+            )}
+          </For>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default ProductGrid;

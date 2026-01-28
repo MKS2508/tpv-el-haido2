@@ -1,22 +1,24 @@
 import { Motion, Presence } from '@motionone/solid';
-import { AwardIcon, DollarSignIcon, ShoppingCartIcon, TrendingUpIcon } from 'lucide-solid';
+import { AwardIcon, DollarSignIcon, ShoppingCartIcon, TrendingUpIcon, CalendarIcon } from 'lucide-solid';
 import { createMemo, createSignal, For, Show, type Component, type JSX } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
-import {
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+// TODO: recharts is React-specific and needs a SolidJS alternative
+// import {
+//   CartesianGrid,
+//   Cell,
+//   Legend,
+//   Line,
+//   LineChart,
+//   Pie,
+//   PieChart,
+//   ResponsiveContainer,
+//   Tooltip,
+//   XAxis,
+//   YAxis,
+// } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DateRangePicker } from '@/components/ui/DateRangePicker';
+// TODO: DateRangePicker is React-specific and needs a SolidJS alternative
+// import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import {
   Table,
   TableBody,
@@ -30,13 +32,14 @@ import { cn } from '@/lib/utils';
 import type Order from '@/models/Order';
 import { homeData } from '@/store/selectors';
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-];
+// Colors for future chart implementation
+// const COLORS = [
+//   'hsl(var(--chart-1))',
+//   'hsl(var(--chart-2))',
+//   'hsl(var(--chart-3))',
+//   'hsl(var(--chart-4))',
+//   'hsl(var(--chart-5))',
+// ];
 
 // Header Component
 interface HomeHeaderProps {
@@ -75,11 +78,13 @@ const HomeHeader: Component<HomeHeaderProps> = (props) => (
       </div>
 
       <Show when={!props.isMobile}>
-        <DateRangePicker
-          initialDateFrom={props.dateRange.from}
-          initialDateTo={props.dateRange.to}
-          onUpdate={props.handleDateRangeChange}
-        />
+        {/* TODO: Replace with SolidJS DateRangePicker */}
+        <div class="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background text-sm text-muted-foreground">
+          <CalendarIcon class="h-4 w-4" />
+          <span>
+            {props.dateRange.from.toLocaleDateString('es-ES')} - {props.dateRange.to.toLocaleDateString('es-ES')}
+          </span>
+        </div>
       </Show>
     </div>
   </Motion.div>
@@ -155,19 +160,19 @@ const StatCard: Component<StatCardProps> = (props) => {
       <Card
         class={cn(
           `${variantStyles().cardClass} shadow-lg transition-all duration-300 hover:shadow-xl border-2`,
-          responsive.isMobile && 'shadow-md hover:shadow-lg'
+          responsive.isMobile() && 'shadow-md hover:shadow-lg'
         )}
       >
         <CardHeader
           class={cn(
             'flex flex-row items-center justify-between space-y-0',
-            responsive.isMobile ? 'pb-1 px-3 pt-3' : 'pb-3'
+            responsive.isMobile() ? 'pb-1 px-3 pt-3' : 'pb-3'
           )}
         >
           <CardTitle
             class={cn(
               'font-semibold text-card-foreground',
-              responsive.isMobile ? 'text-xs leading-tight' : 'text-sm'
+              responsive.isMobile() ? 'text-xs leading-tight' : 'text-sm'
             )}
           >
             {props.title}
@@ -175,18 +180,18 @@ const StatCard: Component<StatCardProps> = (props) => {
           <div
             class={cn(
               `${variantStyles().iconBg} rounded-lg transition-transform duration-200 hover:scale-110`,
-              responsive.isMobile ? 'p-1.5' : 'p-2'
+              responsive.isMobile() ? 'p-1.5' : 'p-2'
             )}
           >
             <Dynamic
               component={props.Icon}
-              class={cn(variantStyles().iconClass, responsive.isMobile ? 'h-4 w-4' : 'h-5 w-5')}
+              class={cn(variantStyles().iconClass, responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')}
             />
           </div>
         </CardHeader>
-        <CardContent class={cn('pt-0', responsive.isMobile ? 'px-3 pb-3' : '')}>
+        <CardContent class={cn('pt-0', responsive.isMobile() ? 'px-3 pb-3' : '')}>
           <Motion.div
-            class={cn('font-bold text-card-foreground', responsive.isMobile ? 'text-lg' : 'text-3xl')}
+            class={cn('font-bold text-card-foreground', responsive.isMobile() ? 'text-lg' : 'text-3xl')}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{
@@ -284,52 +289,35 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
       <Card
         class={cn(
           'bg-gradient-to-br from-card to-muted/20 border-2 shadow-lg hover:shadow-xl transition-all duration-300',
-          responsive.isMobile && 'shadow-md hover:shadow-lg'
+          responsive.isMobile() && 'shadow-md hover:shadow-lg'
         )}
       >
-        <CardHeader class={cn(responsive.isMobile ? 'pb-2 px-4 pt-4' : 'pb-4')}>
+        <CardHeader class={cn(responsive.isMobile() ? 'pb-2 px-4 pt-4' : 'pb-4')}>
           <div class="flex items-center gap-2">
-            <div class={cn('bg-primary/10 rounded-lg', responsive.isMobile ? 'p-1.5' : 'p-2')}>
-              <TrendingUpIcon class={cn('text-primary', responsive.isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
+            <div class={cn('bg-primary/10 rounded-lg', responsive.isMobile() ? 'p-1.5' : 'p-2')}>
+              <TrendingUpIcon class={cn('text-primary', responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')} />
             </div>
             <CardTitle
-              class={cn('font-semibold text-card-foreground', responsive.isMobile ? 'text-sm' : 'text-lg')}
+              class={cn('font-semibold text-card-foreground', responsive.isMobile() ? 'text-sm' : 'text-lg')}
             >
               {props.title}
             </CardTitle>
           </div>
         </CardHeader>
-        <CardContent class={responsive.isMobile ? 'px-4 pb-4' : ''}>
-          <ResponsiveContainer width="100%" height={responsive.isMobile ? 200 : 300}>
-            <LineChart data={props.data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis
-                dataKey="date"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={responsive.isMobile ? 10 : 12}
-              />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={responsive.isMobile ? 10 : 12} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  fontSize: responsive.isMobile ? '12px' : '14px',
-                }}
-              />
-              <Show when={!responsive.isMobile}>
-                <Legend />
-              </Show>
-              <Line
-                type="monotone"
-                dataKey="sales"
-                stroke="hsl(var(--primary))"
-                strokeWidth={responsive.isMobile ? 2 : 3}
-                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: responsive.isMobile ? 3 : 4 }}
-                activeDot={{ r: responsive.isMobile ? 4 : 6, stroke: 'hsl(var(--primary))', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <CardContent class={responsive.isMobile() ? 'px-4 pb-4' : ''}>
+          {/* TODO: Replace with SolidJS-compatible charting library */}
+          <div
+            class={cn(
+              'flex items-center justify-center bg-muted/30 rounded-lg border border-dashed border-border',
+              responsive.isMobile() ? 'h-[200px]' : 'h-[300px]'
+            )}
+          >
+            <div class="text-center text-muted-foreground">
+              <TrendingUpIcon class="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p class="font-medium">Grafico de ventas</p>
+              <p class="text-sm">{props.data.length} puntos de datos</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </Motion.div>
@@ -360,51 +348,46 @@ const PieChartCard: Component<PieChartCardProps> = (props) => {
       <Card
         class={cn(
           'bg-gradient-to-br from-card to-success/5 border-2 border-success/20 shadow-lg hover:shadow-xl transition-all duration-300',
-          responsive.isMobile && 'shadow-md hover:shadow-lg'
+          responsive.isMobile() && 'shadow-md hover:shadow-lg'
         )}
       >
-        <CardHeader class={cn(responsive.isMobile ? 'pb-2 px-4 pt-4' : 'pb-4')}>
+        <CardHeader class={cn(responsive.isMobile() ? 'pb-2 px-4 pt-4' : 'pb-4')}>
           <CardTitle
             class={cn(
               'font-semibold text-card-foreground flex items-center gap-2',
-              responsive.isMobile ? 'text-sm' : 'text-lg'
+              responsive.isMobile() ? 'text-sm' : 'text-lg'
             )}
           >
-            <div class={cn('bg-success/10 rounded-lg', responsive.isMobile ? 'p-1.5' : 'p-2')}>
-              <DollarSignIcon class={cn('text-success', responsive.isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
+            <div class={cn('bg-success/10 rounded-lg', responsive.isMobile() ? 'p-1.5' : 'p-2')}>
+              <DollarSignIcon class={cn('text-success', responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')} />
             </div>
             {props.title}
           </CardTitle>
         </CardHeader>
-        <CardContent class={responsive.isMobile ? 'px-4 pb-4' : ''}>
-          <ResponsiveContainer width="100%" height={responsive.isMobile ? 200 : 300}>
-            <PieChart>
-              <Pie
-                data={props.data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={90}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-              >
-                <For each={props.data}>
-                  {(_, entryIndex) => (
-                    <Cell key={`cell-${entryIndex()}`} fill={COLORS[entryIndex() % COLORS.length]} />
+        <CardContent class={responsive.isMobile() ? 'px-4 pb-4' : ''}>
+          {/* TODO: Replace with SolidJS-compatible charting library */}
+          <div
+            class={cn(
+              'flex items-center justify-center bg-muted/30 rounded-lg border border-dashed border-border',
+              responsive.isMobile() ? 'h-[200px]' : 'h-[300px]'
+            )}
+          >
+            <div class="text-center text-muted-foreground">
+              <DollarSignIcon class="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p class="font-medium">{props.title}</p>
+              <p class="text-sm">{props.data.length} categorias</p>
+              <ul class="mt-2 text-xs space-y-1">
+                <For each={props.data.slice(0, 3)}>
+                  {(item) => (
+                    <li>{item.name}: {item.value}</li>
                   )}
                 </For>
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+                <Show when={props.data.length > 3}>
+                  <li>... y {props.data.length - 3} mas</li>
+                </Show>
+              </ul>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </Motion.div>
@@ -700,37 +683,37 @@ const Home: Component<HomeProps> = (props) => {
         userName={props.userName}
         dateRange={dateRange()}
         handleDateRangeChange={handleDateRangeChange}
-        isMobile={responsive.isMobile}
+        isMobile={responsive.isMobile()}
       />
 
       <div
         class={cn(
           'flex-grow overflow-y-auto',
-          responsive.isMobile ? 'p-4 space-y-4' : 'p-4 space-y-4 lg:p-6 lg:space-y-6'
+          responsive.isMobile() ? 'p-4 space-y-4' : 'p-4 space-y-4 lg:p-6 lg:space-y-6'
         )}
       >
-        <StatsGrid stats={stats()} isMobile={responsive.isMobile} />
+        <StatsGrid stats={stats()} isMobile={responsive.isMobile()} />
 
         {/* Charts and Tables Section - Optimized for all screen sizes */}
         <div
           class={cn(
             'grid gap-3',
-            responsive.isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
+            responsive.isMobile() ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
             'lg:gap-4'
           )}
         >
           {/* Line Chart - Takes more space on larger screens */}
-          <div class={cn(responsive.isMobile ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}>
+          <div class={cn(responsive.isMobile() ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}>
             <LineChartCard title="Tendencia de Ventas" data={chartData().salesTrend} index={0} />
           </div>
 
           {/* Category Pie Chart */}
-          <div class={cn(responsive.isMobile ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
+          <div class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
             <PieChartCard title="Ventas por Categoria" data={chartData().salesByCategory} index={0} />
           </div>
 
           {/* Location Pie Chart */}
-          <div class={cn(responsive.isMobile ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
+          <div class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
             <PieChartCard
               title="Pedidos por Ubicacion"
               data={chartData().ordersByLocation}
@@ -743,7 +726,7 @@ const Home: Component<HomeProps> = (props) => {
         <div
           class={cn(
             'grid gap-3',
-            responsive.isMobile ? 'grid-cols-1 space-y-4' : 'grid-cols-1 lg:grid-cols-2 lg:gap-4'
+            responsive.isMobile() ? 'grid-cols-1 space-y-4' : 'grid-cols-1 lg:grid-cols-2 lg:gap-4'
           )}
         >
           <RecentOrdersTable orders={filteredOrders()} index={0} />

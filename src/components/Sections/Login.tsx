@@ -22,7 +22,7 @@ const Login = (props: LoginProps) => {
 
   // Helper to determine if we should use desktop layout
   const isDesktopLayout = () =>
-    responsive.isLaptop || responsive.isDesktop || responsive.isLargeDesktop || responsive.isUltraWide;
+    responsive.isLaptop() || responsive.isDesktop() || responsive.isLargeDesktop() || responsive.isUltraWide();
 
   // Define handlers
   const handlePinInput = (digit: string) => {
@@ -133,7 +133,7 @@ const Login = (props: LoginProps) => {
                 class={`w-full font-semibold bg-white/50 dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 border-gray-300/50 dark:border-gray-600/50 transition-all hover:scale-105 active:scale-95 touch-manipulation ${
                   isDesktopLayout()
                     ? 'h-12 lg:h-14 text-lg lg:text-xl' // Smaller for desktop to fit better
-                    : responsive.isMobile
+                    : responsive.isMobile()
                       ? 'h-16 text-xl'
                       : 'h-16 text-xl sm:text-2xl'
                 }`}
@@ -213,7 +213,7 @@ const Login = (props: LoginProps) => {
               easing: [0.4, 0, 0.2, 1],
             }}
             class={`bg-white/70 dark:bg-gray-900/70 border border-white/20 dark:border-gray-700/30 rounded-3xl shadow-2xl w-[90vw] max-w-3xl overflow-hidden flex flex-col ${
-              responsive.isMobile
+              responsive.isMobile()
                 ? 'p-4 min-h-[70vh] max-h-[95vh] h-auto' // More padding and height for mobile
                 : 'p-6 sm:p-8 h-[85vh] max-h-[700px]'
             }`}
@@ -228,7 +228,7 @@ const Login = (props: LoginProps) => {
               <img
                 src="/logo.svg"
                 alt="El Haido Logo"
-                class={responsive.isMobile ? 'w-10 h-10' : 'w-20 h-20 sm:w-24 sm:h-24'}
+                class={responsive.isMobile() ? 'w-10 h-10' : 'w-20 h-20 sm:w-24 sm:h-24'}
               />
             </Motion.div>
 
@@ -237,11 +237,11 @@ const Login = (props: LoginProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.4 }}
-              class={`text-center ${responsive.isMobile ? 'mb-2' : 'mb-4'}`}
+              class={`text-center ${responsive.isMobile() ? 'mb-2' : 'mb-4'}`}
             >
               <h1
                 class={
-                  responsive.isMobile
+                  responsive.isMobile()
                     ? 'text-xl font-bold text-gray-900 dark:text-white'
                     : 'text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'
                 }
@@ -249,7 +249,7 @@ const Login = (props: LoginProps) => {
                 El Haido TPV
               </h1>
               <p
-                class={`text-gray-700 dark:text-gray-300 mt-1 font-medium ${responsive.isMobile ? 'text-xs' : 'text-sm'}`}
+                class={`text-gray-700 dark:text-gray-300 mt-1 font-medium ${responsive.isMobile() ? 'text-xs' : 'text-sm'}`}
               >
                 {currentTime().toLocaleTimeString([], {
                   hour: '2-digit',
@@ -265,7 +265,7 @@ const Login = (props: LoginProps) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               class={`font-semibold text-center text-gray-800 dark:text-gray-200 ${
-                responsive.isMobile ? 'text-base mb-4' : 'text-lg sm:text-xl mb-6'
+                responsive.isMobile() ? 'text-base mb-4' : 'text-lg sm:text-xl mb-6'
               }`}
             >
               {selectedUser() ? `Hola, ${selectedUser()!.name}` : 'Selecciona tu usuario'}
@@ -315,7 +315,7 @@ const Login = (props: LoginProps) => {
                       class={`w-full ${
                         isDesktopLayout()
                           ? 'max-w-4xl' // Wider container for desktop
-                          : responsive.isMobile
+                          : responsive.isMobile()
                             ? 'max-w-sm'
                             : 'max-w-md'
                       }`}
@@ -324,7 +324,7 @@ const Login = (props: LoginProps) => {
                         when={isDesktopLayout()}
                         fallback={
                           // Mobile/Tablet Layout - Vertical Single Column
-                          <div class={`${responsive.isMobile ? 'space-y-3' : 'space-y-4 sm:space-y-6'}`}>
+                          <div class={`${responsive.isMobile() ? 'space-y-3' : 'space-y-4 sm:space-y-6'}`}>
                             {/* User avatar - smaller in PIN view */}
                             <Motion.div
                               initial={{ scale: 0.5, opacity: 0 }}
@@ -334,7 +334,7 @@ const Login = (props: LoginProps) => {
                             >
                               <Avatar
                                 class={`ring-4 ring-primary/30 shadow-xl ${
-                                  responsive.isMobile ? 'w-14 h-14' : 'w-24 h-24 sm:w-32 sm:h-32'
+                                  responsive.isMobile() ? 'w-14 h-14' : 'w-24 h-24 sm:w-32 sm:h-32'
                                 }`}
                               >
                                 <AvatarImage src={user().profilePicture} alt={user().name} />
@@ -344,14 +344,14 @@ const Login = (props: LoginProps) => {
                               </Avatar>
                               <p
                                 class={`font-semibold text-gray-900 dark:text-white ${
-                                  responsive.isMobile ? 'mt-1 text-sm' : 'mt-3 text-lg sm:text-xl'
+                                  responsive.isMobile() ? 'mt-1 text-sm' : 'mt-3 text-lg sm:text-xl'
                                 }`}
                               >
                                 {user().name}
                               </p>
                               <p
                                 class={`text-gray-600 dark:text-gray-400 mt-1 ${
-                                  responsive.isMobile ? 'text-xs' : 'text-xs sm:text-sm'
+                                  responsive.isMobile() ? 'text-xs' : 'text-xs sm:text-sm'
                                 }`}
                               >
                                 Introduce tu PIN
@@ -481,7 +481,7 @@ const Login = (props: LoginProps) => {
           {/* Fullscreen button - outside container - Only on desktop and web */}
           <Show
             when={
-              !responsive.isMobile &&
+              !responsive.isMobile() &&
               !isTauri() &&
               typeof window !== 'undefined' &&
               !window.location.href.includes('tauri')

@@ -1,0 +1,68 @@
+---
+title: Bienvenido
+description: 'Bienvenido a haidodocs -  Sistema TPV (Terminal Punto de Venta) de escritorio para hostelería. Construido con Tauri, SolidJS y SQL         ite.'
+---
+
+# Bienvenido a haidodocs
+
+<Callout type="info">
+  Este es un template de Fumadocs. Reemplaza este contenido con tu propia documentación.
+</Callout>
+
+## Características
+
+Este template incluye:
+
+- **Soporte bilingüe** - Español e inglés listos para usar
+- **Buscador integrado** - Búsqueda instantánea de contenido
+- **Tema oscuro/claro** - Cambio automático según preferencia del sistema
+- **MDX completo** - Usa componentes de React en tu markdown
+- **GitHub Pages ready** - Configurado para despliegue estático
+
+## Comenzando
+
+<Steps>
+### Instalación
+
+```bash
+# Copia el contenido de content-template/ a content/
+cp -r content-template/* content/
+```
+
+### Desarrollo
+
+```bash
+bun install
+bun run dev
+```
+
+Abre [http://localhost:3000](http://localhost:3000) para ver tu documentación.
+
+### Build
+
+```bash
+bun run build
+```
+
+Los archivos estáticos se generan en `out/`.
+
+</Steps>
+
+## Configuración
+
+Edita las variables de entorno en `.env.local`:
+
+```bash
+PROJECT_NAME=Mi Proyecto
+DESCRIPTION=Descripción de mi proyecto
+AUTHOR=Tu Nombre
+BASE_PATH=/mi-proyecto
+```
+
+<Callout type="warning">
+  Recuerda configurar <code>BASE_PATH</code> si despliegas en GitHub Pages con un nombre de repositorio personalizado.
+</Callout>
+
+## Siguiente paso
+
+Consulta la sección de [Introducción](/docs/getting-started) para más detalles.
