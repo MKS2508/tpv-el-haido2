@@ -1,5 +1,4 @@
-import type React from 'react';
-import { createContext, useContext } from 'react';
+import { createContext, useContext } from 'solid-js';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
 type OnboardingContextType = ReturnType<typeof useOnboarding>;

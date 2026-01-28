@@ -1,8 +1,7 @@
+import { createMemo, createEffect, createSignal, onCleanup } from 'solid-js';
 import NumberFlow, { NumberFlowGroup } from '@number-flow/react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ClockIcon, CreditCardIcon, EuroIcon, PrinterIcon, XIcon } from 'lucide-react';
-import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { Presence, Motion } from '@motionone/solid';
+import { ClockIcon, CreditCardIcon, EuroIcon, PrinterIcon, XIcon } from 'lucide-solid';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent } from '@/components/ui/card.tsx';
 import {
@@ -49,17 +48,17 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   handleCompleteOrder,
 }) => {
   const { isMobile } = useResponsive();
-  const [localCashAmount, setLocalCashAmount] = useState(cashAmount);
-  const [localPaymentMethod, setLocalPaymentMethod] = useState(paymentMethod);
+  const [localCashAmount, setLocalCashAmount] = createSignal(cashAmount);
+  const [localPaymentMethod, setLocalPaymentMethod] = createSignal(paymentMethod);
 
   // AEAT hooks
   const { isEnabled: isAEATEnabled, isConnected: isAEATConnected, config: aeatConfig } = useAEAT();
   const { emitInvoice } = useEmitInvoice();
 
-  useEffect(() => {
+  createEffect(() => {
     setLocalCashAmount(cashAmount);
     setLocalPaymentMethod(paymentMethod);
-  }, [cashAmount, paymentMethod]);
+  });
 
   const handleLocalCashInput = useCallback((value: string) => {
     setLocalCashAmount((prevAmount) => {
@@ -71,31 +70,31 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   }, []);
 
   const calculateLocalChange = useCallback(() => {
-    const change = parseFloat(localCashAmount) - newOrder.total;
+    const change = parseFloat(localCashAmount()) - newOrder.total;
     return change > 0 ? change.toFixed(2) : '0.00';
-  }, [localCashAmount, newOrder.total]);
+  }, [localCashAmount(), newOrder.total]);
 
   const handleConfirmPayment = useCallback(() => {
     setShowTicketDialog(true);
     console.log('handleConfirmPayment');
     toast({
-      title: localPaymentMethod === 'pagar_luego' ? 'Pago Pendiente' : 'Pago Confirmado!',
+      title: localPaymentMethod() === 'pagar_luego' ? 'Pago Pendiente' : 'Pago Confirmado!',
       description:
-        localPaymentMethod === 'pagar_luego'
+        localPaymentMethod() === 'pagar_luego'
           ? 'La orden se ha registrado como pendiente de pago.'
           : 'El pago ha sido procesado exitosamente.',
       duration: 3000,
     });
-  }, [localPaymentMethod, setShowTicketDialog]);
+  }, [localPaymentMethod(), setShowTicketDialog]);
 
   const handleCompleteTransaction = useCallback(
     async (shouldPrintTicket: boolean) => {
       const updatedOrder: Order = {
         ...newOrder,
-        paymentMethod: localPaymentMethod,
+        paymentMethod: localPaymentMethod(),
         ticketPath: 'ticket.pdf',
-        status: localPaymentMethod === 'pagar_luego' ? 'unpaid' : 'paid',
-        totalPaid: parseFloat(localCashAmount) || 0,
+        status: localPaymentMethod() === 'pagar_luego' ? 'unpaid' : 'paid',
+        totalPaid: parseFloat(localCashAmount()) || 0,
         change: parseFloat(calculateLocalChange()),
         items: newOrder.items,
       };
@@ -114,7 +113,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         toast({
           title: 'Orden completada',
           description:
-            localPaymentMethod === 'pagar_luego'
+            localPaymentMethod() === 'pagar_luego'
               ? 'La orden ha sido registrada como pendiente de pago.'
               : 'La orden ha sido completada sin imprimir ticket.',
           duration: 3000,
@@ -148,11 +147,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     [
       setCashAmount,
       setPaymentMethod,
-      localPaymentMethod,
+      localPaymentMethod(),
       calculateLocalChange,
       handleCompleteOrder,
       handleTicketPrintingComplete,
-      localCashAmount,
+      localCashAmount(),
       newOrder,
       isAEATEnabled,
       isAEATConnected,
@@ -165,7 +164,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
-      if (localPaymentMethod !== 'efectivo') return;
+      if (localPaymentMethod() !== 'efectivo') return;
 
       const key = event.key;
       if (/^[0-9.]$/.test(key) || key === 'Backspace') {
@@ -177,89 +176,90 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         }
       }
     },
-    [localPaymentMethod, handleLocalCashInput]
+    [localPaymentMethod(), handleLocalCashInput]
   );
 
-  useEffect(() => {
+  createEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
-    return () => {
+
+    onCleanup(() => {
       window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [handleKeyPress]);
+    });
+  });
 
   return (
     <>
       {isPaymentModalOpen && (
         <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
           <DialogContent
-            className={cn(
+            class={cn(
               'flex flex-col overflow-auto',
               isMobile
                 ? 'w-[100vw] max-w-[100vw] h-[100vh] max-h-[100vh] rounded-none border-0 p-4'
                 : 'w-[95vw] max-w-[900px] h-[90vh] max-h-[90vh] p-6'
             )}
           >
-            <DialogHeader className={cn(isMobile && 'px-4 py-3')}>
-              <DialogTitle className={cn(isMobile ? 'text-xl mb-4' : 'text-2xl mb-4')}>
+            <DialogHeader class={cn(isMobile && 'px-4 py-3')}>
+              <DialogTitle class={cn(isMobile ? 'text-xl mb-4' : 'text-2xl mb-4')}>
                 Completar Pedido
               </DialogTitle>
 
               <div
-                className={cn(
+                class={cn(
                   'flex items-center gap-3',
                   isMobile ? 'flex-col' : 'flex-row'
                 )}
               >
                 <Button
-                  variant={localPaymentMethod === 'efectivo' ? 'default' : 'outline'}
+                  variant={localPaymentMethod() === 'efectivo' ? 'default' : 'outline'}
                   onClick={() => setLocalPaymentMethod('efectivo')}
-                  className={cn(
+                  class={cn(
                     'flex-1 touch-manipulation',
                     isMobile ? 'h-14 w-full text-lg' : 'h-16 text-xl'
                   )}
                 >
-                  <EuroIcon className={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-7 w-7')} />
+                  <EuroIcon class={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-7 w-7')} />
                   Efectivo
                 </Button>
                 <Button
-                  variant={localPaymentMethod === 'tarjeta' ? 'default' : 'outline'}
+                  variant={localPaymentMethod() === 'tarjeta' ? 'default' : 'outline'}
                   onClick={() => setLocalPaymentMethod('tarjeta')}
-                  className={cn(
+                  class={cn(
                     'flex-1 touch-manipulation',
                     isMobile ? 'h-14 w-full text-lg' : 'h-16 text-xl'
                   )}
                 >
-                  <CreditCardIcon className={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-7 w-7')} />
+                  <CreditCardIcon class={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-7 w-7')} />
                   Tarjeta
                 </Button>
                 <Button
-                  variant={localPaymentMethod === 'pagar_luego' ? 'default' : 'outline'}
+                  variant={localPaymentMethod() === 'pagar_luego' ? 'default' : 'outline'}
                   onClick={() => setLocalPaymentMethod('pagar_luego')}
-                  className={cn(
+                  class={cn(
                     'flex-1 touch-manipulation',
                     isMobile ? 'h-14 w-full text-lg' : 'h-16 text-xl'
                   )}
                 >
-                  <ClockIcon className={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-7 w-7')} />
+                  <ClockIcon class={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-7 w-7')} />
                   Pagar Luego
                 </Button>
               </div>
             </DialogHeader>
             <AnimatePresence>
-              <div className={cn('w-full mx-auto h-full', isMobile ? 'px-4 py-2' : 'max-w-full')}>
-                {localPaymentMethod === 'efectivo' && (
+              <div class={cn('w-full mx-auto h-full', isMobile ? 'px-4 py-2' : 'max-w-full')}>
+                {localPaymentMethod() === 'efectivo' && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.3 }}
-                    className={cn('grid gap-6', isMobile ? 'grid-cols-1' : 'grid-cols-2 gap-8')}
+                    class={cn('grid gap-6', isMobile ? 'grid-cols-1' : 'grid-cols-2 gap-8')}
                   >
-                    <div className={cn('space-y-4', isMobile && 'order-2')}>
-                      <Label className={cn(isMobile ? 'text-lg' : 'text-xl')}>
+                    <div class={cn('space-y-4', isMobile && 'order-2')}>
+                      <Label class={cn(isMobile ? 'text-lg' : 'text-xl')}>
                         Cantidad en Efectivo
                       </Label>
-                      <div className={cn('grid grid-cols-3', isMobile ? 'gap-2' : 'gap-3')}>
+                      <div class={cn('grid grid-cols-3', isMobile ? 'gap-2' : 'gap-3')}>
                         <AnimatePresence>
                           {numpadButtons.map((key, index) => (
                             <motion.div
@@ -274,7 +274,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                               <Button
                                 variant="outline"
                                 onClick={() => handleLocalCashInput(key)}
-                                className={cn(
+                                class={cn(
                                   'w-full bg-input border-2 border-border font-bold hover:bg-input/80 transition-all duration-150 touch-manipulation',
                                   isMobile
                                     ? 'h-16 text-2xl active:scale-95'
@@ -289,18 +289,18 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                       </div>
                     </div>
 
-                    <Card className={cn('w-full', isMobile && 'order-1')}>
-                      <CardContent className={cn(isMobile ? 'p-4' : 'p-6')}>
+                    <Card class={cn('w-full', isMobile && 'order-1')}>
+                      <CardContent class={cn(isMobile ? 'p-4' : 'p-6')}>
                         <NumberFlowGroup>
-                          <div className="space-y-6">
-                            <div className="flex justify-between items-center">
+                          <div class="space-y-6">
+                            <div class="flex justify-between items-center">
                               <span
-                                className={cn('font-semibold', isMobile ? 'text-2xl' : 'text-4xl')}
+                                class={cn('font-semibold', isMobile ? 'text-2xl' : 'text-4xl')}
                               >
                                 Total:
                               </span>
                               <span
-                                className={cn(
+                                class={cn(
                                   'font-bold text-primary bg-primary/10 px-3 py-1 rounded-md',
                                   isMobile ? 'text-3xl' : 'text-7xl'
                                 )}
@@ -326,20 +326,20 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                 />
                               </span>
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div class="flex justify-between items-center">
                               <span
-                                className={cn('font-semibold', isMobile ? 'text-lg' : 'text-2xl')}
+                                class={cn('font-semibold', isMobile ? 'text-lg' : 'text-2xl')}
                               >
                                 Cantidad Ingresada:
                               </span>
                               <span
-                                className={cn(
+                                class={cn(
                                   'font-bold text-card-foreground bg-card px-3 py-1 rounded-md border border-border',
                                   isMobile ? 'text-xl' : 'text-2xl'
                                 )}
                               >
                                 <NumberFlow
-                                  value={parseFloat(localCashAmount) || 0}
+                                  value={parseFloat(localCashAmount()) || 0}
                                   format={{
                                     minimumFractionDigits: 2,
                                     style: 'currency',
@@ -359,14 +359,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                 />
                               </span>
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div class="flex justify-between items-center">
                               <span
-                                className={cn('font-semibold', isMobile ? 'text-lg' : 'text-2xl')}
+                                class={cn('font-semibold', isMobile ? 'text-lg' : 'text-2xl')}
                               >
                                 Cambio:
                               </span>
                               <span
-                                className={cn(
+                                class={cn(
                                   'font-bold text-accent-foreground bg-accent px-3 py-1 rounded-md',
                                   isMobile ? 'text-xl' : 'text-2xl'
                                 )}
@@ -399,16 +399,16 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   </motion.div>
                 )}
               </div>
-              {localPaymentMethod !== 'efectivo' && (
-                <Card className="w-full max-w-full mx-auto">
-                  <CardContent className={cn(isMobile ? 'p-4' : 'p-6')}>
-                    <div className="space-y-6">
-                      <div className="flex justify-between items-center">
-                        <span className={cn('font-semibold', isMobile ? 'text-xl' : 'text-2xl')}>
+              {localPaymentMethod() !== 'efectivo' && (
+                <Card class="w-full max-w-full mx-auto">
+                  <CardContent class={cn(isMobile ? 'p-4' : 'p-6')}>
+                    <div class="space-y-6">
+                      <div class="flex justify-between items-center">
+                        <span class={cn('font-semibold', isMobile ? 'text-xl' : 'text-2xl')}>
                           Total:
                         </span>
                         <span
-                          className={cn(
+                          class={cn(
                             'font-bold text-card-foreground bg-card px-3 py-1 rounded-md border border-border',
                             isMobile ? 'text-xl' : 'text-2xl'
                           )}
@@ -416,23 +416,23 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                           {newOrder.total.toFixed(2)}€
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className={cn(isMobile ? 'text-base' : 'text-lg')}>
+                      <div class="flex justify-between items-center">
+                        <span class={cn(isMobile ? 'text-base' : 'text-lg')}>
                           Cantidad Ingresada:
                         </span>
                         <span
-                          className={cn(
+                          class={cn(
                             'font-bold text-card-foreground bg-card px-3 py-1 rounded-md border border-border',
                             isMobile ? 'text-lg' : 'text-2xl'
                           )}
                         >
-                          {localCashAmount}€
+                          {localCashAmount()}€
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className={cn(isMobile ? 'text-base' : 'text-lg')}>Cambio:</span>
+                      <div class="flex justify-between items-center">
+                        <span class={cn(isMobile ? 'text-base' : 'text-lg')}>Cambio:</span>
                         <span
-                          className={cn(
+                          class={cn(
                             'font-bold text-accent-foreground bg-accent px-3 py-1 rounded-md',
                             isMobile ? 'text-lg' : 'text-2xl'
                           )}
@@ -446,12 +446,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               )}
             </AnimatePresence>
             <DialogFooter
-              className={cn('gap-3 mt-auto pt-4', isMobile ? 'flex-col' : 'flex-row')}
+              class={cn('gap-3 mt-auto pt-4', isMobile ? 'flex-col' : 'flex-row')}
             >
               <Button
                 variant="outline"
                 onClick={() => setIsPaymentModalOpen(false)}
-                className={cn(
+                class={cn(
                   'text-foreground hover:bg-primary/10 w-full font-semibold touch-manipulation',
                   isMobile ? 'h-16 text-xl order-2' : 'h-20 text-2xl'
                 )}
@@ -459,56 +459,55 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 Cancelar
               </Button>
               <Button
-                className={cn(
+                class={cn(
                   'w-full font-semibold touch-manipulation',
                   isMobile ? 'h-16 text-xl order-1' : 'h-20 text-2xl'
                 )}
                 onClick={handleConfirmPayment}
               >
-                {localPaymentMethod === 'pagar_luego' ? 'Confirmar Pedido' : 'Confirmar Pago'}
+                {localPaymentMethod() === 'pagar_luego' ? 'Confirmar Pedido' : 'Confirmar Pago'}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
-
       <Dialog open={showTicketDialog} onOpenChange={setShowTicketDialog}>
         <DialogContent
-          className={cn(
+          class={cn(
             'flex flex-col justify-center',
             isMobile ? 'w-[95vw] max-w-[95vw] p-6' : 'w-[80vw] max-w-[700px] p-8'
           )}
         >
           <DialogHeader>
-            <DialogTitle className={cn('text-center', isMobile ? 'text-3xl' : 'text-5xl')}>
+            <DialogTitle class={cn('text-center', isMobile ? 'text-3xl' : 'text-5xl')}>
               ¿Desea imprimir el ticket?
             </DialogTitle>
           </DialogHeader>
           <div
-            className={cn(
+            class={cn(
               'flex justify-center mt-8',
               isMobile ? 'flex-col gap-4' : 'gap-6'
             )}
           >
             <Button
               onClick={() => handleCompleteTransaction(true)}
-              className={cn(
+              class={cn(
                 'flex-1 touch-manipulation',
                 isMobile ? 'h-20 text-xl' : 'h-28 text-3xl'
               )}
             >
-              <PrinterIcon className={cn('mr-3', isMobile ? 'h-7 w-7' : 'h-10 w-10')} />
+              <PrinterIcon class={cn('mr-3', isMobile ? 'h-7 w-7' : 'h-10 w-10')} />
               Sí, imprimir
             </Button>
             <Button
               onClick={() => handleCompleteTransaction(false)}
               variant="outline"
-              className={cn(
+              class={cn(
                 'flex-1 touch-manipulation',
                 isMobile ? 'h-20 text-xl' : 'h-28 text-3xl'
               )}
             >
-              <XIcon className={cn('mr-3', isMobile ? 'h-7 w-7' : 'h-10 w-10')} />
+              <XIcon class={cn('mr-3', isMobile ? 'h-7 w-7' : 'h-10 w-10')} />
               No, gracias
             </Button>
           </div>

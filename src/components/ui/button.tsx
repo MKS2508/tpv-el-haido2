@@ -1,6 +1,6 @@
-import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
+import type { JSX } from 'solid-js';
+import { splitProps } from 'solid-js';
 
 import { cn } from '../../lib/utils';
 
@@ -31,19 +31,21 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends JSX.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
+  ref?: HTMLButtonElement | ((el: HTMLButtonElement) => void);
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : 'button';
-    return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
-    );
-  }
-);
-Button.displayName = 'Button';
+function Button(props: ButtonProps) {
+  const [local, others] = splitProps(props, ['class', 'variant', 'size', 'ref']);
+
+  return (
+    <button
+      class={cn(buttonVariants({ variant: local.variant, size: local.size, className: local.class }))}
+      ref={local.ref}
+      {...others}
+    />
+  );
+}
 
 export { Button, buttonVariants };

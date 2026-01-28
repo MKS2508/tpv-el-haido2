@@ -1,185 +1,128 @@
-// Selectores optimizados para evitar re-renders innecesarios
-import { useShallow } from 'zustand/react/shallow';
+/**
+ * SolidJS Selectors - Computed memos for optimized reactivity
+ *
+ * In SolidJS, selectors are typically just createMemo wrappers.
+ * Since solid-js/store is already fine-grained reactive, many of these
+ * can be simplified to direct property access.
+ */
+import { createMemo } from 'solid-js';
 import useStore from './store';
 
-// Selectores específicos por dominio - evita re-renders masivos
+// Get the store instance
+const store = useStore();
 
-// 🎯 USUARIOS - Solo para componentes que necesitan usuarios
-export const useUsers = () => useStore((state) => state.users);
-export const useSelectedUser = () => useStore((state) => state.selectedUser);
-export const useSetSelectedUser = () => useStore((state) => state.setSelectedUser);
-export const useSetUsers = () => useStore((state) => state.setUsers);
+// === COMPUTED SELECTORS (createMemo) ===
 
-// 🛒 PRODUCTOS - Solo para componentes de productos
-export const useProducts = () => useStore((state) => state.products);
-export const useRecentProducts = () => useStore((state) => state.recentProducts);
-export const useCategories = () => useStore((state) => state.categories);
-export const useSetProducts = () => useStore((state) => state.setProducts);
-export const useSetRecentProducts = () => useStore((state) => state.setRecentProducts);
-export const useSetCategories = () => useStore((state) => state.setCategories);
+// Order statistics
+export const orderStats = createMemo(() => {
+  const totalOrders = store.state.orderHistory.length;
+  const totalSales = store.state.orderHistory.reduce((total, order) => total + order.total, 0);
+  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-// 🧾 ÓRDENES - Solo para componentes de órdenes
-export const useActiveOrders = () => useStore((state) => state.activeOrders);
-export const useOrderHistory = () => useStore((state) => state.orderHistory);
-export const useSelectedOrder = () => useStore((state) => state.selectedOrder);
-export const useSelectedOrderId = () => useStore((state) => state.selectedOrderId);
-export const useSetActiveOrders = () => useStore((state) => state.setActiveOrders);
-export const useSetOrderHistory = () => useStore((state) => state.setOrderHistory);
-export const useSetSelectedOrder = () => useStore((state) => state.setSelectedOrder);
-export const useSetSelectedOrderId = () => useStore((state) => state.setSelectedOrderId);
+  return {
+    totalOrders,
+    totalSales,
+    averageOrderValue,
+  };
+});
 
-// 🍽️ MESAS - Solo para componentes de mesas
-export const useTables = () => useStore((state) => state.tables);
-export const useSetTables = () => useStore((state) => state.setTables);
+export const activeOrdersCount = createMemo(() => store.state.activeOrders.length);
 
-// 💳 PAGOS - Solo para componentes de pago
-export const usePaymentMethod = () => useStore((state) => state.paymentMethod);
-export const useCashAmount = () => useStore((state) => state.cashAmount);
-export const useShowTicketDialog = () => useStore((state) => state.showTicketDialog);
-export const useSetPaymentMethod = () => useStore((state) => state.setPaymentMethod);
-export const useSetCashAmount = () => useStore((state) => state.setCashAmount);
-export const useSetShowTicketDialog = () => useStore((state) => state.setShowTicketDialog);
+export const productsCount = createMemo(() => store.state.products.length);
 
-// ⚙️ CONFIGURACIÓN - Solo para configuración
-export const useThermalPrinterOptions = () => useStore((state) => state.thermalPrinterOptions);
-export const useStorageMode = () => useStore((state) => state.storageMode);
-export const useUseStockImages = () => useStore((state) => state.useStockImages);
-export const useTouchOptimizationsEnabled = () => useStore((state) => state.touchOptimizationsEnabled);
-export const useDebugMode = () => useStore((state) => state.debugMode);
-export const useIsBackendConnected = () => useStore((state) => state.isBackendConnected);
+// === DIRECT STATE ACCESS HELPERS ===
+// In SolidJS with createStore, direct property access is already reactive
+// These are convenience exports for common patterns
 
-// ⚙️ SETTERS DE CONFIGURACIÓN
-export const useSetThermalPrinterOptions = () => useStore((state) => state.setThermalPrinterOptions);
-export const useSetStorageMode = () => useStore((state) => state.setStorageMode);
-export const useSetUseStockImages = () => useStore((state) => state.setUseStockImages);
-export const useSetTouchOptimizationsEnabled = () =>
-  useStore((state) => state.setTouchOptimizationsEnabled);
-export const useSetDebugMode = () => useStore((state) => state.setDebugMode);
-export const useSetBackendConnected = () => useStore((state) => state.setBackendConnected);
+// Users
+export const users = () => store.state.users;
+export const selectedUser = () => store.state.selectedUser;
 
-// 🔄 ACCIONES COMPLEJAS - Para operaciones que necesitan múltiples partes del state
-export const useOrderActions = () =>
-  useStore(
-    useShallow((state) => ({
-      addToOrder: state.addToOrder,
-      removeFromOrder: state.removeFromOrder,
-      handleTableChange: state.handleTableChange,
-      handleCompleteOrder: state.handleCompleteOrder,
-      closeOrder: state.closeOrder,
-    }))
-  );
+// Products
+export const products = () => store.state.products;
+export const recentProducts = () => store.state.recentProducts;
+export const categories = () => store.state.categories;
 
-// 📊 SELECTORES COMPUTADOS - Memoizados internamente en el store
-export const useOrderStats = () =>
-  useStore(
-    useShallow((state) => {
-      const totalOrders = state.orderHistory.length;
-      const totalSales = state.orderHistory.reduce((total, order) => total + order.total, 0);
-      const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+// Customers
+export const customers = () => store.state.customers;
 
-      return {
-        totalOrders,
-        totalSales,
-        averageOrderValue,
-      };
-    })
-  );
+// Orders
+export const activeOrders = () => store.state.activeOrders;
+export const orderHistory = () => store.state.orderHistory;
+export const selectedOrder = () => store.state.selectedOrder;
+export const selectedOrderId = () => store.state.selectedOrderId;
 
-export const useActiveOrdersCount = () => useStore((state) => state.activeOrders.length);
+// Tables
+export const tables = () => store.state.tables;
 
-export const useProductsCount = () => useStore((state) => state.products.length);
+// Payments
+export const paymentMethod = () => store.state.paymentMethod;
+export const cashAmount = () => store.state.cashAmount;
+export const showTicketDialog = () => store.state.showTicketDialog;
 
-// 🎯 SELECTORES ESPECÍFICOS POR COMPONENTE
+// Configuration
+export const thermalPrinterOptions = () => store.state.thermalPrinterOptions;
+export const storageMode = () => store.state.storageMode;
+export const useStockImages = () => store.state.useStockImages;
+export const touchOptimizationsEnabled = () => store.state.touchOptimizationsEnabled;
+export const debugMode = () => store.state.debugMode;
+export const isBackendConnected = () => store.state.isBackendConnected;
+export const autoOpenCashDrawer = () => store.state.autoOpenCashDrawer;
+export const taxRate = () => store.state.taxRate;
 
-// Para App.tsx - Solo lo que necesita
-export const useAppData = () =>
-  useStore(
-    useShallow((state) => ({
-      users: state.users,
-      selectedUser: state.selectedUser,
-      selectedOrder: state.selectedOrder,
-      thermalPrinterOptions: state.thermalPrinterOptions,
-      tables: state.tables,
-      categories: state.categories,
-      products: state.products,
-      touchOptimizationsEnabled: state.touchOptimizationsEnabled,
-      debugMode: state.debugMode,
-      storageAdapter: state.storageAdapter,
-      setBackendConnected: state.setBackendConnected,
-      setUsers: state.setUsers,
-      setSelectedUser: state.setSelectedUser,
-      setSelectedOrder: state.setSelectedOrder,
-      setSelectedOrderId: state.setSelectedOrderId,
-      setThermalPrinterOptions: state.setThermalPrinterOptions,
-      setTables: state.setTables,
-      setCategories: state.setCategories,
-      setProducts: state.setProducts,
-      setOrderHistory: state.setOrderHistory,
-    }))
-  );
+// === ACTION BUNDLES ===
+// Group related actions for convenience
 
-// Para Home.tsx - Solo estadísticas
-export const useHomeData = () =>
-  useStore(
-    useShallow((state) => ({
-      orderHistory: state.orderHistory,
-    }))
-  );
+export const orderActions = {
+  addToOrder: store.addToOrder,
+  removeFromOrder: store.removeFromOrder,
+  handleTableChange: store.handleTableChange,
+  handleCompleteOrder: store.handleCompleteOrder,
+  closeOrder: store.closeOrder,
+};
 
-// Para Products.tsx - Solo productos y categorías
-export const useProductsData = () =>
-  useStore(
-    useShallow((state) => ({
-      users: state.users,
-      selectedUser: state.selectedUser,
-      products: state.products,
-      setProducts: state.setProducts,
-      setUsers: state.setUsers,
-      setSelectedUser: state.setSelectedUser,
-      storageAdapter: state.storageAdapter,
-    }))
-  );
+// === COMPOSITE DATA SELECTORS ===
+// For components that need multiple pieces of state
 
-// Para NewOrder.tsx - Todo lo relacionado con órdenes
-export const useNewOrderData = () =>
-  useStore(
-    useShallow((state) => ({
-      activeOrders: state.activeOrders,
-      recentProducts: state.recentProducts,
-      products: state.products,
-      selectedUser: state.selectedUser,
-      tables: state.tables,
-      thermalPrinterOptions: state.thermalPrinterOptions,
-      categories: state.categories,
-      orderHistory: state.orderHistory,
-      selectedOrder: state.selectedOrder,
-      selectedOrderId: state.selectedOrderId,
-      paymentMethod: state.paymentMethod,
-      cashAmount: state.cashAmount,
-      showTicketDialog: state.showTicketDialog,
-      setProducts: state.setProducts,
-      setRecentProducts: state.setRecentProducts,
-      setSelectedOrderId: state.setSelectedOrderId,
-      setTables: state.setTables,
-      addToOrder: state.addToOrder,
-      removeFromOrder: state.removeFromOrder,
-      handleTableChange: state.handleTableChange,
-      handleCompleteOrder: state.handleCompleteOrder,
-      closeOrder: state.closeOrder,
-      setPaymentMethod: state.setPaymentMethod,
-      setCashAmount: state.setCashAmount,
-      setShowTicketDialog: state.setShowTicketDialog,
-      setActiveOrders: state.setActiveOrders,
-      setSelectedOrder: state.setSelectedOrder,
-    }))
-  );
+export const appData = createMemo(() => ({
+  users: store.state.users,
+  selectedUser: store.state.selectedUser,
+  selectedOrder: store.state.selectedOrder,
+  thermalPrinterOptions: store.state.thermalPrinterOptions,
+  tables: store.state.tables,
+  categories: store.state.categories,
+  products: store.state.products,
+  touchOptimizationsEnabled: store.state.touchOptimizationsEnabled,
+  debugMode: store.state.debugMode,
+}));
 
-// Para OrderHistory.tsx - Solo historial
-export const useOrderHistoryData = () =>
-  useStore(
-    useShallow((state) => ({
-      orderHistory: state.orderHistory,
-      activeOrders: state.activeOrders,
-      setOrderHistory: state.setOrderHistory,
-    }))
-  );
+export const homeData = createMemo(() => ({
+  orderHistory: store.state.orderHistory,
+}));
+
+export const productsData = createMemo(() => ({
+  users: store.state.users,
+  selectedUser: store.state.selectedUser,
+  products: store.state.products,
+}));
+
+export const newOrderData = createMemo(() => ({
+  activeOrders: store.state.activeOrders,
+  recentProducts: store.state.recentProducts,
+  products: store.state.products,
+  selectedUser: store.state.selectedUser,
+  tables: store.state.tables,
+  thermalPrinterOptions: store.state.thermalPrinterOptions,
+  categories: store.state.categories,
+  orderHistory: store.state.orderHistory,
+  selectedOrder: store.state.selectedOrder,
+  selectedOrderId: store.state.selectedOrderId,
+  paymentMethod: store.state.paymentMethod,
+  cashAmount: store.state.cashAmount,
+  showTicketDialog: store.state.showTicketDialog,
+}));
+
+export const orderHistoryData = createMemo(() => ({
+  orderHistory: store.state.orderHistory,
+  activeOrders: store.state.activeOrders,
+}));

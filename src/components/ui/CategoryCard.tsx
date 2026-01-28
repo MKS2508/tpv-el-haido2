@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { Motion } from '@motionone/solid';
 import {
   Beer,
   Candy,
@@ -9,8 +9,7 @@ import {
   Star,
   Utensils,
   Wine,
-} from 'lucide-react';
-import type React from 'react';
+} from 'lucide-solid';
 import { cn } from '@/lib/utils.ts';
 import type Category from '@/models/Category.ts';
 import { Button } from './button';
@@ -100,7 +99,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           onAction?.(category.name);
         }}
         variant="ghost"
-        className={cn(
+        class={cn(
           'category-button w-full justify-start gap-2 px-2 py-1.5 text-left font-medium rounded-md h-8',
           isSelected
             ? isFavorite
@@ -114,7 +113,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
         )}
       >
         {getCategoryIcon(category.name)}
-        <span className="text-xs truncate">
+        <span class="text-xs truncate">
           {category.name}
           {isFavorite && ' ⭐'}
         </span>
@@ -125,7 +124,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   // Mode 'manage' - for Products page
   return (
     <motion.div
-      className={cn(
+      class={cn(
         'relative overflow-hidden rounded-xl cursor-pointer transition-all duration-200',
         'border bg-card hover:shadow-md hover:border-primary/30',
         'border-border shadow-sm',
@@ -146,26 +145,25 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
       {...props}
     >
       {/* Header with icon and title */}
-      <div className="p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="p-2 bg-background/80 rounded-lg shadow-sm">
+      <div class="p-4">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="p-2 bg-background/80 rounded-lg shadow-sm">
             {getCategoryIcon(category.name)}
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground truncate">{category.name}</h3>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-semibold text-foreground truncate">{category.name}</h3>
           </div>
         </div>
 
         {/* Description */}
         {category.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+          <p class="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
             {category.description}
           </p>
         )}
       </div>
-
       {/* Subtle gradient overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-transparent to-background/10 pointer-events-none rounded-xl" />
+      <div class="absolute inset-0 bg-gradient-to-t from-background/20 via-transparent to-background/10 pointer-events-none rounded-xl" />
     </motion.div>
   );
 };

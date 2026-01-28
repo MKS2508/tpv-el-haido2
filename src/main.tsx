@@ -1,10 +1,7 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import { render } from 'solid-js/web';
 import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
-import { ThemeProvider } from '@mks2508/theme-manager-react';
-import { OnboardingProvider } from './components/Onboarding/OnboardingProvider';
+import { ErrorBoundary } from 'solid-js';
 import App from './App';
-import ErrorBoundary from './components/ErrorBoundary';
 import './styles/optimized-product-card.css';
 import './styles/optimized-order-history.css';
 import './styles/optimized-login.css';
@@ -30,7 +27,7 @@ async function initializeApp() {
     document.body.style.opacity = '1';
     document.body.style.transition = 'opacity 0.15s ease-out';
 
-    console.log('ThemeCore ready, mounting React app...');
+    console.log('ThemeCore ready, mounting Solid app...');
   } catch (error) {
     console.error('ThemeCore initialization failed:', error);
     document.body.style.visibility = 'visible';
@@ -46,16 +43,31 @@ async function initializeApp() {
     }
   }, 1000);
 
-  createRoot(document.getElementById('root') as HTMLElement).render(
-    <StrictMode>
-      <ErrorBoundary level="page" fallbackTitle="Error critico en la aplicacion">
-        <ThemeProvider defaultTheme="default" defaultMode="auto">
-          <OnboardingProvider>
-            <App />
-          </OnboardingProvider>
-        </ThemeProvider>
+  const root = document.getElementById('root');
+  if (!root) throw new Error('Root element not found');
+
+  render(
+    () => (
+      <ErrorBoundary
+        fallback={(err) => (
+          <div class="fixed inset-0 flex items-center justify-center bg-background p-4">
+            <div class="text-center">
+              <h1 class="text-xl font-bold text-destructive">Error critico en la aplicacion</h1>
+              <p class="text-muted-foreground mt-2">{err.message}</p>
+              <button
+                class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
+                onClick={() => window.location.reload()}
+              >
+                Recargar
+              </button>
+            </div>
+          </div>
+        )}
+      >
+        <App />
       </ErrorBoundary>
-    </StrictMode>
+    ),
+    root
   );
 }
 

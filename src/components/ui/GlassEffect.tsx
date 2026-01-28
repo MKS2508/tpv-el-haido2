@@ -1,6 +1,5 @@
-import { motion } from 'framer-motion';
-import type React from 'react';
-import { useEffect, useState } from 'react';
+import { createEffect, createSignal } from 'solid-js';
+import { Motion } from '@motionone/solid';
 
 interface GlassEffectProps {
   children: React.ReactNode;
@@ -37,10 +36,10 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
   b = 20,
   className = '',
 }) => {
-  const [displacementUri, setDisplacementUri] = useState('');
+  const [displacementUri, setDisplacementUri] = createSignal('');
   const filterId = `glass-filter-${Math.random().toString(36).substr(2, 9)}`;
 
-  useEffect(() => {
+  createEffect(() => {
     const buildDisplacementImage = () => {
       const borderSize = Math.min(width, height) * (border * 0.5);
 
@@ -68,13 +67,13 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
     };
 
     buildDisplacementImage();
-  }, [width, height, radius, border, alpha, lightness, blur]);
+  });
 
   return (
     <>
       {/* SVG Filter Definition */}
       <svg
-        className="absolute opacity-0 pointer-events-none"
+        class="absolute opacity-0 pointer-events-none"
         width="0"
         height="0"
         aria-hidden="true"
@@ -82,7 +81,7 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
         <title>Glass Effect Filter</title>
         <defs>
           <filter id={filterId}>
-            <feImage href={displacementUri} result="map" />
+            <feImage href={displacementUri()} result="map" />
             <feDisplacementMap
               in="SourceGraphic"
               in2="map"
@@ -128,10 +127,9 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
           </filter>
         </defs>
       </svg>
-
       {/* Glass Effect Container */}
       <motion.div
-        className={`relative overflow-hidden ${className}`}
+        class={`relative overflow-hidden ${className}`}
         style={{
           width: `${width}px`,
           height: `${height}px`,
@@ -155,7 +153,7 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        <div className="relative z-10 w-full h-full p-6">{children}</div>
+        <div class="relative z-10 w-full h-full p-6">{children}</div>
       </motion.div>
     </>
   );

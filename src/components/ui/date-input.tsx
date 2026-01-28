@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { createEffect, createSignal } from 'solid-js';
 
 interface DateInputProps {
   value?: Date;
@@ -25,14 +25,14 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
   const dayRef = useRef<HTMLInputElement | null>(null);
   const yearRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
+  createEffect(() => {
     const d = value ? new Date(value) : new Date();
     setDate({
       day: d.getDate(),
       month: d.getMonth() + 1,
       year: d.getFullYear(),
     });
-  }, [value]);
+  });
 
   const validateDate = (field: keyof DateParts, value: number): boolean => {
     if (
@@ -55,7 +55,7 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
 
   const handleInputChange =
     (field: keyof DateParts) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value ? Number(e.target.value) : '';
+      const newValue = e.currentTarget.value ? Number(e.currentTarget.value) : '';
       const isValid = typeof newValue === 'number' && validateDate(field, newValue);
 
       // If the new value is valid, update the date
@@ -73,12 +73,12 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
   const handleBlur =
     (field: keyof DateParts) =>
     (e: React.FocusEvent<HTMLInputElement>): void => {
-      if (!e.target.value) {
+      if (!e.currentTarget.value) {
         setDate(initialDate.current);
         return;
       }
 
-      const newValue = Number(e.target.value);
+      const newValue = Number(e.currentTarget.value);
       const isValid = validateDate(field, newValue);
 
       if (!isValid) {
@@ -197,14 +197,14 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
   };
 
   return (
-    <div className="flex border rounded-lg items-center text-sm px-1">
+    <div class="flex border rounded-lg items-center text-sm px-1">
       <input
         type="text"
         ref={monthRef}
         max={12}
         maxLength={2}
         value={date.month.toString()}
-        onChange={handleInputChange('month')}
+        onInput={handleInputChange('month')}
         onKeyDown={handleKeyDown('month')}
         onFocus={(e) => {
           if (window.innerWidth > 1024) {
@@ -212,17 +212,17 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
           }
         }}
         onBlur={handleBlur('month')}
-        className="p-0 outline-none w-6 border-none text-center"
+        class="p-0 outline-none w-6 border-none text-center"
         placeholder="M"
       />
-      <span className="opacity-20 -mx-px">/</span>
+      <span class="opacity-20 -mx-px">/</span>
       <input
         type="text"
         ref={dayRef}
         max={31}
         maxLength={2}
         value={date.day.toString()}
-        onChange={handleInputChange('day')}
+        onInput={handleInputChange('day')}
         onKeyDown={handleKeyDown('day')}
         onFocus={(e) => {
           if (window.innerWidth > 1024) {
@@ -230,17 +230,17 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
           }
         }}
         onBlur={handleBlur('day')}
-        className="p-0 outline-none w-7 border-none text-center"
+        class="p-0 outline-none w-7 border-none text-center"
         placeholder="D"
       />
-      <span className="opacity-20 -mx-px">/</span>
+      <span class="opacity-20 -mx-px">/</span>
       <input
         type="text"
         ref={yearRef}
         max={9999}
         maxLength={4}
         value={date.year.toString()}
-        onChange={handleInputChange('year')}
+        onInput={handleInputChange('year')}
         onKeyDown={handleKeyDown('year')}
         onFocus={(e) => {
           if (window.innerWidth > 1024) {
@@ -248,7 +248,7 @@ const DateInput: React.FC<DateInputProps> = ({ value, onChange }) => {
           }
         }}
         onBlur={handleBlur('year')}
-        className="p-0 outline-none w-12 border-none text-center"
+        class="p-0 outline-none w-12 border-none text-center"
         placeholder="YYYY"
       />
     </div>

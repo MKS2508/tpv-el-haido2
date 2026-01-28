@@ -1,5 +1,7 @@
 import './App.css';
-import { AnimatePresence, motion } from 'framer-motion';
+import { createSignal, createEffect, onMount, Show, ErrorBoundary } from 'solid-js';
+// @ts-ignore - no types available
+import { Motion, Presence } from '@motionone/solid';
 import {
   BeerIcon,
   ClipboardListIcon,
@@ -8,104 +10,113 @@ import {
   PlusCircleIcon,
   ReceiptIcon,
   SettingsIcon,
-} from 'lucide-react';
-import React, { useCallback, useEffect, useRef } from 'react';
-import iconOptions from '@/assets/utils/icons/iconOptions.ts';
+  UsersIcon,
+} from 'lucide-solid';
+import iconOptions from '@/assets/utils/icons/iconOptions';
 import fallbackProducts from '@/assets/products.json';
-import BottomNavigation from '@/components/BottomNavigation.tsx';
-import DebugIndicator from '@/components/DebugIndicator.tsx';
-import ErrorBoundary from '@/components/ErrorBoundary.tsx';
-import AEATInvoices from '@/components/Sections/AEATInvoices.tsx';
-import Home from '@/components/Sections/Home.tsx';
-import Login from '@/components/Sections/Login.tsx';
-import NewOrder from '@/components/Sections/NewOrder.tsx';
-import OrderHistory from '@/components/Sections/OrderHistory.tsx';
-import Products from '@/components/Sections/Products.tsx';
-import SectionHeader from '@/components/Sections/SectionHeader.tsx';
-import SettingsPanel from '@/components/Sections/SettingsPanel.tsx';
-import Sidebar from '@/components/SideBar.tsx';
-import SidebarToggleButton from '@/components/SideBarToggleButton.tsx';
-import UpdateChecker from '@/components/UpdateChecker.tsx';
-import { Onboarding } from '@/components/Onboarding';
-import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
+import BottomNavigation from '@/components/BottomNavigation';
+import DebugIndicator from '@/components/DebugIndicator';
+import AEATInvoices from '@/components/Sections/AEATInvoices';
+import Customers from '@/components/Sections/Customers';
+import Home from '@/components/Sections/Home';
+import Login from '@/components/Sections/Login';
+import NewOrder from '@/components/Sections/NewOrder';
+import OrderHistory from '@/components/Sections/OrderHistory';
+import Products from '@/components/Sections/Products';
+import SectionHeader from '@/components/Sections/SectionHeader';
+import SettingsPanel from '@/components/Sections/SettingsPanel';
+import Sidebar from '@/components/SideBar';
+import SidebarToggleButton from '@/components/SideBarToggleButton';
+import UpdateChecker from '@/components/UpdateChecker';
 import { Card, CardContent } from '@/components/ui/card';
-import { Toaster } from '@/components/ui/toaster.tsx';
-import { useSectionTitle } from '@/hooks/useDocumentTitle';
-import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
-import { useResponsive } from '@/hooks/useResponsive';
-import { useTheme } from '@mks2508/theme-manager-react';
+import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import type Product from '@/models/Product.ts';
+import type Product from '@/models/Product';
 import {
   BreakLine,
   CharacterSet,
   PrinterTypes,
   type ThermalPrinterServiceOptions,
-} from '@/models/ThermalPrinter.ts';
-import { useAppData } from '@/store/selectors';
+} from '@/models/ThermalPrinter';
+import useStore from '@/store/store';
 
 function App() {
-  const {
-    users,
-    selectedUser,
-    selectedOrder,
-    thermalPrinterOptions,
-    tables,
-    categories,
-    products,
-    touchOptimizationsEnabled,
-    debugMode,
-    storageAdapter,
-    setBackendConnected,
+  const store = useStore();
 
-    setUsers,
-    setSelectedUser,
-    setSelectedOrder,
-    setSelectedOrderId,
-    setThermalPrinterOptions,
-    setTables,
-    setCategories,
-    setProducts,
+  // Theme state - get initial from localStorage or default
+  const getInitialMode = (): 'light' | 'dark' => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme-mode');
+      if (saved === 'dark' || saved === 'light') return saved;
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+    }
+    return 'light';
+  };
 
-    setOrderHistory,
-  } = useAppData();
+  const [currentMode, setCurrentMode] = createSignal<'light' | 'dark'>(getInitialMode());
 
-  const { shouldShow } = useOnboardingContext();
+  // Responsive state
+  const [isMobile, setIsMobile] = createSignal(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = createSignal(window.innerWidth >= 768 && window.innerWidth < 1024);
 
-  // Use the perfect new theme system
-  const { currentMode, setTheme, currentTheme } = useTheme();
-  const { isMobile, isTablet } = useResponsive();
-  const performanceConfig = usePerformanceConfig();
+  // Section state
+  const [activeSection, setActiveSection] = createSignal('home');
+  const [isSidebarOpen, setIsSidebarOpen] = createSignal(!isMobile() && !isTablet());
+  let prevSection = 'home';
 
-  const [activeSection, setActiveSection] = React.useState('home');
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(!isMobile && !isTablet); // Start closed on mobile/tablet
-  const prevSectionRef = useRef('home');
+  // Handle window resize for responsive
+  onMount(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  });
 
   // Update document title based on active section
-  useSectionTitle(activeSection);
+  createEffect(() => {
+    const section = activeSection();
+    const titles: Record<string, string> = {
+      home: 'Inicio - TPV El Haido',
+      products: 'Productos - TPV El Haido',
+      newOrder: 'Nueva Comanda - TPV El Haido',
+      orderHistory: 'Historial - TPV El Haido',
+      customers: 'Clientes - TPV El Haido',
+      aeatInvoices: 'Facturas AEAT - TPV El Haido',
+      settings: 'Ajustes - TPV El Haido',
+    };
+    document.title = titles[section] || 'TPV El Haido';
+  });
 
   const toggleDarkMode = () => {
-    setTheme(currentTheme, currentMode === 'dark' ? 'light' : 'dark');
+    const newMode = currentMode() === 'dark' ? 'light' : 'dark';
+    setCurrentMode(newMode);
+    localStorage.setItem('theme-mode', newMode);
+    document.documentElement.classList.toggle('dark', newMode === 'dark');
   };
+
+  // Apply initial theme
+  onMount(() => {
+    document.documentElement.classList.toggle('dark', currentMode() === 'dark');
+  });
 
   const handleThermalPrinterOptionsChange = (options: ThermalPrinterServiceOptions | null) => {
-    setThermalPrinterOptions(options);
+    store.setThermalPrinterOptions(options);
   };
 
-  // Helper function to get fallback products when backend is unavailable
+  // Helper function to get fallback products
   const getFallbackProducts = (): Product[] => {
     console.log('[App] Loading fallback products from products.json');
     const productsWithIcons = fallbackProducts.map((product) => ({
       ...product,
-      icon: React.createElement(
-        iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
-      ),
-    }));
+      icon: iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
+    })) as Product[];
     console.log(`[App] Loaded ${productsWithIcons.length} fallback products`);
     return productsWithIcons;
   };
 
-  // Helper function to get fallback categories from products
+  // Helper function to get fallback categories
   const getFallbackCategories = () => {
     console.log('[App] Extracting fallback categories from products.json');
     const uniqueCategories = [...new Set(fallbackProducts.map((product) => product.category))].filter(Boolean);
@@ -117,101 +128,50 @@ function App() {
     }));
   };
 
-  // Apply performance-based CSS classes to root element
-  useEffect(() => {
-    const root = document.documentElement;
-
-    // Remove existing performance classes
-    root.classList.remove(
-      'low-performance',
-      'very-low-performance',
-      'reduced-motion',
-      'animations-disabled'
-    );
-
-    // Apply new classes based on performance config
-    if (performanceConfig.isVeryLowPerformance) {
-      root.classList.add('very-low-performance');
-    }
-    if (performanceConfig.isLowPerformance) {
-      root.classList.add('low-performance');
-    }
-    if (performanceConfig.reduceMotion) {
-      root.classList.add('reduced-motion');
-    }
-    if (!performanceConfig.enableAnimations) {
-      root.classList.add('animations-disabled');
-    }
-
-    // Set CSS custom properties for animation durations
-    root.style.setProperty('--animation-duration', `${performanceConfig.animationDuration}s`);
-    root.style.setProperty('--transition-duration', `${performanceConfig.transitionDuration}s`);
-
-    console.log('[Performance] Config applied:', {
-      isLowPerformance: performanceConfig.isLowPerformance,
-      isVeryLowPerformance: performanceConfig.isVeryLowPerformance,
-      enableAnimations: performanceConfig.enableAnimations,
-      animationDuration: performanceConfig.animationDuration,
-    });
-  }, [performanceConfig]);
-
-  // Initialize state if it's empty
-  useEffect(() => {
-    const initializeCategories = async () => {
-      if (categories.length === 0) {
-        const result = await storageAdapter.getCategories();
-
-        if (result.ok && result.value.length > 0) {
-          setCategories(result.value);
-          setBackendConnected(true);
-          console.log('[App] Categories loaded:', result.value.length);
-        } else {
-          // Use fallback categories
-          const fallbackCats = getFallbackCategories();
-          setCategories(fallbackCats);
-          console.log('[App] Using fallback categories:', fallbackCats.length);
-        }
+  // Initialize data
+  onMount(async () => {
+    // Initialize categories
+    if (store.state.categories.length === 0) {
+      const result = await store.storageAdapter().getCategories();
+      if (result.ok && result.value.length > 0) {
+        store.setCategories(result.value);
+        store.setBackendConnected(true);
+        console.log('[App] Categories loaded:', result.value.length);
+      } else {
+        const fallbackCats = getFallbackCategories();
+        store.setCategories(fallbackCats);
+        console.log('[App] Using fallback categories:', fallbackCats.length);
       }
-    };
+    }
 
-    const initializeProducts = async () => {
-      if (products.length === 0) {
-        const result = await storageAdapter.getProducts();
-
-        if (result.ok && result.value.length > 0) {
-          const productsWithIcons = result.value.map((product) => ({
-            ...product,
-            icon: React.createElement(
-              iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
-            ),
-          }));
-          setProducts(productsWithIcons);
-          setBackendConnected(true);
-          console.log('[App] Products loaded:', result.value.length);
-        } else {
-          // Use fallback products
-          setProducts(getFallbackProducts());
-          console.log('[App] Using fallback products');
-        }
+    // Initialize products
+    if (store.state.products.length === 0) {
+      const result = await store.storageAdapter().getProducts();
+      if (result.ok && result.value.length > 0) {
+        const productsWithIcons = result.value.map((product) => ({
+          ...product,
+          icon: iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
+        })) as Product[];
+        store.setProducts(productsWithIcons);
+        store.setBackendConnected(true);
+        console.log('[App] Products loaded:', result.value.length);
+      } else {
+        store.setProducts(getFallbackProducts());
+        console.log('[App] Using fallback products');
       }
-    };
+    }
 
-    const initializeOrderHistory = async () => {
-      const result = await storageAdapter.getOrders();
+    // Initialize order history
+    const ordersResult = await store.storageAdapter().getOrders();
+    if (ordersResult.ok) {
+      const paidOrders = ordersResult.value.filter((order) => order.status === 'paid');
+      store.setOrderHistory(paidOrders);
+      console.log('[App] Order history loaded:', paidOrders.length);
+    }
 
-      if (result.ok) {
-        const paidOrders = result.value.filter((order) => order.status === 'paid');
-        setOrderHistory(paidOrders);
-        console.log('[App] Order history loaded:', paidOrders.length);
-      }
-    };
-
-    initializeCategories();
-    initializeProducts();
-    initializeOrderHistory();
-
-    if (users.length === 0) {
-      setUsers([
+    // Initialize users if empty
+    if (store.state.users.length === 0) {
+      store.setUsers([
         {
           id: 1,
           name: 'Germán',
@@ -229,8 +189,9 @@ function App() {
       ]);
     }
 
-    if (tables.length === 0) {
-      setTables([
+    // Initialize tables if empty
+    if (store.state.tables.length === 0) {
+      store.setTables([
         { id: 0, name: 'Barra', available: true },
         { id: 1, name: 'Mesa 1', available: true },
         { id: 2, name: 'Mesa 2', available: true },
@@ -244,8 +205,9 @@ function App() {
       ]);
     }
 
-    if (!thermalPrinterOptions) {
-      setThermalPrinterOptions({
+    // Initialize thermal printer options
+    if (!store.state.thermalPrinterOptions) {
+      store.setThermalPrinterOptions({
         type: PrinterTypes.EPSON,
         interface: '//COM3',
         characterSet: CharacterSet.PC852_LATIN2,
@@ -255,331 +217,222 @@ function App() {
         options: { timeout: 3000 },
       });
     }
-  }, [
-    categories.length,
-    products.length,
-    storageAdapter,
-    setBackendConnected,
-    setCategories,
-    setOrderHistory,
-    setProducts,
-    setTables,
-    setThermalPrinterOptions,
-    setUsers,
-    tables.length,
-    thermalPrinterOptions,
-    users.length,
-  ]);
+  });
 
   const menuItems = [
-    { id: 'home', icon: <HomeIcon />, label: 'Inicio' },
-    { id: 'products', icon: <ClipboardListIcon />, label: 'Productos' },
-    { id: 'newOrder', icon: <PlusCircleIcon />, label: 'Nueva Comanda' },
-    { id: 'orderHistory', icon: <HistoryIcon />, label: 'Historial' },
-    { id: 'aeatInvoices', icon: <ReceiptIcon />, label: 'Facturas AEAT' },
-    { id: 'settings', icon: <SettingsIcon />, label: 'Ajustes' },
+    { id: 'home', icon: HomeIcon, label: 'Inicio' },
+    { id: 'products', icon: ClipboardListIcon, label: 'Productos' },
+    { id: 'newOrder', icon: PlusCircleIcon, label: 'Nueva Comanda' },
+    { id: 'orderHistory', icon: HistoryIcon, label: 'Historial' },
+    { id: 'customers', icon: UsersIcon, label: 'Clientes' },
+    { id: 'aeatInvoices', icon: ReceiptIcon, label: 'Facturas AEAT' },
+    { id: 'settings', icon: SettingsIcon, label: 'Ajustes' },
   ];
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen());
 
-  useEffect(() => {
-    const previousSection = prevSectionRef.current;
+  // Track section changes
+  createEffect(() => {
+    const current = activeSection();
     console.log('🔄 SECTION CHANGE:', {
-      from: previousSection,
-      to: activeSection,
-      isMobile,
+      from: prevSection,
+      to: current,
+      isMobile: isMobile(),
       timestamp: new Date().toLocaleTimeString(),
     });
-    prevSectionRef.current = activeSection;
-  }, [activeSection, isMobile]);
-  // Optimized page variants - mantiene direcciones pero elimina scale y cálculos complejos
-  const pageVariants = {
-    enter: (direction: { axis: 'x' | 'y'; value: number }) => {
-      // Simplified calculation - mantener direcciones forward/upward
-      const enterValue =
-        direction.value > 0
-          ? direction.axis === 'x'
-            ? '100%'
-            : '30vh'
-          : // Forward: right/down
-          direction.axis === 'x'
-            ? '-100%'
-            : '-30vh'; // Backward: left/up
+    prevSection = current;
+  });
 
-      return {
-        [direction.axis]: enterValue,
-        opacity: 0,
-        // Eliminado: scale (costoso para GPU)
-      };
-    },
-    center: {
-      x: 0,
-      y: 0,
-      opacity: 1,
-      // Eliminado: scale
-    },
-    exit: (direction: { axis: 'x' | 'y'; value: number }) => {
-      // Simplified calculation - mantener direcciones
-      const exitValue =
-        direction.value > 0
-          ? direction.axis === 'x'
-            ? '-100%'
-            : '-30vh'
-          : // Forward: left/up
-          direction.axis === 'x'
-            ? '100%'
-            : '30vh'; // Backward: right/down
-
-      return {
-        [direction.axis]: exitValue,
-        opacity: 0,
-        // Eliminado: scale
-      };
-    },
+  const getDirection = (current: string) => {
+    const menuOrder = ['home', 'products', 'newOrder', 'orderHistory', 'customers', 'aeatInvoices', 'settings'];
+    const currentIndex = menuOrder.indexOf(current);
+    const previousIndex = menuOrder.indexOf(prevSection);
+    const direction = currentIndex === previousIndex ? 0 : currentIndex > previousIndex ? 1 : -1;
+    return {
+      axis: isMobile() ? 'x' : 'y',
+      value: direction,
+    };
   };
 
-  // Optimized transition - más simple y rápido
-  const pageTransition = {
-    type: 'tween' as const,
-    ease: 'easeOut' as const,
-    duration: isMobile ? 0.25 : 0.3,
+  // Animation variants for Motion
+  const getAnimationProps = (section: string) => {
+    const dir = getDirection(section);
+    const enterValue = dir.value > 0 ? (dir.axis === 'x' ? '100%' : '30vh') : (dir.axis === 'x' ? '-100%' : '-30vh');
+    const exitValue = dir.value > 0 ? (dir.axis === 'x' ? '-100%' : '-30vh') : (dir.axis === 'x' ? '100%' : '30vh');
+
+    return {
+      initial: { [dir.axis]: enterValue, opacity: 0 },
+      animate: { [dir.axis]: 0, opacity: 1 },
+      exit: { [dir.axis]: exitValue, opacity: 0 },
+      transition: { duration: isMobile() ? 0.25 : 0.3, easing: 'ease-out' },
+    };
   };
-
-  const getDirection = useCallback(
-    (current: string) => {
-      const previous = prevSectionRef.current;
-      const menuOrder = ['home', 'products', 'newOrder', 'orderHistory', 'settings'];
-      const currentIndex = menuOrder.indexOf(current);
-      const previousIndex = menuOrder.indexOf(previous);
-
-      // Fix: Handle equal case properly
-      const direction =
-        currentIndex === previousIndex
-          ? 0 // No movement when same section
-          : currentIndex > previousIndex
-            ? 1
-            : -1;
-
-      const result = {
-        axis: isMobile ? ('x' as const) : ('y' as const),
-        value: direction,
-      };
-
-      // Debug logging
-      if (direction !== 0) {
-        console.log('🎯 TRANSITION DEBUG:', {
-          current,
-          previous,
-          currentIndex,
-          previousIndex,
-          direction: direction > 0 ? 'FORWARD' : 'BACKWARD',
-          isMobile,
-          axis: result.axis,
-          finalDirection: result.value,
-        });
-      }
-
-      return result;
-    },
-    [isMobile]
-  );
-
-  if (shouldShow) {
-    return <Onboarding />;
-  }
 
   return (
     <div
-      className={cn(
+      class={cn(
         'flex h-screen w-screen bg-background text-foreground overscroll-none',
-        isMobile ? 'pb-20 pt-0 px-0' : 'pt-4 pr-4 pb-4',
-        touchOptimizationsEnabled && 'touch-optimized'
+        isMobile() ? 'pb-20 pt-0 px-0' : 'pt-4 pr-4 pb-4',
+        store.state.touchOptimizationsEnabled && 'touch-optimized'
       )}
     >
       <Toaster />
       <UpdateChecker autoCheck={true} checkInterval={3600000} />
 
       {/* Main Content */}
-      {!selectedUser ? (
-        <AnimatePresence>
-          <motion.div
-            key="login"
-            custom={getDirection(activeSection)}
-            variants={pageVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={pageTransition}
-            className="absolute inset-0 bg-transparent"
-          >
-            <ErrorBoundary level="section" fallbackTitle="Error en Login">
-              <Login users={users} onLogin={setSelectedUser} />
-            </ErrorBoundary>
-          </motion.div>
-        </AnimatePresence>
-      ) : (
-        <>
-          <Sidebar
-            isSidebarOpen={isSidebarOpen}
-            activeSection={activeSection}
-            setActiveSection={setActiveSection}
-            isDarkMode={currentMode === 'dark'}
-            toggleDarkMode={toggleDarkMode}
-            menuItems={menuItems}
-            loggedUser={selectedUser}
-            onLogout={() => setSelectedUser(null)}
-          />
-
-          {/* Sidebar Toggle Button - Hide on mobile */}
-          {!isMobile && (
-            <SidebarToggleButton isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-          )}
-
-          <main
-            className={cn(
-              'flex-1 h-full relative overscroll-y-none',
-              isMobile && 'w-full'
-            )}
-          >
-            <AnimatePresence custom={getDirection(activeSection)}>
-              <motion.div
-                key={activeSection}
-                custom={getDirection(activeSection)}
-                variants={pageVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={pageTransition}
-                className="absolute inset-0 rounded-3xl overflow-hidden"
+      <Show
+        when={store.state.selectedUser}
+        fallback={
+          <Presence>
+            <Motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              class="absolute inset-0 bg-transparent"
+            >
+              <ErrorBoundary
+                fallback={(err) => (
+                  <div class="p-4 text-destructive">
+                    <h2>Error en Login</h2>
+                    <p>{err.message}</p>
+                  </div>
+                )}
               >
-                <Card
-                  className={cn(
-                    'h-full w-full bg-card border-card-border shadow-xl overflow-hidden',
-                    isMobile ? 'rounded-none border-0' : 'rounded-3xl'
-                  )}
-                >
-                  <CardContent className="p-0 h-full flex flex-col overflow-hidden bg-card text-card-foreground">
-                    <div
-                      className={cn(
-                        'flex-shrink-0',
-                        isMobile ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6'
-                      )}
-                    >
-                      <SectionHeader menuItems={menuItems} activeSection={activeSection} />
-                    </div>
+                <Login users={store.state.users} onLogin={store.setSelectedUser} />
+              </ErrorBoundary>
+            </Motion.div>
+          </Presence>
+        }
+      >
+        <Sidebar
+          isSidebarOpen={isSidebarOpen()}
+          activeSection={activeSection()}
+          setActiveSection={setActiveSection}
+          isDarkMode={currentMode() === 'dark'}
+          toggleDarkMode={toggleDarkMode}
+          menuItems={menuItems}
+          loggedUser={store.state.selectedUser!}
+          onLogout={() => store.setSelectedUser(null)}
+        />
 
-                    {/*SECTIONS */}
+        {/* Sidebar Toggle Button - Hide on mobile */}
+        <Show when={!isMobile()}>
+          <SidebarToggleButton isSidebarOpen={isSidebarOpen()} toggleSidebar={toggleSidebar} />
+        </Show>
 
-                    <div className="flex-1 overflow-hidden">
-                      {/* Home Section */}
-                      {activeSection === 'home' && (
-                        <div
-                          className={cn(
-                            'h-full overflow-y-auto',
-                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                          )}
-                        >
-                          <ErrorBoundary level="section" fallbackTitle="Error en Inicio">
-                            <Home userName={selectedUser?.name || 'Usuario desconocido'} />
-                          </ErrorBoundary>
-                        </div>
-                      )}
-                      {/* Products Section */}
-                      {activeSection === 'products' && (
-                        <div
-                          className={cn(
-                            'h-full overflow-y-auto',
-                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                          )}
-                        >
-                          <ErrorBoundary level="section" fallbackTitle="Error en Productos">
-                            <Products />
-                          </ErrorBoundary>
-                        </div>
-                      )}
-                      {/* NewOrder Section - No padding for mobile layout */}
-                      {activeSection === 'newOrder' && (
-                        <div className="h-full overflow-hidden">
-                          <ErrorBoundary level="section" fallbackTitle="Error en Nueva Comanda">
-                            <NewOrder />
-                          </ErrorBoundary>
-                        </div>
-                      )}
-                      {activeSection === 'orderHistory' && (
-                        <div
-                          className={cn(
-                            'h-full overflow-y-auto',
-                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                          )}
-                        >
-                          <ErrorBoundary level="section" fallbackTitle="Error en Historial">
-                            <OrderHistory
-                              setSelectedOrderId={setSelectedOrderId}
-                              setActiveSection={setActiveSection}
-                              selectedOrder={selectedOrder}
-                              setSelectedOrder={setSelectedOrder}
-                            />
-                          </ErrorBoundary>
-                        </div>
-                      )}
-                      {activeSection === 'aeatInvoices' && (
-                        <div
-                          className={cn(
-                            'h-full overflow-y-auto',
-                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                          )}
-                        >
-                          <ErrorBoundary level="section" fallbackTitle="Error en Facturas AEAT">
-                            <AEATInvoices />
-                          </ErrorBoundary>
-                        </div>
-                      )}
-                      {activeSection === 'settings' && selectedUser && (
-                        <div
-                          className={cn(
-                            'h-full overflow-y-auto',
-                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                          )}
-                        >
-                          <ErrorBoundary level="section" fallbackTitle="Error en Ajustes">
-                            <SettingsPanel
-                              users={users}
-                              selectedUser={selectedUser}
-                              handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
-                              thermalPrinterOptions={
-                                thermalPrinterOptions as ThermalPrinterServiceOptions
-                              }
-                              isDarkMode={currentMode === 'dark'}
-                              toggleDarkMode={toggleDarkMode}
-                              isSidebarOpen={isSidebarOpen}
-                              setSelectedUser={setSelectedUser}
-                              setUsers={setUsers}
-                            />
-                          </ErrorBoundary>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </AnimatePresence>
-          </main>
+        <main class={cn('flex-1 h-full relative overscroll-y-none', isMobile() && 'w-full')}>
+          <Presence>
+            <Motion.div
+              key={activeSection()}
+              {...getAnimationProps(activeSection())}
+              class="absolute inset-0 rounded-3xl overflow-hidden"
+            >
+              <Card
+                class={cn(
+                  'h-full w-full bg-card border-card-border shadow-xl overflow-hidden',
+                  isMobile() ? 'rounded-none border-0' : 'rounded-3xl'
+                )}
+              >
+                <CardContent class="p-0 h-full flex flex-col overflow-hidden bg-card text-card-foreground">
+                  <div class={cn('flex-shrink-0', isMobile() ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6')}>
+                    <SectionHeader menuItems={menuItems} activeSection={activeSection()} />
+                  </div>
 
-          {/* Bottom Navigation for Mobile */}
-          {isMobile && (
-            <BottomNavigation
-              activeSection={activeSection}
-              setActiveSection={setActiveSection}
-              menuItems={menuItems}
-              loggedUser={selectedUser}
-              onLogout={() => setSelectedUser(null)}
-            />
-          )}
-        </>
-      )}
+                  <div class="flex-1 overflow-hidden">
+                    <Show when={activeSection() === 'home'}>
+                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
+                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Inicio: {err.message}</div>}>
+                          <Home userName={store.state.selectedUser?.name || 'Usuario desconocido'} />
+                        </ErrorBoundary>
+                      </div>
+                    </Show>
+
+                    <Show when={activeSection() === 'products'}>
+                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
+                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Productos: {err.message}</div>}>
+                          <Products />
+                        </ErrorBoundary>
+                      </div>
+                    </Show>
+
+                    <Show when={activeSection() === 'newOrder'}>
+                      <div class="h-full overflow-hidden">
+                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Nueva Comanda: {err.message}</div>}>
+                          <NewOrder />
+                        </ErrorBoundary>
+                      </div>
+                    </Show>
+
+                    <Show when={activeSection() === 'orderHistory'}>
+                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
+                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Historial: {err.message}</div>}>
+                          <OrderHistory
+                            setSelectedOrderId={store.setSelectedOrderId}
+                            setActiveSection={setActiveSection}
+                            selectedOrder={store.state.selectedOrder}
+                            setSelectedOrder={store.setSelectedOrder}
+                          />
+                        </ErrorBoundary>
+                      </div>
+                    </Show>
+
+                    <Show when={activeSection() === 'customers'}>
+                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
+                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Clientes: {err.message}</div>}>
+                          <Customers />
+                        </ErrorBoundary>
+                      </div>
+                    </Show>
+
+                    <Show when={activeSection() === 'aeatInvoices'}>
+                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
+                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Facturas AEAT: {err.message}</div>}>
+                          <AEATInvoices />
+                        </ErrorBoundary>
+                      </div>
+                    </Show>
+
+                    <Show when={activeSection() === 'settings' && store.state.selectedUser}>
+                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
+                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Ajustes: {err.message}</div>}>
+                          <SettingsPanel
+                            users={store.state.users}
+                            selectedUser={store.state.selectedUser!}
+                            handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
+                            thermalPrinterOptions={store.state.thermalPrinterOptions as ThermalPrinterServiceOptions}
+                            isDarkMode={currentMode() === 'dark'}
+                            toggleDarkMode={toggleDarkMode}
+                            isSidebarOpen={isSidebarOpen()}
+                            setSelectedUser={store.setSelectedUser}
+                            setUsers={store.setUsers}
+                          />
+                        </ErrorBoundary>
+                      </div>
+                    </Show>
+                  </div>
+                </CardContent>
+              </Card>
+            </Motion.div>
+          </Presence>
+        </main>
+
+        {/* Bottom Navigation for Mobile */}
+        <Show when={isMobile()}>
+          <BottomNavigation
+            activeSection={activeSection()}
+            setActiveSection={setActiveSection}
+            menuItems={menuItems}
+            loggedUser={store.state.selectedUser!}
+            onLogout={() => store.setSelectedUser(null)}
+          />
+        </Show>
+      </Show>
 
       {/* Debug Indicator */}
-      {debugMode && <DebugIndicator />}
+      <Show when={store.state.debugMode}>
+        <DebugIndicator />
+      </Show>
     </div>
   );
 }

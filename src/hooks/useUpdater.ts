@@ -1,6 +1,6 @@
+import { createSignal } from 'solid-js';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { check, type Update } from '@tauri-apps/plugin-updater';
-import { useCallback, useState } from 'react';
 
 export interface UpdateProgress {
   contentLength: number | null;
@@ -18,7 +18,7 @@ export interface UpdateState {
 }
 
 export function useUpdater() {
-  const [state, setState] = useState<UpdateState>({
+  const [state, setState] = createSignal<UpdateState>({
     available: false,
     checking: false,
     downloading: false,
@@ -28,9 +28,9 @@ export function useUpdater() {
     notes: null,
   });
 
-  const [update, setUpdate] = useState<Update | null>(null);
+  const [update, setUpdate] = createSignal<Update | null>(null);
 
-  const checkForUpdates = useCallback(async () => {
+  const checkForUpdates = async () => {
     setState((prev) => ({ ...prev, checking: true, error: null }));
 
     try {
@@ -62,10 +62,11 @@ export function useUpdater() {
       }));
       return false;
     }
-  }, []);
+  };
 
-  const downloadAndInstall = useCallback(async () => {
-    if (!update) {
+  const downloadAndInstall = async () => {
+    const currentUpdate = update();
+    if (!currentUpdate) {
       setState((prev) => ({ ...prev, error: 'No update available' }));
       return false;
     }
@@ -81,7 +82,7 @@ export function useUpdater() {
       let contentLength: number | null = null;
       let downloaded = 0;
 
-      await update.downloadAndInstall((event) => {
+      await currentUpdate.downloadAndInstall((event) => {
         switch (event.event) {
           case 'Started':
             contentLength = event.data.contentLength ?? null;
@@ -118,9 +119,9 @@ export function useUpdater() {
       }));
       return false;
     }
-  }, [update]);
+  };
 
-  const dismissUpdate = useCallback(() => {
+  const dismissUpdate = () => {
     setUpdate(null);
     setState((prev) => ({
       ...prev,
@@ -128,10 +129,20 @@ export function useUpdater() {
       version: null,
       notes: null,
     }));
-  }, []);
+  };
 
+  // Return reactive getters and actions
   return {
-    ...state,
+    // Reactive getters - access state properties reactively
+    get available() { return state().available; },
+    get checking() { return state().checking; },
+    get downloading() { return state().downloading; },
+    get error() { return state().error; },
+    get progress() { return state().progress; },
+    get version() { return state().version; },
+    get notes() { return state().notes; },
+
+    // Actions
     checkForUpdates,
     downloadAndInstall,
     dismissUpdate,

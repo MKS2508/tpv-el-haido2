@@ -1,5 +1,6 @@
 import type { Result, ResultError } from '@mks2508/no-throw';
 import type Category from '@/models/Category';
+import type Customer from '@/models/Customer';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import type Table from '@/models/Table';
@@ -27,6 +28,12 @@ export interface IStorageAdapter {
   createOrder(order: Order): Promise<StorageResult<void>>;
   updateOrder(order: Order): Promise<StorageResult<void>>;
   deleteOrder(order: Order): Promise<StorageResult<void>>;
+
+  // Customers
+  getCustomers?(): Promise<StorageResult<Customer[]>>;
+  createCustomer?(customer: Customer): Promise<StorageResult<void>>;
+  updateCustomer?(customer: Customer): Promise<StorageResult<void>>;
+  deleteCustomer?(customer: Customer): Promise<StorageResult<void>>;
 
   // Tables (if needed for persistence)
   getTables?(): Promise<StorageResult<Table[]>>;

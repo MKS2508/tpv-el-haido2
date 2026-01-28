@@ -44,6 +44,15 @@ export const CategoryErrorCode = {
   DeleteFailed: 'CATEGORY_DELETE_FAILED',
 } as const;
 
+// ==================== Customer Errors ====================
+export const CustomerErrorCode = {
+  LoadFailed: 'CUSTOMER_LOAD_FAILED',
+  CreateFailed: 'CUSTOMER_CREATE_FAILED',
+  UpdateFailed: 'CUSTOMER_UPDATE_FAILED',
+  DeleteFailed: 'CUSTOMER_DELETE_FAILED',
+  NotFound: 'CUSTOMER_NOT_FOUND',
+} as const;
+
 // ==================== Auth Errors ====================
 export const AuthErrorCode = {
   InvalidPin: 'AUTH_INVALID_PIN',
@@ -98,6 +107,7 @@ export type PrinterErrorCode = ErrorCode<typeof PrinterErrorCode>;
 export type OrderErrorCode = ErrorCode<typeof OrderErrorCode>;
 export type ProductErrorCode = ErrorCode<typeof ProductErrorCode>;
 export type CategoryErrorCode = ErrorCode<typeof CategoryErrorCode>;
+export type CustomerErrorCode = ErrorCode<typeof CustomerErrorCode>;
 export type AuthErrorCode = ErrorCode<typeof AuthErrorCode>;
 export type NetworkErrorCode = ErrorCode<typeof NetworkErrorCode>;
 export type AEATErrorCode = ErrorCode<typeof AEATErrorCode>;
@@ -109,6 +119,7 @@ export type AppErrorCode =
   | OrderErrorCode
   | ProductErrorCode
   | CategoryErrorCode
+  | CustomerErrorCode
   | AuthErrorCode
   | NetworkErrorCode
   | AEATErrorCode;

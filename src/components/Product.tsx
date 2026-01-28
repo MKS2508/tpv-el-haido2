@@ -1,4 +1,3 @@
-import type React from 'react';
 import OptimizedProductCard from '@/components/ui/OptimizedProductCard.tsx';
 import { useResponsive } from '@/hooks/useResponsive';
 import type { OrderItem } from '@/models/Order.ts';
@@ -20,13 +19,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   // Si no hay selectedOrderId, mostrar mensaje pero mantener estructura de scroll
   if (!selectedOrderId) {
     return (
-      <div className="h-full w-full overflow-hidden bg-background">
-        <div className="h-full overflow-y-auto overflow-x-hidden">
-          <div className="min-h-full flex items-center justify-center p-3">
-            <div className="text-center text-muted-foreground">
-              <div className="text-6xl mb-4">🍽️</div>
-              <p className="text-xl font-medium mb-2">Selecciona una mesa</p>
-              <p className="text-sm">Elige una mesa para comenzar a agregar productos</p>
+      <div class="h-full w-full overflow-hidden bg-background">
+        <div class="h-full overflow-y-auto overflow-x-hidden">
+          <div class="min-h-full flex items-center justify-center p-3">
+            <div class="text-center text-muted-foreground">
+              <div class="text-6xl mb-4">🍽️</div>
+              <p class="text-xl font-medium mb-2">Selecciona una mesa</p>
+              <p class="text-sm">Elige una mesa para comenzar a agregar productos</p>
             </div>
           </div>
         </div>
@@ -37,13 +36,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   // Si no hay productos
   if (products.length === 0) {
     return (
-      <div className="h-full w-full overflow-hidden bg-background">
-        <div className="h-full overflow-y-auto overflow-x-hidden">
-          <div className="min-h-full flex items-center justify-center p-3">
-            <div className="text-center text-muted-foreground">
-              <div className="text-4xl mb-3">📦</div>
-              <p className="text-lg font-medium">No hay productos disponibles</p>
-              <p className="text-sm">Esta categoría no tiene productos</p>
+      <div class="h-full w-full overflow-hidden bg-background">
+        <div class="h-full overflow-y-auto overflow-x-hidden">
+          <div class="min-h-full flex items-center justify-center p-3">
+            <div class="text-center text-muted-foreground">
+              <div class="text-4xl mb-3">📦</div>
+              <p class="text-lg font-medium">No hay productos disponibles</p>
+              <p class="text-sm">Esta categoría no tiene productos</p>
             </div>
           </div>
         </div>
@@ -52,10 +51,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   }
 
   return (
-    <div className="h-full w-full overflow-hidden bg-background">
-      <div className="h-full overflow-y-auto overflow-x-hidden p-3">
+    <div class="h-full w-full overflow-hidden bg-background">
+      <div class="h-full overflow-y-auto overflow-x-hidden p-3">
         <div
-          className={`
+          class={`
                     grid gap-3 w-full
                     ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}
                 `}
@@ -67,7 +66,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
               mode="order"
               onAction={handleAddToOrder}
               showCategory={true}
-              className="w-full"
+              class="w-full"
             />
           ))}
         </div>

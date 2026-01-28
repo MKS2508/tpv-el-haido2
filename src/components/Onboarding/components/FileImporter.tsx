@@ -1,5 +1,5 @@
-import { FileIcon, UploadIcon, XIcon } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { createMemo, createSignal } from 'solid-js';
+import { FileIcon, UploadIcon, XIcon } from 'lucide-solid';
 import { Button } from '@/components/ui/button';
 import { getImportDataCounts } from '@/lib/onboarding-utils';
 import { cn } from '@/lib/utils';
@@ -18,9 +18,9 @@ export function FileImporter({
   onClear,
   accept = '.json',
 }: FileImporterProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = createSignal(false);
+  const [isLoading, setIsLoading] = createSignal(false);
+  const [error, setError] = createSignal<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -77,7 +77,7 @@ export function FileImporter({
         setError('Error al procesar el archivo. Verifica el formato.');
       }
 
-      e.target.value = '';
+      e.currentTarget.value = '';
     },
     [onFileSelect]
   );
@@ -95,37 +95,37 @@ export function FileImporter({
     const counts = getImportDataCounts(importedData);
 
     return (
-      <div className="border rounded-lg p-4 bg-muted/50">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <FileIcon className="h-5 w-5 text-primary" />
-            <span className="font-medium">Datos importados</span>
+      <div class="border rounded-lg p-4 bg-muted/50">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <FileIcon class="h-5 w-5 text-primary" />
+            <span class="font-medium">Datos importados</span>
           </div>
           {onClear && (
             <Button variant="ghost" size="sm" onClick={handleClear}>
-              <XIcon className="h-4 w-4" />
+              <XIcon class="h-4 w-4" />
             </Button>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex justify-between p-2 bg-background rounded">
-            <span className="text-muted-foreground">Productos:</span>
-            <span className="font-medium">{counts.products}</span>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="flex justify-between p-2 bg-background rounded">
+            <span class="text-muted-foreground">Productos:</span>
+            <span class="font-medium">{counts.products}</span>
           </div>
-          <div className="flex justify-between p-2 bg-background rounded">
-            <span className="text-muted-foreground">Categorias:</span>
-            <span className="font-medium">{counts.categories}</span>
+          <div class="flex justify-between p-2 bg-background rounded">
+            <span class="text-muted-foreground">Categorias:</span>
+            <span class="font-medium">{counts.categories}</span>
           </div>
           {counts.tables > 0 && (
-            <div className="flex justify-between p-2 bg-background rounded">
-              <span className="text-muted-foreground">Mesas:</span>
-              <span className="font-medium">{counts.tables}</span>
+            <div class="flex justify-between p-2 bg-background rounded">
+              <span class="text-muted-foreground">Mesas:</span>
+              <span class="font-medium">{counts.tables}</span>
             </div>
           )}
           {counts.users > 0 && (
-            <div className="flex justify-between p-2 bg-background rounded">
-              <span className="text-muted-foreground">Usuarios:</span>
-              <span className="font-medium">{counts.users}</span>
+            <div class="flex justify-between p-2 bg-background rounded">
+              <span class="text-muted-foreground">Usuarios:</span>
+              <span class="font-medium">{counts.users}</span>
             </div>
           )}
         </div>
@@ -134,24 +134,24 @@ export function FileImporter({
   }
 
   return (
-    <div className="space-y-3">
+    <div class="space-y-3">
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleClick}
-        className={cn(
+        class={cn(
           'relative border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer',
-          isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
-          isLoading && 'opacity-50 pointer-events-none'
+          isDragging() ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+          isLoading() && 'opacity-50 pointer-events-none'
         )}
       >
-        <UploadIcon className={cn('h-10 w-10', isDragging ? 'text-primary' : 'text-muted-foreground')} />
-        <div className="text-center">
-          <p className="font-medium">
-            {isLoading ? 'Procesando...' : 'Arrastra un archivo JSON aqui'}
+        <UploadIcon class={cn('h-10 w-10', isDragging() ? 'text-primary' : 'text-muted-foreground')} />
+        <div class="text-center">
+          <p class="font-medium">
+            {isLoading() ? 'Procesando...' : 'Arrastra un archivo JSON aqui'}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p class="text-sm text-muted-foreground">
             o haz clic para seleccionar
           </p>
         </div>
@@ -159,14 +159,13 @@ export function FileImporter({
           ref={inputRef}
           type="file"
           accept={accept}
-          onChange={handleFileInput}
-          className="hidden"
-          disabled={isLoading}
+          onInput={handleFileInput}
+          class="hidden"
+          disabled={isLoading()}
         />
       </div>
-
-      {error && (
-        <p className="text-sm text-destructive text-center">{error}</p>
+      {error() && (
+        <p class="text-sm text-destructive text-center">{error()}</p>
       )}
     </div>
   );

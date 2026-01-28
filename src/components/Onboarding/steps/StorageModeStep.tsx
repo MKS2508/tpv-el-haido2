@@ -1,4 +1,4 @@
-import { CloudIcon, DatabaseIcon, HardDriveIcon } from 'lucide-react';
+import { CloudIcon, DatabaseIcon, HardDriveIcon } from 'lucide-solid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -40,20 +40,20 @@ export function StorageModeStep({
   ];
 
   return (
-    <Card className="w-full max-w-lg mx-auto">
+    <Card class="w-full max-w-lg mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl">Modo de Almacenamiento</CardTitle>
+        <CardTitle class="text-2xl">Modo de Almacenamiento</CardTitle>
         <CardDescription>
           Elige como quieres guardar tus datos. Puedes cambiar esto mas tarde en la configuracion.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4">
+      <CardContent class="space-y-4">
+        <div class="grid gap-4">
           {modes.map((mode) => (
             <button
               key={mode.id}
               onClick={() => onSelectMode(mode.id)}
-              className={cn(
+              class={cn(
                 'flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-all hover:bg-accent',
                 selectedMode === mode.id
                   ? 'border-primary bg-primary/5'
@@ -61,29 +61,29 @@ export function StorageModeStep({
               )}
             >
               <div
-                className={cn(
+                class={cn(
                   'mt-1 p-2 rounded-md',
                   selectedMode === mode.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
                 )}
               >
-                <mode.icon className="h-5 w-5" />
+                <mode.icon class="h-5 w-5" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">{mode.title}</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold">{mode.title}</span>
                   {mode.recommended && (
-                    <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                    <span class="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                       Recomendado
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">{mode.description}</p>
+                <p class="text-sm text-muted-foreground mt-1">{mode.description}</p>
               </div>
             </button>
           ))}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between">
+      <CardFooter class="flex justify-between">
         <Button variant="outline" onClick={onBack}>
           Anterior
         </Button>

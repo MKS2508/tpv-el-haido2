@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, lazy, Suspense } from 'react';
-import { Settings, Palette } from 'lucide-react';
+import { createSignal, lazy, Suspense } from 'solid-js';
+import { Settings, Palette } from 'lucide-solid';
 import { ThemeSelector, ModeToggle } from '@mks2508/theme-manager-react';
 import { Button } from '@/components/ui/button';
 
@@ -13,36 +13,35 @@ const FontSettingsModal = lazy(() =>
 );
 
 export function ThemeSwitcher() {
-  const [showThemeManagement, setShowThemeManagement] = useState(false);
-  const [showFontSettings, setShowFontSettings] = useState(false);
+  const [showThemeManagement, setShowThemeManagement] = createSignal(false);
+  const [showFontSettings, setShowFontSettings] = createSignal(false);
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div class="flex items-center gap-2">
         <ThemeSelector
           onThemeManagement={() => setShowThemeManagement(true)}
           onFontSettings={() => setShowFontSettings(true)}
         />
         <ModeToggle />
         <Button variant="outline" size="sm" onClick={() => setShowThemeManagement(true)}>
-          <Palette className="h-4 w-4 mr-2" />
+          <Palette class="h-4 w-4 mr-2" />
           Temas
         </Button>
         <Button variant="outline" size="sm" onClick={() => setShowFontSettings(true)}>
-          <Settings className="h-4 w-4 mr-2" />
+          <Settings class="h-4 w-4 mr-2" />
           Fuentes
         </Button>
       </div>
-
       <Suspense fallback={null}>
-        {showThemeManagement && (
+        {showThemeManagement() && (
           <ThemeManagementModal
-            open={showThemeManagement}
+            open={showThemeManagement()}
             onOpenChange={setShowThemeManagement}
           />
         )}
-        {showFontSettings && (
-          <FontSettingsModal open={showFontSettings} onOpenChange={setShowFontSettings} />
+        {showFontSettings() && (
+          <FontSettingsModal open={showFontSettings()} onOpenChange={setShowFontSettings} />
         )}
       </Suspense>
     </>

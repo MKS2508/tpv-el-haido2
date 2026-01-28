@@ -1,4 +1,6 @@
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { splitProps, type Component } from 'solid-js';
+import { Motion } from '@motionone/solid';
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-solid';
 import { Button } from '@/components/ui/button.tsx';
 
 type SidebarToggleButtonProps = {
@@ -6,20 +8,28 @@ type SidebarToggleButtonProps = {
   toggleSidebar: () => void;
 };
 
-const SidebarToggleButton = ({ isSidebarOpen, toggleSidebar }: SidebarToggleButtonProps) => {
+const SidebarToggleButton: Component<SidebarToggleButtonProps> = (props) => {
+  const [local] = splitProps(props, ['isSidebarOpen', 'toggleSidebar']);
+
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      className="absolute top-4 left-0 z-10 p-0 bg-background"
-      onClick={toggleSidebar}
+    <Motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.2 }}
     >
-      {isSidebarOpen ? (
-        <ChevronLeftIcon className="h-12 w-12" />
-      ) : (
-        <ChevronRightIcon className="h-12 w-12" />
-      )}
-    </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        class="absolute top-4 left-0 z-10 p-0 bg-background"
+        onClick={local.toggleSidebar}
+      >
+        {local.isSidebarOpen ? (
+          <ChevronLeftIcon class="h-12 w-12" />
+        ) : (
+          <ChevronRightIcon class="h-12 w-12" />
+        )}
+      </Button>
+    </Motion.div>
   );
 };
 

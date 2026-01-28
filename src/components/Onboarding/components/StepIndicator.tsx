@@ -1,4 +1,4 @@
-import { CheckIcon } from 'lucide-react';
+import { CheckIcon } from 'lucide-solid';
 import { ONBOARDING_STEPS, type OnboardingStep } from '@/models/Onboarding';
 import { cn } from '@/lib/utils';
 
@@ -25,8 +25,8 @@ export function StepIndicator({
   const currentIndex = ONBOARDING_STEPS.indexOf(currentStep);
 
   return (
-    <div className="w-full px-4 py-6">
-      <div className="flex items-center justify-between">
+    <div class="w-full px-4 py-6">
+      <div class="flex items-center justify-between">
         {ONBOARDING_STEPS.map((step, index) => {
           const isCompleted = completedSteps.includes(step);
           const isSkipped = skippedSteps.includes(step);
@@ -34,11 +34,11 @@ export function StepIndicator({
           const isPast = index < currentIndex;
 
           return (
-            <div key={step} className="flex flex-1 items-center">
+            <div key={step} class="flex flex-1 items-center">
               {/* Step circle */}
-              <div className="flex flex-col items-center">
+              <div class="flex flex-col items-center">
                 <div
-                  className={cn(
+                  class={cn(
                     'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors',
                     isCurrent && 'border-primary bg-primary text-primary-foreground',
                     isCompleted && !isCurrent && 'border-primary bg-primary text-primary-foreground',
@@ -47,13 +47,13 @@ export function StepIndicator({
                   )}
                 >
                   {isCompleted && !isCurrent ? (
-                    <CheckIcon className="h-5 w-5" />
+                    <CheckIcon class="h-5 w-5" />
                   ) : (
-                    <span className="text-sm font-medium">{index + 1}</span>
+                    <span class="text-sm font-medium">{index + 1}</span>
                   )}
                 </div>
                 <span
-                  className={cn(
+                  class={cn(
                     'mt-2 text-xs font-medium hidden sm:block',
                     isCurrent && 'text-foreground',
                     !isCurrent && 'text-muted-foreground'
@@ -62,11 +62,10 @@ export function StepIndicator({
                   {STEP_LABELS[step]}
                 </span>
               </div>
-
               {/* Connector line */}
               {index < ONBOARDING_STEPS.length - 1 && (
                 <div
-                  className={cn(
+                  class={cn(
                     'h-0.5 flex-1 mx-2',
                     isPast || isCompleted ? 'bg-primary' : 'bg-muted'
                   )}

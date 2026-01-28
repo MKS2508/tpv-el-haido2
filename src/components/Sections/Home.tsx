@@ -1,7 +1,7 @@
-import NumberFlow from '@number-flow/react';
-import { motion } from 'framer-motion';
-import { AwardIcon, DollarSignIcon, ShoppingCartIcon, TrendingUpIcon } from 'lucide-react';
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import { Motion, Presence } from '@motionone/solid';
+import { AwardIcon, DollarSignIcon, ShoppingCartIcon, TrendingUpIcon } from 'lucide-solid';
+import { createMemo, createSignal, For, Show, type Component, type JSX } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import {
   CartesianGrid,
   Cell,
@@ -16,7 +16,7 @@ import {
   YAxis,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DateRangePicker } from '@/components/ui/DateRangePicker.tsx';
+import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import {
   Table,
   TableBody,
@@ -24,11 +24,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table.tsx';
+} from '@/components/ui/table';
 import { useResponsive } from '@/hooks/useResponsive';
 import { cn } from '@/lib/utils';
-import type Order from '@/models/Order.ts';
-import { useHomeData } from '@/store/selectors';
+import type Order from '@/models/Order';
+import { homeData } from '@/store/selectors';
 
 const COLORS = [
   'hsl(var(--chart-1))',
@@ -39,12 +39,7 @@ const COLORS = [
 ];
 
 // Header Component
-const HomeHeader = ({
-  userName,
-  dateRange,
-  handleDateRangeChange,
-  isMobile,
-}: {
+interface HomeHeaderProps {
   userName: string;
   dateRange: { from: Date; to: Date };
   handleDateRangeChange: (values: {
@@ -52,54 +47,56 @@ const HomeHeader = ({
     rangeCompare?: { from: Date; to: Date | undefined } | undefined;
   }) => void;
   isMobile: boolean;
-}) => (
-  <motion.div
-    className={cn(
+}
+
+const HomeHeader: Component<HomeHeaderProps> = (props) => (
+  <Motion.div
+    class={cn(
       'flex-none bg-background border-b border-border/50',
-      isMobile ? 'p-4 pb-3' : 'p-6'
+      props.isMobile ? 'p-4 pb-3' : 'p-6'
     )}
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+    transition={{ duration: 0.6, easing: [0.4, 0, 0.2, 1] }}
   >
-    <div className={cn('flex items-center', isMobile ? 'flex-col gap-3' : 'justify-between')}>
-      <div className={isMobile ? 'text-center' : ''}>
+    <div class={cn('flex items-center', props.isMobile ? 'flex-col gap-3' : 'justify-between')}>
+      <div class={props.isMobile ? 'text-center' : ''}>
         <h2
-          className={cn(
+          class={cn(
             'font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
-            isMobile ? 'text-xl' : 'text-3xl'
+            props.isMobile ? 'text-xl' : 'text-3xl'
           )}
         >
-          ¡Hola {userName}!
+          ¡Hola {props.userName}!
         </h2>
-        <p className={cn('text-muted-foreground mt-1', isMobile ? 'text-sm' : 'text-lg')}>
+        <p class={cn('text-muted-foreground mt-1', props.isMobile ? 'text-sm' : 'text-lg')}>
           Bienvenido de nuevo al TPV de El Haido.
         </p>
       </div>
 
-      {!isMobile && (
+      <Show when={!props.isMobile}>
         <DateRangePicker
-          initialDateFrom={dateRange.from}
-          initialDateTo={dateRange.to}
-          onUpdate={handleDateRangeChange}
+          initialDateFrom={props.dateRange.from}
+          initialDateTo={props.dateRange.to}
+          onUpdate={props.handleDateRangeChange}
         />
-      )}
+      </Show>
     </div>
-  </motion.div>
+  </Motion.div>
 );
 
 // Stats Card Component
-type StatCardProps = {
+interface StatCardProps {
   title: string;
   value: string | number;
   numericValue?: number;
   suffix?: string;
   prefix?: string;
   isAnimated?: boolean;
-  Icon: React.ElementType;
+  Icon: Component<{ class?: string }>;
   variant?: 'success' | 'primary' | 'accent' | 'warning';
   index?: number;
-};
+}
 
 const cardVariants = {
   success: {
@@ -128,107 +125,86 @@ const cardVariants = {
   },
 };
 
-const StatCard = ({
-  title,
-  value,
-  numericValue,
-  suffix = '',
-  prefix = '',
-  isAnimated = false,
-  Icon,
-  variant = 'primary',
-  index = 0,
-}: StatCardProps) => {
-  const variantStyles = cardVariants[variant];
-  const { isMobile } = useResponsive();
+const StatCard: Component<StatCardProps> = (props) => {
+  const variantStyles = () => cardVariants[props.variant ?? 'primary'];
+  const responsive = useResponsive();
+  const index = () => props.index ?? 0;
+
+  // Format number for display
+  const formattedValue = createMemo(() => {
+    if (props.isAnimated && props.numericValue !== undefined) {
+      const formatted = props.suffix === '€'
+        ? props.numericValue.toFixed(2)
+        : props.numericValue.toString();
+      return `${props.prefix ?? ''}${formatted}${props.suffix ?? ''}`;
+    }
+    return props.value;
+  });
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: 0.5,
-        delay: index * 0.1,
-        ease: [0.4, 0, 0.2, 1],
+        delay: index() * 0.1,
+        easing: [0.4, 0, 0.2, 1],
       }}
-      whileHover={{
-        y: -4,
-        transition: { duration: 0.2 },
-      }}
+      hover={{ y: -4 }}
     >
       <Card
-        className={cn(
-          `${variantStyles.cardClass} shadow-lg transition-all duration-300 hover:shadow-xl border-2`,
-          isMobile && 'shadow-md hover:shadow-lg'
+        class={cn(
+          `${variantStyles().cardClass} shadow-lg transition-all duration-300 hover:shadow-xl border-2`,
+          responsive.isMobile && 'shadow-md hover:shadow-lg'
         )}
       >
         <CardHeader
-          className={cn(
+          class={cn(
             'flex flex-row items-center justify-between space-y-0',
-            isMobile ? 'pb-1 px-3 pt-3' : 'pb-3'
+            responsive.isMobile ? 'pb-1 px-3 pt-3' : 'pb-3'
           )}
         >
           <CardTitle
-            className={cn(
+            class={cn(
               'font-semibold text-card-foreground',
-              isMobile ? 'text-xs leading-tight' : 'text-sm'
+              responsive.isMobile ? 'text-xs leading-tight' : 'text-sm'
             )}
           >
-            {title}
+            {props.title}
           </CardTitle>
           <div
-            className={cn(
-              `${variantStyles.iconBg} rounded-lg transition-transform duration-200 hover:scale-110`,
-              isMobile ? 'p-1.5' : 'p-2'
+            class={cn(
+              `${variantStyles().iconBg} rounded-lg transition-transform duration-200 hover:scale-110`,
+              responsive.isMobile ? 'p-1.5' : 'p-2'
             )}
           >
-            {React.createElement(Icon, {
-              className: cn(variantStyles.iconClass, isMobile ? 'h-4 w-4' : 'h-5 w-5'),
-            })}
+            <Dynamic
+              component={props.Icon}
+              class={cn(variantStyles().iconClass, responsive.isMobile ? 'h-4 w-4' : 'h-5 w-5')}
+            />
           </div>
         </CardHeader>
-        <CardContent className={cn('pt-0', isMobile ? 'px-3 pb-3' : '')}>
-          <motion.div
-            className={cn('font-bold text-card-foreground', isMobile ? 'text-lg' : 'text-3xl')}
+        <CardContent class={cn('pt-0', responsive.isMobile ? 'px-3 pb-3' : '')}>
+          <Motion.div
+            class={cn('font-bold text-card-foreground', responsive.isMobile ? 'text-lg' : 'text-3xl')}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{
               duration: 0.6,
-              delay: index * 0.1 + 0.2,
+              delay: index() * 0.1 + 0.2,
             }}
+            style={{ 'font-variant-numeric': 'tabular-nums' }}
           >
-            {isAnimated && numericValue !== undefined ? (
-              <NumberFlow
-                value={numericValue}
-                format={{ minimumFractionDigits: suffix === '€' ? 2 : 0 }}
-                suffix={suffix}
-                prefix={prefix}
-                transformTiming={{ duration: 400, easing: 'ease-out' }}
-                opacityTiming={{ duration: 200, easing: 'ease-out' }}
-                willChange
-                style={
-                  {
-                    fontVariantNumeric: 'tabular-nums',
-                    '--number-flow-char-height': '0.85em',
-                    '--number-flow-mask-height': '0.25em',
-                  } as React.CSSProperties
-                }
-              />
-            ) : (
-              value
-            )}
-          </motion.div>
+            {formattedValue()}
+          </Motion.div>
         </CardContent>
       </Card>
-    </motion.div>
+    </Motion.div>
   );
 };
 
 // Stats Grid Component
-const StatsGrid = ({
-  stats,
-  isMobile,
-}: {
+interface StatsGridProps {
   stats: {
     totalSales: number;
     totalOrders: number;
@@ -236,17 +212,19 @@ const StatsGrid = ({
     bestSellerProduct: { name: string; timesOrdered: number };
   };
   isMobile: boolean;
-}) => (
+}
+
+const StatsGrid: Component<StatsGridProps> = (props) => (
   <div
-    className={cn(
+    class={cn(
       'grid gap-4',
-      isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+      props.isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
     )}
   >
     <StatCard
       title="Ventas Totales"
-      value={`${stats.totalSales.toFixed(2)}€`}
-      numericValue={stats.totalSales}
+      value={`${props.stats.totalSales.toFixed(2)}€`}
+      numericValue={props.stats.totalSales}
       suffix="€"
       isAnimated={true}
       Icon={DollarSignIcon}
@@ -255,8 +233,8 @@ const StatsGrid = ({
     />
     <StatCard
       title="Pedidos Totales"
-      value={stats.totalOrders.toString()}
-      numericValue={stats.totalOrders}
+      value={props.stats.totalOrders.toString()}
+      numericValue={props.stats.totalOrders}
       isAnimated={true}
       Icon={ShoppingCartIcon}
       variant="primary"
@@ -264,8 +242,8 @@ const StatsGrid = ({
     />
     <StatCard
       title="Valor Promedio de Pedido"
-      value={`${stats.averageOrderValue.toFixed(2)}€`}
-      numericValue={stats.averageOrderValue}
+      value={`${props.stats.averageOrderValue.toFixed(2)}€`}
+      numericValue={props.stats.averageOrderValue}
       suffix="€"
       isAnimated={true}
       Icon={TrendingUpIcon}
@@ -274,7 +252,7 @@ const StatsGrid = ({
     />
     <StatCard
       title="Best Seller"
-      value={stats.bestSellerProduct.name}
+      value={props.stats.bestSellerProduct.name}
       Icon={AwardIcon}
       variant="warning"
       index={3}
@@ -283,122 +261,126 @@ const StatsGrid = ({
 );
 
 // LineChart Component
-type LineChartCardProps = {
+interface LineChartCardProps {
   title: string;
   data: { date: string; sales: number }[];
   index?: number;
-};
+}
 
-const LineChartCard = ({ title, data, index = 0 }: LineChartCardProps) => {
-  const { isMobile } = useResponsive();
+const LineChartCard: Component<LineChartCardProps> = (props) => {
+  const responsive = useResponsive();
+  const index = () => props.index ?? 0;
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{
         duration: 0.6,
-        delay: 0.4 + index * 0.1,
-        ease: [0.4, 0, 0.2, 1],
+        delay: 0.4 + index() * 0.1,
+        easing: [0.4, 0, 0.2, 1],
       }}
     >
       <Card
-        className={cn(
+        class={cn(
           'bg-gradient-to-br from-card to-muted/20 border-2 shadow-lg hover:shadow-xl transition-all duration-300',
-          isMobile && 'shadow-md hover:shadow-lg'
+          responsive.isMobile && 'shadow-md hover:shadow-lg'
         )}
       >
-        <CardHeader className={cn(isMobile ? 'pb-2 px-4 pt-4' : 'pb-4')}>
-          <div className="flex items-center gap-2">
-            <div className={cn('bg-primary/10 rounded-lg', isMobile ? 'p-1.5' : 'p-2')}>
-              <TrendingUpIcon className={cn('text-primary', isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
+        <CardHeader class={cn(responsive.isMobile ? 'pb-2 px-4 pt-4' : 'pb-4')}>
+          <div class="flex items-center gap-2">
+            <div class={cn('bg-primary/10 rounded-lg', responsive.isMobile ? 'p-1.5' : 'p-2')}>
+              <TrendingUpIcon class={cn('text-primary', responsive.isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
             </div>
             <CardTitle
-              className={cn('font-semibold text-card-foreground', isMobile ? 'text-sm' : 'text-lg')}
+              class={cn('font-semibold text-card-foreground', responsive.isMobile ? 'text-sm' : 'text-lg')}
             >
-              {title}
+              {props.title}
             </CardTitle>
           </div>
         </CardHeader>
-        <CardContent className={isMobile ? 'px-4 pb-4' : ''}>
-          <ResponsiveContainer width="100%" height={isMobile ? 200 : 300}>
-            <LineChart data={data}>
+        <CardContent class={responsive.isMobile ? 'px-4 pb-4' : ''}>
+          <ResponsiveContainer width="100%" height={responsive.isMobile ? 200 : 300}>
+            <LineChart data={props.data}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="date"
                 stroke="hsl(var(--muted-foreground))"
-                fontSize={isMobile ? 10 : 12}
+                fontSize={responsive.isMobile ? 10 : 12}
               />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={isMobile ? 10 : 12} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={responsive.isMobile ? 10 : 12} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
-                  fontSize: isMobile ? '12px' : '14px',
+                  fontSize: responsive.isMobile ? '12px' : '14px',
                 }}
               />
-              {!isMobile && <Legend />}
+              <Show when={!responsive.isMobile}>
+                <Legend />
+              </Show>
               <Line
                 type="monotone"
                 dataKey="sales"
                 stroke="hsl(var(--primary))"
-                strokeWidth={isMobile ? 2 : 3}
-                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: isMobile ? 3 : 4 }}
-                activeDot={{ r: isMobile ? 4 : 6, stroke: 'hsl(var(--primary))', strokeWidth: 2 }}
+                strokeWidth={responsive.isMobile ? 2 : 3}
+                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: responsive.isMobile ? 3 : 4 }}
+                activeDot={{ r: responsive.isMobile ? 4 : 6, stroke: 'hsl(var(--primary))', strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
-    </motion.div>
+    </Motion.div>
   );
 };
 
 // PieChart Component
-type PieChartCardProps = {
+interface PieChartCardProps {
   title: string;
   data: { name: string; value: number }[];
   index?: number;
-};
+}
 
-const PieChartCard = ({ title, data, index = 0 }: PieChartCardProps) => {
-  const { isMobile } = useResponsive();
+const PieChartCard: Component<PieChartCardProps> = (props) => {
+  const responsive = useResponsive();
+  const index = () => props.index ?? 0;
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{
         duration: 0.6,
-        delay: 0.5 + index * 0.1,
-        ease: [0.4, 0, 0.2, 1],
+        delay: 0.5 + index() * 0.1,
+        easing: [0.4, 0, 0.2, 1],
       }}
     >
       <Card
-        className={cn(
+        class={cn(
           'bg-gradient-to-br from-card to-success/5 border-2 border-success/20 shadow-lg hover:shadow-xl transition-all duration-300',
-          isMobile && 'shadow-md hover:shadow-lg'
+          responsive.isMobile && 'shadow-md hover:shadow-lg'
         )}
       >
-        <CardHeader className={cn(isMobile ? 'pb-2 px-4 pt-4' : 'pb-4')}>
+        <CardHeader class={cn(responsive.isMobile ? 'pb-2 px-4 pt-4' : 'pb-4')}>
           <CardTitle
-            className={cn(
+            class={cn(
               'font-semibold text-card-foreground flex items-center gap-2',
-              isMobile ? 'text-sm' : 'text-lg'
+              responsive.isMobile ? 'text-sm' : 'text-lg'
             )}
           >
-            <div className={cn('bg-success/10 rounded-lg', isMobile ? 'p-1.5' : 'p-2')}>
-              <DollarSignIcon className={cn('text-success', isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
+            <div class={cn('bg-success/10 rounded-lg', responsive.isMobile ? 'p-1.5' : 'p-2')}>
+              <DollarSignIcon class={cn('text-success', responsive.isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
             </div>
-            {title}
+            {props.title}
           </CardTitle>
         </CardHeader>
-        <CardContent className={isMobile ? 'px-4 pb-4' : ''}>
-          <ResponsiveContainer width="100%" height={isMobile ? 200 : 300}>
+        <CardContent class={responsive.isMobile ? 'px-4 pb-4' : ''}>
+          <ResponsiveContainer width="100%" height={responsive.isMobile ? 200 : 300}>
             <PieChart>
               <Pie
-                data={data}
+                data={props.data}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -407,9 +389,11 @@ const PieChartCard = ({ title, data, index = 0 }: PieChartCardProps) => {
                 dataKey="value"
                 label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
               >
-                {data.map((_, entryIndex) => (
-                  <Cell key={`cell-${entryIndex}`} fill={COLORS[entryIndex % COLORS.length]} />
-                ))}
+                <For each={props.data}>
+                  {(_, entryIndex) => (
+                    <Cell key={`cell-${entryIndex()}`} fill={COLORS[entryIndex() % COLORS.length]} />
+                  )}
+                </For>
               </Pie>
               <Tooltip
                 contentStyle={{
@@ -423,134 +407,145 @@ const PieChartCard = ({ title, data, index = 0 }: PieChartCardProps) => {
           </ResponsiveContainer>
         </CardContent>
       </Card>
-    </motion.div>
+    </Motion.div>
   );
 };
 
 // Recent Orders Table Component
-type RecentOrdersTableProps = {
+interface RecentOrdersTableProps {
   orders: Order[];
   index?: number;
-};
+}
 
-const RecentOrdersTable = ({ orders, index = 0 }: RecentOrdersTableProps) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{
-      duration: 0.6,
-      delay: 0.6 + index * 0.1,
-      ease: [0.4, 0, 0.2, 1],
-    }}
-  >
-    <Card className="bg-gradient-to-br from-card to-accent/5 border-2 border-accent/20 shadow-lg hover:shadow-xl transition-all duration-300">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <div className="bg-accent/10 p-2 rounded-lg">
-            <ShoppingCartIcon className="h-5 w-5 text-accent" />
+const RecentOrdersTable: Component<RecentOrdersTableProps> = (props) => {
+  const index = () => props.index ?? 0;
+  const displayOrders = createMemo(() => props.orders.slice(0, 5));
+
+  return (
+    <Motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.6,
+        delay: 0.6 + index() * 0.1,
+        easing: [0.4, 0, 0.2, 1],
+      }}
+    >
+      <Card class="bg-gradient-to-br from-card to-accent/5 border-2 border-accent/20 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardHeader class="pb-4">
+          <div class="flex items-center gap-2">
+            <div class="bg-accent/10 p-2 rounded-lg">
+              <ShoppingCartIcon class="h-5 w-5 text-accent" />
+            </div>
+            <CardTitle class="text-lg font-semibold text-card-foreground">
+              Pedidos Recientes
+            </CardTitle>
           </div>
-          <CardTitle className="text-lg font-semibold text-card-foreground">
-            Pedidos Recientes
-          </CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-muted-foreground font-semibold">ID</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Fecha</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Total</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Ubicación</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders.slice(0, 5).map((order, orderIndex) => (
-              <motion.tr
-                key={order.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{
-                  duration: 0.3,
-                  delay: 0.8 + orderIndex * 0.05,
-                }}
-                className="hover:bg-accent/5 transition-colors duration-200"
-              >
-                <TableCell className="font-medium">#{order.id}</TableCell>
-                <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                <TableCell className="font-semibold text-success">
-                  {order.total.toFixed(2)}€
-                </TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
-                    {order.tableNumber ? `Mesa ${order.tableNumber}` : 'Barra'}
-                  </span>
-                </TableCell>
-              </motion.tr>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  </motion.div>
-);
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead class="text-muted-foreground font-semibold">ID</TableHead>
+                <TableHead class="text-muted-foreground font-semibold">Fecha</TableHead>
+                <TableHead class="text-muted-foreground font-semibold">Total</TableHead>
+                <TableHead class="text-muted-foreground font-semibold">Ubicacion</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <For each={displayOrders()}>
+                {(order, orderIndex) => (
+                  <Motion.tr
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: 0.8 + orderIndex() * 0.05,
+                    }}
+                    class="hover:bg-accent/5 transition-colors duration-200"
+                  >
+                    <TableCell class="font-medium">#{order.id}</TableCell>
+                    <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
+                    <TableCell class="font-semibold text-success">
+                      {order.total.toFixed(2)}€
+                    </TableCell>
+                    <TableCell>
+                      <span class="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                        {order.tableNumber ? `Mesa ${order.tableNumber}` : 'Barra'}
+                      </span>
+                    </TableCell>
+                  </Motion.tr>
+                )}
+              </For>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </Motion.div>
+  );
+};
 
 // Top Products Card Component
-type TopProductsCardProps = {
+interface TopProductsCardProps {
   products: { name: string; timesOrdered: number }[];
   index?: number;
-};
+}
 
-const TopProductsCard = ({ products, index = 0 }: TopProductsCardProps) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{
-      duration: 0.6,
-      delay: 0.7 + index * 0.1,
-      ease: [0.4, 0, 0.2, 1],
-    }}
-  >
-    <Card className="bg-gradient-to-br from-card to-warning/5 border-2 border-warning/20 shadow-lg hover:shadow-xl transition-all duration-300">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <div className="bg-warning/10 p-2 rounded-lg">
-            <AwardIcon className="h-5 w-5 text-warning" />
+const TopProductsCard: Component<TopProductsCardProps> = (props) => {
+  const index = () => props.index ?? 0;
+
+  return (
+    <Motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.6,
+        delay: 0.7 + index() * 0.1,
+        easing: [0.4, 0, 0.2, 1],
+      }}
+    >
+      <Card class="bg-gradient-to-br from-card to-warning/5 border-2 border-warning/20 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardHeader class="pb-4">
+          <div class="flex items-center gap-2">
+            <div class="bg-warning/10 p-2 rounded-lg">
+              <AwardIcon class="h-5 w-5 text-warning" />
+            </div>
+            <CardTitle class="text-lg font-semibold text-card-foreground">
+              Top 5 Productos
+            </CardTitle>
           </div>
-          <CardTitle className="text-lg font-semibold text-card-foreground">
-            Top 5 Productos
-          </CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-3">
-          {products.map((product, productIndex) => (
-            <motion.li
-              key={product.name}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                duration: 0.3,
-                delay: 0.9 + productIndex * 0.05,
-              }}
-              className="flex justify-between items-center p-3 rounded-lg bg-background/50 hover:bg-warning/5 transition-colors duration-200"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-6 h-6 bg-warning/10 text-warning rounded-full text-sm font-bold">
-                  {productIndex + 1}
-                </div>
-                <span className="font-medium text-card-foreground">{product.name}</span>
-              </div>
-              <span className="px-2 py-1 bg-success/10 text-success text-xs rounded-full font-semibold">
-                {product.timesOrdered} pedidos
-              </span>
-            </motion.li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  </motion.div>
-);
+        </CardHeader>
+        <CardContent>
+          <ul class="space-y-3">
+            <For each={props.products}>
+              {(product, productIndex) => (
+                <Motion.li
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: 0.9 + productIndex() * 0.05,
+                  }}
+                  class="flex justify-between items-center p-3 rounded-lg bg-background/50 hover:bg-warning/5 transition-colors duration-200"
+                >
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-6 h-6 bg-warning/10 text-warning rounded-full text-sm font-bold">
+                      {productIndex() + 1}
+                    </div>
+                    <span class="font-medium text-card-foreground">{product.name}</span>
+                  </div>
+                  <span class="px-2 py-1 bg-success/10 text-success text-xs rounded-full font-semibold">
+                    {product.timesOrdered} pedidos
+                  </span>
+                </Motion.li>
+              )}
+            </For>
+          </ul>
+        </CardContent>
+      </Card>
+    </Motion.div>
+  );
+};
 
 // Utility Functions
 const getTotalSales = (orderHistory: Order[]) => {
@@ -648,104 +643,97 @@ const getSalesTrend = (orderHistory: Order[]): { date: string; sales: number }[]
   return Object.entries(salesByDate).map(([date, sales]) => ({ date, sales }));
 };
 
-type HomeProps = {
+interface HomeProps {
   userName: string;
-};
+}
 
-const Home = memo(({ userName }: HomeProps) => {
-  const { orderHistory } = useHomeData();
-  const { isMobile } = useResponsive();
-  const [dateRange, setDateRange] = useState({
+const Home: Component<HomeProps> = (props) => {
+  const data = homeData();
+  const responsive = useResponsive();
+
+  const [dateRange, setDateRange] = createSignal({
     from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     to: new Date(),
   });
 
-  // Memoizar filtros pesados para evitar recálculos innecesarios
-  const filteredOrders = useMemo(() => {
-    return orderHistory.filter((order) => {
+  // Memoized filtered orders based on date range
+  const filteredOrders = createMemo(() => {
+    const range = dateRange();
+    return data.orderHistory.filter((order) => {
       const orderDate = new Date(order.date);
-      return orderDate >= dateRange.from && orderDate <= dateRange.to;
+      return orderDate >= range.from && orderDate <= range.to;
     });
-  }, [orderHistory, dateRange.from, dateRange.to]);
+  });
 
-  // Memoizar cálculos pesados de estadísticas
-  const stats = useMemo(
-    () => ({
-      totalSales: getTotalSales(filteredOrders),
-      totalOrders: getTotalOrders(filteredOrders),
-      averageOrderValue: getAverageOrderValue(filteredOrders),
-      bestSellerProduct: getBestSellerProduct(filteredOrders) || {
-        name: 'No hay productos en el pedido',
-        timesOrdered: 0,
-      },
-    }),
-    [filteredOrders]
-  );
-
-  // Memoizar cálculos pesados de gráficos
-  const chartData = useMemo(
-    () => ({
-      salesByCategory: getSalesByCategory(filteredOrders),
-      ordersByLocation: getOrdersByLocation(filteredOrders),
-      top5Products: getTop5Products(filteredOrders),
-      salesTrend: getSalesTrend(filteredOrders),
-    }),
-    [filteredOrders]
-  );
-
-  // Callback memoizado para cambios de fecha
-  const handleDateRangeChange = useCallback(
-    (values: {
-      range: { from: Date; to: Date | undefined };
-      rangeCompare?: { from: Date; to: Date | undefined } | undefined;
-    }) => {
-      const { from, to } = values.range;
-      if (!from || !to) return;
-      setDateRange({ from, to });
+  // Memoized statistics calculations
+  const stats = createMemo(() => ({
+    totalSales: getTotalSales(filteredOrders()),
+    totalOrders: getTotalOrders(filteredOrders()),
+    averageOrderValue: getAverageOrderValue(filteredOrders()),
+    bestSellerProduct: getBestSellerProduct(filteredOrders()) || {
+      name: 'No hay productos en el pedido',
+      timesOrdered: 0,
     },
-    []
-  );
+  }));
+
+  // Memoized chart data calculations
+  const chartData = createMemo(() => ({
+    salesByCategory: getSalesByCategory(filteredOrders()),
+    ordersByLocation: getOrdersByLocation(filteredOrders()),
+    top5Products: getTop5Products(filteredOrders()),
+    salesTrend: getSalesTrend(filteredOrders()),
+  }));
+
+  // Handler for date range changes
+  const handleDateRangeChange = (values: {
+    range: { from: Date; to: Date | undefined };
+    rangeCompare?: { from: Date; to: Date | undefined } | undefined;
+  }) => {
+    const { from, to } = values.range;
+    if (!from || !to) return;
+    setDateRange({ from, to });
+  };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div class="flex flex-col h-full overflow-hidden">
       <HomeHeader
-        userName={userName}
-        dateRange={dateRange}
+        userName={props.userName}
+        dateRange={dateRange()}
         handleDateRangeChange={handleDateRangeChange}
-        isMobile={isMobile}
+        isMobile={responsive.isMobile}
       />
 
       <div
-        className={cn(
+        class={cn(
           'flex-grow overflow-y-auto',
-          isMobile ? 'p-4 space-y-4' : 'p-4 space-y-4 lg:p-6 lg:space-y-6'
+          responsive.isMobile ? 'p-4 space-y-4' : 'p-4 space-y-4 lg:p-6 lg:space-y-6'
         )}
       >
-        <StatsGrid stats={stats} isMobile={isMobile} />
+        <StatsGrid stats={stats()} isMobile={responsive.isMobile} />
 
         {/* Charts and Tables Section - Optimized for all screen sizes */}
         <div
-          className={cn(
+          class={cn(
             'grid gap-3',
-            isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
+            responsive.isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
             'lg:gap-4'
           )}
         >
           {/* Line Chart - Takes more space on larger screens */}
-          <div className={cn(isMobile ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}>
-            <LineChartCard title="Tendencia de Ventas" data={chartData.salesTrend} index={0} />
+          <div class={cn(responsive.isMobile ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}>
+            <LineChartCard title="Tendencia de Ventas" data={chartData().salesTrend} index={0} />
           </div>
 
           {/* Category Pie Chart */}
-          <div className={cn(isMobile ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
-            <PieChartCard title="Ventas por Categoría" data={chartData.salesByCategory} index={0} />
+          <div class={cn(responsive.isMobile ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
+            <PieChartCard title="Ventas por Categoria" data={chartData().salesByCategory} index={0} />
           </div>
 
           {/* Location Pie Chart */}
-          <div className={cn(isMobile ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
+          <div class={cn(responsive.isMobile ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
             <PieChartCard
-              title="Pedidos por Ubicación"
-              data={chartData.ordersByLocation}
+              title="Pedidos por Ubicacion"
+              data={chartData().ordersByLocation}
               index={1}
             />
           </div>
@@ -753,19 +741,17 @@ const Home = memo(({ userName }: HomeProps) => {
 
         {/* Recent Orders and Top Products - Side by side on larger screens */}
         <div
-          className={cn(
+          class={cn(
             'grid gap-3',
-            isMobile ? 'grid-cols-1 space-y-4' : 'grid-cols-1 lg:grid-cols-2 lg:gap-4'
+            responsive.isMobile ? 'grid-cols-1 space-y-4' : 'grid-cols-1 lg:grid-cols-2 lg:gap-4'
           )}
         >
-          <RecentOrdersTable orders={filteredOrders} index={0} />
-          <TopProductsCard products={chartData.top5Products} index={1} />
+          <RecentOrdersTable orders={filteredOrders()} index={0} />
+          <TopProductsCard products={chartData().top5Products} index={1} />
         </div>
       </div>
     </div>
   );
-});
-
-Home.displayName = 'Home';
+};
 
 export default Home;

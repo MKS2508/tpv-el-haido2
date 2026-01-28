@@ -1,7 +1,6 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Plus, Star } from 'lucide-react';
-import type React from 'react';
-import { useState } from 'react';
+import { createSignal } from 'solid-js';
+import { Presence, Motion } from '@motionone/solid';
+import { Check, Plus, Star } from 'lucide-solid';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
 import stockImagesService from '@/services/stock-images.service';
@@ -33,8 +32,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onDrag, // Destructure conflicting prop
   ...props
 }) => {
-  const [isAdding, setIsAdding] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [isAdding, setIsAdding] = createSignal(false);
+  const [showSuccess, setShowSuccess] = createSignal(false);
   const { useStockImages } = useStore();
 
   // Obtener imagen: personalizada > stock > fallback
@@ -80,7 +79,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
 
     // Mode 'order' - add to order logic
-    if (isAdding) return;
+    if (isAdding()) return;
 
     setIsAdding(true);
     onAction?.(product);
@@ -139,9 +138,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
       return cn(
         baseStyles,
         'border-2 touch-enhanced bg-gradient-to-b from-background to-card',
-        isAdding
+        isAdding()
           ? 'border-success shadow-2xl shadow-success/40 ring-2 ring-success/30 scale-[1.02]'
-          : showSuccess
+          : showSuccess()
             ? 'border-success/60 shadow-xl shadow-success/30'
             : 'border-border shadow-lg hover:border-primary/40 hover:shadow-xl'
       );
@@ -157,12 +156,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <motion.div
-      className={cn(getCardStyles(), className)}
+      class={cn(getCardStyles(), className)}
       onClick={handleClick}
       whileTap={{ scale: mode === 'order' ? 0.97 : 0.98 }}
       whileHover={{ scale: mode === 'order' ? 1.02 : 1.01 }}
       animate={{
-        scale: isAdding ? 1.03 : 1,
+        scale: isAdding() ? 1.03 : 1,
       }}
       transition={{
         scale: { duration: 0.2, type: 'spring', stiffness: 300, damping: 25 },
@@ -172,7 +171,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Image Section */}
       <div
-        className={cn(
+        class={cn(
           'relative overflow-hidden',
           mode === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
           !isRealImage ? `bg-gradient-to-br ${getCategoryColors(product.category)}` : 'bg-muted/10'
@@ -181,18 +180,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
       >
         {/* Overlay para mejor legibilidad en imágenes reales */}
         {isRealImage && (
-          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+          <div class="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
         )}
 
         {/* Emoji/Icon si es imagen SVG fallback */}
         {!isRealImage && (
           <motion.div
-            className={cn(
+            class={cn(
               'flex items-center justify-center h-full',
               mode === 'order' ? 'text-4xl sm:text-5xl' : 'text-3xl'
             )}
             animate={{
-              scale: isAdding ? 1.08 : 1,
+              scale: isAdding() ? 1.08 : 1,
             }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
           >
@@ -202,89 +201,86 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Category badge */}
         {showCategory && product.category && (
-          <div className="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
+          <div class="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
             {product.category}
           </div>
         )}
 
         {/* Action button - top right */}
-        <div className="absolute top-2 right-2">
+        <div class="absolute top-2 right-2">
           {mode === 'order' ? (
             <AnimatePresence mode="wait">
-              {!showSuccess ? (
+              {!showSuccess() ? (
                 <motion.div
                   key="plus"
-                  className={cn(
+                  class={cn(
                     'rounded-full p-2 shadow-2xl',
-                    isAdding
+                    isAdding()
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-accent text-accent-foreground'
                   )}
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{
-                    scale: isAdding ? 1.15 : 1,
+                    scale: isAdding() ? 1.15 : 1,
                     opacity: 1,
                   }}
                   exit={{ scale: 0, opacity: 0 }}
                   transition={{ duration: 0.2, type: 'spring', stiffness: 300 }}
                 >
-                  <Plus className="w-4 h-4" strokeWidth={2.5} />
+                  <Plus class="w-4 h-4" strokeWidth={2.5} />
                 </motion.div>
               ) : (
                 <motion.div
                   key="check"
-                  className="bg-success text-success-foreground rounded-full p-2 shadow-2xl"
+                  class="bg-success text-success-foreground rounded-full p-2 shadow-2xl"
                   initial={{ scale: 0, opacity: 0, rotate: -90 }}
                   animate={{ scale: 1, opacity: 1, rotate: 0 }}
                   exit={{ scale: 0, opacity: 0 }}
                   transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
                 >
-                  <Check className="w-4 h-4" strokeWidth={3} />
+                  <Check class="w-4 h-4" strokeWidth={3} />
                 </motion.div>
               )}
             </AnimatePresence>
           ) : (
             // Mode 'manage' - show favorite star
-            onFavoriteToggle && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
-                onClick={handleFavoriteClick}
-              >
-                <Star
-                  className={cn(
-                    'h-4 w-4',
-                    isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
-                  )}
-                />
-              </Button>
-            )
+            (onFavoriteToggle && (<Button
+              variant="ghost"
+              size="sm"
+              class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+              onClick={handleFavoriteClick}
+            >
+              <Star
+                class={cn(
+                  'h-4 w-4',
+                  isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
+                )}
+              />
+            </Button>))
           )}
         </div>
       </div>
-
       {/* Product Info Section */}
       <div
-        className={cn(
+        class={cn(
           'flex-1 flex flex-col justify-between bg-gradient-to-b from-card/50 to-card border-t border-border/20',
           mode === 'order' ? 'p-3' : 'p-2'
         )}
       >
         {/* Product Name */}
-        <div className={cn(mode === 'order' ? 'mb-2' : 'mb-1')}>
+        <div class={cn(mode === 'order' ? 'mb-2' : 'mb-1')}>
           <h3
-            className={cn(
+            class={cn(
               'font-extrabold line-clamp-2 leading-tight',
               mode === 'order' ? 'text-sm mb-0.5' : 'text-xs',
-              isAdding ? 'text-primary' : 'text-foreground'
+              isAdding() ? 'text-primary' : 'text-foreground'
             )}
           >
             {product.name}
           </h3>
           {product.brand && (
             <p
-              className={cn(
+              class={cn(
                 'text-muted-foreground font-medium opacity-90',
                 mode === 'order' ? 'text-xs' : 'text-[10px]'
               )}
@@ -295,25 +291,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Price Section */}
-        <div className="flex items-end justify-between">
+        <div class="flex items-end justify-between">
           <motion.div
-            className="flex flex-col"
+            class="flex flex-col"
             animate={{
-              scale: isAdding ? 1.08 : 1,
+              scale: isAdding() ? 1.08 : 1,
             }}
             transition={{ duration: 0.15 }}
           >
             <span
-              className={cn(
+              class={cn(
                 'font-black tracking-tight',
                 mode === 'order' ? 'text-2xl' : 'text-lg',
-                isAdding ? 'text-success drop-shadow-md' : 'text-primary'
+                isAdding() ? 'text-success drop-shadow-md' : 'text-primary'
               )}
             >
               {product.price.toFixed(2)}€
             </span>
             {mode === 'order' && (
-              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
+              <span class="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
                 unidad
               </span>
             )}
@@ -321,26 +317,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Stock indicator para mode order */}
           {mode === 'order' && product.stock !== undefined && product.stock < 10 && (
-            <div className="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
-              <span className="text-xs font-bold text-warning">Quedan {product.stock}</span>
+            <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
+              <span class="text-xs font-bold text-warning">Quedan {product.stock}</span>
             </div>
           )}
 
           {/* Category info para mode manage */}
           {mode === 'manage' && product.category && (
-            <div className="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
+            <div class="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
               {product.category}
             </div>
           )}
         </div>
       </div>
-
       {/* Loading overlay solo para mode order */}
       {mode === 'order' && (
         <AnimatePresence>
-          {isAdding && !showSuccess && (
+          {isAdding() && !showSuccess() && (
             <motion.div
-              className="absolute inset-0 bg-primary/10 backdrop-blur-[2px] rounded-xl"
+              class="absolute inset-0 bg-primary/10 backdrop-blur-[2px] rounded-xl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

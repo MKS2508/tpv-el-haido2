@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { createMemo, createEffect, createSignal, onCleanup } from 'solid-js';
 
 export type BreakpointSize =
   | 'mobile'
@@ -31,7 +31,7 @@ const BREAKPOINTS = {
 } as const;
 
 export function useResponsive(): ResponsiveState {
-  const [state, setState] = useState<ResponsiveState>(() => {
+  const [state, setState] = createSignal<ResponsiveState>(() => {
     const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
     const height = typeof window !== 'undefined' ? window.innerHeight : 768;
     const isTouch =
@@ -69,7 +69,7 @@ export function useResponsive(): ResponsiveState {
     });
   }, []);
 
-  useEffect(() => {
+  createEffect(() => {
     // Cleanup refs para mejor cleanup
     let timeoutId: NodeJS.Timeout | null = null;
     let isMounted = true;
@@ -108,18 +108,17 @@ export function useResponsive(): ResponsiveState {
       updateState(initialWidth, initialHeight);
     }
 
-    // Cleanup function mejorado
-    return () => {
+    onCleanup(() => {
       isMounted = false;
       window.removeEventListener('resize', handleResize);
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
       }
-    };
-  }, [updateState]); // Dependencia del callback memoizado
+    });
+  }); // Dependencia del callback memoizado
 
-  return state;
+  return state();
 }
 
 function getBreakpoint(width: number): BreakpointSize {
@@ -151,12 +150,12 @@ export function useBreakpoint(breakpoint: BreakpointSize): boolean {
 
 // Utility hook for media queries
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() => {
+  const [matches, setMatches] = createSignal(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia(query).matches;
   });
 
-  useEffect(() => {
+  createEffect(() => {
     const mediaQuery = window.matchMedia(query);
 
     const handleChange = (e: MediaQueryListEvent) => {
@@ -173,7 +172,7 @@ export function useMediaQuery(query: string): boolean {
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
-  }, [query]);
+  });
 
-  return matches;
+  return matches();
 }

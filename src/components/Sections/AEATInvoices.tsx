@@ -4,7 +4,8 @@
  * Panel para gestionar facturas emitidas a AEAT VERI*FACTU
  */
 
-'use client';
+'use client';;
+import { createMemo, createSignal } from 'solid-js';
 
 import {
   ArrowUpDown,
@@ -16,8 +17,8 @@ import {
   RefreshCw,
   Search,
   XCircle,
-} from 'lucide-react';
-import { memo, useCallback, useMemo, useState } from 'react';
+} from 'lucide-solid';
+import { memo, useCallback, useMemo, createSignal } from 'react';
 import { InvoiceStatusBadge } from '@/components/InvoiceStatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,14 +76,14 @@ const AEATInvoices = memo(() => {
   const { emitInvoice, isEmitting } = useEmitInvoice();
 
   // State
-  const [filterStatus, setFilterStatus] = useState<InvoiceFilter>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortConfig, setSortConfig] = useState<{
+  const [filterStatus, setFilterStatus] = createSignal<InvoiceFilter>('all');
+  const [searchQuery, setSearchQuery] = createSignal('');
+  const [sortConfig, setSortConfig] = createSignal<{
     key: 'date' | 'total';
     direction: 'asc' | 'desc';
   }>({ key: 'date', direction: 'desc' });
-  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceWithOrder | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = createSignal<InvoiceWithOrder | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = createSignal(false);
 
   // Filtrar solo pedidos pagados (facturables)
   const invoiceableOrders = useMemo(() => {
@@ -105,18 +106,18 @@ const AEATInvoices = memo(() => {
     let result = [...invoices];
 
     // Filtrar por estado
-    if (filterStatus !== 'all') {
+    if (filterStatus() !== 'all') {
       result = result.filter((inv) => {
-        if (filterStatus === 'not_invoiced') {
+        if (filterStatus() === 'not_invoiced') {
           return !inv.order.aeat?.invoiceSent;
         }
-        return inv.status === filterStatus;
+        return inv.status === filterStatus();
       });
     }
 
     // Filtrar por búsqueda
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (searchQuery().trim()) {
+      const query = searchQuery().toLowerCase();
       result = result.filter(
         (inv) =>
           inv.invoiceNumber?.toLowerCase().includes(query) ||
@@ -128,16 +129,16 @@ const AEATInvoices = memo(() => {
     // Ordenar
     result.sort((a, b) => {
       let comparison = 0;
-      if (sortConfig.key === 'date') {
+      if (sortConfig().key === 'date') {
         comparison = new Date(a.order.date).getTime() - new Date(b.order.date).getTime();
-      } else if (sortConfig.key === 'total') {
+      } else if (sortConfig().key === 'total') {
         comparison = a.order.total - b.order.total;
       }
-      return sortConfig.direction === 'asc' ? comparison : -comparison;
+      return sortConfig().direction === 'asc' ? comparison : -comparison;
     });
 
     return result;
-  }, [invoices, filterStatus, searchQuery, sortConfig]);
+  }, [invoices, filterStatus(), searchQuery(), sortConfig()]);
 
   // Estadísticas
   const stats = useMemo(() => {
@@ -242,7 +243,6 @@ const AEATInvoices = memo(() => {
           )}
         </div>
       </div>
-
       {/* Estadísticas */}
       <div className={cn('grid gap-2 flex-shrink-0', isMobile ? 'grid-cols-2' : 'grid-cols-5')}>
         <Card className="p-3">
@@ -270,7 +270,6 @@ const AEATInvoices = memo(() => {
           </>
         )}
       </div>
-
       {/* Filtros */}
       <div
         className={cn(
@@ -279,7 +278,7 @@ const AEATInvoices = memo(() => {
         )}
       >
         <div className="flex gap-2 items-center">
-          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as InvoiceFilter)}>
+          <Select value={filterStatus()} onValueChange={(v) => setFilterStatus(v as InvoiceFilter)}>
             <SelectTrigger className={cn('bg-background', isMobile ? 'w-full' : 'w-[180px]')}>
               <SelectValue placeholder="Filtrar por estado" />
             </SelectTrigger>
@@ -296,7 +295,7 @@ const AEATInvoices = memo(() => {
             <Button variant="outline" size="sm" onClick={() => handleSort('date')}>
               <CalendarIcon className="h-4 w-4 mr-1" />
               Fecha
-              {sortConfig.key === 'date' && <ArrowUpDown className="h-3 w-3 ml-1" />}
+              {sortConfig().key === 'date' && <ArrowUpDown className="h-3 w-3 ml-1" />}
             </Button>
           )}
         </div>
@@ -305,13 +304,12 @@ const AEATInvoices = memo(() => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nº factura o CSV..."
-            value={searchQuery}
+            value={searchQuery()}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={cn('pl-9 bg-background', isMobile ? 'w-full' : 'w-[250px]')}
           />
         </div>
       </div>
-
       {/* Lista de facturas */}
       <div className="flex-1 overflow-hidden">
         {isMobile ? (
@@ -339,7 +337,7 @@ const AEATInvoices = memo(() => {
                     onClick={() => handleSort('date')}
                   >
                     Fecha
-                    {sortConfig.key === 'date' && <ArrowUpDown className="ml-1 h-3 w-3 inline" />}
+                    {sortConfig().key === 'date' && <ArrowUpDown className="ml-1 h-3 w-3 inline" />}
                   </TableHead>
                   <TableHead className="border border-border">Pedido</TableHead>
                   <TableHead
@@ -347,7 +345,7 @@ const AEATInvoices = memo(() => {
                     onClick={() => handleSort('total')}
                   >
                     Total
-                    {sortConfig.key === 'total' && <ArrowUpDown className="ml-1 h-3 w-3 inline" />}
+                    {sortConfig().key === 'total' && <ArrowUpDown className="ml-1 h-3 w-3 inline" />}
                   </TableHead>
                   <TableHead className="border border-border">Estado</TableHead>
                   <TableHead className="border border-border">CSV</TableHead>
@@ -398,63 +396,62 @@ const AEATInvoices = memo(() => {
           </ScrollArea>
         )}
       </div>
-
       {/* Dialog de detalles */}
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+      <Dialog open={isDetailsOpen()} onOpenChange={setIsDetailsOpen}>
         <DialogContent className={cn(isMobile ? 'max-w-[95vw]' : 'max-w-[600px]')}>
           <DialogHeader>
             <DialogTitle>Detalles de Factura</DialogTitle>
             <DialogDescription>
-              {selectedInvoice?.invoiceNumber || `Pedido #${selectedInvoice?.order.id}`}
+              {selectedInvoice()?.invoiceNumber || `Pedido #${selectedInvoice()?.order.id}`}
             </DialogDescription>
           </DialogHeader>
 
-          {selectedInvoice && (
+          {selectedInvoice() && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm text-muted-foreground">Estado</Label>
                   <div className="mt-1">
-                    <InvoiceStatusBadge aeat={selectedInvoice.order.aeat} />
+                    <InvoiceStatusBadge aeat={selectedInvoice().order.aeat} />
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm text-muted-foreground">Total</Label>
                   <div className="mt-1 font-bold text-lg">
-                    {selectedInvoice.order.total.toFixed(2)}€
+                    {selectedInvoice().order.total.toFixed(2)}€
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm text-muted-foreground">Nº Factura</Label>
                   <div className="mt-1 font-mono">
-                    {selectedInvoice.invoiceNumber || 'Sin facturar'}
+                    {selectedInvoice().invoiceNumber || 'Sin facturar'}
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm text-muted-foreground">CSV</Label>
-                  <div className="mt-1 font-mono text-sm">{selectedInvoice.csv || '-'}</div>
+                  <div className="mt-1 font-mono text-sm">{selectedInvoice().csv || '-'}</div>
                 </div>
                 <div>
                   <Label className="text-sm text-muted-foreground">Fecha envío</Label>
-                  <div className="mt-1">{formatDate(selectedInvoice.sentAt)}</div>
+                  <div className="mt-1">{formatDate(selectedInvoice().sentAt)}</div>
                 </div>
                 <div>
                   <Label className="text-sm text-muted-foreground">Pedido</Label>
                   <div className="mt-1">
-                    #{selectedInvoice.order.id} - Mesa{' '}
-                    {selectedInvoice.order.tableNumber === 0
+                    #{selectedInvoice().order.id} - Mesa{' '}
+                    {selectedInvoice().order.tableNumber === 0
                       ? 'Barra'
-                      : selectedInvoice.order.tableNumber}
+                      : selectedInvoice().order.tableNumber}
                   </div>
                 </div>
               </div>
 
               {/* Desglose de impuestos */}
-              {selectedInvoice.order.aeat?.taxBreakdown && (
+              {selectedInvoice().order.aeat?.taxBreakdown && (
                 <div>
                   <Label className="text-sm text-muted-foreground">Desglose IVA</Label>
                   <div className="mt-2 space-y-1">
-                    {selectedInvoice.order.aeat.taxBreakdown.map((item) => (
+                    {selectedInvoice().order.aeat.taxBreakdown.map((item) => (
                       <div key={`tax-${item.rate}`} className="flex justify-between text-sm">
                         <span>
                           Base ({item.rate}%): {item.baseAmount.toFixed(2)}€
@@ -467,20 +464,20 @@ const AEATInvoices = memo(() => {
               )}
 
               {/* Error si hay */}
-              {selectedInvoice.order.aeat?.invoiceError && (
+              {selectedInvoice().order.aeat?.invoiceError && (
                 <div className="p-3 bg-destructive/10 rounded-lg">
                   <Label className="text-sm text-destructive">Error</Label>
-                  <div className="mt-1 text-sm">{selectedInvoice.order.aeat.invoiceError}</div>
+                  <div className="mt-1 text-sm">{selectedInvoice().order.aeat.invoiceError}</div>
                 </div>
               )}
             </div>
           )}
 
           <DialogFooter className="gap-2">
-            {selectedInvoice?.csv && (
+            {selectedInvoice()?.csv && (
               <Button variant="outline" asChild>
                 <a
-                  href={`https://www2.agenciatributaria.gob.es/wlpl/inwinvoc/es.aeat.dit.adu.eeca.catalogo.vis.VisualizaSVInternacional?csv=${selectedInvoice.csv}`}
+                  href={`https://www2.agenciatributaria.gob.es/wlpl/inwinvoc/es.aeat.dit.adu.eeca.catalogo.vis.VisualizaSVInternacional?csv=${selectedInvoice().csv}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -489,12 +486,12 @@ const AEATInvoices = memo(() => {
                 </a>
               </Button>
             )}
-            {selectedInvoice &&
-              (selectedInvoice.status === 'rejected' ||
-                selectedInvoice.status === 'error' ||
-                !selectedInvoice.order.aeat?.invoiceSent) && (
+            {selectedInvoice() &&
+              (selectedInvoice().status === 'rejected' ||
+                selectedInvoice().status === 'error' ||
+                !selectedInvoice().order.aeat?.invoiceSent) && (
                 <Button
-                  onClick={() => handleRetryInvoice(selectedInvoice.order)}
+                  onClick={() => handleRetryInvoice(selectedInvoice().order)}
                   disabled={isEmitting || !isConnected}
                 >
                   {isEmitting ? (
@@ -502,7 +499,7 @@ const AEATInvoices = memo(() => {
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  {selectedInvoice.order.aeat?.invoiceSent ? 'Reintentar' : 'Emitir Factura'}
+                  {selectedInvoice().order.aeat?.invoiceSent ? 'Reintentar' : 'Emitir Factura'}
                 </Button>
               )}
           </DialogFooter>

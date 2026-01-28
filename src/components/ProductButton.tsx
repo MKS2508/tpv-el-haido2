@@ -1,4 +1,3 @@
-import type React from 'react';
 import OptimizedProductCard from '@/components/ui/OptimizedProductCard';
 import type Product from '@/models/Product.ts';
 

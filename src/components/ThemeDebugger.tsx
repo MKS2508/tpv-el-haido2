@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { createMemo, createEffect, createSignal, onCleanup } from 'solid-js';
 import { useTheme } from '@mks2508/theme-manager-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,14 +54,14 @@ export function ThemeDebugger() {
   const { currentTheme, currentMode, themes, initialized } = themeContext;
   const loading = 'loading' in themeContext ? (themeContext as any).loading : false;
   const error = 'error' in themeContext ? (themeContext as any).error : null;
-  const [cssVariables, setCssVariables] = useState<CSSVariable[]>([]);
-  const [domInfo, setDomInfo] = useState({
+  const [cssVariables, setCssVariables] = createSignal<CSSVariable[]>([]);
+  const [domInfo, setDomInfo] = createSignal({
     dataTheme: '',
     darkClass: false,
     htmlClasses: '',
   });
 
-  const [copyStatus, setCopyStatus] = useState('');
+  const [copyStatus, setCopyStatus] = createSignal('');
 
   const refreshDebugInfo = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -98,7 +98,7 @@ export function ThemeDebugger() {
   }, []);
 
   const handleCopyAll = () => {
-    const textToCopy = cssVariables.map((v) => `${v.name}: ${v.computed}`).join('\n');
+    const textToCopy = cssVariables().map((v) => `${v.name}: ${v.computed}`).join('\n');
     navigator.clipboard
       .writeText(textToCopy)
       .then(() => {
@@ -111,21 +111,21 @@ export function ThemeDebugger() {
       });
   };
 
-  useEffect(() => {
+  createEffect(() => {
     refreshDebugInfo();
 
     // Refresh on theme changes
     const interval = setInterval(refreshDebugInfo, 1000);
 
-    return () => clearInterval(interval);
-  }, [refreshDebugInfo]);
+    onCleanup(() => clearInterval(interval));
+  });
 
   return (
-    <Card className="w-full">
+    <Card class="w-full">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle class="flex items-center justify-between">
           Theme Debugger
-          <div className="flex gap-2">
+          <div class="flex gap-2">
             <Button onClick={refreshDebugInfo} size="sm" variant="outline">
               Refresh
             </Button>
@@ -135,77 +135,77 @@ export function ThemeDebugger() {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent class="space-y-4">
         {/* Theme State Info */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div>
-            <div className="text-sm font-medium">Theme:</div>
+            <div class="text-sm font-medium">Theme:</div>
             <Badge variant="outline">{currentTheme}</Badge>
           </div>
           <div>
-            <div className="text-sm font-medium">Mode:</div>
+            <div class="text-sm font-medium">Mode:</div>
             <Badge variant="outline">{currentMode}</Badge>
           </div>
           <div>
-            <div className="text-sm font-medium">Initialized:</div>
+            <div class="text-sm font-medium">Initialized:</div>
             <Badge variant={initialized ? 'default' : 'destructive'}>
               {initialized ? 'Yes' : 'No'}
             </Badge>
           </div>
           <div>
-            <div className="text-sm font-medium">Themes:</div>
+            <div class="text-sm font-medium">Themes:</div>
             <Badge variant="outline">{themes?.length || 0}</Badge>
           </div>
           <div>
-            <div className="text-sm font-medium">Loading:</div>
+            <div class="text-sm font-medium">Loading:</div>
             <Badge variant={loading ? 'secondary' : 'outline'}>{loading ? 'Yes' : 'No'}</Badge>
           </div>
         </div>
 
         {error && (
-          <div className="border border-destructive rounded p-3 bg-destructive/10">
-            <div className="text-sm font-medium text-destructive">Error: {error}</div>
+          <div class="border border-destructive rounded p-3 bg-destructive/10">
+            <div class="text-sm font-medium text-destructive">Error: {error}</div>
           </div>
         )}
 
         {/* DOM State Info */}
-        <div className="border rounded p-3 bg-muted/50">
-          <div className="text-sm font-medium mb-2">DOM State:</div>
-          <div className="space-y-1 text-xs font-mono">
+        <div class="border rounded p-3 bg-muted/50">
+          <div class="text-sm font-medium mb-2">DOM State:</div>
+          <div class="space-y-1 text-xs font-mono">
             <div>
-              data-theme: <span className="bg-primary/10 px-1 rounded">{domInfo.dataTheme}</span>
+              data-theme: <span class="bg-primary/10 px-1 rounded">{domInfo().dataTheme}</span>
             </div>
             <div>
               dark class:{' '}
-              <span className="bg-primary/10 px-1 rounded">{domInfo.darkClass.toString()}</span>
+              <span class="bg-primary/10 px-1 rounded">{domInfo().darkClass.toString()}</span>
             </div>
             <div>
               html classes:{' '}
-              <span className="bg-primary/10 px-1 rounded">{domInfo.htmlClasses || 'none'}</span>
+              <span class="bg-primary/10 px-1 rounded">{domInfo().htmlClasses || 'none'}</span>
             </div>
           </div>
         </div>
 
         {/* CSS Variables Table */}
         <div>
-          <div className="text-sm font-medium mb-2">
+          <div class="text-sm font-medium mb-2">
             CSS Variables:{' '}
-            {copyStatus && <span className="text-green-500 text-xs ml-2">{copyStatus}</span>}
+            {copyStatus() && <span class="text-green-500 text-xs ml-2">{copyStatus()}</span>}
           </div>
-          <div className="border rounded overflow-hidden max-h-[400px] overflow-y-auto">
-            <div className="bg-muted p-2 grid grid-cols-3 gap-2 text-xs font-medium sticky top-0">
+          <div class="border rounded overflow-hidden max-h-[400px] overflow-y-auto">
+            <div class="bg-muted p-2 grid grid-cols-3 gap-2 text-xs font-medium sticky top-0">
               <div>Variable</div>
               <div>Computed Value</div>
               <div>Preview</div>
             </div>
-            <div className="divide-y">
-              {cssVariables.map((variable) => (
-                <div key={variable.name} className="p-2 grid grid-cols-3 gap-2 text-xs">
-                  <div className="font-mono">{variable.name}</div>
-                  <div className="font-mono break-all">{variable.computed || 'undefined'}</div>
-                  <div className="flex items-center gap-1">
+            <div class="divide-y">
+              {cssVariables().map((variable) => (
+                <div key={variable.name} class="p-2 grid grid-cols-3 gap-2 text-xs">
+                  <div class="font-mono">{variable.name}</div>
+                  <div class="font-mono break-all">{variable.computed || 'undefined'}</div>
+                  <div class="flex items-center gap-1">
                     <div
-                      className="w-4 h-4 border rounded"
+                      class="w-4 h-4 border rounded"
                       style={{ backgroundColor: variable.computed }}
                       title={variable.computed}
                     />
@@ -218,55 +218,55 @@ export function ThemeDebugger() {
 
         {/* Theme Test Colors Preview */}
         <div>
-          <div className="text-sm font-medium mb-2">Theme Test Colors:</div>
-          <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-background border mx-auto mb-1"></div>
-              <div className="text-[10px]">bg</div>
+          <div class="text-sm font-medium mb-2">Theme Test Colors:</div>
+          <div class="grid grid-cols-5 md:grid-cols-10 gap-2">
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-background border mx-auto mb-1"></div>
+              <div class="text-[10px]">bg</div>
             </div>
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-foreground border mx-auto mb-1"></div>
-              <div className="text-[10px]">fg</div>
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-foreground border mx-auto mb-1"></div>
+              <div class="text-[10px]">fg</div>
             </div>
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-primary border mx-auto mb-1"></div>
-              <div className="text-[10px]">primary</div>
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-primary border mx-auto mb-1"></div>
+              <div class="text-[10px]">primary</div>
             </div>
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-secondary border mx-auto mb-1"></div>
-              <div className="text-[10px]">sec</div>
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-secondary border mx-auto mb-1"></div>
+              <div class="text-[10px]">sec</div>
             </div>
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-muted border mx-auto mb-1"></div>
-              <div className="text-[10px]">muted</div>
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-muted border mx-auto mb-1"></div>
+              <div class="text-[10px]">muted</div>
             </div>
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-accent border mx-auto mb-1"></div>
-              <div className="text-[10px]">accent</div>
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-accent border mx-auto mb-1"></div>
+              <div class="text-[10px]">accent</div>
             </div>
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-destructive border mx-auto mb-1"></div>
-              <div className="text-[10px]">dest</div>
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-destructive border mx-auto mb-1"></div>
+              <div class="text-[10px]">dest</div>
             </div>
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-card border mx-auto mb-1"></div>
-              <div className="text-[10px]">card</div>
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-card border mx-auto mb-1"></div>
+              <div class="text-[10px]">card</div>
             </div>
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-border border mx-auto mb-1"></div>
-              <div className="text-[10px]">border</div>
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-border border mx-auto mb-1"></div>
+              <div class="text-[10px]">border</div>
             </div>
-            <div className="text-center">
-              <div className="w-8 h-8 rounded bg-ring border mx-auto mb-1"></div>
-              <div className="text-[10px]">ring</div>
+            <div class="text-center">
+              <div class="w-8 h-8 rounded bg-ring border mx-auto mb-1"></div>
+              <div class="text-[10px]">ring</div>
             </div>
           </div>
         </div>
 
         {/* LocalStorage Debug */}
         <div>
-          <div className="text-sm font-medium mb-2">LocalStorage:</div>
-          <div className="bg-muted/50 p-2 rounded text-xs font-mono space-y-1">
+          <div class="text-sm font-medium mb-2">LocalStorage:</div>
+          <div class="bg-muted/50 p-2 rounded text-xs font-mono space-y-1">
             <div>
               theme-preference:{' '}
               {typeof window !== 'undefined' ? localStorage.getItem('theme-preference') : 'N/A'}

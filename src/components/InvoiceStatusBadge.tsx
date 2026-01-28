@@ -4,8 +4,7 @@
  * Muestra el estado de facturación AEAT de un pedido
  */
 
-import { AlertCircle, Check, Clock, FileX, Receipt } from 'lucide-react';
-import type React from 'react';
+import { AlertCircle, Check, Clock, FileX, Receipt } from 'lucide-solid';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -140,15 +139,15 @@ export const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({
   const badge = (
     <Badge
       variant={config.variant}
-      className={cn(
+      class={cn(
         'flex items-center gap-1 font-medium border',
         config.className,
         compact ? 'px-1.5 py-0.5' : 'px-2 py-1',
         className
       )}
     >
-      <Icon className={cn(compact ? 'h-3 w-3' : 'h-3.5 w-3.5')} />
-      {!compact && <span className="text-xs">{config.label}</span>}
+      <Icon class={cn(compact ? 'h-3 w-3' : 'h-3.5 w-3.5')} />
+      {!compact && <span class="text-xs">{config.label}</span>}
     </Badge>
   );
 
@@ -161,22 +160,22 @@ export const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({
       <Tooltip>
         <TooltipTrigger asChild>{badge}</TooltipTrigger>
         <TooltipContent>
-          <div className="max-w-xs">
-            <p className="font-medium">{config.label}</p>
-            <p className="text-xs text-muted-foreground">{getTooltipContent(aeat)}</p>
+          <div class="max-w-xs">
+            <p class="font-medium">{config.label}</p>
+            <p class="text-xs text-muted-foreground">{getTooltipContent(aeat)}</p>
             {aeat?.numSerieFactura && status !== 'not_invoiced' && (
-              <p className="text-xs mt-1">
-                <span className="text-muted-foreground">Nº Factura:</span> {aeat.numSerieFactura}
+              <p class="text-xs mt-1">
+                <span class="text-muted-foreground">Nº Factura:</span> {aeat.numSerieFactura}
               </p>
             )}
             {aeat?.csv && (
-              <p className="text-xs">
-                <span className="text-muted-foreground">CSV:</span> {aeat.csv}
+              <p class="text-xs">
+                <span class="text-muted-foreground">CSV:</span> {aeat.csv}
               </p>
             )}
             {aeat?.invoiceSentAt && (
-              <p className="text-xs">
-                <span className="text-muted-foreground">Fecha:</span>{' '}
+              <p class="text-xs">
+                <span class="text-muted-foreground">Fecha:</span>{' '}
                 {new Date(aeat.invoiceSentAt).toLocaleString('es-ES')}
               </p>
             )}

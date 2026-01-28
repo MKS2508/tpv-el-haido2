@@ -1,3 +1,4 @@
+import { createSignal, For, Match, onMount, Show, Switch, type Component } from 'solid-js';
 import {
   Cloud,
   Database,
@@ -9,9 +10,7 @@ import {
   ShieldCheck,
   Trash2,
   Wand2,
-} from 'lucide-react';
-import type React from 'react';
-import { useEffect, useState } from 'react';
+} from 'lucide-solid';
 import AEATSettings from '@/components/AEATSettings';
 import { ThemeDebugger } from '@/components/ThemeDebugger';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
@@ -37,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.tsx';
-import { Switch } from '@/components/ui/switch.tsx';
+import { Switch as SwitchUI } from '@/components/ui/switch.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { toast } from '@/components/ui/use-toast.ts';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
@@ -61,37 +60,23 @@ type SettingsPanelProps = {
   handleThermalPrinterOptionsChange: (options: ThermalPrinterServiceOptions) => void;
 };
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({
-  selectedUser,
-  setSelectedUser,
-  users,
-  setUsers,
-  isSidebarOpen,
-  isDarkMode,
-  toggleDarkMode,
-  thermalPrinterOptions,
-  handleThermalPrinterOptionsChange,
-}) => {
+const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   const {
-    storageMode,
+    state,
     setStorageMode,
-    useStockImages,
     setUseStockImages,
-    touchOptimizationsEnabled,
     setTouchOptimizationsEnabled,
-    autoOpenCashDrawer,
     setAutoOpenCashDrawer,
-    taxRate,
     setTaxRate,
   } = useStore();
   const { restartOnboarding } = useOnboardingContext();
 
-  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [newUser, setNewUser] = useState<Partial<User>>({ name: '', profilePicture: '', pin: '' });
-  const [activeTab, setActiveTab] = useState('general');
-  const [isStorageModeDialogOpen, setIsStorageModeDialogOpen] = useState(false);
-  const [pendingStorageMode, setPendingStorageMode] = useState<StorageMode | null>(null);
+  const [isUserDialogOpen, setIsUserDialogOpen] = createSignal(false);
+  const [editingUser, setEditingUser] = createSignal<User | null>(null);
+  const [newUser, setNewUser] = createSignal<Partial<User>>({ name: '', profilePicture: '', pin: '' });
+  const [activeTab, setActiveTab] = createSignal('general');
+  const [isStorageModeDialogOpen, setIsStorageModeDialogOpen] = createSignal(false);
+  const [pendingStorageMode, setPendingStorageMode] = createSignal<StorageMode | null>(null);
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
@@ -106,27 +91,27 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   const handleSaveUser = () => {
-    if (editingUser) {
-      setUsers(users.map((u) => (u.id === editingUser.id ? { ...u, ...newUser } : u)));
-      if (selectedUser.id === editingUser.id) {
-        setSelectedUser({ ...selectedUser, ...newUser } as User);
+    const editing = editingUser();
+    if (editing) {
+      props.setUsers(props.users.map((u) => (u.id === editing.id ? { ...u, ...newUser() } : u)));
+      if (props.selectedUser.id === editing.id) {
+        props.setSelectedUser({ ...props.selectedUser, ...newUser() } as User);
       }
     } else {
-      const newId = Math.max(...users.map((u) => u.id)) + 1;
-      setUsers([...users, { ...(newUser as User), id: newId }]);
+      const newId = Math.max(...props.users.map((u) => u.id)) + 1;
+      props.setUsers([...props.users, { ...(newUser() as User), id: newId }]);
     }
     setIsUserDialogOpen(false);
   };
 
   const handleDeleteUser = (userId: number) => {
-    setUsers(users.filter((u) => u.id !== userId));
-    if (selectedUser.id === userId) {
-      setSelectedUser(users.find((u) => u.id !== userId) || users[0]);
+    props.setUsers(props.users.filter((u) => u.id !== userId));
+    if (props.selectedUser.id === userId) {
+      props.setSelectedUser(props.users.find((u) => u.id !== userId) || props.users[0]);
     }
   };
 
   async function handlePrintTestTicket() {
-    // Ejemplo de uso
     let result = '';
     try {
       result = await runThermalPrinterCommand('isConnected,execute,raw(Hello World)');
@@ -134,13 +119,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       if (result.indexOf('Error') !== -1 || result.indexOf('error') !== -1) {
         toast({
           title: 'Error al imprimir ticket',
-          description: 'No se pudo imprimir el ticket. Por favor, inténtelo de nuevo.',
+          description: 'No se pudo imprimir el ticket. Por favor, intentelo de nuevo.',
           duration: 3000,
         });
       } else {
         toast({
           title: 'Ticket impreso',
-          description: 'Ticket impreso con éxito.',
+          description: 'Ticket impreso con exito.',
           duration: 3000,
         });
       }
@@ -157,15 +142,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     console.log('Printer command result:', result);
     if (result.indexOf('true') !== -1) {
       toast({
-        title: 'Conexión exitosa',
-        description: 'La conexión se ha establecido con éxito.',
+        title: 'Conexion exitosa',
+        description: 'La conexion se ha establecido con exito.',
         duration: 3000,
       });
     } else {
       toast({
-        title: 'Error de conexión',
+        title: 'Error de conexion',
         description:
-          'No se ha podido establecer la conexión. Por favor, revise los ajustes de la impresora.',
+          'No se ha podido establecer la conexion. Por favor, revise los ajustes de la impresora.',
         duration: 3000,
       });
     }
@@ -173,7 +158,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   const handleStorageModeToggle = (newMode: StorageMode) => {
-    if (newMode !== storageMode) {
+    if (newMode !== state.storageMode) {
       setPendingStorageMode(newMode);
       setIsStorageModeDialogOpen(true);
     }
@@ -193,14 +178,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   const confirmStorageModeChange = () => {
-    if (pendingStorageMode) {
-      setStorageMode(pendingStorageMode);
-      // Persist the setting
-      localStorage.setItem('tpv-storage-mode', pendingStorageMode);
+    const pending = pendingStorageMode();
+    if (pending) {
+      setStorageMode(pending);
+      localStorage.setItem('tpv-storage-mode', pending);
 
       toast({
         title: 'Modo de almacenamiento cambiado',
-        description: `Ahora usando ${getStorageModeDescription(pendingStorageMode)}`,
+        description: `Ahora usando ${getStorageModeDescription(pending)}`,
         duration: 3000,
       });
     }
@@ -214,7 +199,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   // Load storage mode and touch optimizations from localStorage on component mount
-  useEffect(() => {
+  onMount(() => {
     const savedMode = localStorage.getItem('tpv-storage-mode') as StorageMode | null;
     if (
       savedMode &&
@@ -227,102 +212,117 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     if (savedTouchOptimizations !== null) {
       setTouchOptimizationsEnabled(savedTouchOptimizations === 'true');
     }
-  }, [setStorageMode, setTouchOptimizationsEnabled]);
+  });
 
   return (
-    <div className={`space-y-0 p-0 ${isSidebarOpen ? 'ml-1' : ''} bg-background text-foreground`}>
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-0 flex-wrap">
+    <div class={`space-y-0 p-0 ${props.isSidebarOpen ? 'ml-1' : ''} bg-background text-foreground`}>
+      <Tabs value={activeTab()} onChange={setActiveTab}>
+        <TabsList class="mb-0 flex-wrap">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="appearance">Apariencia</TabsTrigger>
           <TabsTrigger value="users">Usuarios</TabsTrigger>
-          <TabsTrigger value="printing">Impresión</TabsTrigger>
+          <TabsTrigger value="printing">Impresion</TabsTrigger>
           <TabsTrigger value="pos">Punto de Venta</TabsTrigger>
-          <TabsTrigger value="verifactu" className="flex items-center gap-1">
-            <FileText className="h-3 w-3" />
+          <TabsTrigger value="verifactu" class="flex items-center gap-1">
+            <FileText class="h-3 w-3" />
             VERI*FACTU
           </TabsTrigger>
           <TabsTrigger value="security">Seguridad</TabsTrigger>
           <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
         </TabsList>
+
         <TabsContent value="general">
           <Card>
             <CardHeader>
-              <CardTitle>Configuración General</CardTitle>
+              <CardTitle>Configuracion General</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="darkMode">Modo Oscuro</Label>
-                <Switch id="darkMode" checked={isDarkMode} onCheckedChange={toggleDarkMode} />
+            <CardContent class="space-y-4">
+              <div class="flex items-center justify-between">
+                <Label for="darkMode">Modo Oscuro</Label>
+                <SwitchUI id="darkMode" checked={props.isDarkMode} onChange={props.toggleDarkMode} />
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="touchOptimizations">Optimizaciones Táctiles</Label>
-                <Switch
+              <div class="flex items-center justify-between">
+                <Label for="touchOptimizations">Optimizaciones Tactiles</Label>
+                <SwitchUI
                   id="touchOptimizations"
-                  checked={touchOptimizationsEnabled}
-                  onCheckedChange={setTouchOptimizationsEnabled}
+                  checked={state.touchOptimizationsEnabled}
+                  onChange={setTouchOptimizationsEnabled}
                 />
               </div>
 
-              <div className="space-y-3 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col space-y-1">
-                    <Label htmlFor="storageMode" className="font-medium">
+              <div class="space-y-3 border-t pt-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col space-y-1">
+                    <Label for="storageMode" class="font-medium">
                       Modo de Almacenamiento
                     </Label>
-                    <p className="text-xs text-muted-foreground">
-                      {storageMode === 'sqlite' && 'SQLite integrado (recomendado)'}
-                      {storageMode === 'http' && 'Base de datos externa HTTP'}
-                      {storageMode === 'indexeddb' && 'IndexedDB local (navegador)'}
+                    <p class="text-xs text-muted-foreground">
+                      <Switch>
+                        <Match when={state.storageMode === 'sqlite'}>
+                          SQLite integrado (recomendado)
+                        </Match>
+                        <Match when={state.storageMode === 'http'}>
+                          Base de datos externa HTTP
+                        </Match>
+                        <Match when={state.storageMode === 'indexeddb'}>
+                          IndexedDB local (navegador)
+                        </Match>
+                      </Switch>
                     </p>
                   </div>
-                  <Select
-                    value={storageMode}
-                    onValueChange={(value) => handleStorageModeToggle(value as StorageMode)}
+                  <Select<string>
+                    value={state.storageMode}
+                    onChange={(value) => value && handleStorageModeToggle(value as StorageMode)}
+                    options={['sqlite', 'http', 'indexeddb']}
+                    itemComponent={(itemProps) => (
+                      <SelectItem value={itemProps.item.rawValue}>
+                        <Switch>
+                          <Match when={itemProps.item.rawValue === 'sqlite'}>
+                            <span class="flex items-center gap-2">
+                              <HardDrive class="h-4 w-4" />
+                              SQLite (Nativo)
+                            </span>
+                          </Match>
+                          <Match when={itemProps.item.rawValue === 'http'}>
+                            <span class="flex items-center gap-2">
+                              <Cloud class="h-4 w-4" />
+                              HTTP API
+                            </span>
+                          </Match>
+                          <Match when={itemProps.item.rawValue === 'indexeddb'}>
+                            <span class="flex items-center gap-2">
+                              <Database class="h-4 w-4" />
+                              IndexedDB
+                            </span>
+                          </Match>
+                        </Switch>
+                      </SelectItem>
+                    )}
                   >
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger class="w-[180px]">
                       <SelectValue placeholder="Selecciona modo" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sqlite">
-                        <span className="flex items-center gap-2">
-                          <HardDrive className="h-4 w-4" />
-                          SQLite (Nativo)
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="http">
-                        <span className="flex items-center gap-2">
-                          <Cloud className="h-4 w-4" />
-                          HTTP API
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="indexeddb">
-                        <span className="flex items-center gap-2">
-                          <Database className="h-4 w-4" />
-                          IndexedDB
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
+                    <SelectContent />
                   </Select>
                 </div>
-                <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded space-y-1">
+                <div class="text-xs text-muted-foreground bg-secondary/50 p-2 rounded space-y-1">
                   <div>
                     <strong>
-                      <HardDrive className="h-3 w-3 inline mr-1" />
+                      <HardDrive class="h-3 w-3 inline mr-1" />
                       SQLite:
                     </strong>{' '}
-                    Base de datos nativa, mejor rendimiento, funciona sin conexión
+                    Base de datos nativa, mejor rendimiento, funciona sin conexion
                   </div>
                   <div>
                     <strong>
-                      <Cloud className="h-3 w-3 inline mr-1" />
+                      <Cloud class="h-3 w-3 inline mr-1" />
                       HTTP API:
                     </strong>{' '}
                     Datos centralizados, requiere servidor externo
                   </div>
                   <div>
                     <strong>
-                      <Database className="h-3 w-3 inline mr-1" />
+                      <Database class="h-3 w-3 inline mr-1" />
                       IndexedDB:
                     </strong>{' '}
                     Almacenamiento del navegador, fallback para desarrollo
@@ -330,37 +330,51 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="language">Idioma</Label>
-                <Select defaultValue="es">
-                  <SelectTrigger className="w-[180px]">
+              <div class="flex items-center justify-between">
+                <Label for="language">Idioma</Label>
+                <Select<string>
+                  defaultValue="es"
+                  options={['es', 'en']}
+                  itemComponent={(itemProps) => (
+                    <SelectItem value={itemProps.item.rawValue}>
+                      <Show when={itemProps.item.rawValue === 'es'} fallback="English">
+                        Espanol
+                      </Show>
+                    </SelectItem>
+                  )}
+                >
+                  <SelectTrigger class="w-[180px]">
                     <SelectValue placeholder="Selecciona un idioma" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                  </SelectContent>
+                  <SelectContent />
                 </Select>
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="currency">Moneda</Label>
-                <Select defaultValue="eur">
-                  <SelectTrigger className="w-[180px]">
+              <div class="flex items-center justify-between">
+                <Label for="currency">Moneda</Label>
+                <Select<string>
+                  defaultValue="eur"
+                  options={['eur', 'usd']}
+                  itemComponent={(itemProps) => (
+                    <SelectItem value={itemProps.item.rawValue}>
+                      <Show when={itemProps.item.rawValue === 'eur'} fallback="Dolar ($)">
+                        Euro (EUR)
+                      </Show>
+                    </SelectItem>
+                  )}
+                >
+                  <SelectTrigger class="w-[180px]">
                     <SelectValue placeholder="Selecciona una moneda" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="eur">Euro (€)</SelectItem>
-                    <SelectItem value="usd">Dólar ($)</SelectItem>
-                  </SelectContent>
+                  <SelectContent />
                 </Select>
               </div>
 
-              <div className="pt-4 border-t">
-                <Button variant="outline" className="w-full justify-start h-12" onClick={restartOnboarding}>
-                  <Wand2 className="mr-2 h-4 w-4 text-primary" />
+              <div class="pt-4 border-t">
+                <Button variant="outline" class="w-full justify-start h-12" onClick={restartOnboarding}>
+                  <Wand2 class="mr-2 h-4 w-4 text-primary" />
                   Ejecutar Asistente de Configuracion
                 </Button>
-                <p className="text-[10px] text-muted-foreground mt-2 px-1">
+                <p class="text-[10px] text-muted-foreground mt-2 px-1">
                   Reinicia el asistente para volver a configurar el almacenamiento, importar datos o crear usuarios iniciales.
                 </p>
               </div>
@@ -371,45 +385,45 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <TabsContent value="appearance">
           <Card>
             <CardHeader>
-              <CardTitle>Configuración de Apariencia</CardTitle>
+              <CardTitle>Configuracion de Apariencia</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-base font-medium">Control de Tema</Label>
-                <p className="text-sm text-muted-foreground">
+            <CardContent class="space-y-6">
+              <div class="space-y-3">
+                <Label class="text-base font-medium">Control de Tema</Label>
+                <p class="text-sm text-muted-foreground">
                   Personaliza la apariencia con diferentes temas de color y modo claro/oscuro.
                 </p>
-                <div className="border rounded-lg p-4 bg-muted/10">
+                <div class="border rounded-lg p-4 bg-muted/10">
                   <ThemeSwitcher />
                 </div>
               </div>
 
-              <div className="space-y-3 border-t pt-6">
-                <Label className="text-base font-medium">Imágenes de Productos</Label>
-                <p className="text-sm text-muted-foreground">
-                  Configura cómo se muestran las imágenes de productos sin imagen personalizada.
+              <div class="space-y-3 border-t pt-6">
+                <Label class="text-base font-medium">Imagenes de Productos</Label>
+                <p class="text-sm text-muted-foreground">
+                  Configura como se muestran las imagenes de productos sin imagen personalizada.
                 </p>
-                <div className="flex items-center justify-between p-4 bg-muted/10 rounded-lg">
-                  <div className="space-y-1">
-                    <Label htmlFor="stock-images" className="text-sm font-medium">
-                      Usar imágenes stock
+                <div class="flex items-center justify-between p-4 bg-muted/10 rounded-lg">
+                  <div class="space-y-1">
+                    <Label for="stock-images" class="text-sm font-medium">
+                      Usar imagenes stock
                     </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Mostrar imágenes predefinidas para productos sin imagen personalizada
+                    <p class="text-xs text-muted-foreground">
+                      Mostrar imagenes predefinidas para productos sin imagen personalizada
                     </p>
                   </div>
-                  <Switch
+                  <SwitchUI
                     id="stock-images"
-                    checked={useStockImages}
-                    onCheckedChange={setUseStockImages}
+                    checked={state.useStockImages}
+                    onChange={setUseStockImages}
                   />
                 </div>
               </div>
 
-              <div className="space-y-3 border-t pt-6">
-                <Label className="text-base font-medium">Diagnóstico de Temas</Label>
-                <p className="text-sm text-muted-foreground">
-                  Herramienta de depuración para visualizar variables CSS y estado del tema.
+              <div class="space-y-3 border-t pt-6">
+                <Label class="text-base font-medium">Diagnostico de Temas</Label>
+                <p class="text-sm text-muted-foreground">
+                  Herramienta de depuracion para visualizar variables CSS y estado del tema.
                 </p>
                 <ThemeDebugger />
               </div>
@@ -418,21 +432,21 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </TabsContent>
 
         <TabsContent value="users">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Usuario Actual</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center space-x-4 mb-4">
+                <div class="flex items-center space-x-4 mb-4">
                   <Avatar>
-                    <AvatarImage src={selectedUser.profilePicture} alt={selectedUser.name} />
-                    <AvatarFallback>{selectedUser.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={props.selectedUser.profilePicture} alt={props.selectedUser.name} />
+                    <AvatarFallback>{props.selectedUser.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <span className="text-lg font-semibold">{selectedUser.name}</span>
+                  <span class="text-lg font-semibold">{props.selectedUser.name}</span>
                 </div>
-                <Button onClick={() => handleEditUser(selectedUser)}>
-                  <Pencil className="mr-2 h-4 w-4" /> Editar Usuario
+                <Button onClick={() => handleEditUser(props.selectedUser)}>
+                  <Pencil class="mr-2 h-4 w-4" /> Editar Usuario
                 </Button>
               </CardContent>
             </Card>
@@ -441,63 +455,64 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <CardTitle>Lista de Usuarios</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {users.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between p-2 bg-muted rounded"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <Avatar>
-                          <AvatarImage src={user.profilePicture} alt={user.name} />
-                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-semibold">{user.name}</span>
+                <div class="space-y-4">
+                  <For each={props.users}>
+                    {(user) => (
+                      <div class="flex items-center justify-between p-2 bg-muted rounded">
+                        <div class="flex items-center space-x-4">
+                          <Avatar>
+                            <AvatarImage src={user.profilePicture} alt={user.name} />
+                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <span class="text-sm font-semibold">{user.name}</span>
+                        </div>
+                        <div>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
+                            <Pencil class="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)}>
+                            <Trash2 class="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
-                          <Pencil className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)}>
-                          <Trash2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    )}
+                  </For>
                 </div>
-                <Button className="mt-4 w-full" onClick={handleCreateUser}>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Crear Nuevo Usuario
+                <Button class="mt-4 w-full" onClick={handleCreateUser}>
+                  <PlusCircle class="mr-2 h-4 w-4" /> Crear Nuevo Usuario
                 </Button>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
+
         <TabsContent value="printing">
           <Card>
             <CardHeader>
-              <CardTitle>Configuración de Impresión</CardTitle>
+              <CardTitle>Configuracion de Impresion</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent class="space-y-4">
               <ThermalPrinterSettings
-                options={thermalPrinterOptions}
-                onOptionsChange={handleThermalPrinterOptionsChange}
+                options={props.thermalPrinterOptions}
+                onOptionsChange={props.handleThermalPrinterOptionsChange}
                 onPrintTestTicket={handlePrintTestTicket}
                 onTestConnection={handleTestConnection}
               />
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="pos">
           <Card>
             <CardHeader>
-              <CardTitle>Configuración del Punto de Venta</CardTitle>
+              <CardTitle>Configuracion del Punto de Venta</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col space-y-1">
-                  <Label htmlFor="openCashDrawer">Abrir Caja Registradora</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Envía el comando de apertura al cajón de efectivo
+            <CardContent class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex flex-col space-y-1">
+                  <Label for="openCashDrawer">Abrir Caja Registradora</Label>
+                  <p class="text-xs text-muted-foreground">
+                    Envia el comando de apertura al cajon de efectivo
                   </p>
                 </div>
                 <Button
@@ -507,129 +522,137 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       await openCashDrawerOnly();
                       toast({
                         title: 'Caja abierta',
-                        description: 'El cajón de efectivo se ha abierto correctamente.',
+                        description: 'El cajon de efectivo se ha abierto correctamente.',
                         duration: 3000,
                       });
                     } catch (_error) {
                       toast({
                         title: 'Error al abrir caja',
                         description:
-                          'No se pudo abrir el cajón. Verifica la conexión de la impresora.',
+                          'No se pudo abrir el cajon. Verifica la conexion de la impresora.',
                         duration: 3000,
                       });
                     }
                   }}
                 >
-                  <DollarSign className="mr-2 h-4 w-4" /> Abrir Caja
+                  <DollarSign class="mr-2 h-4 w-4" /> Abrir Caja
                 </Button>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col space-y-1">
-                  <Label htmlFor="autoOpenDrawer">Abrir Caja Automáticamente</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Abre el cajón al completar cada venta en efectivo
+              <div class="flex items-center justify-between">
+                <div class="flex flex-col space-y-1">
+                  <Label for="autoOpenDrawer">Abrir Caja Automaticamente</Label>
+                  <p class="text-xs text-muted-foreground">
+                    Abre el cajon al completar cada venta en efectivo
                   </p>
                 </div>
-                <Switch
+                <SwitchUI
                   id="autoOpenDrawer"
-                  checked={autoOpenCashDrawer}
-                  onCheckedChange={setAutoOpenCashDrawer}
+                  checked={state.autoOpenCashDrawer}
+                  onChange={setAutoOpenCashDrawer}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col space-y-1">
-                  <Label htmlFor="taxRate">Tasa de Impuestos (%)</Label>
-                  <p className="text-xs text-muted-foreground">
-                    IVA aplicado en los tickets (España: 21%)
+              <div class="flex items-center justify-between">
+                <div class="flex flex-col space-y-1">
+                  <Label for="taxRate">Tasa de Impuestos (%)</Label>
+                  <p class="text-xs text-muted-foreground">
+                    IVA aplicado en los tickets (Espana: 21%)
                   </p>
                 </div>
                 <Input
                   id="taxRate"
                   type="number"
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                  value={state.taxRate}
+                  onInput={(e) => setTaxRate(parseFloat(e.currentTarget.value) || 0)}
                   placeholder="21"
-                  className="w-[100px]"
+                  class="w-[100px]"
                 />
               </div>
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="verifactu">
           <AEATSettings />
         </TabsContent>
+
         <TabsContent value="security">
           <Card>
             <CardHeader>
-              <CardTitle>Configuración de Seguridad</CardTitle>
+              <CardTitle>Configuracion de Seguridad</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="twoFactor">Autenticación de dos factores</Label>
-                <Switch id="twoFactor" />
+            <CardContent class="space-y-4">
+              <div class="flex items-center justify-between">
+                <Label for="twoFactor">Autenticacion de dos factores</Label>
+                <SwitchUI id="twoFactor" />
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="autoLogout">Cierre de Sesión Automático (minutos)</Label>
-                <Input id="autoLogout" type="number" placeholder="30" className="w-[100px]" />
+              <div class="flex items-center justify-between">
+                <Label for="autoLogout">Cierre de Sesion Automatico (minutos)</Label>
+                <Input id="autoLogout" type="number" placeholder="30" class="w-[100px]" />
               </div>
               <Button>
-                <ShieldCheck className="mr-2 h-4 w-4" /> Cambiar Contraseña
+                <ShieldCheck class="mr-2 h-4 w-4" /> Cambiar Contrasena
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="notifications">
           <Card>
             <CardHeader>
-              <CardTitle>Configuración de Notificaciones</CardTitle>
+              <CardTitle>Configuracion de Notificaciones</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="emailNotifications">Notificaciones por correo</Label>
-                <Switch id="emailNotifications" />
+            <CardContent class="space-y-4">
+              <div class="flex items-center justify-between">
+                <Label for="emailNotifications">Notificaciones por correo</Label>
+                <SwitchUI id="emailNotifications" />
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="pushNotifications">Notificaciones push</Label>
-                <Switch id="pushNotifications" />
+              <div class="flex items-center justify-between">
+                <Label for="pushNotifications">Notificaciones push</Label>
+                <SwitchUI id="pushNotifications" />
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="lowStockAlert">Alerta de Stock Bajo</Label>
-                <Switch id="lowStockAlert" />
+              <div class="flex items-center justify-between">
+                <Label for="lowStockAlert">Alerta de Stock Bajo</Label>
+                <SwitchUI id="lowStockAlert" />
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+      {/* User Edit/Create Dialog */}
+      <Dialog open={isUserDialogOpen()} onOpenChange={setIsUserDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</DialogTitle>
+            <DialogTitle>
+              <Show when={editingUser()} fallback="Crear Nuevo Usuario">
+                Editar Usuario
+              </Show>
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div class="space-y-4">
             <div>
-              <Label htmlFor="name">Nombre</Label>
+              <Label for="name">Nombre</Label>
               <Input
                 id="name"
-                value={newUser.name}
-                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                value={newUser().name}
+                onInput={(e) => setNewUser({ ...newUser(), name: e.currentTarget.value })}
               />
             </div>
             <div>
-              <Label htmlFor="profilePicture">URL de la Imagen de Perfil</Label>
+              <Label for="profilePicture">URL de la Imagen de Perfil</Label>
               <Input
                 id="profilePicture"
-                value={newUser.profilePicture}
-                onChange={(e) => setNewUser({ ...newUser, profilePicture: e.target.value })}
+                value={newUser().profilePicture}
+                onInput={(e) => setNewUser({ ...newUser(), profilePicture: e.currentTarget.value })}
               />
             </div>
             <div>
-              <Label htmlFor="pin">PIN</Label>
+              <Label for="pin">PIN</Label>
               <Input
                 id="pin"
                 type="password"
-                value={newUser.pin}
-                onChange={(e) => setNewUser({ ...newUser, pin: e.target.value })}
+                value={newUser().pin}
+                onInput={(e) => setNewUser({ ...newUser(), pin: e.currentTarget.value })}
               />
             </div>
           </div>
@@ -643,45 +666,41 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       </Dialog>
 
       {/* Storage Mode Confirmation Dialog */}
-      <Dialog open={isStorageModeDialogOpen} onOpenChange={setIsStorageModeDialogOpen}>
-        <DialogContent className="bg-background dark:bg-background rounded-lg shadow-xl">
+      <Dialog open={isStorageModeDialogOpen()} onOpenChange={setIsStorageModeDialogOpen}>
+        <DialogContent class="bg-background dark:bg-background rounded-lg shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-foreground dark:text-foreground">
-              ¿Cambiar modo de almacenamiento?
+            <DialogTitle class="text-xl font-semibold text-foreground dark:text-foreground">
+              Cambiar modo de almacenamiento?
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground dark:text-muted-foreground">
-              {pendingStorageMode === 'sqlite' && (
-                <>
-                  Cambiar a <strong>SQLite nativo</strong> usará una base de datos integrada en la
-                  aplicación. Es la opción más rápida y funciona completamente sin conexión.
-                  Recomendado para uso en producción.
-                </>
-              )}
-              {pendingStorageMode === 'indexeddb' && (
-                <>
-                  Cambiar a <strong>IndexedDB</strong> almacenará los datos en el navegador. Útil
+            <DialogDescription class="text-muted-foreground dark:text-muted-foreground">
+              <Switch>
+                <Match when={pendingStorageMode() === 'sqlite'}>
+                  Cambiar a <strong>SQLite nativo</strong> usara una base de datos integrada en la
+                  aplicacion. Es la opcion mas rapida y funciona completamente sin conexion.
+                  Recomendado para uso en produccion.
+                </Match>
+                <Match when={pendingStorageMode() === 'indexeddb'}>
+                  Cambiar a <strong>IndexedDB</strong> almacenara los datos en el navegador. Util
                   para desarrollo web pero los datos se pierden si se limpia el cache del navegador.
-                </>
-              )}
-              {pendingStorageMode === 'http' && (
-                <>
-                  Cambiar a <strong>modo HTTP API</strong> usará la base de datos externa. Requiere
-                  conexión al servidor pero permite sincronización entre dispositivos.
-                </>
-              )}
+                </Match>
+                <Match when={pendingStorageMode() === 'http'}>
+                  Cambiar a <strong>modo HTTP API</strong> usara la base de datos externa. Requiere
+                  conexion al servidor pero permite sincronizacion entre dispositivos.
+                </Match>
+              </Switch>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={cancelStorageModeChange}
-              className="text-foreground dark:text-foreground hover:bg-secondary dark:hover:bg-secondary"
+              class="text-foreground dark:text-foreground hover:bg-secondary dark:hover:bg-secondary"
             >
               Cancelar
             </Button>
             <Button
               onClick={confirmStorageModeChange}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              class="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               Confirmar Cambio
             </Button>

@@ -1,4 +1,3 @@
-import type React from 'react';
 import styles from './MoonSunSwitch.module.css';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -37,23 +36,23 @@ const MoonSunSwitch: React.FC<DarkModeToggleProps> = ({
 
   return (
     <div
-      className={`flex items-center justify-center bg-transparent text-foreground ${containerSize}`}
+      class={`flex items-center justify-center bg-transparent text-foreground ${containerSize}`}
     >
-      <label className={`${styles.container} relative inline-block ${switchSize}`}>
+      <label class={`${styles.container} relative inline-block ${switchSize}`}>
         <input
           type="checkbox"
-          className="opacity-0 w-0 h-0"
+          class="opacity-0 w-0 h-0"
           checked={isDarkMode}
-          onChange={toggleDarkMode}
+          onInput={toggleDarkMode}
         />
         <span
-          className={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-600 ease-out overflow-hidden z-[1] rounded-full`}
+          class={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-600 ease-out overflow-hidden z-[1] rounded-full`}
         >
           <div
-            className={`${styles.background} absolute w-1.5 h-1.5 bg-white rounded-full bottom-0 right-0 transition-all duration-600 ease-out`}
+            class={`${styles.background} absolute w-1.5 h-1.5 bg-white rounded-full bottom-0 right-0 transition-all duration-600 ease-out`}
           ></div>
-          <div className={`${styles.star} scale-0 transition-all duration-600 ease-out`}></div>
-          <div className={`${styles.star} scale-0 transition-all duration-600 ease-out`}></div>
+          <div class={`${styles.star} scale-0 transition-all duration-600 ease-out`}></div>
+          <div class={`${styles.star} scale-0 transition-all duration-600 ease-out`}></div>
         </span>
       </label>
     </div>

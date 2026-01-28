@@ -1,6 +1,5 @@
-import { Check, Plus, Star } from 'lucide-react';
-import type React from 'react';
-import { useEffect, useState } from 'react';
+import { createEffect, createSignal, onCleanup, onMount } from 'solid-js';
+import { Check, Plus, Star } from 'lucide-solid';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
 import stockImagesService from '@/services/stock-images.service';
@@ -26,8 +25,8 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
   className,
   ...props
 }) => {
-  const [isAdding, setIsAdding] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [isAdding, setIsAdding] = createSignal(false);
+  const [showSuccess, setShowSuccess] = createSignal(false);
   const { useStockImages } = useStore();
 
   // Obtener imagen: personalizada > stock > fallback
@@ -73,7 +72,7 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
     }
 
     // Mode 'order' - add to order logic optimizado
-    if (isAdding) return;
+    if (isAdding()) return;
 
     setIsAdding(true);
     onAction?.(product);
@@ -136,8 +135,8 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
       return cn(
         baseStyles,
         'border-2 touch-enhanced bg-gradient-to-b from-background to-card',
-        isAdding && 'adding',
-        showSuccess && 'success',
+        isAdding() && 'adding',
+        showSuccess() && 'success',
         className
       );
     }
@@ -147,15 +146,15 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
   };
 
   // Cleanup effect para timers
-  useEffect(() => {
-    return () => {
+  onMount(() => {
+    onCleanup(() => {
       // Cleanup any pending timers
-    };
-  }, []);
+    });
+  });
 
   return (
     <div
-      className={getCardStyles()}
+      class={getCardStyles()}
       onClick={handleClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -169,7 +168,7 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
     >
       {/* Image Section */}
       <div
-        className={cn(
+        class={cn(
           'relative overflow-hidden',
           mode === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
           !isRealImage ? `bg-gradient-to-br ${getCategoryColors(product.category)}` : 'bg-muted/10'
@@ -178,16 +177,16 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
       >
         {/* Overlay para mejor legibilidad en imágenes reales */}
         {isRealImage && (
-          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+          <div class="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
         )}
 
         {/* Emoji/Icon si es imagen SVG fallback */}
         {!isRealImage && (
           <div
-            className={cn(
+            class={cn(
               'product-icon flex items-center justify-center h-full',
               mode === 'order' ? 'text-4xl sm:text-5xl' : 'text-3xl',
-              isAdding && 'adding'
+              isAdding() && 'adding'
             )}
           >
             {product.icon || '🍽️'}
@@ -196,72 +195,69 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
 
         {/* Category badge */}
         {showCategory && product.category && (
-          <div className="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
+          <div class="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
             {product.category}
           </div>
         )}
 
         {/* Action button - top right */}
-        <div className="absolute top-2 right-2">
+        <div class="absolute top-2 right-2">
           {mode === 'order' ? (
             <div
-              className={cn(
+              class={cn(
                 'action-btn rounded-full p-2 shadow-2xl',
-                showSuccess
+                showSuccess()
                   ? 'bg-success text-success-foreground success'
-                  : isAdding
+                  : isAdding()
                     ? 'bg-primary text-primary-foreground adding'
                     : 'bg-accent text-accent-foreground'
               )}
             >
-              {showSuccess ? (
-                <Check className="w-4 h-4" strokeWidth={3} />
+              {showSuccess() ? (
+                <Check class="w-4 h-4" strokeWidth={3} />
               ) : (
-                <Plus className="w-4 h-4" strokeWidth={2.5} />
+                <Plus class="w-4 h-4" strokeWidth={2.5} />
               )}
             </div>
           ) : (
             // Mode 'manage' - show favorite star
-            onFavoriteToggle && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
-                onClick={handleFavoriteClick}
-              >
-                <Star
-                  className={cn(
-                    'h-4 w-4',
-                    isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
-                  )}
-                />
-              </Button>
-            )
+            (onFavoriteToggle && (<Button
+              variant="ghost"
+              size="sm"
+              class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+              onClick={handleFavoriteClick}
+            >
+              <Star
+                class={cn(
+                  'h-4 w-4',
+                  isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
+                )}
+              />
+            </Button>))
           )}
         </div>
       </div>
-
       {/* Product Info Section */}
       <div
-        className={cn(
+        class={cn(
           'flex-1 flex flex-col justify-between bg-gradient-to-b from-card/50 to-card border-t border-border/20',
           mode === 'order' ? 'p-3' : 'p-2'
         )}
       >
         {/* Product Name */}
-        <div className={cn(mode === 'order' ? 'mb-2' : 'mb-1')}>
+        <div class={cn(mode === 'order' ? 'mb-2' : 'mb-1')}>
           <h3
-            className={cn(
+            class={cn(
               'font-extrabold line-clamp-2 leading-tight',
               mode === 'order' ? 'text-sm mb-0.5' : 'text-xs',
-              isAdding ? 'text-primary' : 'text-foreground'
+              isAdding() ? 'text-primary' : 'text-foreground'
             )}
           >
             {product.name}
           </h3>
           {product.brand && (
             <p
-              className={cn(
+              class={cn(
                 'text-muted-foreground font-medium opacity-90',
                 mode === 'order' ? 'text-xs' : 'text-[10px]'
               )}
@@ -272,19 +268,19 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
         </div>
 
         {/* Price Section */}
-        <div className="flex items-end justify-between">
-          <div className={cn('product-price flex flex-col', isAdding && 'adding')}>
+        <div class="flex items-end justify-between">
+          <div class={cn('product-price flex flex-col', isAdding() && 'adding')}>
             <span
-              className={cn(
+              class={cn(
                 'font-black tracking-tight',
                 mode === 'order' ? 'text-2xl' : 'text-lg',
-                isAdding ? 'text-success drop-shadow-md' : 'text-primary'
+                isAdding() ? 'text-success drop-shadow-md' : 'text-primary'
               )}
             >
               {product.price.toFixed(2)}€
             </span>
             {mode === 'order' && (
-              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
+              <span class="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
                 unidad
               </span>
             )}
@@ -292,14 +288,14 @@ const OptimizedProductCard: React.FC<OptimizedProductCardProps> = ({
 
           {/* Stock indicator para mode order */}
           {mode === 'order' && product.stock !== undefined && product.stock < 10 && (
-            <div className="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
-              <span className="text-xs font-bold text-warning">Quedan {product.stock}</span>
+            <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
+              <span class="text-xs font-bold text-warning">Quedan {product.stock}</span>
             </div>
           )}
 
           {/* Category info para mode manage */}
           {mode === 'manage' && product.category && (
-            <div className="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
+            <div class="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
               {product.category}
             </div>
           )}

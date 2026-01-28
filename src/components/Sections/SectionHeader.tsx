@@ -1,8 +1,8 @@
-import type React from 'react';
+import { Component, splitProps, Show } from 'solid-js';
 
 interface MenuItem {
   id: string;
-  icon: React.ReactNode;
+  icon: Component<any>;
   label: string;
 }
 
@@ -11,17 +11,24 @@ interface SectionHeaderProps {
   activeSection: string;
 }
 
-const SectionHeader: React.FC<SectionHeaderProps> = ({ menuItems, activeSection }) => {
-  const activeItem = menuItems.find((item) => item.id === activeSection);
+function SectionHeader(props: SectionHeaderProps) {
+  const [local] = splitProps(props, ['menuItems', 'activeSection']);
 
-  if (!activeItem) return null; // Evita el renderizado si no hay un ítem activo
+  const activeItem = () => local.menuItems.find((item) => item.id === local.activeSection);
 
   return (
-    <h1 className="text-3xl font-bold mb-6 flex items-center">
-      {activeItem.icon}
-      <span className="ml-2">{activeItem.label}</span>
-    </h1>
+    <Show when={activeItem()}>
+      {(item) => {
+        const IconComponent = item().icon;
+        return (
+          <h1 class="text-3xl font-bold mb-6 flex items-center">
+            <IconComponent />
+            <span class="ml-2">{item().label}</span>
+          </h1>
+        );
+      }}
+    </Show>
   );
-};
+}
 
 export default SectionHeader;

@@ -1,3 +1,4 @@
+import { createSignal } from 'solid-js';
 /**
  * AEATSettings Component
  *
@@ -22,9 +23,7 @@ import {
   Wifi,
   WifiOff,
   X,
-} from 'lucide-react';
-import type React from 'react';
-import { useState } from 'react';
+} from 'lucide-solid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -82,7 +81,7 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
     },
   });
 
-  const [externalUrl, setExternalUrl] = useState(config.externalUrl || 'http://localhost:3001');
+  const [externalUrl, setExternalUrl] = createSignal(config.externalUrl || 'http://localhost:3001');
 
   // ==================== Handlers ====================
 
@@ -90,7 +89,7 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
     updateConfig({ mode });
 
     if (mode === 'external') {
-      updateConfig({ externalUrl });
+      updateConfig({ externalUrl() });
     }
 
     toast({
@@ -115,10 +114,10 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
   };
 
   const handleExternalUrlSave = () => {
-    updateConfig({ externalUrl });
+    updateConfig({ externalUrl() });
     toast({
       title: 'URL guardada',
-      description: `Servidor externo: ${externalUrl}`,
+      description: `Servidor externo: ${externalUrl()}`,
       duration: 3000,
     });
   };
@@ -306,7 +305,6 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
           )}
         </CardContent>
       </Card>
-
       {/* Configuración Modo Externo */}
       {config.mode === 'external' && (
         <Card>
@@ -322,7 +320,7 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
               <div className="flex gap-2">
                 <Input
                   id="externalUrl"
-                  value={externalUrl}
+                  value={externalUrl()}
                   onChange={(e) => handleExternalUrlChange(e.target.value)}
                   placeholder="http://localhost:3001"
                   className="flex-1"
@@ -355,7 +353,6 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
           </CardContent>
         </Card>
       )}
-
       {/* Configuración Modo Sidecar */}
       {config.mode === 'sidecar' && isSidecarAvailable && (
         <Card>
@@ -445,7 +442,6 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
           </CardContent>
         </Card>
       )}
-
       {/* Datos Fiscales del Negocio */}
       {isEnabled && (
         <Card>
@@ -564,7 +560,6 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
           </CardContent>
         </Card>
       )}
-
       {/* Opciones de Facturación */}
       {isEnabled && (
         <Card>
@@ -611,7 +606,6 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
           </CardContent>
         </Card>
       )}
-
       {/* Información de Certificados */}
       {isEnabled && (
         <Card>
@@ -669,7 +663,6 @@ const AEATSettings: React.FC<AEATSettingsProps> = ({ className }) => {
           </CardContent>
         </Card>
       )}
-
       {/* Información del Circuit Breaker */}
       {isEnabled && connectionStatus.circuitBreaker && (
         <Card>

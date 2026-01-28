@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createEffect, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 
 // Environment variable to force high performance mode
 const FORCE_HIGH_PERFORMANCE = import.meta.env.VITE_FORCE_HIGH_PERFORMANCE === 'true';
@@ -73,7 +73,7 @@ const HIGH_PERFORMANCE_CONFIG: PerformanceConfig = {
 };
 
 export const usePerformanceConfig = (): PerformanceConfig => {
-  const [memoryPressure, setMemoryPressure] = useState<'normal' | 'critical'>('normal');
+  const [memoryPressure, setMemoryPressure] = createSignal<'normal' | 'critical'>('normal');
 
   // If forced high performance, return early with optimal config
   if (FORCE_HIGH_PERFORMANCE) {
@@ -135,7 +135,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   }, []);
 
   // Memory pressure detection - only check actual heap usage, not long tasks
-  useEffect(() => {
+  onMount(() => {
     if (!('memory' in performance)) return;
 
     const checkMemory = () => {
@@ -153,13 +153,13 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     const memoryInterval = setInterval(checkMemory, 30000);
     checkMemory();
 
-    return () => clearInterval(memoryInterval);
-  }, []);
+    onCleanup(() => clearInterval(memoryInterval));
+  });
 
   // Network-based performance adjustments
-  const [networkSpeed, setNetworkSpeed] = useState<'slow' | 'fast'>('fast');
+  const [networkSpeed, setNetworkSpeed] = createSignal<'slow' | 'fast'>('fast');
 
-  useEffect(() => {
+  onMount(() => {
     const connection =
       (navigator as NavigatorWithExtensions).connection ||
       (navigator as NavigatorWithExtensions).mozConnection ||
@@ -178,12 +178,12 @@ export const usePerformanceConfig = (): PerformanceConfig => {
         connection.removeEventListener('change', updateNetworkInfo);
       };
     }
-  }, []);
+  });
 
   // Prefers-reduced-motion detection
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = createSignal(false);
 
-  useEffect(() => {
+  onMount(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const handleChange = (e: MediaQueryListEvent) => {
@@ -199,13 +199,13 @@ export const usePerformanceConfig = (): PerformanceConfig => {
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
-  }, []);
+  });
 
   // Generate performance configuration
   const performanceConfig = useMemo((): PerformanceConfig => {
     const { isRaspberryPi, isMobile, isLowPerformance, isVeryLowPerformance } = deviceInfo;
 
-    const isNetworkConstrained = networkSpeed === 'slow';
+    const isNetworkConstrained = networkSpeed() === 'slow';
     // Note: memoryPressure is monitored but not currently used for performance decisions
     // as it gives too many false positives on normal devices
 
@@ -216,10 +216,10 @@ export const usePerformanceConfig = (): PerformanceConfig => {
       isMobile,
 
       // Note: Memory pressure is ignored for animations as it gives too many false positives
-      enableAnimations: !isVeryLowPerformance && !prefersReducedMotion,
+      enableAnimations: !isVeryLowPerformance && !prefersReducedMotion(),
       enableHoverEffects: !isVeryLowPerformance && !isMobile,
       enableTransitions: !isVeryLowPerformance,
-      reduceMotion: prefersReducedMotion || isVeryLowPerformance,
+      reduceMotion: prefersReducedMotion() || isVeryLowPerformance,
 
       animationDuration: isVeryLowPerformance ? 0.1 : isLowPerformance ? 0.2 : 0.3,
       transitionDuration: isVeryLowPerformance ? 0.05 : isLowPerformance ? 0.1 : 0.15,
@@ -238,14 +238,14 @@ export const usePerformanceConfig = (): PerformanceConfig => {
       console.log('Performance Configuration:', {
         device: isRaspberryPi ? 'Raspberry Pi' : isMobile ? 'Mobile' : 'Desktop',
         performance: isVeryLowPerformance ? 'Very Low' : isLowPerformance ? 'Low' : 'Normal',
-        memory: memoryPressure,
-        network: networkSpeed,
+        memory: memoryPressure(),
+        network: networkSpeed(),
         config,
       });
     }
 
     return config;
-  }, [deviceInfo, memoryPressure, networkSpeed, prefersReducedMotion]);
+  }, [deviceInfo, memoryPressure(), networkSpeed(), prefersReducedMotion()]);
 
   return performanceConfig;
 };

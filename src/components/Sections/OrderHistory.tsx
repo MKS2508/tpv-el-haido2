@@ -1,5 +1,4 @@
-'use client';
-
+import { Motion, Presence } from '@motionone/solid';
 import {
   ArrowUpDown,
   Banknote,
@@ -10,9 +9,17 @@ import {
   Loader2,
   Receipt,
   XCircle,
-} from 'lucide-react';
-import type React from 'react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+} from 'lucide-solid';
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  onCleanup,
+  onMount,
+  Show,
+  type Component,
+} from 'solid-js';
 import { renderTicketPreview } from '@/assets/utils/utils.ts';
 import { InvoiceStatusBadge } from '@/components/InvoiceStatusBadge';
 import PaymentModal from '@/components/PaymentModal.tsx';
@@ -50,7 +57,7 @@ import { useEmitInvoice } from '@/hooks/useEmitInvoice';
 import { useResponsive } from '@/hooks/useResponsive';
 import { cn } from '@/lib/utils';
 import type Order from '@/models/Order.ts';
-import { useOrderHistoryData } from '@/store/selectors';
+import useStore from '@/store/store';
 
 interface OrderHistoryProps {
   setActiveSection: (section: string) => void;
@@ -59,731 +66,752 @@ interface OrderHistoryProps {
   setSelectedOrderId: (orderId: number | null) => void;
 }
 
-const OrderHistory = memo(
-  ({
-    setActiveSection,
-    selectedOrder,
-    setSelectedOrder,
-    setSelectedOrderId,
-  }: OrderHistoryProps) => {
-    const { isMobile } = useResponsive();
-    const [sortConfig, setSortConfig] = useState<{
-      key: 'date' | 'total' | 'status' | 'id';
-      direction: 'asc' | 'desc';
-    }>({
-      key: 'date',
-      direction: 'desc',
+const OrderHistory: Component<OrderHistoryProps> = (props) => {
+  const store = useStore();
+  const responsive = useResponsive();
+
+  const [sortConfig, setSortConfig] = createSignal<{
+    key: 'date' | 'total' | 'status' | 'id';
+    direction: 'asc' | 'desc';
+  }>({
+    key: 'date',
+    direction: 'desc',
+  });
+  const [filterStatus, setFilterStatus] = createSignal<string>('all');
+  const [isDialogOpen, setIsDialogOpen] = createSignal(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = createSignal(false);
+  const [paymentMethod, setPaymentMethod] = createSignal('efectivo');
+  const [cashAmount, setCashAmount] = createSignal('');
+  const [showTicketDialog, setShowTicketDialog] = createSignal(false);
+  const [isDragging, setIsDragging] = createSignal(false);
+  const [startY, setStartY] = createSignal(0);
+  const [scrollTop, setScrollTop] = createSignal(0);
+
+  let tableRef: HTMLDivElement | undefined;
+
+  // Access store data
+  const orderHistory = () => store.state.orderHistory;
+  const activeOrders = () => store.state.activeOrders;
+
+  // AEAT hooks
+  const { isEnabled: isAEATEnabled, isConnected: isAEATConnected } = useAEAT();
+  const { emitInvoice, isEmitting } = useEmitInvoice();
+
+  // Handler for emitting invoice
+  const handleEmitInvoice = async () => {
+    if (!props.selectedOrder) return;
+
+    const result = await emitInvoice(props.selectedOrder);
+    if (result.success) {
+      // Update the selected order with AEAT info
+      props.setSelectedOrder(result.order);
+    }
+  };
+
+  // Determine if the invoice button should be disabled
+  const isInvoiceButtonDisabled = createMemo(() => {
+    if (!props.selectedOrder) return true;
+    if (isEmitting) return true;
+    if (!isAEATConnected) return true;
+    if (props.selectedOrder.aeat?.invoiceStatus === 'accepted') return true;
+    if (props.selectedOrder.aeat?.invoiceStatus === 'pending') return true;
+    return false;
+  });
+
+  // Get tooltip for invoice button
+  const getInvoiceButtonTooltip = () => {
+    if (!props.selectedOrder) return '';
+    if (isEmitting) return 'Emitiendo factura...';
+    if (!isAEATConnected) return 'Sin conexion con AEAT';
+    if (props.selectedOrder.aeat?.invoiceStatus === 'accepted') return 'Factura ya aceptada';
+    if (props.selectedOrder.aeat?.invoiceStatus === 'pending') return 'Factura pendiente de respuesta';
+    return 'Emitir factura a AEAT';
+  };
+
+  const handleCompleteOrder = (completedOrder: Order) => {
+    store.setOrderHistory(
+      orderHistory().map((order) => (order.id === completedOrder.id ? completedOrder : order))
+    );
+    toast({
+      title: 'Payment Confirmed',
+      description: `Payment confirmed for order: ${completedOrder.id}`,
     });
-    const [filterStatus, setFilterStatus] = useState<string>('all');
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState('efectivo');
-    const [cashAmount, setCashAmount] = useState('');
-    const [showTicketDialog, setShowTicketDialog] = useState(false);
-    const { orderHistory, setOrderHistory, activeOrders } = useOrderHistoryData();
-    const tableRef = useRef<HTMLDivElement>(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [startY, setStartY] = useState(0);
-    const [scrollTop, setScrollTop] = useState(0);
 
-    // AEAT hooks
-    const { isEnabled: isAEATEnabled, isConnected: isAEATConnected } = useAEAT();
-    const { emitInvoice, isEmitting } = useEmitInvoice();
+    setShowTicketDialog(true);
+  };
 
-    // Handler para emitir factura
-    const handleEmitInvoice = useCallback(async () => {
-      if (!selectedOrder) return;
+  const handlePrintTicket = () => {
+    console.log('Printing ticket for order:', props.selectedOrder?.id);
+    setShowTicketDialog(true);
+  };
 
-      const result = await emitInvoice(selectedOrder);
-      if (result.success) {
-        // Actualizar el pedido seleccionado con la info de AEAT
-        setSelectedOrder(result.order);
-      }
-    }, [selectedOrder, emitInvoice, setSelectedOrder]);
+  const handleTicketPrintingComplete = (shouldPrintTicket: boolean) => {
+    setShowTicketDialog(false);
+    setIsPaymentModalOpen(false);
+    setIsDialogOpen(false);
 
-    // Determinar si el botón de factura debe estar deshabilitado
-    const isInvoiceButtonDisabled = useMemo(() => {
-      if (!selectedOrder) return true;
-      if (isEmitting) return true;
-      if (!isAEATConnected) return true;
-      if (selectedOrder.aeat?.invoiceStatus === 'accepted') return true;
-      if (selectedOrder.aeat?.invoiceStatus === 'pending') return true;
-      return false;
-    }, [selectedOrder, isEmitting, isAEATConnected]);
+    if (shouldPrintTicket) {
+      handlePrintTicket();
+    } else {
+      toast({
+        title: 'Order Completed',
+        description: 'Order completed without printing ticket.',
+        duration: 3000,
+      });
+    }
+  };
 
-    // Obtener tooltip para el botón de factura
-    const getInvoiceButtonTooltip = useCallback(() => {
-      if (!selectedOrder) return '';
-      if (isEmitting) return 'Emitiendo factura...';
-      if (!isAEATConnected) return 'Sin conexión con AEAT';
-      if (selectedOrder.aeat?.invoiceStatus === 'accepted') return 'Factura ya aceptada';
-      if (selectedOrder.aeat?.invoiceStatus === 'pending') return 'Factura pendiente de respuesta';
-      return 'Emitir factura a AEAT';
-    }, [selectedOrder, isEmitting, isAEATConnected]);
-
-    const handleCompleteOrder = useCallback(
-      (completedOrder: Order) => {
-        setOrderHistory(
-          orderHistory.map((order) => (order.id === completedOrder.id ? completedOrder : order))
-        );
-        toast({
-          title: 'Payment Confirmed',
-          description: `Payment confirmed for order: ${completedOrder.id}`,
-        });
-
-        setShowTicketDialog(true);
-      },
-      [setOrderHistory, orderHistory]
-    );
-
-    const handlePrintTicket = useCallback(() => {
-      console.log('Printing ticket for order:', selectedOrder?.id);
-      setShowTicketDialog(true);
-    }, [selectedOrder?.id]);
-
-    const handleTicketPrintingComplete = useCallback(
-      (shouldPrintTicket: boolean) => {
-        setShowTicketDialog(false);
-        setIsPaymentModalOpen(false);
-        setIsDialogOpen(false);
-
-        if (shouldPrintTicket) {
-          handlePrintTicket();
-        } else {
-          toast({
-            title: 'Order Completed',
-            description: 'Order completed without printing ticket.',
-            duration: 3000,
-          });
-        }
-      },
-      [handlePrintTicket]
-    );
-
-    const sortedAndFilteredOrders = useMemo(() => {
-      let filteredOrders = [...orderHistory, ...activeOrders];
-      const uniqueOrders = filteredOrders.reduce<Order[]>((acc, order, currentIndex) => {
-        const existingIndex = acc.findIndex((o) => o.id === order.id);
-        if (existingIndex === -1) {
-          acc.push(order);
-        } else {
-          const existingOrder = acc[existingIndex];
-          if (existingOrder.status === 'inProgress' && order.status === 'paid') {
+  const sortedAndFilteredOrders = createMemo(() => {
+    let filteredOrders = [...orderHistory(), ...activeOrders()];
+    const uniqueOrders = filteredOrders.reduce<Order[]>((acc, order, currentIndex) => {
+      const existingIndex = acc.findIndex((o) => o.id === order.id);
+      if (existingIndex === -1) {
+        acc.push(order);
+      } else {
+        const existingOrder = acc[existingIndex];
+        if (existingOrder.status === 'inProgress' && order.status === 'paid') {
+          acc[existingIndex] = order;
+        } else if (existingOrder.status === 'inProgress' && order.status === 'inProgress') {
+          const previousIndex = filteredOrders.findIndex((o) => o.id === order.id);
+          if (currentIndex > previousIndex) {
             acc[existingIndex] = order;
-          } else if (existingOrder.status === 'inProgress' && order.status === 'inProgress') {
-            const previousIndex = filteredOrders.findIndex((o) => o.id === order.id);
-            if (currentIndex > previousIndex) {
-              acc[existingIndex] = order;
-            }
           }
         }
-        return acc;
-      }, []);
-      console.log({ orderHistory, activeOrders, filteredOrders, uniqueOrders });
-      if (filterStatus !== 'all') {
-        filteredOrders = filteredOrders
-          .filter((order) => order.status === filterStatus)
-          .filter((order) => order.itemCount > 0);
-      } else {
-        filteredOrders = uniqueOrders;
       }
-      return filteredOrders
-        .filter((order) => order.itemCount > 0)
-        .sort((a, b) => {
-          if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-          if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-          return 0;
-        });
-    }, [orderHistory, sortConfig, filterStatus, activeOrders]);
+      return acc;
+    }, []);
+    console.log({ orderHistory: orderHistory(), activeOrders: activeOrders(), filteredOrders, uniqueOrders });
+    if (filterStatus() !== 'all') {
+      filteredOrders = filteredOrders
+        .filter((order) => order.status === filterStatus())
+        .filter((order) => order.itemCount > 0);
+    } else {
+      filteredOrders = uniqueOrders;
+    }
+    const config = sortConfig();
+    return filteredOrders
+      .filter((order) => order.itemCount > 0)
+      .sort((a, b) => {
+        if (a[config.key] < b[config.key]) return config.direction === 'asc' ? -1 : 1;
+        if (a[config.key] > b[config.key]) return config.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+  });
 
-    const handleSort = (key: 'date' | 'total' | 'status' | 'id') => {
-      setSortConfig((current) => ({
-        key,
-        direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
-      }));
-    };
+  const handleSort = (key: 'date' | 'total' | 'status' | 'id') => {
+    setSortConfig((current) => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
 
-    const handleDetails = (order: Order) => {
-      setSelectedOrder(order);
-      setIsDialogOpen(true);
-    };
+  const handleDetails = (order: Order) => {
+    props.setSelectedOrder(order);
+    setIsDialogOpen(true);
+  };
 
-    const handleConfirmPayment = () => {
-      if (selectedOrder) {
-        setIsPaymentModalOpen(true);
+  const handleConfirmPayment = () => {
+    if (props.selectedOrder) {
+      setIsPaymentModalOpen(true);
+    }
+  };
+
+  const handleContinueOrder = () => {
+    if (props.selectedOrder) {
+      toast({
+        title: 'Resumiendo comanda',
+        description: `Continuando pedido de la ${props.selectedOrder.tableNumber === 0 ? 'Barra' : `mesa ${props.selectedOrder.tableNumber.toString()}`}`,
+      });
+
+      props.setSelectedOrderId(props.selectedOrder.id);
+      props.setActiveSection('newOrder');
+      setIsDialogOpen(false);
+    }
+  };
+
+  const handleTouchStart = (e: TouchEvent) => {
+    setIsDragging(true);
+    setStartY(e.touches[0].clientY - scrollTop());
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isDragging()) return;
+    const y = e.touches[0].clientY;
+    const scroll = y - startY();
+    if (tableRef) {
+      tableRef.scrollTop = -scroll;
+      setScrollTop(-scroll);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Setup wheel listener
+  createEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (tableRef) {
+        e.preventDefault();
+        tableRef.scrollTop += e.deltaY;
+        setScrollTop(tableRef.scrollTop);
       }
     };
 
-    const handleContinueOrder = () => {
-      if (selectedOrder) {
-        toast({
-          title: 'Resumiendo comanda',
-          description: `Continuando pedido de la ${selectedOrder.tableNumber === 0 ? 'Barra' : `mesa ${selectedOrder.tableNumber.toString()}`}`,
-        });
+    const currentRef = tableRef;
+    if (currentRef && !responsive.isMobile) {
+      // Only add wheel listener on non-mobile
+      currentRef.addEventListener('wheel', handleWheel, { passive: false });
+    }
 
-        setSelectedOrderId(selectedOrder.id);
-        setActiveSection('newOrder');
-        setIsDialogOpen(false);
+    onCleanup(() => {
+      if (currentRef) {
+        currentRef.removeEventListener('wheel', handleWheel);
       }
-    };
+    });
+  });
 
-    const handleTouchStart = (e: React.TouchEvent) => {
-      setIsDragging(true);
-      setStartY(e.touches[0].clientY - scrollTop);
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-      if (!isDragging) return;
-      const y = e.touches[0].clientY;
-      const scroll = y - startY;
-      if (tableRef.current) {
-        tableRef.current.scrollTop = -scroll;
-        setScrollTop(-scroll);
-      }
-    };
-
-    const handleTouchEnd = () => {
-      setIsDragging(false);
-    };
-
-    useEffect(() => {
-      const handleWheel = (e: WheelEvent) => {
-        if (tableRef.current) {
-          e.preventDefault();
-          tableRef.current.scrollTop += e.deltaY;
-          setScrollTop(tableRef.current.scrollTop);
-        }
-      };
-
-      const currentRef = tableRef.current;
-      if (currentRef && !isMobile) {
-        // Only add wheel listener on non-mobile
-        currentRef.addEventListener('wheel', handleWheel, { passive: false });
-      }
-
-      return () => {
-        if (currentRef) {
-          currentRef.removeEventListener('wheel', handleWheel);
-        }
-      };
-    }, [isMobile]);
-
-    // Mobile-friendly OrderCard component
-    const OrderCard = ({ order }: { order: Order }) => {
-      const getStatusIcon = () => {
-        switch (order.status) {
-          case 'paid':
-            if (order.paymentMethod === 'efectivo') {
-              return (
-                <div className="flex items-center gap-1">
-                  <HandCoins className="w-4 h-4 text-warning" />
-                  <CheckCircle className="w-4 h-4 text-success" />
-                </div>
-              );
-            }
+  // Mobile-friendly OrderCard component
+  const OrderCard: Component<{ order: Order }> = (cardProps) => {
+    const getStatusIcon = () => {
+      switch (cardProps.order.status) {
+        case 'paid':
+          if (cardProps.order.paymentMethod === 'efectivo') {
             return (
-              <div className="flex items-center gap-1">
-                <CreditCard className="w-4 h-4 text-info" />
-                <CheckCircle className="w-4 h-4 text-success" />
+              <div class="flex items-center gap-1">
+                <HandCoins class="w-4 h-4 text-warning" />
+                <CheckCircle class="w-4 h-4 text-success" />
               </div>
             );
-          case 'unpaid':
-            return <XCircle className="w-4 h-4 text-destructive" />;
-          case 'canceled':
-            return <XCircle className="w-4 h-4 text-muted-foreground" />;
-          case 'inProgress':
-            return <Loader2 className="w-4 h-4 animate-spin text-info" />;
-          default:
-            return null;
-        }
-      };
+          }
+          return (
+            <div class="flex items-center gap-1">
+              <CreditCard class="w-4 h-4 text-info" />
+              <CheckCircle class="w-4 h-4 text-success" />
+            </div>
+          );
+        case 'unpaid':
+          return <XCircle class="w-4 h-4 text-destructive" />;
+        case 'canceled':
+          return <XCircle class="w-4 h-4 text-muted-foreground" />;
+        case 'inProgress':
+          return <Loader2 class="w-4 h-4 animate-spin text-info" />;
+        default:
+          return null;
+      }
+    };
 
-      const getStatusText = () => {
-        switch (order.status) {
-          case 'paid':
-            return order.paymentMethod === 'efectivo' ? 'Pagado - Efectivo' : 'Pagado - Tarjeta';
-          case 'unpaid':
-            return 'No pagado';
-          case 'canceled':
-            return 'Cancelado';
-          case 'inProgress':
-            return 'En progreso';
-          default:
-            return order.status;
-        }
-      };
-
-      return (
-        <Card
-          className="touch-manipulation cursor-pointer hover:shadow-md transition-shadow duration-200"
-          onClick={() => handleDetails(order)}
-        >
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Pedido #{order.id}</CardTitle>
-              <div className="flex items-center gap-2">{getStatusIcon()}</div>
-            </div>
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>{new Date(order.date).toLocaleDateString()}</span>
-              <span className="font-medium text-primary">
-                {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Total:</span>
-                <span className="font-bold text-lg text-success">{order.total.toFixed(2)}€</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Artículos:</span>
-                <span className="text-sm font-medium">{order.itemCount}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Estado:</span>
-                <span className="text-sm font-medium">{getStatusText()}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      );
+    const getStatusText = () => {
+      switch (cardProps.order.status) {
+        case 'paid':
+          return cardProps.order.paymentMethod === 'efectivo' ? 'Pagado - Efectivo' : 'Pagado - Tarjeta';
+        case 'unpaid':
+          return 'No pagado';
+        case 'canceled':
+          return 'Cancelado';
+        case 'inProgress':
+          return 'En progreso';
+        default:
+          return cardProps.order.status;
+      }
     };
 
     return (
-      <div className="space-y-4 text-foreground w-full overflow-y-hidden">
-        <div className="flex items-center justify-between">
-          <h2 className={cn('font-semibold', isMobile ? 'text-xl' : 'text-2xl')}>
-            Historial de Cuentas
-          </h2>
-
-          {/* Sort button for mobile */}
-          {isMobile && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleSort(sortConfig.key === 'date' ? 'total' : 'date')}
-              className="touch-manipulation"
-            >
-              <ArrowUpDown className="w-4 h-4 mr-1" />
-              {sortConfig.key === 'date' ? 'Por fecha' : 'Por total'}
-            </Button>
-          )}
-        </div>
-
-        <div className={cn('flex items-center', isMobile ? 'flex-col gap-3' : 'justify-between')}>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger
-              className={cn(
-                'bg-background border-border touch-manipulation',
-                isMobile ? 'w-full h-12' : 'w-[180px]'
-              )}
-            >
-              <SelectValue placeholder="Filtrar por estado" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover">
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="paid">
-                <span className="flex items-center gap-2">
-                  <Banknote className="text-success" /> <span>Pagado</span>
-                </span>
-              </SelectItem>
-              <SelectItem value="unpaid">
-                <span className="flex items-center gap-2">
-                  <HandCoins className="text-destructive" /> <span>No pagado</span>
-                </span>
-              </SelectItem>
-              <SelectItem value="canceled">
-                <span className="flex items-center gap-2">
-                  <XCircle className="text-muted-foreground" /> <span>Cancelado</span>
-                </span>
-              </SelectItem>
-              <SelectItem value="inProgress">
-                <span className="flex items-center gap-2">
-                  <Loader2 className="animate-spin text-info" /> <span>En progreso</span>
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Mobile Card View */}
-        {isMobile ? (
-          <div className="space-y-3 h-[calc(100vh-240px)] overflow-y-auto">
-            {sortedAndFilteredOrders.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                No hay pedidos que mostrar
-              </div>
-            ) : (
-              sortedAndFilteredOrders.map((order: Order) => (
-                <OrderCard key={order.id} order={order} />
-              ))
-            )}
+      <Card
+        class="touch-manipulation cursor-pointer hover:shadow-md transition-shadow duration-200"
+        onClick={() => handleDetails(cardProps.order)}
+      >
+        <CardHeader class="pb-3">
+          <div class="flex items-center justify-between">
+            <CardTitle class="text-base font-semibold">Pedido #{cardProps.order.id}</CardTitle>
+            <div class="flex items-center gap-2">{getStatusIcon()}</div>
           </div>
-        ) : (
+          <div class="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{new Date(cardProps.order.date).toLocaleDateString()}</span>
+            <span class="font-medium text-primary">
+              {cardProps.order.tableNumber === 0 ? 'Barra' : `Mesa ${cardProps.order.tableNumber}`}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent class="pt-0">
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-muted-foreground">Total:</span>
+              <span class="font-bold text-lg text-success">{cardProps.order.total.toFixed(2)}€</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-muted-foreground">Articulos:</span>
+              <span class="text-sm font-medium">{cardProps.order.itemCount}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-muted-foreground">Estado:</span>
+              <span class="text-sm font-medium">{getStatusText()}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div class="space-y-4 text-foreground w-full overflow-y-hidden">
+      <div class="flex items-center justify-between">
+        <h2 class={cn('font-semibold', responsive.isMobile ? 'text-xl' : 'text-2xl')}>
+          Historial de Cuentas
+        </h2>
+
+        {/* Sort button for mobile */}
+        <Show when={responsive.isMobile}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleSort(sortConfig().key === 'date' ? 'total' : 'date')}
+            class="touch-manipulation"
+          >
+            <ArrowUpDown class="w-4 h-4 mr-1" />
+            {sortConfig().key === 'date' ? 'Por fecha' : 'Por total'}
+          </Button>
+        </Show>
+      </div>
+
+      <div class={cn('flex items-center', responsive.isMobile ? 'flex-col gap-3' : 'justify-between')}>
+        <Select value={filterStatus()} onChange={setFilterStatus}>
+          <SelectTrigger
+            class={cn(
+              'bg-background border-border touch-manipulation',
+              responsive.isMobile ? 'w-full h-12' : 'w-[180px]'
+            )}
+          >
+            <SelectValue placeholder="Filtrar por estado" />
+          </SelectTrigger>
+          <SelectContent class="bg-popover">
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="paid">
+              <span class="flex items-center gap-2">
+                <Banknote class="text-success" /> <span>Pagado</span>
+              </span>
+            </SelectItem>
+            <SelectItem value="unpaid">
+              <span class="flex items-center gap-2">
+                <HandCoins class="text-destructive" /> <span>No pagado</span>
+              </span>
+            </SelectItem>
+            <SelectItem value="canceled">
+              <span class="flex items-center gap-2">
+                <XCircle class="text-muted-foreground" /> <span>Cancelado</span>
+              </span>
+            </SelectItem>
+            <SelectItem value="inProgress">
+              <span class="flex items-center gap-2">
+                <Loader2 class="animate-spin text-info" /> <span>En progreso</span>
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Mobile Card View */}
+      <Show
+        when={responsive.isMobile}
+        fallback={
           /* Desktop Table View */
           <div
             ref={tableRef}
-            className="h-[calc(90vh-200px)] overflow-y-auto touch-manipulation"
+            class="h-[calc(90vh-200px)] overflow-y-auto touch-manipulation"
             style={{
-              overscrollBehavior: 'contain',
-              WebkitOverflowScrolling: 'touch',
+              'overscroll-behavior': 'contain',
+              '-webkit-overflow-scrolling': 'touch',
             }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <Table className="border-collapse border border-border">
+            <Table class="border-collapse border border-border">
               <TableHeader>
-                <TableRow className="bg-muted">
+                <TableRow class="bg-muted">
                   <TableHead
-                    className="cursor-pointer border border-border touch-manipulation"
+                    class="cursor-pointer border border-border touch-manipulation"
                     onClick={() => handleSort('date')}
                   >
                     Fecha{' '}
-                    {sortConfig.key === 'date' && <ArrowUpDown className="ml-2 h-4 w-4 inline" />}
+                    <Show when={sortConfig().key === 'date'}>
+                      <ArrowUpDown class="ml-2 h-4 w-4 inline" />
+                    </Show>
                   </TableHead>
-                  <TableHead className="border border-border">Total</TableHead>
-                  <TableHead className="border border-border">Elementos</TableHead>
-                  <TableHead className="border border-border">Mesa</TableHead>
+                  <TableHead class="border border-border">Total</TableHead>
+                  <TableHead class="border border-border">Elementos</TableHead>
+                  <TableHead class="border border-border">Mesa</TableHead>
                   <TableHead
-                    className="cursor-pointer border border-border touch-manipulation"
+                    class="cursor-pointer border border-border touch-manipulation"
                     onClick={() => handleSort('status')}
                   >
                     Estado{' '}
-                    {sortConfig.key === 'status' && <ArrowUpDown className="ml-2 h-4 w-4 inline" />}
+                    <Show when={sortConfig().key === 'status'}>
+                      <ArrowUpDown class="ml-2 h-4 w-4 inline" />
+                    </Show>
                   </TableHead>
-                  <TableHead className="border border-border">Acciones</TableHead>
+                  <TableHead class="border border-border">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedAndFilteredOrders.map((order: Order) => (
-                  <TableRow key={order.id} className="hover:bg-muted/50 touch-manipulation">
-                    <TableCell className="border border-border">{order.date}</TableCell>
-                    <TableCell className="border border-border">
-                      {order.total.toFixed(2)}€
-                    </TableCell>
-                    <TableCell className="border border-border">{order.itemCount}</TableCell>
-                    <TableCell className="border border-border">
-                      {order.tableNumber === 0 ? 'Barra' : order.tableNumber}
-                    </TableCell>
-                    <TableCell className="border border-border">
-                      {order.status === 'paid' && order.paymentMethod === 'efectivo' && (
-                        <div className="flex flex-col items-center">
-                          <div className="flex items-center gap-2">
-                            <HandCoins className="text-warning" />
-                            <CheckCircle className="text-success" />
+                <For each={sortedAndFilteredOrders()}>
+                  {(order) => (
+                    <TableRow class="hover:bg-muted/50 touch-manipulation">
+                      <TableCell class="border border-border">{order.date}</TableCell>
+                      <TableCell class="border border-border">
+                        {order.total.toFixed(2)}€
+                      </TableCell>
+                      <TableCell class="border border-border">{order.itemCount}</TableCell>
+                      <TableCell class="border border-border">
+                        {order.tableNumber === 0 ? 'Barra' : order.tableNumber}
+                      </TableCell>
+                      <TableCell class="border border-border">
+                        <Show when={order.status === 'paid' && order.paymentMethod === 'efectivo'}>
+                          <div class="flex flex-col items-center">
+                            <div class="flex items-center gap-2">
+                              <HandCoins class="text-warning" />
+                              <CheckCircle class="text-success" />
+                            </div>
+                            <div class="w-full border-t border-border my-1" />
+                            <span>Pagado con Efectivo</span>
                           </div>
-                          <div className="w-full border-t border-border my-1"></div>
-                          <span>Pagado con Efectivo</span>
-                        </div>
-                      )}
-                      {order.status === 'paid' && order.paymentMethod === 'tarjeta' && (
-                        <div className="flex flex-col items-center">
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="text-info" />
-                            <CheckCircle className="text-success" />
+                        </Show>
+                        <Show when={order.status === 'paid' && order.paymentMethod === 'tarjeta'}>
+                          <div class="flex flex-col items-center">
+                            <div class="flex items-center gap-2">
+                              <CreditCard class="text-info" />
+                              <CheckCircle class="text-success" />
+                            </div>
+                            <div class="w-full border-t border-border my-1" />
+                            <span>Pagado con Tarjeta</span>
                           </div>
-                          <div className="w-full border-t border-border my-1"></div>
-                          <span>Pagado con Tarjeta</span>
-                        </div>
-                      )}
-                      {order.status === 'unpaid' && (
-                        <div className="flex flex-col items-center">
-                          <div className="flex items-center gap-2">
-                            <XCircle className="text-destructive" />
+                        </Show>
+                        <Show when={order.status === 'unpaid'}>
+                          <div class="flex flex-col items-center">
+                            <div class="flex items-center gap-2">
+                              <XCircle class="text-destructive" />
+                            </div>
+                            <div class="w-full border-t border-border my-1" />
+                            <span>No pagado</span>
                           </div>
-                          <div className="w-full border-t border-border my-1"></div>
-                          <span>No pagado</span>
-                        </div>
-                      )}
-                      {order.status === 'canceled' && (
-                        <div className="flex flex-col items-center">
-                          <XCircle className="text-muted-foreground" />
-                          <div className="w-full border-t border-border my-1"></div>
-                          <span>Cancelado</span>
-                        </div>
-                      )}
-                      {order.status === 'inProgress' && (
-                        <div className="flex flex-col items-center">
-                          <Loader2 className="animate-spin text-info" />
-                          <div className="w-full border-t border-border my-1"></div>
-                          <span>En progreso</span>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="border border-border justify-center ml-auto mr-auto">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDetails(order)}
-                        className="bg-background text-foreground border-border hover:bg-muted w-full h-full p-4 touch-manipulation"
-                      >
-                        Detalles
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        </Show>
+                        <Show when={order.status === 'canceled'}>
+                          <div class="flex flex-col items-center">
+                            <XCircle class="text-muted-foreground" />
+                            <div class="w-full border-t border-border my-1" />
+                            <span>Cancelado</span>
+                          </div>
+                        </Show>
+                        <Show when={order.status === 'inProgress'}>
+                          <div class="flex flex-col items-center">
+                            <Loader2 class="animate-spin text-info" />
+                            <div class="w-full border-t border-border my-1" />
+                            <span>En progreso</span>
+                          </div>
+                        </Show>
+                      </TableCell>
+                      <TableCell class="border border-border justify-center ml-auto mr-auto">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDetails(order)}
+                          class="bg-background text-foreground border-border hover:bg-muted w-full h-full p-4 touch-manipulation"
+                        >
+                          Detalles
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </For>
               </TableBody>
             </Table>
           </div>
-        )}
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent
-            className={cn(
-              'flex flex-col bg-background text-foreground overflow-y-hidden',
-              isMobile ? 'max-w-[95vw] max-h-[90vh] p-3' : 'sm:max-w-[1200px]'
-            )}
+        }
+      >
+        <div class="space-y-3 h-[calc(100vh-240px)] overflow-y-auto">
+          <Show
+            when={sortedAndFilteredOrders().length > 0}
+            fallback={
+              <div class="text-center text-muted-foreground py-8">
+                No hay pedidos que mostrar
+              </div>
+            }
           >
-            <DialogHeader>
-              <DialogTitle>Detalles de la Orden</DialogTitle>
-            </DialogHeader>
-            {selectedOrder && (
+            <For each={sortedAndFilteredOrders()}>
+              {(order) => <OrderCard order={order} />}
+            </For>
+          </Show>
+        </div>
+      </Show>
+
+      <Dialog open={isDialogOpen()} onOpenChange={setIsDialogOpen}>
+        <DialogContent
+          class={cn(
+            'flex flex-col bg-background text-foreground overflow-y-hidden',
+            responsive.isMobile ? 'max-w-[95vw] max-h-[90vh] p-3' : 'sm:max-w-[1200px]'
+          )}
+        >
+          <DialogHeader>
+            <DialogTitle>Detalles de la Orden</DialogTitle>
+          </DialogHeader>
+          <Show when={props.selectedOrder}>
+            {(selectedOrder) => (
               <div
-                className={cn('flex flex-1 overflow-hidden', isMobile ? 'flex-col gap-3' : 'gap-4')}
+                class={cn('flex flex-1 overflow-hidden', responsive.isMobile ? 'flex-col gap-3' : 'gap-4')}
               >
-                <div className={cn('overflow-y-auto', isMobile ? 'flex-1' : 'flex-1')}>
+                <div class={cn('overflow-y-auto', responsive.isMobile ? 'flex-1' : 'flex-1')}>
                   <ScrollArea
-                    className={cn(
+                    class={cn(
                       'pr-4',
-                      isMobile ? 'h-[calc(70vh-120px)]' : 'h-[calc(80vh-120px)]'
+                      responsive.isMobile ? 'h-[calc(70vh-120px)]' : 'h-[calc(80vh-120px)]'
                     )}
                   >
-                    <div className="space-y-4">
-                      <div className={cn(isMobile ? 'grid grid-cols-2 gap-2' : 'space-y-4')}>
+                    <div class="space-y-4">
+                      <div class={cn(responsive.isMobile ? 'grid grid-cols-2 gap-2' : 'space-y-4')}>
                         <div>
-                          <Label className="text-sm">Fecha</Label>
+                          <Label class="text-sm">Fecha</Label>
                           <Input
-                            value={selectedOrder.date}
+                            value={selectedOrder().date}
                             readOnly
-                            className={cn('bg-muted', isMobile ? 'h-10 text-sm' : '')}
+                            class={cn('bg-muted', responsive.isMobile ? 'h-10 text-sm' : '')}
                           />
                         </div>
                         <div>
-                          <Label className="text-sm">Total</Label>
+                          <Label class="text-sm">Total</Label>
                           <Input
-                            value={`${selectedOrder.total.toFixed(2)}€`}
+                            value={`${selectedOrder().total.toFixed(2)}€`}
                             readOnly
-                            className={cn(
+                            class={cn(
                               'bg-muted font-semibold text-success',
-                              isMobile ? 'h-10 text-sm' : ''
+                              responsive.isMobile ? 'h-10 text-sm' : ''
                             )}
                           />
                         </div>
                         <div>
-                          <Label className="text-sm">Estado</Label>
+                          <Label class="text-sm">Estado</Label>
                           <Input
-                            value={selectedOrder.status}
+                            value={selectedOrder().status}
                             readOnly
-                            className={cn('bg-muted', isMobile ? 'h-10 text-sm' : '')}
+                            class={cn('bg-muted', responsive.isMobile ? 'h-10 text-sm' : '')}
                           />
                         </div>
                         <div>
-                          <Label className="text-sm">Mesa</Label>
+                          <Label class="text-sm">Mesa</Label>
                           <Input
                             value={
-                              selectedOrder.tableNumber === 0
+                              selectedOrder().tableNumber === 0
                                 ? 'Barra'
-                                : selectedOrder.tableNumber.toString()
+                                : selectedOrder().tableNumber.toString()
                             }
                             readOnly
-                            className={cn('bg-muted', isMobile ? 'h-10 text-sm' : '')}
+                            class={cn('bg-muted', responsive.isMobile ? 'h-10 text-sm' : '')}
                           />
                         </div>
-                        {!isMobile && (
+                        <Show when={!responsive.isMobile}>
                           <div>
-                            <Label className="text-sm">Método de Pago</Label>
+                            <Label class="text-sm">Metodo de Pago</Label>
                             <Input
-                              value={selectedOrder.paymentMethod}
+                              value={selectedOrder().paymentMethod}
                               readOnly
-                              className="bg-muted"
+                              class="bg-muted"
                             />
                           </div>
-                        )}
-                        {/* Estado de facturación AEAT */}
-                        {isAEATEnabled && selectedOrder.status === 'paid' && (
-                          <div className={cn(isMobile ? 'col-span-2' : '')}>
-                            <Label className="text-sm">Factura AEAT</Label>
-                            <div className="mt-1.5">
-                              <InvoiceStatusBadge aeat={selectedOrder.aeat} />
+                        </Show>
+                        {/* AEAT invoice status */}
+                        <Show when={isAEATEnabled && selectedOrder().status === 'paid'}>
+                          <div class={cn(responsive.isMobile ? 'col-span-2' : '')}>
+                            <Label class="text-sm">Factura AEAT</Label>
+                            <div class="mt-1.5">
+                              <InvoiceStatusBadge aeat={selectedOrder().aeat} />
                             </div>
                           </div>
-                        )}
+                        </Show>
                       </div>
 
                       <div>
-                        <Label className="text-sm">Elementos</Label>
-                        {isMobile ? (
-                          /* Mobile: Card layout for items */
-                          <div className="space-y-2 mt-2">
-                            {selectedOrder.items.map((item, index) => (
-                              <Card key={index} className="bg-muted/50">
-                                <CardContent className="p-3">
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex-1">
-                                      <p className="font-medium text-sm">{item.name}</p>
-                                      <p className="text-xs text-muted-foreground">
-                                        {item.quantity}x {item.price.toFixed(2)}€
-                                      </p>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="font-semibold text-success">
-                                        {(item.price * item.quantity).toFixed(2)}€
-                                      </p>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        ) : (
-                          /* Desktop: Table layout */
-                          <Table className="border-collapse border border-border mt-2">
-                            <TableHeader>
-                              <TableRow className="bg-muted">
-                                <TableHead className="border border-border">Producto</TableHead>
-                                <TableHead className="border border-border">Cantidad</TableHead>
-                                <TableHead className="border border-border">Precio</TableHead>
-                                <TableHead className="border border-border">Subtotal</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {selectedOrder.items.map((item, index) => (
-                                <TableRow
-                                  key={index}
-                                  className="hover:bg-muted/50 touch-manipulation"
-                                >
-                                  <TableCell className="border border-border">
-                                    {item.name}
-                                  </TableCell>
-                                  <TableCell className="border border-border">
-                                    {item.quantity}
-                                  </TableCell>
-                                  <TableCell className="border border-border">
-                                    {item.price.toFixed(2)}€
-                                  </TableCell>
-                                  <TableCell className="border border-border">
-                                    {(item.price * item.quantity).toFixed(2)}€
-                                  </TableCell>
+                        <Label class="text-sm">Elementos</Label>
+                        <Show
+                          when={responsive.isMobile}
+                          fallback={
+                            /* Desktop: Table layout */
+                            <Table class="border-collapse border border-border mt-2">
+                              <TableHeader>
+                                <TableRow class="bg-muted">
+                                  <TableHead class="border border-border">Producto</TableHead>
+                                  <TableHead class="border border-border">Cantidad</TableHead>
+                                  <TableHead class="border border-border">Precio</TableHead>
+                                  <TableHead class="border border-border">Subtotal</TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        )}
+                              </TableHeader>
+                              <TableBody>
+                                <For each={selectedOrder().items}>
+                                  {(item) => (
+                                    <TableRow class="hover:bg-muted/50 touch-manipulation">
+                                      <TableCell class="border border-border">
+                                        {item.name}
+                                      </TableCell>
+                                      <TableCell class="border border-border">
+                                        {item.quantity}
+                                      </TableCell>
+                                      <TableCell class="border border-border">
+                                        {item.price.toFixed(2)}€
+                                      </TableCell>
+                                      <TableCell class="border border-border">
+                                        {(item.price * item.quantity).toFixed(2)}€
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </For>
+                              </TableBody>
+                            </Table>
+                          }
+                        >
+                          {/* Mobile: Card layout for items */}
+                          <div class="space-y-2 mt-2">
+                            <For each={selectedOrder().items}>
+                              {(item) => (
+                                <Card class="bg-muted/50">
+                                  <CardContent class="p-3">
+                                    <div class="flex justify-between items-center">
+                                      <div class="flex-1">
+                                        <p class="font-medium text-sm">{item.name}</p>
+                                        <p class="text-xs text-muted-foreground">
+                                          {item.quantity}x {item.price.toFixed(2)}€
+                                        </p>
+                                      </div>
+                                      <div class="text-right">
+                                        <p class="font-semibold text-success">
+                                          {(item.price * item.quantity).toFixed(2)}€
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+                            </For>
+                          </div>
+                        </Show>
                       </div>
                     </div>
                   </ScrollArea>
                 </div>
 
-                {!isMobile && (
-                  <div className="w-1/3 border-l border-border pl-4">
+                <Show when={!responsive.isMobile}>
+                  <div class="w-1/3 border-l border-border pl-4">
                     <Label>Vista previa del ticket</Label>
-                    <div className="mt-2 bg-muted p-4 h-[calc(80vh-180px)] overflow-y-auto border border-border rounded">
-                      <pre className="text-xs whitespace-pre-wrap text-foreground">
-                        {renderTicketPreview(selectedOrder)}
+                    <div class="mt-2 bg-muted p-4 h-[calc(80vh-180px)] overflow-y-auto border border-border rounded">
+                      <pre class="text-xs whitespace-pre-wrap text-foreground">
+                        {renderTicketPreview(selectedOrder())}
                       </pre>
                     </div>
                   </div>
-                )}
+                </Show>
               </div>
             )}
-            <DialogFooter className={cn('gap-2', isMobile ? 'flex-col sm:flex-row' : '')}>
+          </Show>
+          <DialogFooter class={cn('gap-2', responsive.isMobile ? 'flex-col sm:flex-row' : '')}>
+            <Button
+              variant="outline"
+              onClick={handlePrintTicket}
+              class={cn(
+                'bg-background text-foreground border-border hover:bg-muted touch-manipulation',
+                responsive.isMobile ? 'w-full h-12' : 'w-1/3 h-20'
+              )}
+            >
+              <FileText class={cn('mr-2', responsive.isMobile ? 'h-4 w-4' : 'h-4 w-4')} />
+              Imprimir Ticket
+            </Button>
+            {/* Emit Invoice Button - only for paid orders with AEAT enabled */}
+            <Show when={props.selectedOrder?.status === 'paid' && isAEATEnabled}>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div class={cn(responsive.isMobile ? 'w-full' : '')}>
+                      <Button
+                        variant="outline"
+                        onClick={handleEmitInvoice}
+                        disabled={isInvoiceButtonDisabled()}
+                        class={cn(
+                          'bg-background text-foreground border-border hover:bg-muted touch-manipulation',
+                          responsive.isMobile ? 'w-full h-12' : 'w-full h-20',
+                          props.selectedOrder?.aeat?.invoiceStatus === 'accepted' &&
+                            'border-green-500 text-green-600 dark:text-green-400'
+                        )}
+                      >
+                        <Show
+                          when={!isEmitting}
+                          fallback={<Loader2 class="mr-2 h-4 w-4 animate-spin" />}
+                        >
+                          <Receipt class={cn('mr-2', responsive.isMobile ? 'h-4 w-4' : 'h-4 w-4')} />
+                        </Show>
+                        <Show
+                          when={!isEmitting}
+                          fallback="Emitiendo..."
+                        >
+                          <Show
+                            when={props.selectedOrder?.aeat?.invoiceStatus !== 'accepted'}
+                            fallback="Factura Emitida"
+                          >
+                            Emitir Factura
+                          </Show>
+                        </Show>
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{getInvoiceButtonTooltip()}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </Show>
+            <Show when={props.selectedOrder?.status === 'unpaid'}>
               <Button
-                variant="outline"
-                onClick={handlePrintTicket}
-                className={cn(
-                  'bg-background text-foreground border-border hover:bg-muted touch-manipulation',
-                  isMobile ? 'w-full h-12' : 'w-1/3 h-20'
+                onClick={handleConfirmPayment}
+                class={cn(
+                  'bg-info hover:bg-info/80 text-info-foreground touch-manipulation',
+                  responsive.isMobile ? 'w-full h-12' : ''
                 )}
               >
-                <FileText className={cn('mr-2', isMobile ? 'h-4 w-4' : 'h-4 w-4')} />
-                Imprimir Ticket
+                <CreditCard class="mr-2 h-4 w-4" />
+                Confirmar Pago
               </Button>
-              {/* Botón Emitir Factura - solo para pedidos pagados con AEAT habilitado */}
-              {selectedOrder?.status === 'paid' && isAEATEnabled && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className={cn(isMobile ? 'w-full' : '')}>
-                        <Button
-                          variant="outline"
-                          onClick={handleEmitInvoice}
-                          disabled={isInvoiceButtonDisabled}
-                          className={cn(
-                            'bg-background text-foreground border-border hover:bg-muted touch-manipulation',
-                            isMobile ? 'w-full h-12' : 'w-full h-20',
-                            selectedOrder.aeat?.invoiceStatus === 'accepted' &&
-                              'border-green-500 text-green-600 dark:text-green-400'
-                          )}
-                        >
-                          {isEmitting ? (
-                            <Loader2 className={cn('mr-2 h-4 w-4 animate-spin')} />
-                          ) : (
-                            <Receipt className={cn('mr-2', isMobile ? 'h-4 w-4' : 'h-4 w-4')} />
-                          )}
-                          {isEmitting
-                            ? 'Emitiendo...'
-                            : selectedOrder.aeat?.invoiceStatus === 'accepted'
-                              ? 'Factura Emitida'
-                              : 'Emitir Factura'}
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{getInvoiceButtonTooltip()}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              {selectedOrder?.status === 'unpaid' && (
-                <Button
-                  onClick={handleConfirmPayment}
-                  className={cn(
-                    'bg-info hover:bg-info/80 text-info-foreground touch-manipulation',
-                    isMobile ? 'w-full h-12' : ''
-                  )}
+            </Show>
+            <Show when={props.selectedOrder?.status === 'inProgress'}>
+              <Button
+                onClick={handleContinueOrder}
+                class={cn(
+                  'bg-success hover:bg-success/80 text-success-foreground touch-manipulation',
+                  responsive.isMobile ? 'w-full h-12' : ''
+                )}
+              >
+                <CreditCard class="mr-2 h-4 w-4" />
+                <Show
+                  when={!responsive.isMobile}
+                  fallback={`Continuar Mesa ${props.selectedOrder?.tableNumber}`}
                 >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Confirmar Pago
-                </Button>
-              )}
-              {selectedOrder?.status === 'inProgress' && (
-                <Button
-                  onClick={handleContinueOrder}
-                  className={cn(
-                    'bg-success hover:bg-success/80 text-success-foreground touch-manipulation',
-                    isMobile ? 'w-full h-12' : ''
-                  )}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  {isMobile
-                    ? `Continuar Mesa ${selectedOrder.tableNumber}`
-                    : `Continuar cuenta de la mesa ${selectedOrder.tableNumber}`}
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        {selectedOrder && (
-          <PaymentModal
-            isPaymentModalOpen={isPaymentModalOpen}
-            setIsPaymentModalOpen={setIsPaymentModalOpen}
-            cashAmount={cashAmount}
-            setCashAmount={setCashAmount}
-            paymentMethod={paymentMethod}
-            setPaymentMethod={setPaymentMethod}
-            newOrder={selectedOrder}
-            handleCompleteOrder={handleCompleteOrder}
-            showTicketDialog={showTicketDialog}
-            setShowTicketDialog={setShowTicketDialog}
-            handleTicketPrintingComplete={handleTicketPrintingComplete}
-          />
-        )}
-      </div>
-    );
-  }
-);
-
-OrderHistory.displayName = 'OrderHistory';
+                  {`Continuar cuenta de la mesa ${props.selectedOrder?.tableNumber}`}
+                </Show>
+              </Button>
+            </Show>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Show when={props.selectedOrder}>
+        <PaymentModal
+          isPaymentModalOpen={isPaymentModalOpen()}
+          setIsPaymentModalOpen={setIsPaymentModalOpen}
+          cashAmount={cashAmount()}
+          setCashAmount={setCashAmount}
+          paymentMethod={paymentMethod()}
+          setPaymentMethod={setPaymentMethod}
+          newOrder={props.selectedOrder!}
+          handleCompleteOrder={handleCompleteOrder}
+          showTicketDialog={showTicketDialog()}
+          setShowTicketDialog={setShowTicketDialog}
+          handleTicketPrintingComplete={handleTicketPrintingComplete}
+        />
+      </Show>
+    </div>
+  );
+};
 
 export default OrderHistory;
