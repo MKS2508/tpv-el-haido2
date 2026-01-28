@@ -23,9 +23,14 @@ import { join, resolve } from 'path';
 
 // ==================== Configuration ====================
 
-const AEAT_PROJECT_PATH = resolve(__dirname, '../../tpv-soap-aeat');
+const AEAT_PROJECT_PATHS = [
+  resolve(__dirname, '../../tpv-soap-aeat'),
+  '/Users/mks/tpv-soap-aeat',
+];
 const OUTPUT_DIR = resolve(__dirname, '../sidecars');
 const SIDECAR_NAME = 'aeat-bridge';
+
+let AEAT_PROJECT_PATH = AEAT_PROJECT_PATHS[0];
 
 type Target = 'linux-x64' | 'linux-arm64' | 'darwin-x64' | 'darwin-arm64' | 'windows-x64';
 
@@ -68,8 +73,14 @@ function getCurrentPlatformTarget(): Target {
 }
 
 async function checkAEATProjectExists(): Promise<boolean> {
-  const serverPath = join(AEAT_PROJECT_PATH, 'src', 'server.ts');
-  return existsSync(serverPath);
+  for (const path of AEAT_PROJECT_PATHS) {
+    const serverPath = join(path, 'src', 'server.ts');
+    if (existsSync(serverPath)) {
+      AEAT_PROJECT_PATH = path;
+      return true;
+    }
+  }
+  return false;
 }
 
 async function ensureOutputDir(): Promise<void> {
@@ -164,8 +175,11 @@ async function main(): Promise<void> {
   // Check if AEAT project exists
   if (!(await checkAEATProjectExists())) {
     console.error('❌ Error: tpv-soap-aeat project not found!');
-    console.error(`   Expected path: ${AEAT_PROJECT_PATH}`);
-    console.error('\n   Please ensure the tpv-soap-aeat repository is cloned alongside this project.');
+    console.error('   Searched paths:');
+    for (const path of AEAT_PROJECT_PATHS) {
+      console.error(`   - ${path}`);
+    }
+    console.error('\n   Please ensure the tpv-soap-aeat repository is cloned in one of these locations.');
     process.exit(1);
   }
 
