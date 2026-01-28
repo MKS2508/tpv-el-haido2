@@ -193,10 +193,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
           <DialogContent
             className={cn(
-              'flex flex-col',
+              'flex flex-col overflow-auto',
               isMobile
-                ? 'max-w-[100vw] max-h-[100vh] min-h-[100vh] w-full h-full rounded-none border-0'
-                : 'max-w-[90vw] max-h-[95vh] min-h-[500px]'
+                ? 'w-[100vw] max-w-[100vw] h-[100vh] max-h-[100vh] rounded-none border-0 p-4'
+                : 'w-[95vw] max-w-[900px] h-[90vh] max-h-[90vh] p-6'
             )}
           >
             <DialogHeader className={cn(isMobile && 'px-4 py-3')}>
@@ -206,32 +206,41 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
               <div
                 className={cn(
-                  'flex items-center gap-2',
-                  isMobile ? 'flex-col space-y-2' : 'space-x-4'
+                  'flex items-center gap-3',
+                  isMobile ? 'flex-col' : 'flex-row'
                 )}
               >
                 <Button
                   variant={localPaymentMethod === 'efectivo' ? 'default' : 'outline'}
                   onClick={() => setLocalPaymentMethod('efectivo')}
-                  className={cn('flex-1 text-lg', isMobile ? 'h-12 w-full' : 'h-10')}
+                  className={cn(
+                    'flex-1 touch-manipulation',
+                    isMobile ? 'h-14 w-full text-lg' : 'h-16 text-xl'
+                  )}
                 >
-                  <EuroIcon className={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-5 w-5')} />
+                  <EuroIcon className={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-7 w-7')} />
                   Efectivo
                 </Button>
                 <Button
                   variant={localPaymentMethod === 'tarjeta' ? 'default' : 'outline'}
                   onClick={() => setLocalPaymentMethod('tarjeta')}
-                  className={cn('flex-1 text-lg', isMobile ? 'h-12 w-full' : 'h-10')}
+                  className={cn(
+                    'flex-1 touch-manipulation',
+                    isMobile ? 'h-14 w-full text-lg' : 'h-16 text-xl'
+                  )}
                 >
-                  <CreditCardIcon className={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-5 w-5')} />
+                  <CreditCardIcon className={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-7 w-7')} />
                   Tarjeta
                 </Button>
                 <Button
                   variant={localPaymentMethod === 'pagar_luego' ? 'default' : 'outline'}
                   onClick={() => setLocalPaymentMethod('pagar_luego')}
-                  className={cn('flex-1 text-lg', isMobile ? 'h-12 w-full' : 'h-10')}
+                  className={cn(
+                    'flex-1 touch-manipulation',
+                    isMobile ? 'h-14 w-full text-lg' : 'h-16 text-xl'
+                  )}
                 >
-                  <ClockIcon className={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-5 w-5')} />
+                  <ClockIcon className={cn('mr-2', isMobile ? 'h-6 w-6' : 'h-7 w-7')} />
                   Pagar Luego
                 </Button>
               </div>
@@ -266,10 +275,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                                 variant="outline"
                                 onClick={() => handleLocalCashInput(key)}
                                 className={cn(
-                                  'w-full bg-input border border-border font-bold hover:bg-input/80 transition-all duration-150',
+                                  'w-full bg-input border-2 border-border font-bold hover:bg-input/80 transition-all duration-150 touch-manipulation',
                                   isMobile
-                                    ? 'h-18 text-2xl active:scale-95 touch-manipulation'
-                                    : 'h-20 text-3xl hover:scale-105 active:scale-95'
+                                    ? 'h-16 text-2xl active:scale-95'
+                                    : 'h-24 text-4xl hover:scale-102 active:scale-95'
                                 )}
                               >
                                 {key}
@@ -437,22 +446,22 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               )}
             </AnimatePresence>
             <DialogFooter
-              className={cn('gap-2', isMobile ? 'flex-col px-4 pb-4 pt-2' : 'flex-row')}
+              className={cn('gap-3 mt-auto pt-4', isMobile ? 'flex-col' : 'flex-row')}
             >
               <Button
                 variant="outline"
                 onClick={() => setIsPaymentModalOpen(false)}
                 className={cn(
-                  'text-foreground hover:bg-primary/10 w-full font-semibold',
-                  isMobile ? 'h-12 text-base order-2' : 'h-14 text-lg mt-4'
+                  'text-foreground hover:bg-primary/10 w-full font-semibold touch-manipulation',
+                  isMobile ? 'h-16 text-xl order-2' : 'h-20 text-2xl'
                 )}
               >
                 Cancelar
               </Button>
               <Button
                 className={cn(
-                  'w-full font-semibold',
-                  isMobile ? 'h-12 text-base order-1' : 'h-14 text-lg mt-4'
+                  'w-full font-semibold touch-manipulation',
+                  isMobile ? 'h-16 text-xl order-1' : 'h-20 text-2xl'
                 )}
                 onClick={handleConfirmPayment}
               >
@@ -463,50 +472,48 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         </Dialog>
       )}
 
-      <AnimatePresence>
-        {showTicketDialog && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
+      <Dialog open={showTicketDialog} onOpenChange={setShowTicketDialog}>
+        <DialogContent
+          className={cn(
+            'flex flex-col justify-center',
+            isMobile ? 'w-[95vw] max-w-[95vw] p-6' : 'w-[80vw] max-w-[700px] p-8'
+          )}
+        >
+          <DialogHeader>
+            <DialogTitle className={cn('text-center', isMobile ? 'text-3xl' : 'text-5xl')}>
+              ¿Desea imprimir el ticket?
+            </DialogTitle>
+          </DialogHeader>
+          <div
+            className={cn(
+              'flex justify-center mt-8',
+              isMobile ? 'flex-col gap-4' : 'gap-6'
+            )}
           >
-            <Dialog open={showTicketDialog} onOpenChange={setShowTicketDialog}>
-              <DialogContent
-                className={cn(isMobile ? 'max-w-[95vw] max-h-[80vh] w-full' : 'sm:max-w-[625px]')}
-              >
-                <DialogHeader className={cn(isMobile && 'px-2 py-4')}>
-                  <DialogTitle className={cn('text-center', isMobile ? 'text-2xl' : 'text-4xl')}>
-                    ¿Desea imprimir el ticket?
-                  </DialogTitle>
-                </DialogHeader>
-                <div
-                  className={cn(
-                    'flex justify-center mt-6',
-                    isMobile ? 'flex-col gap-3 px-2' : 'space-x-4'
-                  )}
-                >
-                  <Button
-                    onClick={() => handleCompleteTransaction(true)}
-                    className={cn('flex-1', isMobile ? 'h-16 text-lg' : 'h-24 text-2xl')}
-                  >
-                    <PrinterIcon className={cn('mr-2', isMobile ? 'h-5 w-5' : 'h-6 w-6')} />
-                    Sí, imprimir
-                  </Button>
-                  <Button
-                    onClick={() => handleCompleteTransaction(false)}
-                    variant="outline"
-                    className={cn('flex-1', isMobile ? 'h-16 text-lg' : 'h-24 text-2xl')}
-                  >
-                    <XIcon className={cn('mr-2', isMobile ? 'h-5 w-5' : 'h-6 w-4')} />
-                    No, gracias
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <Button
+              onClick={() => handleCompleteTransaction(true)}
+              className={cn(
+                'flex-1 touch-manipulation',
+                isMobile ? 'h-20 text-xl' : 'h-28 text-3xl'
+              )}
+            >
+              <PrinterIcon className={cn('mr-3', isMobile ? 'h-7 w-7' : 'h-10 w-10')} />
+              Sí, imprimir
+            </Button>
+            <Button
+              onClick={() => handleCompleteTransaction(false)}
+              variant="outline"
+              className={cn(
+                'flex-1 touch-manipulation',
+                isMobile ? 'h-20 text-xl' : 'h-28 text-3xl'
+              )}
+            >
+              <XIcon className={cn('mr-3', isMobile ? 'h-7 w-7' : 'h-10 w-10')} />
+              No, gracias
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

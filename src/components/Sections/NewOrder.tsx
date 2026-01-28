@@ -386,35 +386,33 @@ const NewOrder = memo(() => {
 
           {/* Mobile Order Panel Modal */}
           <Dialog open={showOrderPanel} onOpenChange={setShowOrderPanel}>
-            <DialogContent className="max-w-[95vw] max-h-[85vh] p-0">
-              <div className="h-[80vh] flex flex-col">
-                <DialogHeader className="px-4 py-3 border-b">
-                  <DialogTitle>
-                    Pedido -{' '}
-                    {selectedOrder?.tableNumber === 0
-                      ? 'Barra'
-                      : `Mesa ${selectedOrder?.tableNumber}`}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 overflow-hidden">
-                  <OrderPanel
-                    activeOrders={activeOrders}
-                    selectedOrder={selectedOrder}
-                    selectedOrderId={selectedOrderId}
-                    tables={tables}
-                    onOrderSelect={setSelectedOrderId}
-                    onOrderClose={handleCloseTab}
-                    onNewOrder={() => handleTableChange(0)}
-                    onTableChange={handleTableChange}
-                    onPaymentStart={() => {
-                      setShowOrderPanel(false);
-                      setIsPaymentModalOpen(true);
-                    }}
-                    onRemoveFromOrder={handleRemoveFromOrder}
-                    onAddToOrder={handleAddToOrder}
-                    disableAnimations={true}
-                  />
-                </div>
+            <DialogContent className="w-[100vw] max-w-[100vw] h-[100vh] max-h-[100vh] p-0 flex flex-col rounded-none border-0">
+              <DialogHeader className="px-4 py-4 border-b flex-shrink-0 bg-background">
+                <DialogTitle className="text-2xl font-semibold">
+                  Pedido -{' '}
+                  {selectedOrder?.tableNumber === 0
+                    ? 'Barra'
+                    : `Mesa ${selectedOrder?.tableNumber}`}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-hidden min-h-0">
+                <OrderPanel
+                  activeOrders={activeOrders}
+                  selectedOrder={selectedOrder}
+                  selectedOrderId={selectedOrderId}
+                  tables={tables}
+                  onOrderSelect={setSelectedOrderId}
+                  onOrderClose={handleCloseTab}
+                  onNewOrder={() => handleTableChange(0)}
+                  onTableChange={handleTableChange}
+                  onPaymentStart={() => {
+                    setShowOrderPanel(false);
+                    setIsPaymentModalOpen(true);
+                  }}
+                  onRemoveFromOrder={handleRemoveFromOrder}
+                  onAddToOrder={handleAddToOrder}
+                  disableAnimations={true}
+                />
               </div>
             </DialogContent>
           </Dialog>
@@ -503,21 +501,36 @@ const NewOrder = memo(() => {
       )}
 
       <Dialog open={isConfirmCloseModalOpen} onOpenChange={setIsConfirmCloseModalOpen}>
-        <DialogContent className="bg-background dark:bg-background rounded-lg shadow-xl">
+        <DialogContent className={cn(
+          'flex flex-col justify-center',
+          isMobile ? 'w-[95vw] max-w-[95vw] p-6' : 'w-[80vw] max-w-[600px] p-8'
+        )}>
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-foreground dark:text-foreground">
+            <DialogTitle className={cn(
+              'font-semibold text-center',
+              isMobile ? 'text-2xl' : 'text-4xl'
+            )}>
               ¿Estás seguro de eliminar esta comanda?
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground dark:text-muted-foreground">
+            <DialogDescription className={cn(
+              'text-center mt-4',
+              isMobile ? 'text-base' : 'text-xl'
+            )}>
               Esta acción eliminará la comanda en progreso para la{' '}
               {orderToClose?.tableNumber === 0 ? 'Barra' : `Mesa ${orderToClose?.tableNumber}`}.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className={cn(
+            'gap-4 mt-6',
+            isMobile ? 'flex-col' : 'flex-row'
+          )}>
             <Button
               variant="outline"
               onClick={() => setIsConfirmCloseModalOpen(false)}
-              className="text-foreground dark:text-foreground hover:bg-secondary dark:hover:bg-secondary"
+              className={cn(
+                'flex-1 touch-manipulation',
+                isMobile ? 'h-16 text-xl' : 'h-20 text-2xl'
+              )}
             >
               Cancelar
             </Button>
@@ -529,7 +542,10 @@ const NewOrder = memo(() => {
                 }
                 setIsConfirmCloseModalOpen(false);
               }}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className={cn(
+                'flex-1 touch-manipulation',
+                isMobile ? 'h-16 text-xl' : 'h-20 text-2xl'
+              )}
             >
               Eliminar
             </Button>

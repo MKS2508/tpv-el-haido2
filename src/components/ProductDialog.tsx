@@ -12,7 +12,7 @@ import type Product from '@/models/Product';
 import CategoryForm from './CategoryForm';
 import ProductForm from './ProductForm';
 
-interface ProductDialogProps {
+interface ProductDialogContentProps {
   editingProduct?: Product | null;
   editingCategory?: Category | null;
   onProductSave: (product: Product) => void;
@@ -23,6 +23,64 @@ interface ProductDialogProps {
   categories: Category[];
 }
 
+/**
+ * Contenido del dialog sin el wrapper Dialog.
+ * Usar cuando ya estás dentro de un DialogContent.
+ */
+export const ProductDialogContent: React.FC<ProductDialogContentProps> = ({
+  editingProduct,
+  editingCategory,
+  onProductSave,
+  onCategorySave,
+  onProductDelete,
+  onCategoryDelete,
+  onCancel,
+  categories,
+}) => {
+  if (editingProduct) {
+    return (
+      <>
+        <ProductForm
+          categories={categories}
+          product={editingProduct}
+          onSave={onProductSave}
+          onCancel={onCancel}
+        />
+        <DialogFooter>
+          {editingProduct.id > 0 && (
+            <Button variant="destructive" onClick={() => onProductDelete(editingProduct.id)}>
+              Eliminar Producto
+            </Button>
+          )}
+        </DialogFooter>
+      </>
+    );
+  }
+
+  if (editingCategory) {
+    return (
+      <>
+        <CategoryForm category={editingCategory} onSave={onCategorySave} onCancel={onCancel} />
+        <DialogFooter>
+          {editingCategory.id > 0 && (
+            <Button variant="destructive" onClick={() => onCategoryDelete(editingCategory.id)}>
+              Eliminar Categoría
+            </Button>
+          )}
+        </DialogFooter>
+      </>
+    );
+  }
+
+  return null;
+};
+
+interface ProductDialogProps extends ProductDialogContentProps {}
+
+/**
+ * Dialog completo con wrapper.
+ * Usar como componente standalone (no dentro de otro Dialog).
+ */
 const ProductDialog: React.FC<ProductDialogProps> = ({
   editingProduct,
   editingCategory,
@@ -33,50 +91,33 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
   onCancel,
   categories,
 }) => {
+  const isOpen = !!(editingProduct || editingCategory);
+  const title = editingProduct
+    ? editingProduct.id ? 'Editar Producto' : 'Añadir Producto'
+    : editingCategory
+      ? editingCategory.id ? 'Editar Categoría' : 'Añadir Categoría'
+      : '';
+
+  if (!isOpen) return null;
+
   return (
-    <>
-      {editingProduct && (
-        <Dialog open={!!editingProduct} onOpenChange={onCancel}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingProduct.id ? 'Editar Producto' : 'Añadir Producto'}</DialogTitle>
-            </DialogHeader>
-            <ProductForm
-              categories={categories}
-              product={editingProduct}
-              onSave={onProductSave}
-              onCancel={onCancel}
-            />
-            <DialogFooter>
-              {editingProduct.id > 0 && (
-                <Button variant="destructive" onClick={() => onProductDelete(editingProduct.id)}>
-                  Eliminar Producto
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-      {editingCategory && (
-        <Dialog open={!!editingCategory} onOpenChange={onCancel}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingCategory.id ? 'Editar Categoría' : 'Añadir Categoría'}
-              </DialogTitle>
-            </DialogHeader>
-            <CategoryForm category={editingCategory} onSave={onCategorySave} onCancel={onCancel} />
-            <DialogFooter>
-              {editingCategory.id > 0 && (
-                <Button variant="destructive" onClick={() => onCategoryDelete(editingCategory.id)}>
-                  Eliminar Categoría
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <ProductDialogContent
+          editingProduct={editingProduct}
+          editingCategory={editingCategory}
+          onProductSave={onProductSave}
+          onCategorySave={onCategorySave}
+          onProductDelete={onProductDelete}
+          onCategoryDelete={onCategoryDelete}
+          onCancel={onCancel}
+          categories={categories}
+        />
+      </DialogContent>
+    </Dialog>
   );
 };
 

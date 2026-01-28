@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { BeerIcon, FilterIcon, PlusIcon } from 'lucide-react';
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import iconOptions from '@/assets/utils/icons/iconOptions.ts';
-import ProductDialog from '@/components/ProductDialog';
+import ProductDialog, { ProductDialogContent } from '@/components/ProductDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import CategoryCard from '@/components/ui/CategoryCard';
@@ -429,7 +429,7 @@ const Products = memo(() => {
           <DialogHeader>
             <DialogTitle>Añadir Producto</DialogTitle>
           </DialogHeader>
-          <ProductDialog
+          <ProductDialogContent
             editingProduct={defaultProduct}
             onProductSave={(product) => {
               handleAddProduct(product);
@@ -452,7 +452,7 @@ const Products = memo(() => {
           <DialogHeader>
             <DialogTitle>Añadir Categoría</DialogTitle>
           </DialogHeader>
-          <ProductDialog
+          <ProductDialogContent
             editingCategory={defaultCategory}
             onCategorySave={(category) => {
               handleAddCategory(category);
@@ -491,16 +491,20 @@ const Products = memo(() => {
       />
 
       <Dialog open={deleteConfirmation !== null} onOpenChange={() => setDeleteConfirmation(null)}>
-        <DialogContent>
+        <DialogContent className="w-[90vw] max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirmar eliminación</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl">Confirmar eliminación</DialogTitle>
+            <DialogDescription className="text-base mt-2">
               ¿Estás seguro de que quieres eliminar este{' '}
               {deleteConfirmation?.type === 'product' ? 'producto' : 'categoría'}?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmation(null)}>
+          <DialogFooter className="flex-col sm:flex-row gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmation(null)}
+              className="h-14 text-lg flex-1"
+            >
               Cancelar
             </Button>
             <Button
@@ -510,6 +514,7 @@ const Products = memo(() => {
                   ? confirmDeleteProduct
                   : confirmDeleteCategory
               }
+              className="h-14 text-lg flex-1"
             >
               Eliminar
             </Button>
