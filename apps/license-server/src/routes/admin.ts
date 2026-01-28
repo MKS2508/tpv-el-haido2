@@ -1,48 +1,207 @@
-import { Elysia, t } from "elysia";
-import { LicenseService } from "../services/license.service.ts";
-import type { CreateLicenseRequest, CreateLicenseResponse } from "../types/index.ts";
+import { Elysia, t } from 'elysia';
+import { bearer } from '@elysiajs/bearer';
+import { LicenseService } from '../services/license.service.js';
+import {
+  CreateLicenseRequestSchema,
+  CreateLicenseResponseSchema,
+  LicenseListItemSchema,
+  SuccessResponseSchema,
+  ErrorResponseSchema,
+  LicenseIdParamSchema,
+  EmailParamSchema
+} from '../schemas/license.schema.js';
+import { adminLogger, apiLogger } from '../lib/logger.js';
 
-export const adminRoutes = new Elysia({ prefix: "/api/admin" })
-  .get("/licenses", () => {
-    return LicenseService.listLicenses();
+/**
+ * Admin authentication token
+ * In production, this should come from environment variables
+ */
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'admin-secret-token-change-me';
+
+/**
+ * Admin routes for license management
+ * All endpoints require Bearer token authentication
+ */
+export const adminRoutes = new Elysia({ prefix: '/api/admin' })
+  .use(bearer())
+
+  /**
+   * Authentication guard
+   * Validates bearer token before processing any admin request
+   */
+  .onBeforeHandle(({ bearer, set }) => {
+    if (bearer !== ADMIN_TOKEN) {
+      adminLogger.warn('Unauthorized admin access attempt');
+
+      set.status = 401;
+
+      return {
+        error: 'Unauthorized',
+        message: 'Invalid or missing admin token'
+      };
+    }
   })
 
-  .post("/licenses", async ({ body }: { body: CreateLicenseRequest }) => {
-    const { key, keyHash } = LicenseService.createLicense(
-      body.email,
-      body.license_type,
-      body.expires_in_days
-    );
+  /**
+   * List all licenses
+   * Returns all licenses in the system ordered by creation date
+   */
+  .get(
+    '/licenses',
+    async () => {
+      adminLogger.info('Admin: listing all licenses');
 
-    const response: CreateLicenseResponse = {
-      key,
-      key_hash: keyHash,
-      email: body.email,
-      license_type: body.license_type,
-      expires_at: body.expires_in_days
-        ? Math.floor(Date.now() / 1000) + (body.expires_in_days * 24 * 60 * 60)
-        : undefined
-    };
+      const result = await LicenseService.listLicenses();
 
-    return response;
-  }, {
-    body: t.Object({
-      email: t.String({ format: "email" }),
-      license_type: t.Union([t.Literal("basic"), t.Literal("pro"), t.Literal("enterprise")]),
-      expires_in_days: t.Optional(t.Number())
-    })
-  })
+      if (!result.ok) {
+        return {
+          error: 'Failed to retrieve licenses',
+          code: result.error.code
+        };
+      }
 
-  .post("/licenses/:id/revoke", async ({ params }: { params: { id: string } }) => {
-    const success = LicenseService.revokeLicense(parseInt(params.id));
-    return { success };
-  })
+      return result.value;
+    },
+    {
+      response: t.Union([t.Array(LicenseListItemSchema), ErrorResponseSchema]),
+      detail: {
+        summary: 'List all licenses',
+        description: 'Returns all licenses in the system ordered by creation date (newest first)',
+        tags: ['Admin']
+      }
+    }
+  )
 
-  .post("/licenses/:id/reactivate", async ({ params }: { params: { id: string } }) => {
-    const success = LicenseService.reactivateLicense(parseInt(params.id));
-    return { success };
-  })
+  /**
+   * Create a new license
+   * Generates a unique license key and stores it in the database
+   */
+  .post(
+    '/licenses',
+    async ({ body, set }) => {
+      adminLogger.info('Admin: creating license', { email: body.email });
 
-  .get("/licenses/:email", async ({ params }: { params: { email: string } }) => {
-    return LicenseService.getLicensesByEmail(params.email);
-  });
+      const result = await LicenseService.createLicense({
+        email: body.email,
+        license_type: body.license_type,
+        expires_in_days: body.expires_in_days
+      });
+
+      if (!result.ok) {
+        set.status = 400;
+        return {
+          error: result.error.message,
+          code: result.error.code
+        };
+      }
+
+      return result.value;
+    },
+    {
+      body: CreateLicenseRequestSchema,
+      response: t.Union([CreateLicenseResponseSchema, ErrorResponseSchema]),
+      detail: {
+        summary: 'Create license',
+        description:
+          'Creates a new license with the specified email and type. Optionally sets an expiration date.',
+        tags: ['Admin']
+      }
+    }
+  )
+
+  /**
+   * Revoke a license
+   * Deactivates a license, making it invalid for validation
+   */
+  .post(
+    '/licenses/:id/revoke',
+    async ({ params }) => {
+      adminLogger.info('Admin: revoking license', { id: params.id });
+
+      const result = await LicenseService.revokeLicense(params.id);
+
+      if (!result.ok) {
+        return {
+          success: false,
+          error: result.error.message,
+          code: result.error.code
+        };
+      }
+
+      return { success: result.value };
+    },
+    {
+      params: LicenseIdParamSchema,
+      response: t.Union([SuccessResponseSchema, ErrorResponseSchema]),
+      detail: {
+        summary: 'Revoke license',
+        description:
+          'Revokes a license by setting its active status to false. The license will no longer pass validation.',
+        tags: ['Admin']
+      }
+    }
+  )
+
+  /**
+   * Reactivate a license
+   * Reactivates a previously revoked license
+   */
+  .post(
+    '/licenses/:id/reactivate',
+    async ({ params }) => {
+      adminLogger.info('Admin: reactivating license', { id: params.id });
+
+      const result = await LicenseService.reactivateLicense(params.id);
+
+      if (!result.ok) {
+        return {
+          success: false,
+          error: result.error.message,
+          code: result.error.code
+        };
+      }
+
+      return { success: result.value };
+    },
+    {
+      params: LicenseIdParamSchema,
+      response: t.Union([SuccessResponseSchema, ErrorResponseSchema]),
+      detail: {
+        summary: 'Reactivate license',
+        description:
+          'Reactivates a previously revoked license by setting its active status to true.',
+        tags: ['Admin']
+      }
+    }
+  )
+
+  /**
+   * Get licenses by email
+   * Returns all licenses associated with a specific email address
+   */
+  .get(
+    '/licenses/email/:email',
+    async ({ params }) => {
+      adminLogger.info('Admin: retrieving licenses by email', { email: params.email });
+
+      const result = await LicenseService.getLicensesByEmail(params.email);
+
+      if (!result.ok) {
+        return {
+          error: 'Failed to retrieve licenses',
+          code: result.error.code
+        };
+      }
+
+      return result.value;
+    },
+    {
+      params: EmailParamSchema,
+      response: t.Union([t.Array(LicenseListItemSchema), ErrorResponseSchema]),
+      detail: {
+        summary: 'Get licenses by email',
+        description: 'Returns all licenses associated with the specified email address.',
+        tags: ['Admin']
+      }
+    }
+  );

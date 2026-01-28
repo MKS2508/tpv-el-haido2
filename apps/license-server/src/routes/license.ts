@@ -1,40 +1,78 @@
-import { Elysia, t } from "elysia";
-import { LicenseService } from "../services/license.service.ts";
-import type { LicenseValidationRequest, LicenseValidationResponse } from "../types/index.ts";
+import { Elysia, t } from 'elysia';
+import { LicenseService } from '../services/license.service.js';
+import {
+  ValidateLicenseRequestSchema,
+  ValidateLicenseResponseSchema,
+  HealthCheckResponseSchema,
+  ErrorResponseSchema
+} from '../schemas/license.schema.js';
+import { apiLogger } from '../lib/logger.js';
 
-export const licenseRoutes = new Elysia({ prefix: "/api/license" })
-  .post("/validate", async ({ body }: { body: LicenseValidationRequest }) => {
-    try {
-      const result = LicenseService.validateLicense(
-        body.key,
-        body.machine_fingerprint
-      );
+/**
+ * Public license routes
+ * Provides endpoints for license validation and health checks
+ * No authentication required
+ */
+export const licenseRoutes = new Elysia({ prefix: '/api/license' })
 
-      const response: LicenseValidationResponse = {
-        valid: result.valid,
-        user_email: result.userEmail,
-        license_type: result.licenseType,
-        expires_at: result.expiresAt,
-        error: result.error
-      };
-
-      return response;
-    } catch (error) {
-      console.error("Error validating license:", error);
+  /**
+   * Health check endpoint
+   * Returns server status and version information
+   */
+  .get(
+    '/health',
+    () => {
       return {
-        valid: false,
-        user_email: "",
-        license_type: "",
-        error: "Internal server error"
+        status: 'ok' as const,
+        service: 'license-server',
+        timestamp: Date.now(),
+        version: '1.0.0'
       };
+    },
+    {
+      response: HealthCheckResponseSchema,
+      detail: {
+        summary: 'Health check',
+        description: 'Returns server status and version information',
+        tags: ['Health']
+      }
     }
-  }, {
-    body: t.Object({
-      key: t.String(),
-      email: t.String(),
-      machine_fingerprint: t.String()
-    })
-  })
-  .get("/health", () => {
-    return { status: "ok", service: "license-server", timestamp: Date.now() };
-  });
+  )
+
+  /**
+   * License validation endpoint
+   * Validates a license key and returns license details if valid
+   */
+  .post(
+    '/validate',
+    async ({ body }) => {
+      apiLogger.info('License validation request', { email: body.email });
+
+      const result = await LicenseService.validateLicense({
+        key: body.key,
+        email: body.email,
+        machine_fingerprint: body.machine_fingerprint
+      });
+
+      if (!result.ok) {
+        apiLogger.error('Validation failed', result.error);
+        return {
+          valid: false,
+          error: 'Internal server error',
+          code: result.error.code
+        };
+      }
+
+      return result.value;
+    },
+    {
+      body: ValidateLicenseRequestSchema,
+      response: t.Union([ValidateLicenseResponseSchema, ErrorResponseSchema]),
+      detail: {
+        summary: 'Validate license',
+        description:
+          'Validates a license key against database and business rules. Returns license details if valid, or error information if invalid.',
+        tags: ['License']
+      }
+    }
+  );

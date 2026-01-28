@@ -21,7 +21,8 @@
       "Bash(bun install)",
       "Bash(bun run src/index.ts)",
       "Bash(curl:*)",
-      "Bash(jq)"
+      "Bash(jq)",
+      "Bash(pkill:*)"
     ]
   }
 }
