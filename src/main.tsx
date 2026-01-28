@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { ThemeProvider } from '@mks2508/theme-manager-react';
+import { OnboardingProvider } from './components/Onboarding/OnboardingProvider';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import './styles/optimized-product-card.css';
@@ -49,7 +50,9 @@ async function initializeApp() {
     <StrictMode>
       <ErrorBoundary level="page" fallbackTitle="Error critico en la aplicacion">
         <ThemeProvider defaultTheme="default" defaultMode="auto">
-          <App />
+          <OnboardingProvider>
+            <App />
+          </OnboardingProvider>
         </ThemeProvider>
       </ErrorBoundary>
     </StrictMode>

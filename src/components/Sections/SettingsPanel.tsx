@@ -8,6 +8,7 @@ import {
   PlusCircle,
   ShieldCheck,
   Trash2,
+  Wand2,
 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
@@ -15,6 +16,7 @@ import AEATSettings from '@/components/AEATSettings';
 import { ThemeDebugger } from '@/components/ThemeDebugger';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import ThermalPrinterSettings from '@/components/ThermalPrinterSettings.tsx';
+import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.tsx';
@@ -82,6 +84,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     taxRate,
     setTaxRate,
   } = useStore();
+  const { restartOnboarding } = useOnboardingContext();
+
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState<Partial<User>>({ name: '', profilePicture: '', pin: '' });
@@ -349,6 +353,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <SelectItem value="usd">Dólar ($)</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="pt-4 border-t">
+                <Button variant="outline" className="w-full justify-start h-12" onClick={restartOnboarding}>
+                  <Wand2 className="mr-2 h-4 w-4 text-primary" />
+                  Ejecutar Asistente de Configuracion
+                </Button>
+                <p className="text-[10px] text-muted-foreground mt-2 px-1">
+                  Reinicia el asistente para volver a configurar el almacenamiento, importar datos o crear usuarios iniciales.
+                </p>
               </div>
             </CardContent>
           </Card>

@@ -8,11 +8,13 @@ import {
   FileText,
   HandCoins,
   Loader2,
+  Receipt,
   XCircle,
 } from 'lucide-react';
 import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { renderTicketPreview } from '@/assets/utils/utils.ts';
+import { InvoiceStatusBadge } from '@/components/InvoiceStatusBadge';
 import PaymentModal from '@/components/PaymentModal.tsx';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +43,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/components/ui/use-toast.ts';
+import { useAEAT } from '@/hooks/useAEAT';
+import { useEmitInvoice } from '@/hooks/useEmitInvoice';
 import { useResponsive } from '@/hooks/useResponsive';
 import { cn } from '@/lib/utils';
 import type Order from '@/models/Order.ts';
@@ -62,7 +67,10 @@ const OrderHistory = memo(
     setSelectedOrderId,
   }: OrderHistoryProps) => {
     const { isMobile } = useResponsive();
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Order; direction: 'asc' | 'desc' }>({
+    const [sortConfig, setSortConfig] = useState<{
+      key: 'date' | 'total' | 'status' | 'id';
+      direction: 'asc' | 'desc';
+    }>({
       key: 'date',
       direction: 'desc',
     });
@@ -77,6 +85,41 @@ const OrderHistory = memo(
     const [isDragging, setIsDragging] = useState(false);
     const [startY, setStartY] = useState(0);
     const [scrollTop, setScrollTop] = useState(0);
+
+    // AEAT hooks
+    const { isEnabled: isAEATEnabled, isConnected: isAEATConnected } = useAEAT();
+    const { emitInvoice, isEmitting } = useEmitInvoice();
+
+    // Handler para emitir factura
+    const handleEmitInvoice = useCallback(async () => {
+      if (!selectedOrder) return;
+
+      const result = await emitInvoice(selectedOrder);
+      if (result.success) {
+        // Actualizar el pedido seleccionado con la info de AEAT
+        setSelectedOrder(result.order);
+      }
+    }, [selectedOrder, emitInvoice, setSelectedOrder]);
+
+    // Determinar si el botón de factura debe estar deshabilitado
+    const isInvoiceButtonDisabled = useMemo(() => {
+      if (!selectedOrder) return true;
+      if (isEmitting) return true;
+      if (!isAEATConnected) return true;
+      if (selectedOrder.aeat?.invoiceStatus === 'accepted') return true;
+      if (selectedOrder.aeat?.invoiceStatus === 'pending') return true;
+      return false;
+    }, [selectedOrder, isEmitting, isAEATConnected]);
+
+    // Obtener tooltip para el botón de factura
+    const getInvoiceButtonTooltip = useCallback(() => {
+      if (!selectedOrder) return '';
+      if (isEmitting) return 'Emitiendo factura...';
+      if (!isAEATConnected) return 'Sin conexión con AEAT';
+      if (selectedOrder.aeat?.invoiceStatus === 'accepted') return 'Factura ya aceptada';
+      if (selectedOrder.aeat?.invoiceStatus === 'pending') return 'Factura pendiente de respuesta';
+      return 'Emitir factura a AEAT';
+    }, [selectedOrder, isEmitting, isAEATConnected]);
 
     const handleCompleteOrder = useCallback(
       (completedOrder: Order) => {
@@ -153,7 +196,7 @@ const OrderHistory = memo(
         });
     }, [orderHistory, sortConfig, filterStatus, activeOrders]);
 
-    const handleSort = (key: keyof Order) => {
+    const handleSort = (key: 'date' | 'total' | 'status' | 'id') => {
       setSortConfig((current) => ({
         key,
         direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
@@ -557,6 +600,15 @@ const OrderHistory = memo(
                             />
                           </div>
                         )}
+                        {/* Estado de facturación AEAT */}
+                        {isAEATEnabled && selectedOrder.status === 'paid' && (
+                          <div className={cn(isMobile ? 'col-span-2' : '')}>
+                            <Label className="text-sm">Factura AEAT</Label>
+                            <div className="mt-1.5">
+                              <InvoiceStatusBadge aeat={selectedOrder.aeat} />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div>
@@ -647,6 +699,42 @@ const OrderHistory = memo(
                 <FileText className={cn('mr-2', isMobile ? 'h-4 w-4' : 'h-4 w-4')} />
                 Imprimir Ticket
               </Button>
+              {/* Botón Emitir Factura - solo para pedidos pagados con AEAT habilitado */}
+              {selectedOrder?.status === 'paid' && isAEATEnabled && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={cn(isMobile ? 'w-full' : '')}>
+                        <Button
+                          variant="outline"
+                          onClick={handleEmitInvoice}
+                          disabled={isInvoiceButtonDisabled}
+                          className={cn(
+                            'bg-background text-foreground border-border hover:bg-muted touch-manipulation',
+                            isMobile ? 'w-full h-12' : 'w-full h-20',
+                            selectedOrder.aeat?.invoiceStatus === 'accepted' &&
+                              'border-green-500 text-green-600 dark:text-green-400'
+                          )}
+                        >
+                          {isEmitting ? (
+                            <Loader2 className={cn('mr-2 h-4 w-4 animate-spin')} />
+                          ) : (
+                            <Receipt className={cn('mr-2', isMobile ? 'h-4 w-4' : 'h-4 w-4')} />
+                          )}
+                          {isEmitting
+                            ? 'Emitiendo...'
+                            : selectedOrder.aeat?.invoiceStatus === 'accepted'
+                              ? 'Factura Emitida'
+                              : 'Emitir Factura'}
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{getInvoiceButtonTooltip()}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               {selectedOrder?.status === 'unpaid' && (
                 <Button
                   onClick={handleConfirmPayment}

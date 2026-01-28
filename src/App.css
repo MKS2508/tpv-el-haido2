@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
 /* Import touch optimizations */
 @import './styles/touch-optimizations.css';
 
@@ -9,8 +13,10 @@
 /* Base styles for theme transitions - themes are loaded dynamically by ThemeCore */
 
 /* Tailwind v4 Theme Configuration */
-@theme {
+@theme inline {
   /* Border radius */
+  --radius: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -79,6 +85,27 @@
   --spacing-touch: var(--touch-spacing);
   --spacing-touch-md: var(--touch-spacing-md);
   --spacing-touch-lg: var(--touch-spacing-lg);
+
+  /* Shadows */
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  /* Spacing */
+  --spacing: var(--spacing);
+
+  /* Letter spacing / tracking */
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 
   /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -170,9 +197,9 @@ html, body {
 
 @layer base {
   * {
-    @apply border-border;
-    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                color 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+    @apply border-border outline-ring/50;
+    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
                 border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
                 fill 0.2s cubic-bezier(0.4, 0, 0.2, 1),
                 stroke 0.2s cubic-bezier(0.4, 0, 0.2, 1);

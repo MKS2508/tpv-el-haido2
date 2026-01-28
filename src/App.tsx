@@ -6,6 +6,7 @@ import {
   HistoryIcon,
   HomeIcon,
   PlusCircleIcon,
+  ReceiptIcon,
   SettingsIcon,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef } from 'react';
@@ -14,6 +15,7 @@ import fallbackProducts from '@/assets/products.json';
 import BottomNavigation from '@/components/BottomNavigation.tsx';
 import DebugIndicator from '@/components/DebugIndicator.tsx';
 import ErrorBoundary from '@/components/ErrorBoundary.tsx';
+import AEATInvoices from '@/components/Sections/AEATInvoices.tsx';
 import Home from '@/components/Sections/Home.tsx';
 import Login from '@/components/Sections/Login.tsx';
 import NewOrder from '@/components/Sections/NewOrder.tsx';
@@ -24,6 +26,8 @@ import SettingsPanel from '@/components/Sections/SettingsPanel.tsx';
 import Sidebar from '@/components/SideBar.tsx';
 import SidebarToggleButton from '@/components/SideBarToggleButton.tsx';
 import UpdateChecker from '@/components/UpdateChecker.tsx';
+import { Onboarding } from '@/components/Onboarding';
+import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster.tsx';
 import { useSectionTitle } from '@/hooks/useDocumentTitle';
@@ -65,6 +69,8 @@ function App() {
 
     setOrderHistory,
   } = useAppData();
+
+  const { shouldShow } = useOnboardingContext();
 
   // Use the perfect new theme system
   const { currentMode, setTheme, currentTheme } = useTheme();
@@ -270,6 +276,7 @@ function App() {
     { id: 'products', icon: <ClipboardListIcon />, label: 'Productos' },
     { id: 'newOrder', icon: <PlusCircleIcon />, label: 'Nueva Comanda' },
     { id: 'orderHistory', icon: <HistoryIcon />, label: 'Historial' },
+    { id: 'aeatInvoices', icon: <ReceiptIcon />, label: 'Facturas AEAT' },
     { id: 'settings', icon: <SettingsIcon />, label: 'Ajustes' },
   ];
 
@@ -295,7 +302,7 @@ function App() {
             ? '100%'
             : '30vh'
           : // Forward: right/down
-            direction.axis === 'x'
+          direction.axis === 'x'
             ? '-100%'
             : '-30vh'; // Backward: left/up
 
@@ -319,7 +326,7 @@ function App() {
             ? '-100%'
             : '-30vh'
           : // Forward: left/up
-            direction.axis === 'x'
+          direction.axis === 'x'
             ? '100%'
             : '30vh'; // Backward: right/down
 
@@ -377,11 +384,15 @@ function App() {
     [isMobile]
   );
 
+  if (shouldShow) {
+    return <Onboarding />;
+  }
+
   return (
     <div
       className={cn(
         'flex h-screen w-screen bg-background text-foreground overscroll-none',
-        isMobile && 'pb-20 pt-0 px-0',
+        isMobile ? 'pb-20 pt-0 px-0' : 'pt-4 pr-4 pb-4',
         touchOptimizationsEnabled && 'touch-optimized'
       )}
     >
@@ -426,8 +437,8 @@ function App() {
 
           <main
             className={cn(
-              'flex-1 h-full relative overflow-hidden overscroll-y-none',
-              isMobile ? 'w-full' : 'py-4 pr-4'
+              'flex-1 h-full relative overscroll-y-none',
+              isMobile && 'w-full'
             )}
           >
             <AnimatePresence custom={getDirection(activeSection)}>
@@ -439,7 +450,7 @@ function App() {
                 animate="center"
                 exit="exit"
                 transition={pageTransition}
-                className="absolute inset-0 overflow-hidden"
+                className="absolute inset-0 rounded-3xl overflow-hidden"
               >
                 <Card
                   className={cn(
@@ -508,6 +519,18 @@ function App() {
                               selectedOrder={selectedOrder}
                               setSelectedOrder={setSelectedOrder}
                             />
+                          </ErrorBoundary>
+                        </div>
+                      )}
+                      {activeSection === 'aeatInvoices' && (
+                        <div
+                          className={cn(
+                            'h-full overflow-y-auto',
+                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                          )}
+                        >
+                          <ErrorBoundary level="section" fallbackTitle="Error en Facturas AEAT">
+                            <AEATInvoices />
                           </ErrorBoundary>
                         </div>
                       )}

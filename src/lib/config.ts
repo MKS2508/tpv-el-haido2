@@ -7,7 +7,37 @@
 
 import type { StorageMode } from '@/services/storage-adapter.interface';
 
-export const config = {
+export interface Config {
+  api: {
+    baseUrl: string;
+    timeout: number;
+  };
+  aeat: {
+    port: number;
+    baseUrl: string;
+    timeout: number;
+    startupTimeout: number;
+    maxRestartAttempts: number;
+    healthCheckInterval: number;
+  };
+  printer: {
+    timeout: number;
+  };
+  storage: {
+    defaultMode: StorageMode;
+  };
+  performance: {
+    forceHighPerformance: boolean;
+  };
+  debug: {
+    enabled: boolean;
+  };
+  onboarding: {
+    forceOnboarding: boolean;
+  };
+}
+
+export const config: Config = {
   /**
    * API/Backend configuration
    */
@@ -67,6 +97,14 @@ export const config = {
     /** Enable debug mode */
     enabled: import.meta.env.VITE_DEBUG_MODE === 'true',
   },
-} as const;
+
+  /**
+   * Onboarding configuration
+   */
+  onboarding: {
+    /** Force onboarding to show even if completed */
+    forceOnboarding: import.meta.env.VITE_FORCE_ONBOARDING === 'true',
+  },
+};
 
 export default config;

@@ -1,0 +1,301 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Cafe solo",
+      "price": 1.5,
+      "category": "Cafes",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "CoffeeIcon",
+      "uploadedImage": "/productos/img_2.png"
+    },
+    {
+      "id": 2,
+      "name": "Cafe con leche",
+      "price": 2.5,
+      "category": "Cafes",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "CoffeeIcon",
+      "uploadedImage": "/productos/img_2.png"
+    },
+    {
+      "id": 3,
+      "name": "Cafe con leche y hielo",
+      "price": 3.0,
+      "category": "Cafes",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "CoffeeIcon",
+      "uploadedImage": "/productos/img_2.png"
+    },
+    {
+      "id": 4,
+      "name": "Cafe con hielo",
+      "price": 3.0,
+      "category": "Cafes",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "CoffeeIcon",
+      "uploadedImage": "/productos/img_2.png"
+    },
+    {
+      "id": 5,
+      "name": "Cafe bombon",
+      "price": 2.5,
+      "category": "Cafes",
+      "brand": "Voll-damm",
+      "iconType": "preset",
+      "selectedIcon": "CoffeeIcon",
+      "uploadedImage": "/productos/img_2.png"
+    },
+    {
+      "id": 6,
+      "name": "Cafe bombon con hielo",
+      "price": 2.5,
+      "category": "Cafes",
+      "brand": "Voll-damm",
+      "iconType": "preset",
+      "selectedIcon": "CoffeeIcon",
+      "uploadedImage": "/productos/img_2.png"
+    },
+    {
+      "id": 7,
+      "name": "Botellin tercio estrella damm",
+      "price": 3.0,
+      "category": "Cervezas",
+      "brand": "Estrella Damm",
+      "iconType": "preset",
+      "selectedIcon": "BeerIcon",
+      "uploadedImage": "/productos/img_2.png"
+    },
+    {
+      "id": 8,
+      "name": "Cerveza sin gluten",
+      "price": 3.0,
+      "category": "Cervezas",
+      "brand": "Estrella Damm",
+      "iconType": "preset",
+      "selectedIcon": "BeerIcon",
+      "uploadedImage": "/productos/img_3.png"
+    },
+    {
+      "id": 9,
+      "name": "Botellin sin alcohol",
+      "price": 3.0,
+      "category": "Cervezas",
+      "brand": "Estrella Damm",
+      "iconType": "preset",
+      "selectedIcon": "BeerIcon",
+      "uploadedImage": "/productos/img_1.png"
+    },
+    {
+      "id": 10,
+      "name": "Cana de cerveza",
+      "price": 3.0,
+      "category": "Cervezas",
+      "brand": "Estrella Damm",
+      "iconType": "preset",
+      "selectedIcon": "BeerIcon",
+      "uploadedImage": "/productos/img.png"
+    },
+    {
+      "id": 11,
+      "name": "Cana de cerveza con limon",
+      "price": 3.0,
+      "category": "Cervezas",
+      "brand": "Estrella Damm",
+      "iconType": "preset",
+      "selectedIcon": "BeerIcon",
+      "uploadedImage": "/productos/img_1.png"
+    },
+    {
+      "id": 12,
+      "name": "Helado almendra",
+      "price": 2.0,
+      "category": "Postres",
+      "brand": "Haagen-Dazs",
+      "iconType": "preset",
+      "selectedIcon": "IceCreamIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 13,
+      "name": "Helado chocolate",
+      "price": 2.0,
+      "category": "Postres",
+      "brand": "Haagen-Dazs",
+      "iconType": "preset",
+      "selectedIcon": "IceCreamIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 14,
+      "name": "Helado vainilla",
+      "price": 2.0,
+      "category": "Postres",
+      "brand": "Haagen-Dazs",
+      "iconType": "preset",
+      "selectedIcon": "IceCreamIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 15,
+      "name": "Helado calippo",
+      "price": 2.0,
+      "category": "Postres",
+      "brand": "Haagen-Dazs",
+      "iconType": "preset",
+      "selectedIcon": "IceCreamIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 16,
+      "name": "Licor de hierbas",
+      "price": 1.5,
+      "category": "Licores",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "WineIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 17,
+      "name": "Vino Rioja",
+      "price": 1.5,
+      "category": "Licores",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "WineIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 18,
+      "name": "Vino Tempranillo",
+      "price": 1.5,
+      "category": "Licores",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "WineIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 19,
+      "name": "Pincho de tortilla",
+      "price": 1.5,
+      "category": "Tapas",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "UtensilsIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 20,
+      "name": "Emparedado mixto",
+      "price": 1.5,
+      "category": "Tapas",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "UtensilsIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 21,
+      "name": "Cebolletas y aceitunas",
+      "price": 1.5,
+      "category": "Tapas",
+      "brand": "El Haido",
+      "iconType": "preset",
+      "selectedIcon": "UtensilsIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 22,
+      "name": "Pringles verdes",
+      "price": 1.5,
+      "category": "Golosinas",
+      "brand": "Pringles",
+      "iconType": "preset",
+      "selectedIcon": "IceCreamIcon",
+      "uploadedImage": "/productos/img_4.png"
+    },
+    {
+      "id": 23,
+      "name": "Pringles rojas",
+      "price": 1.5,
+      "category": "Golosinas",
+      "brand": "Pringles",
+      "iconType": "preset",
+      "selectedIcon": "IceCreamIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 24,
+      "name": "Bolsa chuches fini",
+      "price": 1.5,
+      "category": "Golosinas",
+      "brand": "Fini",
+      "iconType": "preset",
+      "selectedIcon": "IceCreamIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 25,
+      "name": "Coca cola",
+      "price": 1.5,
+      "category": "Refrescos",
+      "brand": "Coca Cola",
+      "iconType": "preset",
+      "selectedIcon": "CoffeeIcon",
+      "uploadedImage": null
+    },
+    {
+      "id": 26,
+      "name": "Aquarius",
+      "price": 1.5,
+      "category": "Refrescos",
+      "brand": "Aquarius",
+      "iconType": "preset",
+      "selectedIcon": "CoffeeIcon",
+      "uploadedImage": null
+    }
+  ],
+  "categories": [
+    { "id": 1, "name": "Cafes", "description": "Cafes y bebidas calientes" },
+    { "id": 2, "name": "Cervezas", "description": "Cervezas y bebidas alcoholicas" },
+    { "id": 3, "name": "Postres", "description": "Helados y postres" },
+    { "id": 4, "name": "Licores", "description": "Vinos y licores" },
+    { "id": 5, "name": "Tapas", "description": "Tapas y pinchos" },
+    { "id": 6, "name": "Golosinas", "description": "Snacks y golosinas" },
+    { "id": 7, "name": "Refrescos", "description": "Refrescos y bebidas frias" }
+  ],
+  "tables": [
+    { "id": 0, "name": "Barra", "available": true },
+    { "id": 1, "name": "Mesa 1", "available": true },
+    { "id": 2, "name": "Mesa 2", "available": true },
+    { "id": 3, "name": "Mesa 3", "available": true },
+    { "id": 4, "name": "Mesa 4", "available": true },
+    { "id": 5, "name": "Mesa 5", "available": true },
+    { "id": 6, "name": "Mesa 6", "available": true },
+    { "id": 7, "name": "Mesa 7", "available": true },
+    { "id": 8, "name": "Mesa 8", "available": true },
+    { "id": 9, "name": "Mesa 9", "available": true }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "name": "German",
+      "profilePicture": "/panxo.svg",
+      "pin": "1111",
+      "pinnedProductIds": [1, 2, 3, 4, 5, 6]
+    },
+    {
+      "id": 2,
+      "name": "Marta",
+      "profilePicture": "/nuka.svg",
+      "pin": "1234",
+      "pinnedProductIds": [1, 2, 3]
+    }
+  ]
+}

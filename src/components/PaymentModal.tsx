@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/dialog.tsx';
 import { Label } from '@/components/ui/label.tsx';
 import { toast } from '@/components/ui/use-toast.ts';
+import { useAEAT } from '@/hooks/useAEAT';
+import { useEmitInvoice } from '@/hooks/useEmitInvoice';
 import { useResponsive } from '@/hooks/useResponsive';
 import { cn } from '@/lib/utils';
 import type Order from '@/models/Order.ts';
@@ -50,6 +52,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [localCashAmount, setLocalCashAmount] = useState(cashAmount);
   const [localPaymentMethod, setLocalPaymentMethod] = useState(paymentMethod);
 
+  // AEAT hooks
+  const { isEnabled: isAEATEnabled, isConnected: isAEATConnected, config: aeatConfig } = useAEAT();
+  const { emitInvoice } = useEmitInvoice();
+
   useEffect(() => {
     setLocalCashAmount(cashAmount);
     setLocalPaymentMethod(paymentMethod);
@@ -83,13 +89,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   }, [localPaymentMethod, setShowTicketDialog]);
 
   const handleCompleteTransaction = useCallback(
-    (shouldPrintTicket: boolean) => {
-      const updatedOrder = {
+    async (shouldPrintTicket: boolean) => {
+      const updatedOrder: Order = {
         ...newOrder,
         paymentMethod: localPaymentMethod,
         ticketPath: 'ticket.pdf',
         status: localPaymentMethod === 'pagar_luego' ? 'unpaid' : 'paid',
-        totalPaid: parseFloat(localCashAmount),
+        totalPaid: parseFloat(localCashAmount) || 0,
         change: parseFloat(calculateLocalChange()),
         items: newOrder.items,
       };
@@ -114,6 +120,30 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           duration: 3000,
         });
       }
+
+      // Auto-envío de factura AEAT si está habilitado
+      if (
+        isAEATEnabled &&
+        isAEATConnected &&
+        aeatConfig.autoSendInvoices &&
+        updatedOrder.status === 'paid'
+      ) {
+        // Pequeño delay para asegurar que el pedido se ha guardado
+        setTimeout(async () => {
+          console.log('[PaymentModal] Auto-sending invoice to AEAT...');
+          const result = await emitInvoice(updatedOrder);
+          if (result.success) {
+            toast({
+              title: 'Factura AEAT emitida',
+              description: result.csv
+                ? `CSV: ${result.csv}`
+                : `Factura ${result.invoiceNumber} enviada correctamente`,
+              duration: 5000,
+            });
+          }
+          // Si hay error, el hook ya muestra el toast correspondiente
+        }, 500);
+      }
     },
     [
       setCashAmount,
@@ -124,6 +154,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       handleTicketPrintingComplete,
       localCashAmount,
       newOrder,
+      isAEATEnabled,
+      isAEATConnected,
+      aeatConfig.autoSendInvoices,
+      emitInvoice,
     ]
   );
 

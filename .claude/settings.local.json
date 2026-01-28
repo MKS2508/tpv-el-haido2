@@ -11,7 +11,11 @@
       "Bash(dir /B \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\tpv-el-haido2\\\\sidecars\")",
       "Bash(npm view:*)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\4NUBI$\\\\Documents\\\\GitHub\\\\shadcn-basecoat-theming\" -Recurse -Filter \"*.css\" -Name)",
-      "Bash(Select-Object -First 30)"
+      "Bash(Select-Object -First 30)",
+      "Bash(powershell -Command:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:rrjanbiah.github.io)"
     ]
   }
 }
