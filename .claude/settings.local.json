@@ -16,7 +16,12 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:rrjanbiah.github.io)",
-      "WebFetch(domain:kobalte.dev)"
+      "WebFetch(domain:kobalte.dev)",
+      "Bash(cargo check:*)",
+      "Bash(bun install)",
+      "Bash(bun run src/index.ts)",
+      "Bash(curl:*)",
+      "Bash(jq)"
     ]
   }
 }
