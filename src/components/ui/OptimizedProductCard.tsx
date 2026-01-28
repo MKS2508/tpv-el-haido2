@@ -30,7 +30,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
       return props.product.uploadedImage;
     }
 
-    if (state.useStockImages) {
+    if (state.state.useStockImages) {
       const stockImage = stockImagesService.getConsistentStockImage(
         props.product.id,
         props.product.name,

@@ -1,4 +1,4 @@
-import { createSignal, createEffect } from 'solid-js';
+import { createEffect, createSignal } from 'solid-js';
 import { getThemeById } from '@/lib/themes/preset-themes';
 import {
   applyTheme,
@@ -54,7 +54,7 @@ export function useTheme() {
     }));
   };
 
-  const setFontSize = (size: string) => {
+  const setFontSize = (size: 'small' | 'medium' | 'large' | 'extra-large') => {
     setSettings((prev) => ({
       ...prev,
       fontSize: size,

@@ -116,7 +116,7 @@ const VirtualizedOrderHistory = (props: VirtualizedOrderHistoryProps): JSX.Eleme
   const containerHeight = height || window.innerHeight - 240;
   const itemHeight = isMobile() ? 140 : 80;
 
-  let parentRef: HTMLDivElement | undefined;
+  const parentRef: HTMLDivElement | null = null;
 
   const rowVirtualizer = createVirtualizer({
     get count() {

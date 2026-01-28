@@ -47,7 +47,7 @@ const ProductCard = (props: ProductCardProps) => {
       return product.uploadedImage;
     }
 
-    if (state.useStockImages) {
+    if (state.state.useStockImages) {
       const stockImage = stockImagesService.getConsistentStockImage(
         product.id,
         product.name,
