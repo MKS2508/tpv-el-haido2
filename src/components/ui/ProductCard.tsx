@@ -158,9 +158,8 @@ const ProductCard = (props: ProductCardProps) => {
   return (
     <Motion.div
       class={cn(getCardStyles(), className)}
-      onClick={handleClick}
-      whilePress={{ scale: mode === 'order' ? 0.97 : 0.98 }}
-      whileHover={{ scale: mode === 'order' ? 1.02 : 1.01 }}
+      onClick={handleClick as any}
+      style={others.style as any}
       animate={{
         scale: isAdding() ? 1.03 : 1,
       }}
@@ -168,7 +167,6 @@ const ProductCard = (props: ProductCardProps) => {
         duration: 0.2,
         easing: [0.25, 0.1, 0.25, 1],
       }}
-      {...others}
     >
       <div
         class={cn(
@@ -193,7 +191,7 @@ const ProductCard = (props: ProductCardProps) => {
             }}
             transition={{ duration: 0.15, easing: 'ease-out' }}
           >
-            {product.icon || '🍽️'}
+            {product.icon || '🍽️' as any}
           </Motion.div>
         )}
 

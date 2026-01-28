@@ -7,16 +7,20 @@ import { cn } from '@/lib/utils';
 
 type DropdownMenuProps = JSX.HTMLAttributes<HTMLDivElement>;
 type DropdownMenuTriggerProps = JSX.HTMLAttributes<HTMLButtonElement>;
-type DropdownMenuContentProps = JSX.HTMLAttributes<HTMLDivElement>;
-type DropdownMenuItemProps = JSX.HTMLAttributes<HTMLDivElement> & {
+type DropdownMenuContentProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, 'sideOffset'> & {
+  sideOffset?: number;
+};
+type DropdownMenuItemProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, 'onSelect'> & {
   onSelect?: () => void;
 };
-type DropdownMenuCheckboxItemProps = JSX.HTMLAttributes<HTMLDivElement> & {
+type DropdownMenuCheckboxItemProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, 'onChange' | 'onSelect'> & {
   checked?: boolean;
   onChange?: (checked: boolean) => void;
+  onSelect?: () => void;
 };
-type DropdownMenuRadioItemProps = JSX.HTMLAttributes<HTMLDivElement> & {
+type DropdownMenuRadioItemProps = Omit<JSX.HTMLAttributes<HTMLDivElement>, 'onSelect'> & {
   value?: string;
+  onSelect?: () => void;
 };
 type DropdownMenuLabelProps = JSX.HTMLAttributes<HTMLDivElement> & {
   inset?: boolean;
@@ -24,7 +28,7 @@ type DropdownMenuLabelProps = JSX.HTMLAttributes<HTMLDivElement> & {
 type DropdownMenuSeparatorProps = JSX.HTMLAttributes<HTMLDivElement>;
 
 const DropdownMenu = (props: DropdownMenuProps) => {
-  return <KobalteDropdownMenu.Root {...props} />;
+  return <KobalteDropdownMenu {...props} />;
 };
 
 const DropdownMenuTrigger = (props: DropdownMenuTriggerProps) => {
@@ -74,11 +78,12 @@ const DropdownMenuContent = (props: DropdownMenuContentProps) => {
   return (
     <KobalteDropdownMenu.Portal>
       <KobalteDropdownMenu.Content
-        sideOffset={local.sideOffset ?? 4}
         class={cn(
           'z-50 max-h-[var(--kb-dropdown-menu-content-available-height)] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
           local.class
         )}
+        shift
+        gutter={local.sideOffset ?? 4}
         {...others}
       />
     </KobalteDropdownMenu.Portal>
@@ -103,7 +108,7 @@ const DropdownMenuItem = (props: DropdownMenuItemProps & { inset?: boolean }) =>
 };
 
 const DropdownMenuCheckboxItem = (props: DropdownMenuCheckboxItemProps) => {
-  const [local, others] = splitProps(props, ['class', 'children', 'checked', 'onChange']);
+  const [local, others] = splitProps(props, ['class', 'children', 'checked', 'onChange', 'onSelect']);
   return (
     <KobalteDropdownMenu.CheckboxItem
       class={cn(
@@ -112,6 +117,7 @@ const DropdownMenuCheckboxItem = (props: DropdownMenuCheckboxItemProps) => {
       )}
       checked={local.checked}
       onChange={local.onChange}
+      onSelect={local.onSelect}
       {...others}
     >
       <KobalteDropdownMenu.ItemIndicator class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
@@ -123,7 +129,7 @@ const DropdownMenuCheckboxItem = (props: DropdownMenuCheckboxItemProps) => {
 };
 
 const DropdownMenuRadioItem = (props: DropdownMenuRadioItemProps) => {
-  const [local, others] = splitProps(props, ['class', 'children', 'value']);
+  const [local, others] = splitProps(props, ['class', 'children', 'value', 'onSelect']);
   return (
     <KobalteDropdownMenu.RadioItem
       class={cn(
@@ -131,6 +137,7 @@ const DropdownMenuRadioItem = (props: DropdownMenuRadioItemProps) => {
         local.class
       )}
       value={local.value}
+      onSelect={local.onSelect}
       {...others}
     >
       <KobalteDropdownMenu.ItemIndicator class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
@@ -144,7 +151,7 @@ const DropdownMenuRadioItem = (props: DropdownMenuRadioItemProps) => {
 const DropdownMenuLabel = (props: DropdownMenuLabelProps) => {
   const [local, others] = splitProps(props, ['class', 'inset']);
   return (
-    <KobalteDropdownMenu.Label
+    <div
       class={cn('px-2 py-1.5 text-sm font-semibold', local.inset && 'pl-8', local.class)}
       {...others}
     />

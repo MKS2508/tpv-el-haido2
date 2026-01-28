@@ -4,7 +4,7 @@ import { splitProps } from 'solid-js';
 
 import { cn } from '@/lib/utils';
 
-export interface SliderProps extends JSX.HTMLAttributes<HTMLDivElement> {
+export interface SliderProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   value?: number[];
   defaultValue?: number[];
   min?: number;
@@ -31,7 +31,7 @@ const Slider = (props: SliderProps) => {
   ]);
 
   return (
-    <KobalteSlider.Root
+    <KobalteSlider
       class={cn('relative flex w-full touch-none select-none items-center', local.class)}
       value={local.value}
       defaultValue={local.defaultValue}
@@ -48,7 +48,7 @@ const Slider = (props: SliderProps) => {
         <KobalteSlider.Fill class="absolute h-full bg-primary" />
       </KobalteSlider.Track>
       <KobalteSlider.Thumb class="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
-    </KobalteSlider.Root>
+    </KobalteSlider>
   );
 };
 

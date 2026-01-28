@@ -188,7 +188,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
               isAdding() && 'adding'
             )}
           >
-            {props.product.icon || '🍽️'}
+            {props.product.icon || '🍽️' as any}
           </div>
         )}
 

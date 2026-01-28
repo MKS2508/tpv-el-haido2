@@ -113,8 +113,8 @@ const GlassEffect = (props: GlassEffectProps) => {
           height: `${props.height ?? 300}px`,
           'border-radius': `${props.radius ?? 20}px`,
           background: `hsl(0 0% 100% / ${props.frost ?? 0.1})`,
-          backdropFilter: `url(#${filterId})`,
-          'webkit-backdrop-filter': `url(#${filterId})`,
+          'backdrop-filter': `url(#${filterId})`,
+          '-webkit-backdrop-filter': `url(#${filterId})`,
           'will-change': 'backdrop-filter',
           'box-shadow': `
             0 0 2px 1px hsl(0 0% 0% / 0.15) inset,

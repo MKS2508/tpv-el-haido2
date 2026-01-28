@@ -324,15 +324,15 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
           <div class="text-right">
             <div class="py-1">
               <div>{`${formatDate(range().from, locale())}${
-                range().to ? ` - ${formatDate(range().to, locale())}` : ''
+                range().to ? ` - ${formatDate(range().to as Date, locale())}` : ''
               }`}</div>
             </div>
             <div class="text-xs text-muted-foreground flex items-center justify-end gap-1">
               {showCompare() && rangeCompare() ? (
                 <>
                   <ChevronLeft width={18} height={18} />
-                  <span>{`${formatDate(rangeCompare().from, locale())} - ${formatDate(
-                    rangeCompare().to ?? range().from,
+                  <span>{`${formatDate(rangeCompare()!.from, locale())} - ${formatDate(
+                    rangeCompare()!.to ?? new Date(),
                     locale()
                   )}`}</span>
                   <ChevronRight width={18} height={18} />
@@ -486,9 +486,9 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
               <div>
                 <Calendar
                   mode="range"
-                  onSelect={(value: { from?: Date; to?: Date } | undefined) => {
-                    if (value?.from != null) {
-                      setRange({ from: value.from, to: value?.to });
+                  onSelect={(value) => {
+                    if (value != null && 'from' in value && value.from != null) {
+                      setRange({ from: value.from, to: value.to });
                     }
                   }}
                   selected={range()}

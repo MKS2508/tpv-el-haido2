@@ -625,7 +625,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                           </div>
                         </Show>
                         {/* AEAT invoice status */}
-                        <Show when={isAEATEnabled && selectedOrder().status === 'paid'}>
+                        <Show when={isAEATEnabled() && selectedOrder().status === 'paid'}>
                           <div class={cn(responsive.isMobile() ? 'col-span-2' : '')}>
                             <Label class="text-sm">Factura AEAT</Label>
                             <div class="mt-1.5">
@@ -729,7 +729,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
               Imprimir Ticket
             </Button>
             {/* Emit Invoice Button - only for paid orders with AEAT enabled */}
-            <Show when={props.selectedOrder?.status === 'paid' && isAEATEnabled}>
+            <Show when={props.selectedOrder?.status === 'paid' && isAEATEnabled()}>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger

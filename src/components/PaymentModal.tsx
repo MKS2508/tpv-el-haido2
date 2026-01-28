@@ -115,9 +115,9 @@ function PaymentModal(props: PaymentModalProps) {
 
     // Auto-envio de factura AEAT si esta habilitado
     if (
-      isAEATEnabled &&
-      isAEATConnected &&
-      aeatConfig.autoSendInvoices &&
+      isAEATEnabled() &&
+      isAEATConnected() &&
+      aeatConfig().autoSendInvoices &&
       updatedOrder.status === 'paid'
     ) {
       // Pequeno delay para asegurar que el pedido se ha guardado

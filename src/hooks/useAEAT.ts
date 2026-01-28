@@ -70,9 +70,8 @@ const CONNECTION_CHECK_INTERVAL = 30000; // 30 seconds
 export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
   const { onConnectionChange, onError } = options;
 
-  // Config state
-  const [config, setConfig] = createSignal<AEATConfig>(() => {
-    // Intentar cargar desde localStorage
+  // Config state - get initial value synchronously
+  const initialConfig: AEATConfig = (() => {
     try {
       const saved = localStorage.getItem('tpv-aeat-config');
       if (saved) {
@@ -82,12 +81,12 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
       // Ignorar errores de parsing
     }
     return DEFAULT_AEAT_CONFIG;
-  });
+  })();
 
-  // Connection status
+  const [config, setConfig] = createSignal<AEATConfig>(initialConfig);
   const [connectionStatus, setConnectionStatus] = createSignal<AEATConnectionStatus>({
     isConnected: false,
-    mode: config().mode,
+    mode: initialConfig.mode,
     endpoint: '',
     lastCheck: null,
   });

@@ -1,10 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-solid';
 import type { JSX } from 'solid-js';
-import { splitProps } from 'solid-js';
+import { For, splitProps } from 'solid-js';
 
 import { cn } from '@/lib/utils';
 
-export interface CalendarProps extends JSX.HTMLAttributes<HTMLDivElement> {
+export interface CalendarProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
   mode?: 'single' | 'range' | 'multiple';
   selected?: Date | Date[] | { from?: Date; to?: Date } | undefined;
   onSelect?: (value: Date | Date[] | { from?: Date; to?: Date } | undefined) => void;
@@ -199,21 +199,22 @@ function Calendar(props: CalendarProps) {
           </button>
         </div>
         <div class="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-          {[...Array(local.numberOfMonths ?? 1)].map((_, monthIndex) => (
-            <div key={monthIndex} class="space-y-4">
-              <div class="grid grid-cols-7 gap-1 text-center">
-                {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                  <div
-                    key={day}
-                    class="text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]"
-                  >
-                    {getDayName(day)}
-                  </div>
-                ))}
+          <For each={Array.from({ length: local.numberOfMonths ?? 1 }, (_, i) => i)}>
+            {(_) => (
+              <div class="space-y-4">
+                <div class="grid grid-cols-7 gap-1 text-center">
+                  <For each={[0, 1, 2, 3, 4, 5, 6]}>
+                    {(day) => (
+                      <div class="text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]">
+                        {getDayName(day)}
+                      </div>
+                    )}
+                  </For>
+                </div>
+                <div class="grid grid-cols-7 gap-1">{renderDays()}</div>
               </div>
-              <div class="grid grid-cols-7 gap-1">{renderDays()}</div>
-            </div>
-          ))}
+            )}
+          </For>
         </div>
       </div>
     </div>

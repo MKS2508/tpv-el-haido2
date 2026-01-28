@@ -116,13 +116,13 @@ const VirtualizedOrderHistory = (props: VirtualizedOrderHistoryProps): JSX.Eleme
   const containerHeight = height || window.innerHeight - 240;
   const itemHeight = isMobile() ? 140 : 80;
 
-  const parentRef: HTMLDivElement | null = null;
+  let parentRef: HTMLDivElement | undefined;
 
   const rowVirtualizer = createVirtualizer({
     get count() {
       return orders.length;
     },
-    getScrollElement: () => parentRef,
+    getScrollElement: () => parentRef ?? null,
     estimateSize: () => itemHeight,
     overscan: 5,
   });
@@ -156,7 +156,7 @@ const VirtualizedOrderHistory = (props: VirtualizedOrderHistoryProps): JSX.Eleme
 
       {/* Virtualized list with @tanstack/solid-virtual */}
       <div
-        ref={parentRef}
+        ref={parentRef!}
         style={{ height: `${containerHeight - (isMobile() ? 0 : 50)}px`, overflow: 'auto' }}
         class="virtualized-order-list"
       >

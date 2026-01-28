@@ -111,7 +111,7 @@ export function useEmitInvoice(): UseEmitInvoiceReturn {
 
     try {
       // 1. Verificar que AEAT está habilitado
-      if (!isEnabled) {
+      if (!isEnabled()) {
         const error = 'La facturación AEAT no está habilitada. Actívela en Ajustes.';
         setLastError(error);
         toast({
@@ -123,7 +123,7 @@ export function useEmitInvoice(): UseEmitInvoiceReturn {
       }
 
       // 2. Verificar conexión
-      if (!isConnected) {
+      if (!isConnected()) {
         const error = 'No hay conexión con el servicio AEAT. Verifique la configuración.';
         setLastError(error);
         toast({
@@ -135,7 +135,7 @@ export function useEmitInvoice(): UseEmitInvoiceReturn {
       }
 
       // 3. Validar datos del negocio
-      const businessValidation = invoiceBuilderService.validateBusinessData(config.businessData);
+      const businessValidation = invoiceBuilderService.validateBusinessData(config().businessData);
       if (!businessValidation.isValid) {
         const error = `Datos fiscales incompletos: ${businessValidation.errors.join(', ')}`;
         setLastError(error);
@@ -171,7 +171,7 @@ export function useEmitInvoice(): UseEmitInvoiceReturn {
       // 6. Construir petición
       const { request, invoiceNumber, taxBreakdown } = invoiceBuilderService.buildInvoiceRequest(
         order,
-        config.businessData,
+        config().businessData,
         state.taxRate
       );
 

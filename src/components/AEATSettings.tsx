@@ -367,7 +367,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
       </Show>
 
       {/* Configuracion Modo Sidecar */}
-      <Show when={config().mode === 'sidecar' && isSidecarAvailable()}>
+      <Show when={config().mode === 'sidecar' && isSidecarAvailable}>
         <Card>
           <CardHeader class="pb-3">
             <CardTitle class="text-base flex items-center gap-2">

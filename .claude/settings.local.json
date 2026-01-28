@@ -31,7 +31,9 @@
       "Bash(__NEW_LINE_5b1c6fc2c4ea33c8__ echo \"=== ENVIRONMENT VARIABLES SUMMARY ===\")",
       "Bash(bun run build)",
       "Bash(bun pm ls:*)",
-      "Bash(npm search:*)"
+      "Bash(npm search:*)",
+      "Bash(bun run type-check:*)",
+      "Bash(bunx tsc --noEmit)"
     ]
   }
 }
