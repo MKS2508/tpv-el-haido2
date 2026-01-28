@@ -1,5 +1,5 @@
-import { AlertTriangle, ChevronDown, ChevronUp, ClipboardCopy, Home, RefreshCw } from 'lucide-react';
-import React, { Component, type ReactNode } from 'react';
+import { AlertTriangle, ChevronDown, ChevronUp, ClipboardCopy, Home, RefreshCw } from 'lucide-solid';
+import { createSignal, ErrorBoundary as SolidErrorBoundary, For, type JSX, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -12,7 +12,7 @@ interface ErrorDetails {
   timestamp: string;
   url: string;
   userAgent: string;
-  reactVersion: string;
+  solidVersion: string;
   consoleLogs: ConsoleLog[];
   networkErrors: NetworkError[];
 }
@@ -31,21 +31,12 @@ interface NetworkError {
 }
 
 interface ErrorBoundaryProps {
-  children: ReactNode;
-  fallback?: ReactNode;
+  children: JSX.Element;
+  fallback?: JSX.Element;
   level?: 'page' | 'section' | 'component';
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  onError?: (error: Error, reset: () => void) => void;
   fallbackTitle?: string;
   fallbackMessage?: string;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-  errorInfo: React.ErrorInfo | null;
-  errorDetails: ErrorDetails | null;
-  showDetails: boolean;
-  copied: boolean;
 }
 
 // Global console log capture for development
@@ -137,331 +128,327 @@ if (isDev && typeof window !== 'undefined') {
   };
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null,
-      errorDetails: null,
-      showDetails: false,
-      copied: false,
-    };
+function generateErrorReport(errorDetails: ErrorDetails): string {
+  const sections = [
+    '=== ERROR REPORT ===',
+    '',
+    `Timestamp: ${errorDetails.timestamp}`,
+    `URL: ${errorDetails.url}`,
+    `SolidJS Version: ${errorDetails.solidVersion}`,
+    `User Agent: ${errorDetails.userAgent}`,
+    '',
+    '=== ERROR MESSAGE ===',
+    errorDetails.message,
+    '',
+    '=== STACK TRACE ===',
+    errorDetails.stack || 'No stack trace available',
+    '',
+    '=== COMPONENT STACK ===',
+    errorDetails.componentStack || 'No component stack available',
+  ];
+
+  if (errorDetails.networkErrors.length > 0) {
+    sections.push(
+      '',
+      '=== NETWORK ERRORS ===',
+      ...errorDetails.networkErrors.map(
+        (ne) => `[${ne.timestamp}] ${ne.url} - ${ne.message}${ne.status ? ` (${ne.status})` : ''}`
+      )
+    );
   }
 
-  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    return { hasError: true, error };
+  if (errorDetails.consoleLogs.length > 0) {
+    sections.push(
+      '',
+      '=== RECENT CONSOLE LOGS ===',
+      ...errorDetails.consoleLogs.map((log) => `[${log.timestamp}] [${log.type.toUpperCase()}] ${log.message}`)
+    );
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    const errorDetails: ErrorDetails = {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack || undefined,
-      timestamp: new Date().toISOString(),
-      url: typeof window !== 'undefined' ? window.location.href : '',
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-      reactVersion: React.version,
-      consoleLogs: [...capturedLogs].reverse(), // Most recent first
-      networkErrors: [...capturedNetworkErrors].reverse(),
-    };
+  return sections.join('\n');
+}
 
-    this.setState({ errorInfo, errorDetails });
+function TechnicalDetails(props: { errorDetails: ErrorDetails }) {
+  const [showDetails, setShowDetails] = createSignal(false);
+  const [copied, setCopied] = createSignal(false);
 
-    // Log error for debugging
-    console.error('[ErrorBoundary] Caught error:', {
-      error: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-    });
-
-    // Call optional onError callback
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
-    }
-  }
-
-  handleReset = (): void => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null,
-      errorDetails: null,
-      showDetails: false,
-      copied: false,
-    });
+  const toggleDetails = () => {
+    setShowDetails(!showDetails());
   };
 
-  handleReload = (): void => {
-    window.location.reload();
-  };
-
-  toggleDetails = (): void => {
-    this.setState((prev) => ({ showDetails: !prev.showDetails }));
-  };
-
-  copyToClipboard = async (): Promise<void> => {
-    const { errorDetails } = this.state;
-    if (!errorDetails) return;
-
-    const report = this.generateErrorReport();
+  const copyToClipboard = async () => {
+    const report = generateErrorReport(props.errorDetails);
 
     try {
       await navigator.clipboard.writeText(report);
-      this.setState({ copied: true });
-      setTimeout(() => this.setState({ copied: false }), 2000);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy to clipboard:', err);
     }
   };
 
-  generateErrorReport = (): string => {
-    const { errorDetails } = this.state;
-    if (!errorDetails) return '';
-
-    const sections = [
-      '=== ERROR REPORT ===',
-      '',
-      `Timestamp: ${errorDetails.timestamp}`,
-      `URL: ${errorDetails.url}`,
-      `React Version: ${errorDetails.reactVersion}`,
-      `User Agent: ${errorDetails.userAgent}`,
-      '',
-      '=== ERROR MESSAGE ===',
-      errorDetails.message,
-      '',
-      '=== STACK TRACE ===',
-      errorDetails.stack || 'No stack trace available',
-      '',
-      '=== COMPONENT STACK ===',
-      errorDetails.componentStack || 'No component stack available',
-    ];
-
-    if (errorDetails.networkErrors.length > 0) {
-      sections.push(
-        '',
-        '=== NETWORK ERRORS ===',
-        ...errorDetails.networkErrors.map(
-          (ne) => `[${ne.timestamp}] ${ne.url} - ${ne.message}${ne.status ? ` (${ne.status})` : ''}`
-        )
-      );
-    }
-
-    if (errorDetails.consoleLogs.length > 0) {
-      sections.push(
-        '',
-        '=== RECENT CONSOLE LOGS ===',
-        ...errorDetails.consoleLogs.map((log) => `[${log.timestamp}] [${log.type.toUpperCase()}] ${log.message}`)
-      );
-    }
-
-    return sections.join('\n');
-  };
-
-  renderTechnicalDetails(): ReactNode {
-    const { errorDetails, showDetails, copied } = this.state;
-    if (!isDev || !errorDetails) return null;
-
-    return (
-      <div className="mt-4 space-y-2">
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={this.toggleDetails} className="flex-1">
-            {showDetails ? <ChevronUp className="mr-2 h-4 w-4" /> : <ChevronDown className="mr-2 h-4 w-4" />}
-            {showDetails ? 'Ocultar Detalles' : 'Detalles Tecnicos'}
+  return (
+    <Show when={isDev}>
+      <div class="mt-4 space-y-2">
+        <div class="flex gap-2">
+          <Button variant="outline" size="sm" onClick={toggleDetails} class="flex-1">
+            <Show when={showDetails()} fallback={<ChevronDown class="mr-2 h-4 w-4" />}>
+              <ChevronUp class="mr-2 h-4 w-4" />
+            </Show>
+            {showDetails() ? 'Ocultar Detalles' : 'Detalles Tecnicos'}
           </Button>
-          <Button variant="outline" size="sm" onClick={this.copyToClipboard}>
-            <ClipboardCopy className="mr-2 h-4 w-4" />
-            {copied ? 'Copiado!' : 'Copiar'}
+          <Button variant="outline" size="sm" onClick={copyToClipboard}>
+            <ClipboardCopy class="mr-2 h-4 w-4" />
+            {copied() ? 'Copiado!' : 'Copiar'}
           </Button>
         </div>
 
-        {showDetails && (
-          <div className="rounded-md bg-muted p-3 max-h-96 overflow-auto text-xs font-mono space-y-4">
+        <Show when={showDetails()}>
+          <div class="rounded-md bg-muted p-3 max-h-96 overflow-auto text-xs font-mono space-y-4">
             {/* Error Info */}
             <div>
-              <div className="text-destructive font-bold mb-1">Error:</div>
-              <div className="text-muted-foreground break-all">{errorDetails.message}</div>
+              <div class="text-destructive font-bold mb-1">Error:</div>
+              <div class="text-muted-foreground break-all">{props.errorDetails.message}</div>
             </div>
 
             {/* Stack Trace */}
-            {errorDetails.stack && (
+            <Show when={props.errorDetails.stack}>
               <div>
-                <div className="text-warning font-bold mb-1">Stack Trace:</div>
-                <pre className="text-muted-foreground whitespace-pre-wrap break-all text-[10px]">
-                  {errorDetails.stack}
+                <div class="text-warning font-bold mb-1">Stack Trace:</div>
+                <pre class="text-muted-foreground whitespace-pre-wrap break-all text-[10px]">
+                  {props.errorDetails.stack}
                 </pre>
               </div>
-            )}
+            </Show>
 
             {/* Component Stack */}
-            {errorDetails.componentStack && (
+            <Show when={props.errorDetails.componentStack}>
               <div>
-                <div className="text-chart-3 font-bold mb-1">Component Stack:</div>
-                <pre className="text-muted-foreground whitespace-pre-wrap break-all text-[10px]">
-                  {errorDetails.componentStack}
+                <div class="text-chart-3 font-bold mb-1">Component Stack:</div>
+                <pre class="text-muted-foreground whitespace-pre-wrap break-all text-[10px]">
+                  {props.errorDetails.componentStack}
                 </pre>
               </div>
-            )}
+            </Show>
 
             {/* Network Errors */}
-            {errorDetails.networkErrors.length > 0 && (
+            <Show when={props.errorDetails.networkErrors.length > 0}>
               <div>
-                <div className="text-chart-1 font-bold mb-1">Network Errors ({errorDetails.networkErrors.length}):</div>
-                <div className="space-y-1">
-                  {errorDetails.networkErrors.slice(0, 10).map((ne, i) => (
-                    <div key={i} className="text-muted-foreground text-[10px]">
-                      <span className="text-chart-1">[{ne.timestamp.split('T')[1]?.slice(0, 8)}]</span>{' '}
-                      <span className="text-destructive">{ne.message}</span>
-                      <div className="pl-4 opacity-70 break-all">{ne.url}</div>
-                    </div>
-                  ))}
+                <div class="text-chart-1 font-bold mb-1">Network Errors ({props.errorDetails.networkErrors.length}):</div>
+                <div class="space-y-1">
+                  <For each={props.errorDetails.networkErrors.slice(0, 10)}>
+                    {(ne) => (
+                      <div class="text-muted-foreground text-[10px]">
+                        <span class="text-chart-1">[{ne.timestamp.split('T')[1]?.slice(0, 8)}]</span>{' '}
+                        <span class="text-destructive">{ne.message}</span>
+                        <div class="pl-4 opacity-70 break-all">{ne.url}</div>
+                      </div>
+                    )}
+                  </For>
                 </div>
               </div>
-            )}
+            </Show>
 
             {/* Console Logs */}
-            {errorDetails.consoleLogs.length > 0 && (
+            <Show when={props.errorDetails.consoleLogs.length > 0}>
               <div>
-                <div className="text-chart-2 font-bold mb-1">Recent Logs ({errorDetails.consoleLogs.length}):</div>
-                <div className="space-y-0.5">
-                  {errorDetails.consoleLogs.slice(0, 20).map((log, i) => (
-                    <div
-                      key={i}
-                      className={`text-[10px] ${
-                        log.type === 'error'
-                          ? 'text-destructive'
-                          : log.type === 'warn'
-                            ? 'text-warning'
-                            : 'text-muted-foreground'
-                      }`}
-                    >
-                      <span className="opacity-50">[{log.timestamp.split('T')[1]?.slice(0, 8)}]</span>{' '}
-                      <span className="font-bold">[{log.type.toUpperCase()}]</span>{' '}
-                      <span className="break-all">{log.message.slice(0, 200)}</span>
-                    </div>
-                  ))}
+                <div class="text-chart-2 font-bold mb-1">Recent Logs ({props.errorDetails.consoleLogs.length}):</div>
+                <div class="space-y-0.5">
+                  <For each={props.errorDetails.consoleLogs.slice(0, 20)}>
+                    {(log) => (
+                      <div
+                        class={`text-[10px] ${
+                          log.type === 'error'
+                            ? 'text-destructive'
+                            : log.type === 'warn'
+                              ? 'text-warning'
+                              : 'text-muted-foreground'
+                        }`}
+                      >
+                        <span class="opacity-50">[{log.timestamp.split('T')[1]?.slice(0, 8)}]</span>{' '}
+                        <span class="font-bold">[{log.type.toUpperCase()}]</span>{' '}
+                        <span class="break-all">{log.message.slice(0, 200)}</span>
+                      </div>
+                    )}
+                  </For>
                 </div>
               </div>
-            )}
+            </Show>
 
             {/* Environment Info */}
-            <div className="pt-2 border-t border-border">
-              <div className="text-muted-foreground text-[10px] space-y-0.5">
+            <div class="pt-2 border-t border-border">
+              <div class="text-muted-foreground text-[10px] space-y-0.5">
                 <div>
-                  <span className="font-bold">Timestamp:</span> {errorDetails.timestamp}
+                  <span class="font-bold">Timestamp:</span> {props.errorDetails.timestamp}
                 </div>
                 <div>
-                  <span className="font-bold">React:</span> {errorDetails.reactVersion}
+                  <span class="font-bold">SolidJS:</span> {props.errorDetails.solidVersion}
                 </div>
-                <div className="break-all">
-                  <span className="font-bold">URL:</span> {errorDetails.url}
+                <div class="break-all">
+                  <span class="font-bold">URL:</span> {props.errorDetails.url}
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </Show>
       </div>
-    );
-  }
+    </Show>
+  );
+}
 
-  render(): ReactNode {
-    const { hasError, error } = this.state;
-    const { children, fallback, level = 'section', fallbackTitle, fallbackMessage } = this.props;
+function ErrorFallback(props: {
+  error: Error;
+  reset: () => void;
+  level: 'page' | 'section' | 'component';
+  fallbackTitle?: string;
+  fallbackMessage?: string;
+}) {
+  const errorDetails: ErrorDetails = {
+    message: props.error.message,
+    stack: props.error.stack,
+    componentStack: undefined,
+    timestamp: new Date().toISOString(),
+    url: typeof window !== 'undefined' ? window.location.href : '',
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+    solidVersion: '1.x', // SolidJS doesn't expose version like React does
+    consoleLogs: [...capturedLogs].reverse(), // Most recent first
+    networkErrors: [...capturedNetworkErrors].reverse(),
+  };
 
-    if (!hasError) {
-      return children;
-    }
+  // Log error for debugging
+  console.error('[ErrorBoundary] Caught error:', {
+    error: props.error.message,
+    stack: props.error.stack,
+  });
 
-    // If custom fallback is provided, use it
-    if (fallback) {
-      return fallback;
-    }
+  const handleReload = () => {
+    window.location.reload();
+  };
 
-    // Page-level: Full screen error with reload option
-    if (level === 'page') {
-      return (
-        <div className="fixed inset-0 flex items-center justify-center bg-background p-4">
-          <Card className="w-full max-w-lg shadow-xl">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-                <AlertTriangle className="h-8 w-8 text-destructive" />
-              </div>
-              <CardTitle className="text-xl">{fallbackTitle || 'Ha ocurrido un error'}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-center text-muted-foreground">
-                {fallbackMessage ||
-                  'Lo sentimos, algo ha salido mal. Por favor, recarga la aplicacion para continuar.'}
-              </p>
-              {error && !isDev && (
-                <div className="rounded-md bg-muted p-3">
-                  <p className="text-xs font-mono text-muted-foreground break-all">{error.message}</p>
-                </div>
-              )}
-              <div className="flex flex-col gap-2">
-                <Button onClick={this.handleReload} className="w-full">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Recargar Aplicacion
-                </Button>
-                <Button variant="outline" onClick={this.handleReset} className="w-full">
-                  <Home className="mr-2 h-4 w-4" />
-                  Intentar de Nuevo
-                </Button>
-              </div>
-              {this.renderTechnicalDetails()}
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
-
-    // Section-level: Card with retry button
-    if (level === 'section') {
-      return (
-        <Card className="m-4 border-destructive/50">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-              </div>
-              <CardTitle className="text-base">{fallbackTitle || 'Error en esta seccion'}</CardTitle>
+  // Page-level: Full screen error with reload option
+  if (props.level === 'page') {
+    return (
+      <div class="fixed inset-0 flex items-center justify-center bg-background p-4">
+        <Card class="w-full max-w-lg shadow-xl">
+          <CardHeader class="text-center">
+            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle class="h-8 w-8 text-destructive" />
             </div>
+            <CardTitle class="text-xl">{props.fallbackTitle || 'Ha ocurrido un error'}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              {fallbackMessage ||
-                'No se ha podido cargar esta seccion. Puedes intentar de nuevo o navegar a otra parte de la aplicacion.'}
+          <CardContent class="space-y-4">
+            <p class="text-center text-muted-foreground">
+              {props.fallbackMessage ||
+                'Lo sentimos, algo ha salido mal. Por favor, recarga la aplicacion para continuar.'}
             </p>
-            {error && !isDev && (
-              <div className="rounded-md bg-muted p-2">
-                <p className="text-xs font-mono text-muted-foreground break-all">{error.message}</p>
+            <Show when={props.error && !isDev}>
+              <div class="rounded-md bg-muted p-3">
+                <p class="text-xs font-mono text-muted-foreground break-all">{props.error.message}</p>
               </div>
-            )}
-            <Button onClick={this.handleReset} size="sm">
-              <RefreshCw className="mr-2 h-3 w-3" />
-              Reintentar
-            </Button>
-            {this.renderTechnicalDetails()}
+            </Show>
+            <div class="flex flex-col gap-2">
+              <Button onClick={handleReload} class="w-full">
+                <RefreshCw class="mr-2 h-4 w-4" />
+                Recargar Aplicacion
+              </Button>
+              <Button variant="outline" onClick={props.reset} class="w-full">
+                <Home class="mr-2 h-4 w-4" />
+                Intentar de Nuevo
+              </Button>
+            </div>
+            <TechnicalDetails errorDetails={errorDetails} />
           </CardContent>
         </Card>
-      );
-    }
-
-    // Component-level: Inline minimal error
-    return (
-      <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-          <span className="text-destructive">{fallbackTitle || 'Error al cargar'}</span>
-          <Button variant="ghost" size="sm" onClick={this.handleReset} className="ml-auto h-6 px-2 text-xs">
-            <RefreshCw className="h-3 w-3" />
-          </Button>
-        </div>
-        {isDev && this.renderTechnicalDetails()}
       </div>
     );
   }
+
+  // Section-level: Card with retry button
+  if (props.level === 'section') {
+    return (
+      <Card class="m-4 border-destructive/50">
+        <CardHeader class="pb-3">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle class="h-5 w-5 text-destructive" />
+            </div>
+            <CardTitle class="text-base">{props.fallbackTitle || 'Error en esta seccion'}</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent class="space-y-3">
+          <p class="text-sm text-muted-foreground">
+            {props.fallbackMessage ||
+              'No se ha podido cargar esta seccion. Puedes intentar de nuevo o navegar a otra parte de la aplicacion.'}
+          </p>
+          <Show when={props.error && !isDev}>
+            <div class="rounded-md bg-muted p-2">
+              <p class="text-xs font-mono text-muted-foreground break-all">{props.error.message}</p>
+            </div>
+          </Show>
+          <Button onClick={props.reset} size="sm">
+            <RefreshCw class="mr-2 h-3 w-3" />
+            Reintentar
+          </Button>
+          <TechnicalDetails errorDetails={errorDetails} />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Component-level: Inline minimal error
+  return (
+    <div class="rounded-md bg-destructive/10 px-3 py-2 text-sm">
+      <div class="flex items-center gap-2">
+        <AlertTriangle class="h-4 w-4 text-destructive flex-shrink-0" />
+        <span class="text-destructive">{props.fallbackTitle || 'Error al cargar'}</span>
+        <Button variant="ghost" size="sm" onClick={props.reset} class="ml-auto h-6 px-2 text-xs">
+          <RefreshCw class="h-3 w-3" />
+        </Button>
+      </div>
+      <Show when={isDev}>
+        <TechnicalDetails errorDetails={errorDetails} />
+      </Show>
+    </div>
+  );
+}
+
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  const level = props.level || 'section';
+
+  // If custom fallback is provided, use it
+  if (props.fallback) {
+    return (
+      <SolidErrorBoundary fallback={props.fallback}>
+        {props.children}
+      </SolidErrorBoundary>
+    );
+  }
+
+  return (
+    <SolidErrorBoundary
+      fallback={(err, reset) => {
+        const error = err instanceof Error ? err : new Error(String(err));
+
+        // Call optional onError callback
+        if (props.onError) {
+          props.onError(error, reset);
+        }
+
+        return (
+          <ErrorFallback
+            error={error}
+            reset={reset}
+            level={level}
+            fallbackTitle={props.fallbackTitle}
+            fallbackMessage={props.fallbackMessage}
+          />
+        );
+      }}
+    >
+      {props.children}
+    </SolidErrorBoundary>
+  );
 }
 
 export default ErrorBoundary;

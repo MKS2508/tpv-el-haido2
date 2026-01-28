@@ -6,7 +6,7 @@ interface WelcomeStepProps {
   onNext: () => void;
 }
 
-export function WelcomeStep({ onNext }: WelcomeStepProps) {
+export function WelcomeStep(props: WelcomeStepProps) {
   return (
     <Card class="w-full max-w-lg mx-auto">
       <CardHeader class="text-center">
@@ -42,7 +42,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         </ul>
       </CardContent>
       <CardFooter class="justify-center">
-        <Button onClick={onNext} size="lg">
+        <Button onClick={props.onNext} size="lg">
           Comenzar
         </Button>
       </CardFooter>

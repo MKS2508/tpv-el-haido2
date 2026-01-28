@@ -10,7 +10,7 @@ interface ThemeStepProps {
     onSkip: () => void;
 }
 
-export function ThemeStep({ onNext, onBack, onSkip }: ThemeStepProps) {
+export function ThemeStep(props: ThemeStepProps) {
     return (
         <Card class="w-full max-w-lg mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl">
             <CardHeader>
@@ -28,7 +28,7 @@ export function ThemeStep({ onNext, onBack, onSkip }: ThemeStepProps) {
             </CardHeader>
             <CardContent class="space-y-8 py-8">
                 <div class="flex flex-col items-center justify-center text-center space-y-6">
-                    <motion.div
+                    <Motion.div
                         animate={{
                             scale: [1, 1.05, 1],
                             rotate: [0, 5, -5, 0]
@@ -36,12 +36,12 @@ export function ThemeStep({ onNext, onBack, onSkip }: ThemeStepProps) {
                         transition={{
                             duration: 5,
                             repeat: Infinity,
-                            ease: "easeInOut"
+                            easing: "ease-in-out"
                         }}
                         class="w-24 h-24 rounded-2xl bg-gradient-to-tr from-primary to-pink-500 flex items-center justify-center shadow-lg shadow-primary/20"
                     >
                         <SparklesIcon class="h-12 w-12 text-white" />
-                    </motion.div>
+                    </Motion.div>
 
                     <div class="space-y-2">
                         <h3 class="font-semibold text-lg">Prueba diferentes temas</h3>
@@ -59,14 +59,14 @@ export function ThemeStep({ onNext, onBack, onSkip }: ThemeStepProps) {
                 </div>
             </CardContent>
             <CardFooter class="flex justify-between border-t p-6 bg-muted/10">
-                <Button variant="ghost" onClick={onBack}>
+                <Button variant="ghost" onClick={props.onBack}>
                     Anterior
                 </Button>
                 <div class="flex gap-3">
-                    <Button variant="outline" onClick={onSkip}>
+                    <Button variant="outline" onClick={props.onSkip}>
                         Saltar
                     </Button>
-                    <Button onClick={onNext} class="bg-primary hover:bg-primary/90">
+                    <Button onClick={props.onNext} class="bg-primary hover:bg-primary/90">
                         Me gusta este estilo
                     </Button>
                 </div>

@@ -15,7 +15,8 @@
       "Bash(powershell -Command:*)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:dev.to)",
-      "WebFetch(domain:rrjanbiah.github.io)"
+      "WebFetch(domain:rrjanbiah.github.io)",
+      "WebFetch(domain:kobalte.dev)"
     ]
   }
 }

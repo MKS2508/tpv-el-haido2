@@ -20,58 +20,47 @@ export function UpdateChecker(props: UpdateCheckerProps) {
   const autoCheck = () => props.autoCheck ?? true;
   const checkInterval = () => props.checkInterval ?? 60 * 60 * 1000; // 1 hour default
 
-  const {
-    available,
-    checking: _checking,
-    downloading,
-    error,
-    progress,
-    version,
-    notes,
-    checkForUpdates,
-    downloadAndInstall,
-    dismissUpdate,
-  } = useUpdater();
+  const updater = useUpdater();
 
   // Auto-check on mount and periodically
   createEffect(() => {
     if (!autoCheck()) return;
 
     // Check on mount
-    checkForUpdates();
+    updater.checkForUpdates();
 
     // Set up interval
     const interval = setInterval(() => {
-      checkForUpdates();
+      updater.checkForUpdates();
     }, checkInterval());
 
     onCleanup(() => clearInterval(interval));
   });
 
   const progressPercent = () =>
-    progress()?.contentLength
-      ? Math.round((progress()!.downloaded / progress()!.contentLength!) * 100)
+    updater.progress()?.contentLength
+      ? Math.round((updater.progress()!.downloaded / updater.progress()!.contentLength!) * 100)
       : 0;
 
   return (
-    <Dialog open={available()} onOpenChange={(open) => !open && dismissUpdate()}>
+    <Dialog open={updater.available()} onOpenChange={(open) => !open && updater.dismissUpdate()}>
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
           <DialogTitle class="flex items-center gap-2">
             <Download class="h-5 w-5 text-primary" />
             Nueva actualización disponible
           </DialogTitle>
-          <DialogDescription>Versión {version()} está disponible para descargar.</DialogDescription>
+          <DialogDescription>Versión {updater.version()} está disponible para descargar.</DialogDescription>
         </DialogHeader>
 
-        <Show when={notes()}>
+        <Show when={updater.notes()}>
           <div class="max-h-40 overflow-y-auto rounded-md bg-muted p-3 text-sm">
             <p class="font-medium mb-1">Novedades:</p>
-            <p class="text-muted-foreground whitespace-pre-wrap">{notes()}</p>
+            <p class="text-muted-foreground whitespace-pre-wrap">{updater.notes()}</p>
           </div>
         </Show>
 
-        <Show when={downloading() && progress()}>
+        <Show when={updater.downloading() && updater.progress()}>
           <div class="space-y-2">
             <div class="flex justify-between text-sm">
               <span>Descargando...</span>
@@ -83,30 +72,30 @@ export function UpdateChecker(props: UpdateCheckerProps) {
                 style={{ width: `${progressPercent()}%` }}
               />
             </div>
-            <Show when={progress()?.contentLength}>
+            <Show when={updater.progress()?.contentLength}>
               <p class="text-xs text-muted-foreground text-center">
-                {(progress()!.downloaded / 1024 / 1024).toFixed(1)} MB /{' '}
-                {(progress()!.contentLength! / 1024 / 1024).toFixed(1)} MB
+                {(updater.progress()!.downloaded / 1024 / 1024).toFixed(1)} MB /{' '}
+                {(updater.progress()!.contentLength! / 1024 / 1024).toFixed(1)} MB
               </p>
             </Show>
           </div>
         </Show>
 
-        <Show when={error()}>
+        <Show when={updater.error()}>
           <div class="flex items-center gap-2 text-destructive text-sm">
             <AlertCircle class="h-4 w-4" />
-            <span>{error()}</span>
+            <span>{updater.error()}</span>
           </div>
         </Show>
 
         <DialogFooter class="flex gap-2 sm:gap-0">
-          <Button variant="outline" onClick={dismissUpdate} disabled={downloading()}>
+          <Button variant="outline" onClick={updater.dismissUpdate} disabled={updater.downloading()}>
             <X class="h-4 w-4 mr-2" />
             Más tarde
           </Button>
-          <Button onClick={downloadAndInstall} disabled={downloading()}>
+          <Button onClick={updater.downloadAndInstall} disabled={updater.downloading()}>
             <Show
-              when={downloading()}
+              when={updater.downloading()}
               fallback={
                 <>
                   <CheckCircle2 class="h-4 w-4 mr-2" />
@@ -126,12 +115,12 @@ export function UpdateChecker(props: UpdateCheckerProps) {
 
 // Manual check button component for settings
 export function UpdateCheckButton() {
-  const { checking, checkForUpdates, available, error } = useUpdater();
+  const updater = useUpdater();
 
   return (
-    <Button variant="outline" onClick={checkForUpdates} disabled={checking()} class="w-full">
+    <Button variant="outline" onClick={updater.checkForUpdates} disabled={updater.checking()} class="w-full">
       <Show
-        when={!checking()}
+        when={!updater.checking()}
         fallback={
           <>
             <RefreshCw class="h-4 w-4 mr-2 animate-spin" />
@@ -140,7 +129,7 @@ export function UpdateCheckButton() {
         }
       >
         <Show
-          when={!available()}
+          when={!updater.available()}
           fallback={
             <>
               <Download class="h-4 w-4 mr-2 text-primary" />
@@ -149,7 +138,7 @@ export function UpdateCheckButton() {
           }
         >
           <Show
-            when={!error()}
+            when={!updater.error()}
             fallback={
               <>
                 <AlertCircle class="h-4 w-4 mr-2 text-destructive" />

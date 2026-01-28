@@ -1,5 +1,4 @@
-import type React from 'react';
-import { useState } from 'react';
+import { createSignal } from 'solid-js';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import type Category from '@/models/Category.ts';
@@ -10,32 +9,33 @@ type CategoryFormProps = {
   onSave: (category: Category) => void;
   onCancel: () => void;
 };
-const CategoryForm = ({ category, onSave, onCancel }: CategoryFormProps) => {
-  const [name, setName] = useState(category?.name || '');
-  const [description, setDescription] = useState(category?.description || '');
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+const CategoryForm = (props: CategoryFormProps) => {
+  const [name, setName] = createSignal(props.category?.name || '');
+  const [description, setDescription] = createSignal(props.category?.description || '');
+
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    onSave({ id: category?.id, name, description });
+    props.onSave({ id: props.category?.id, name: name(), description: description() });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} class="space-y-4">
       <div>
-        <Label htmlFor="name">Nombre</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <Label for="name">Nombre</Label>
+        <Input id="name" value={name()} onInput={(e) => setName(e.currentTarget.value)} required />
       </div>
       <div>
-        <Label htmlFor="description">Descripción</Label>
+        <Label for="description">Descripcion</Label>
         <Input
           id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={description()}
+          onInput={(e) => setDescription(e.currentTarget.value)}
           required
         />
       </div>
-      <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      <div class="flex justify-end space-x-2">
+        <Button type="button" variant="outline" onClick={props.onCancel}>
           Cancelar
         </Button>
         <Button type="submit">Guardar</Button>

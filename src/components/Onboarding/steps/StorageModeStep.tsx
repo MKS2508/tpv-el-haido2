@@ -1,3 +1,4 @@
+import { For, Show } from 'solid-js';
 import { CloudIcon, DatabaseIcon, HardDriveIcon } from 'lucide-solid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,12 +12,7 @@ interface StorageModeStepProps {
   onSelectMode: (mode: StorageMode) => void;
 }
 
-export function StorageModeStep({
-  onNext,
-  onBack,
-  selectedMode,
-  onSelectMode,
-}: StorageModeStepProps) {
+export function StorageModeStep(props: StorageModeStepProps) {
   const modes = [
     {
       id: 'sqlite' as StorageMode,
@@ -49,45 +45,46 @@ export function StorageModeStep({
       </CardHeader>
       <CardContent class="space-y-4">
         <div class="grid gap-4">
-          {modes.map((mode) => (
-            <button
-              key={mode.id}
-              onClick={() => onSelectMode(mode.id)}
-              class={cn(
-                'flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-all hover:bg-accent',
-                selectedMode === mode.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-muted hover:border-muted-foreground'
-              )}
-            >
-              <div
+          <For each={modes}>
+            {(mode) => (
+              <button
+                onClick={() => props.onSelectMode(mode.id)}
                 class={cn(
-                  'mt-1 p-2 rounded-md',
-                  selectedMode === mode.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                  'flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-all hover:bg-accent',
+                  props.selectedMode === mode.id
+                    ? 'border-primary bg-primary/5'
+                    : 'border-muted hover:border-muted-foreground'
                 )}
               >
-                <mode.icon class="h-5 w-5" />
-              </div>
-              <div class="flex-1">
-                <div class="flex items-center justify-between">
-                  <span class="font-semibold">{mode.title}</span>
-                  {mode.recommended && (
-                    <span class="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                      Recomendado
-                    </span>
+                <div
+                  class={cn(
+                    'mt-1 p-2 rounded-md',
+                    props.selectedMode === mode.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
                   )}
+                >
+                  <mode.icon class="h-5 w-5" />
                 </div>
-                <p class="text-sm text-muted-foreground mt-1">{mode.description}</p>
-              </div>
-            </button>
-          ))}
+                <div class="flex-1">
+                  <div class="flex items-center justify-between">
+                    <span class="font-semibold">{mode.title}</span>
+                    <Show when={mode.recommended}>
+                      <span class="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        Recomendado
+                      </span>
+                    </Show>
+                  </div>
+                  <p class="text-sm text-muted-foreground mt-1">{mode.description}</p>
+                </div>
+              </button>
+            )}
+          </For>
         </div>
       </CardContent>
       <CardFooter class="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={props.onBack}>
           Anterior
         </Button>
-        <Button onClick={onNext} disabled={!selectedMode}>
+        <Button onClick={props.onNext} disabled={!props.selectedMode}>
           Siguiente
         </Button>
       </CardFooter>

@@ -1,3 +1,4 @@
+import type { Component } from 'solid-js';
 import styles from './MoonSunSwitch.module.css';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -26,24 +27,20 @@ const containerSizeClasses: Record<Size, string> = {
   '2xl': 'w-32 h-32',
 };
 
-const MoonSunSwitch: React.FC<DarkModeToggleProps> = ({
-  isDarkMode,
-  toggleDarkMode,
-  size = 'md',
-}) => {
-  const switchSize = sizeClasses[size];
-  const containerSize = containerSizeClasses[size];
+const MoonSunSwitch: Component<DarkModeToggleProps> = (props) => {
+  const switchSize = () => sizeClasses[props.size ?? 'md'];
+  const containerSize = () => containerSizeClasses[props.size ?? 'md'];
 
   return (
     <div
-      class={`flex items-center justify-center bg-transparent text-foreground ${containerSize}`}
+      class={`flex items-center justify-center bg-transparent text-foreground ${containerSize()}`}
     >
-      <label class={`${styles.container} relative inline-block ${switchSize}`}>
+      <label class={`${styles.container} relative inline-block ${switchSize()}`}>
         <input
           type="checkbox"
           class="opacity-0 w-0 h-0"
-          checked={isDarkMode}
-          onInput={toggleDarkMode}
+          checked={props.isDarkMode}
+          onInput={props.toggleDarkMode}
         />
         <span
           class={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-600 ease-out overflow-hidden z-[1] rounded-full`}

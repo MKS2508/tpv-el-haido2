@@ -1,5 +1,5 @@
 import { createSignal, createMemo, For, Show } from 'solid-js';
-import { PlusIcon, PencilIcon, TrashIcon, SearchIcon, UsersIcon } from 'lucide-solid';
+import { PlusIcon, PencilIcon, TrashIcon, SearchIcon, UsersIcon, Building2, FileText } from 'lucide-solid';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -150,12 +150,38 @@ function Customers() {
         <Show
           when={filteredCustomers().length > 0}
           fallback={
-            <div class="flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <UsersIcon class="h-12 w-12 mb-4 opacity-50" />
-              <p class="text-lg font-medium">No hay clientes</p>
-              <p class="text-sm">
-                {searchTerm() ? 'No se encontraron resultados' : 'Añade tu primer cliente'}
+            <div class="flex flex-col items-center justify-center h-full min-h-[400px] text-center p-8">
+              <div class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 mb-6">
+                <UsersIcon class="h-10 w-10 text-primary" />
+              </div>
+              <h3 class="text-xl font-semibold text-foreground mb-2">
+                {searchTerm() ? 'Sin resultados' : 'Gestión de Clientes'}
+              </h3>
+              <p class="text-muted-foreground max-w-md mb-6">
+                {searchTerm()
+                  ? `No se encontraron clientes que coincidan con "${searchTerm()}"`
+                  : 'Registra a tus clientes para asociarlos a facturas y llevar un control de sus datos fiscales.'}
               </p>
+              <Show when={!searchTerm()}>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 w-full max-w-lg">
+                  <div class="flex flex-col items-center p-4 rounded-lg bg-muted/50 border border-border">
+                    <Building2 class="h-6 w-6 text-muted-foreground mb-2" />
+                    <span class="text-xs text-muted-foreground text-center">Datos Fiscales</span>
+                  </div>
+                  <div class="flex flex-col items-center p-4 rounded-lg bg-muted/50 border border-border">
+                    <FileText class="h-6 w-6 text-muted-foreground mb-2" />
+                    <span class="text-xs text-muted-foreground text-center">Facturación</span>
+                  </div>
+                  <div class="flex flex-col items-center p-4 rounded-lg bg-muted/50 border border-border">
+                    <UsersIcon class="h-6 w-6 text-muted-foreground mb-2" />
+                    <span class="text-xs text-muted-foreground text-center">Contacto</span>
+                  </div>
+                </div>
+                <Button onClick={openCreateDialog} size="lg">
+                  <PlusIcon class="mr-2 h-5 w-5" />
+                  Añadir Primer Cliente
+                </Button>
+              </Show>
             </div>
           }
         >

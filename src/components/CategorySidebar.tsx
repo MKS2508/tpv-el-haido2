@@ -1,6 +1,6 @@
+import { For } from 'solid-js';
 import { Grid3X3 } from 'lucide-solid';
 import CategoryCard from '@/components/ui/CategoryCard';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import type Category from '@/models/Category';
 
 interface CategorySidebarProps {
@@ -9,11 +9,7 @@ interface CategorySidebarProps {
   onCategorySelect: (categoryName: string) => void;
 }
 
-const CategorySidebar: React.FC<CategorySidebarProps> = ({
-  categories,
-  selectedCategory,
-  onCategorySelect,
-}) => {
+function CategorySidebar(props: CategorySidebarProps) {
   return (
     <div class="h-full w-full flex flex-col bg-sidebar border-sidebar-border overflow-hidden">
       {/* Header */}
@@ -22,32 +18,33 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
         <h3 class="text-sm font-medium text-sidebar-foreground">Categorías</h3>
       </div>
       {/* Lista de categorías con scroll independiente */}
-      <ScrollArea class="flex-1 min-h-0 w-full">
+      <div class="flex-1 min-h-0 w-full overflow-y-auto">
         <div class="p-1.5 space-y-0.5">
           {/* Categoría Fijados primero */}
           <CategoryCard
             category={{ name: 'Fijados', description: 'Productos fijados' }}
             mode="sidebar"
-            isSelected={selectedCategory === 'Fijados'}
-            onAction={onCategorySelect}
+            isSelected={props.selectedCategory === 'Fijados'}
+            onAction={props.onCategorySelect}
             isFavorite={true}
           />
 
           {/* Resto de categorías */}
-          {categories.map((category) => (
-            <CategoryCard
-              key={`category-${category.id}`}
-              category={category}
-              mode="sidebar"
-              isSelected={selectedCategory === category.name}
-              onAction={onCategorySelect}
-              isFavorite={false}
-            />
-          ))}
+          <For each={props.categories}>
+            {(category) => (
+              <CategoryCard
+                category={category}
+                mode="sidebar"
+                isSelected={props.selectedCategory === category.name}
+                onAction={props.onCategorySelect}
+                isFavorite={false}
+              />
+            )}
+          </For>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
-};
+}
 
 export default CategorySidebar;

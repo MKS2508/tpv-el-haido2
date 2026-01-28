@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'solid-js';
+import { createContext, useContext, type JSX } from 'solid-js';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
 type OnboardingContextType = ReturnType<typeof useOnboarding>;
@@ -6,15 +6,15 @@ type OnboardingContextType = ReturnType<typeof useOnboarding>;
 const OnboardingContext = createContext<OnboardingContextType | null>(null);
 
 interface OnboardingProviderProps {
-  children: React.ReactNode;
+  children: JSX.Element;
 }
 
-export function OnboardingProvider({ children }: OnboardingProviderProps) {
+export function OnboardingProvider(props: OnboardingProviderProps) {
   const onboarding = useOnboarding();
 
   return (
     <OnboardingContext.Provider value={onboarding}>
-      {children}
+      {props.children}
     </OnboardingContext.Provider>
   );
 }

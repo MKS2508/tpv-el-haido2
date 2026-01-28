@@ -4,6 +4,8 @@
  * Muestra el estado de facturación AEAT de un pedido
  */
 
+import type { Component } from 'solid-js';
+import { Show } from 'solid-js';
 import { AlertCircle, Check, Clock, FileX, Receipt } from 'lucide-solid';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -18,7 +20,7 @@ export interface InvoiceStatusBadgeProps {
   /** Mostrar versión compacta (solo icono) */
   compact?: boolean;
   /** Clase CSS adicional */
-  className?: string;
+  class?: string;
   /** Mostrar tooltip con detalles */
   showTooltip?: boolean;
 }
@@ -31,7 +33,7 @@ const statusConfig: Record<
   InvoiceStatus,
   {
     label: string;
-    icon: React.ElementType;
+    icon: Component;
     variant: 'default' | 'secondary' | 'destructive' | 'outline';
     className: string;
   }
@@ -126,13 +128,8 @@ function getTooltipContent(aeat?: OrderAEATInfo): string {
 
 // ==================== Component ====================
 
-export const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({
-  aeat,
-  compact = false,
-  className,
-  showTooltip = true,
-}) => {
-  const status = getInvoiceStatus(aeat);
+export function InvoiceStatusBadge(props: InvoiceStatusBadgeProps) {
+  const status = getInvoiceStatus(props.aeat);
   const config = statusConfig[status];
   const Icon = config.icon;
 
@@ -142,48 +139,52 @@ export const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({
       class={cn(
         'flex items-center gap-1 font-medium border',
         config.className,
-        compact ? 'px-1.5 py-0.5' : 'px-2 py-1',
-        className
+        props.compact ? 'px-1.5 py-0.5' : 'px-2 py-1',
+        props.class
       )}
     >
-      <Icon class={cn(compact ? 'h-3 w-3' : 'h-3.5 w-3.5')} />
-      {!compact && <span class="text-xs">{config.label}</span>}
+      <Icon class={cn(props.compact ? 'h-3 w-3' : 'h-3.5 w-3.5')} />
+      <Show when={!props.compact}>
+        <span class="text-xs">{config.label}</span>
+      </Show>
     </Badge>
   );
 
-  if (!showTooltip) {
-    return badge;
-  }
-
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>{badge}</TooltipTrigger>
-        <TooltipContent>
-          <div class="max-w-xs">
+    <Show when={props.showTooltip !== false} fallback={badge}>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            as={(triggerProps) => (
+              <span {...triggerProps} class="inline-flex cursor-default">
+                {badge}
+              </span>
+            )}
+          />
+          <TooltipContent class="max-w-xs">
             <p class="font-medium">{config.label}</p>
-            <p class="text-xs text-muted-foreground">{getTooltipContent(aeat)}</p>
-            {aeat?.numSerieFactura && status !== 'not_invoiced' && (
+            <p class="text-xs text-muted-foreground">{getTooltipContent(props.aeat)}</p>
+            <Show when={props.aeat?.numSerieFactura && status !== 'not_invoiced'}>
               <p class="text-xs mt-1">
-                <span class="text-muted-foreground">Nº Factura:</span> {aeat.numSerieFactura}
+                <span class="text-muted-foreground">Nº Factura:</span> {props.aeat?.numSerieFactura}
               </p>
-            )}
-            {aeat?.csv && (
+            </Show>
+            <Show when={props.aeat?.csv}>
               <p class="text-xs">
-                <span class="text-muted-foreground">CSV:</span> {aeat.csv}
+                <span class="text-muted-foreground">CSV:</span> {props.aeat?.csv}
               </p>
-            )}
-            {aeat?.invoiceSentAt && (
+            </Show>
+            <Show when={props.aeat?.invoiceSentAt}>
               <p class="text-xs">
                 <span class="text-muted-foreground">Fecha:</span>{' '}
-                {new Date(aeat.invoiceSentAt).toLocaleString('es-ES')}
+                {new Date(props.aeat!.invoiceSentAt!).toLocaleString('es-ES')}
               </p>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+            </Show>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </Show>
   );
-};
+}
 
 export default InvoiceStatusBadge;

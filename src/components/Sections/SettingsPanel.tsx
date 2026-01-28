@@ -5,6 +5,7 @@ import {
   DollarSign,
   FileText,
   HardDrive,
+  Info,
   Pencil,
   PlusCircle,
   ShieldCheck,
@@ -12,9 +13,11 @@ import {
   Wand2,
 } from 'lucide-solid';
 import AEATSettings from '@/components/AEATSettings';
+import DemoDataLoader from '@/components/DemoDataLoader';
 import { ThemeDebugger } from '@/components/ThemeDebugger';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import ThermalPrinterSettings from '@/components/ThermalPrinterSettings.tsx';
+import VersionInfo from '@/components/VersionInfo';
 import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Button } from '@/components/ui/button.tsx';
@@ -229,6 +232,10 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
           </TabsTrigger>
           <TabsTrigger value="security">Seguridad</TabsTrigger>
           <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
+          <TabsTrigger value="about" class="flex items-center gap-1">
+            <Info class="h-3 w-3" />
+            Acerca de
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -378,6 +385,12 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                   Reinicia el asistente para volver a configurar el almacenamiento, importar datos o crear usuarios iniciales.
                 </p>
               </div>
+
+              <Show when={state.debugMode}>
+                <div class="pt-4 border-t">
+                  <DemoDataLoader />
+                </div>
+              </Show>
             </CardContent>
           </Card>
         </TabsContent>
@@ -614,6 +627,17 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                 <Label for="lowStockAlert">Alerta de Stock Bajo</Label>
                 <SwitchUI id="lowStockAlert" />
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="about">
+          <Card>
+            <CardHeader>
+              <CardTitle>Acerca de TPV El Haido</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <VersionInfo />
             </CardContent>
           </Card>
         </TabsContent>

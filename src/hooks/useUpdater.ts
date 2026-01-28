@@ -131,16 +131,16 @@ export function useUpdater() {
     }));
   };
 
-  // Return reactive getters and actions
+  // Return signal accessors and actions
   return {
-    // Reactive getters - access state properties reactively
-    get available() { return state().available; },
-    get checking() { return state().checking; },
-    get downloading() { return state().downloading; },
-    get error() { return state().error; },
-    get progress() { return state().progress; },
-    get version() { return state().version; },
-    get notes() { return state().notes; },
+    // Signal accessors - call these as functions to get reactive values
+    available: () => state().available,
+    checking: () => state().checking,
+    downloading: () => state().downloading,
+    error: () => state().error,
+    progress: () => state().progress,
+    version: () => state().version,
+    notes: () => state().notes,
 
     // Actions
     checkForUpdates,

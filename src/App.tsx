@@ -16,6 +16,7 @@ import iconOptions from '@/assets/utils/icons/iconOptions';
 import fallbackProducts from '@/assets/products.json';
 import BottomNavigation from '@/components/BottomNavigation';
 import DebugIndicator from '@/components/DebugIndicator';
+import ScreenshotOverlay from '@/components/ScreenshotOverlay';
 import AEATInvoices from '@/components/Sections/AEATInvoices';
 import Customers from '@/components/Sections/Customers';
 import Home from '@/components/Sections/Home';
@@ -324,7 +325,6 @@ function App() {
         <main class={cn('flex-1 h-full relative overscroll-y-none', isMobile() && 'w-full')}>
           <Presence>
             <Motion.div
-              key={activeSection()}
               {...getAnimationProps(activeSection())}
               class="absolute inset-0 rounded-3xl overflow-hidden"
             >
@@ -432,6 +432,11 @@ function App() {
       {/* Debug Indicator */}
       <Show when={store.state.debugMode}>
         <DebugIndicator />
+      </Show>
+
+      {/* Screenshot Overlay - Solo en modo debug */}
+      <Show when={store.state.debugMode}>
+        <ScreenshotOverlay activeSection={store.state.selectedUser ? activeSection() : 'login'} />
       </Show>
     </div>
   );
