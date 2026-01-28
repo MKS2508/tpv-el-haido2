@@ -21,8 +21,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import type Category from '@/models/Category';
 import type Product from '@/models/Product';
-import CategoriesService from '@/services/categories.service.ts';
-import ProductService from '@/services/products.service.ts';
 import { useProductsData } from '@/store/selectors';
 
 const Products = memo(() => {
@@ -42,28 +40,32 @@ const Products = memo(() => {
   } | null>(null);
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
-  const { users, selectedUser, setUsers, setSelectedUser, products, setProducts } =
+  const { users, selectedUser, setUsers, setSelectedUser, products, setProducts, storageAdapter } =
     useProductsData();
 
-  // Memoizar servicios para evitar recreación en cada render
-  const productService = useMemo(() => new ProductService(), []);
-  const categoriesService = useMemo(() => new CategoriesService(), []);
-
   const fetchProducts = useCallback(async () => {
-    const fetchedProducts = await productService.getProducts();
-    const productsWithIcons = fetchedProducts.map((product) => ({
-      ...product,
-      icon: React.createElement(
-        iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
-      ),
-    }));
-    setProducts(productsWithIcons);
-  }, [productService, setProducts]);
+    const result = await storageAdapter.getProducts();
+    if (result.ok) {
+      const productsWithIcons = result.value.map((product) => ({
+        ...product,
+        icon: React.createElement(
+          iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
+        ),
+      }));
+      setProducts(productsWithIcons);
+    } else {
+      console.error('[Products] Error fetching products:', result.error.code);
+    }
+  }, [storageAdapter, setProducts]);
 
   const fetchCategories = useCallback(async () => {
-    const fetchedCategories = await categoriesService.getCategories();
-    setCategories(fetchedCategories);
-  }, [categoriesService]);
+    const result = await storageAdapter.getCategories();
+    if (result.ok) {
+      setCategories(result.value);
+    } else {
+      console.error('[Products] Error fetching categories:', result.error.code);
+    }
+  }, [storageAdapter]);
 
   useEffect(() => {
     fetchProducts();
@@ -71,13 +73,21 @@ const Products = memo(() => {
   }, [fetchCategories, fetchProducts]);
 
   const handleAddProduct = async (newProduct: Product) => {
-    await productService.createProduct(newProduct);
-    fetchProducts();
+    const result = await storageAdapter.createProduct(newProduct);
+    if (result.ok) {
+      fetchProducts();
+    } else {
+      console.error('[Products] Error creating product:', result.error.code);
+    }
   };
 
   const handleEditProduct = async (editedProduct: Product) => {
-    await productService.updateProduct(editedProduct);
-    fetchProducts();
+    const result = await storageAdapter.updateProduct(editedProduct);
+    if (result.ok) {
+      fetchProducts();
+    } else {
+      console.error('[Products] Error updating product:', result.error.code);
+    }
   };
 
   const handleDeleteProduct = async (id: number) => {
@@ -88,8 +98,12 @@ const Products = memo(() => {
     if (deleteConfirmation?.type === 'product') {
       const productToDelete = products.find((p) => p.id === deleteConfirmation.id);
       if (productToDelete) {
-        await productService.deleteProduct(productToDelete);
-        fetchProducts();
+        const result = await storageAdapter.deleteProduct(productToDelete);
+        if (result.ok) {
+          fetchProducts();
+        } else {
+          console.error('[Products] Error deleting product:', result.error.code);
+        }
       }
       setDeleteConfirmation(null);
       setEditingProduct(null);
@@ -97,13 +111,21 @@ const Products = memo(() => {
   };
 
   const handleAddCategory = async (newCategory: Category) => {
-    await categoriesService.createCategory(newCategory);
-    fetchCategories();
+    const result = await storageAdapter.createCategory(newCategory);
+    if (result.ok) {
+      fetchCategories();
+    } else {
+      console.error('[Products] Error creating category:', result.error.code);
+    }
   };
 
   const handleEditCategory = async (editedCategory: Category) => {
-    await categoriesService.updateCategory(editedCategory);
-    fetchCategories();
+    const result = await storageAdapter.updateCategory(editedCategory);
+    if (result.ok) {
+      fetchCategories();
+    } else {
+      console.error('[Products] Error updating category:', result.error.code);
+    }
   };
 
   const handleDeleteCategory = (id: number) => {
@@ -114,8 +136,12 @@ const Products = memo(() => {
     if (deleteConfirmation?.type === 'category') {
       const categoryToDelete = categoryList.find((c) => c.id === deleteConfirmation.id);
       if (categoryToDelete) {
-        await categoriesService.deleteCategory(categoryToDelete);
-        fetchCategories();
+        const result = await storageAdapter.deleteCategory(categoryToDelete);
+        if (result.ok) {
+          fetchCategories();
+        } else {
+          console.error('[Products] Error deleting category:', result.error.code);
+        }
       }
       setDeleteConfirmation(null);
       setEditingCategory(null);
@@ -218,10 +244,10 @@ const Products = memo(() => {
   };
 
   return (
-    <div className="flex flex-col space-y-6 p-4 md:flex-row md:space-x-6 md:space-y-0">
+    <div className="flex flex-col h-full space-y-6 p-4 md:flex-row md:space-x-6 md:space-y-0">
       {/* Products */}
-      <div className="w-full md:w-2/3 space-y-6">
-        <div className="flex flex-col space-y-4">
+      <div className="w-full md:w-2/3 flex flex-col space-y-6 min-h-0">
+        <div className="flex flex-col space-y-4 flex-shrink-0">
           <div className="flex flex-wrap gap-4">
             <Input
               placeholder="Buscar productos..."
@@ -331,7 +357,7 @@ const Products = memo(() => {
           </div>
         </div>
 
-        <ScrollArea className="h-[calc(100vh-300px)]">
+        <ScrollArea className="flex-1 min-h-0">
           <AnimatePresence>
             <div
               className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4`}
@@ -361,8 +387,8 @@ const Products = memo(() => {
       </div>
 
       {/* Categories */}
-      <div className="w-full md:w-1/3 space-y-6">
-        <div className="flex flex-col space-y-4">
+      <div className="w-full md:w-1/3 flex flex-col space-y-6 min-h-0">
+        <div className="flex flex-col space-y-4 flex-shrink-0">
           <Input
             placeholder="Buscar categorías..."
             value={categorySearchTerm}
@@ -374,7 +400,7 @@ const Products = memo(() => {
           </Button>
         </div>
 
-        <ScrollArea className="h-[calc(100vh-300px)]">
+        <ScrollArea className="flex-1 min-h-0">
           <AnimatePresence>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredCategories.map((category) => (

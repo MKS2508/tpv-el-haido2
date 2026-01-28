@@ -21,7 +21,9 @@
     "typecheck": "tsgo --noEmit",
     "typecheck:tsc": "tsc --noEmit",
     "build:aeat-sidecar": "bun run scripts/build-aeat-sidecar.ts",
-    "build:aeat-sidecar:all": "bun run scripts/build-aeat-sidecar.ts --target all"
+    "build:aeat-sidecar:all": "bun run scripts/build-aeat-sidecar.ts --target all",
+    "seed": "bun run scripts/seed.ts",
+    "seed:clear": "bun run scripts/seed.ts --clear"
   },
   "dependencies": {
     "@mks2508/better-logger": "^4.0.0",

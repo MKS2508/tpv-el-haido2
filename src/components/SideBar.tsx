@@ -5,6 +5,7 @@ import MoonSunSwitch from '@/components/MoonSunSwitch.tsx';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useResponsive } from '@/hooks/useResponsive';
+import { cn } from '@/lib/utils';
 import type User from '@/models/User';
 import { Card, CardContent } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
@@ -74,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       initial={false}
       animate={isSidebarOpen ? 'open' : 'closed'}
       variants={sidebarVariants}
-      className="relative h-full mr-4"
+      className="relative h-full py-4 pl-4"
     >
       <Card
         className={`h-full bg-sidebar border-sidebar-border rounded-r-3xl shadow-lg overflow-hidden ${
@@ -83,10 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         style={{ boxShadow: 'var(--shadow-lg)' }}
       >
         <CardContent
-          className="flex flex-col h-full overflow-hidden"
-          style={{
-            padding: isTablet ? 'calc(var(--spacing) * 1.5)' : 'calc(var(--spacing) * 2)',
-          }}
+          className={cn('flex flex-col h-full overflow-hidden', isTablet ? 'p-1.5' : 'p-2')}
         >
           <div
             className="flex items-center justify-center"

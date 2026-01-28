@@ -205,8 +205,9 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   const performanceConfig = useMemo((): PerformanceConfig => {
     const { isRaspberryPi, isMobile, isLowPerformance, isVeryLowPerformance } = deviceInfo;
 
-    const isMemoryConstrained = memoryPressure === 'critical';
     const isNetworkConstrained = networkSpeed === 'slow';
+    // Note: memoryPressure is monitored but not currently used for performance decisions
+    // as it gives too many false positives on normal devices
 
     const config: PerformanceConfig = {
       isLowPerformance,

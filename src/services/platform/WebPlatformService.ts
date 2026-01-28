@@ -26,7 +26,7 @@ export class WebPlatformService implements PlatformService {
     }
   }
 
-  async printReceipt(order: Order): Promise<void> {
+  async printReceipt(_order: Order): Promise<void> {
     // Receipt printing not available in PWA version
     console.warn('[WebPlatformService] Receipt printing not available in PWA version');
     alert(

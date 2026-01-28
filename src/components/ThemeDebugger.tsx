@@ -50,7 +50,10 @@ const THEME_VARS = [
 ];
 
 export function ThemeDebugger() {
-  const { currentTheme, currentMode, themes, initialized, loading, error } = useTheme();
+  const themeContext = useTheme();
+  const { currentTheme, currentMode, themes, initialized } = themeContext;
+  const loading = 'loading' in themeContext ? (themeContext as any).loading : false;
+  const error = 'error' in themeContext ? (themeContext as any).error : null;
   const [cssVariables, setCssVariables] = useState<CSSVariable[]>([]);
   const [domInfo, setDomInfo] = useState({
     dataTheme: '',
@@ -150,12 +153,12 @@ export function ThemeDebugger() {
             </Badge>
           </div>
           <div>
-            <div className="text-sm font-medium">Loading:</div>
-            <Badge variant={loading ? 'secondary' : 'outline'}>{loading ? 'Yes' : 'No'}</Badge>
-          </div>
-          <div>
             <div className="text-sm font-medium">Themes:</div>
             <Badge variant="outline">{themes?.length || 0}</Badge>
+          </div>
+          <div>
+            <div className="text-sm font-medium">Loading:</div>
+            <Badge variant={loading ? 'secondary' : 'outline'}>{loading ? 'Yes' : 'No'}</Badge>
           </div>
         </div>
 

@@ -136,6 +136,7 @@ export const useProductsData = () =>
       setProducts: state.setProducts,
       setUsers: state.setUsers,
       setSelectedUser: state.setSelectedUser,
+      storageAdapter: state.storageAdapter,
     }))
   );
 

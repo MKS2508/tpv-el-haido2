@@ -155,18 +155,15 @@ function App() {
       if (categories.length === 0) {
         const result = await storageAdapter.getCategories();
 
-        if (result.ok) {
+        if (result.ok && result.value.length > 0) {
           setCategories(result.value);
-          if (result.value.length > 0) {
-            setBackendConnected(true);
-          }
+          setBackendConnected(true);
           console.log('[App] Categories loaded:', result.value.length);
         } else {
-          console.error('[App] Error loading categories:', result.error.code, result.error.message);
           // Use fallback categories
           const fallbackCats = getFallbackCategories();
           setCategories(fallbackCats);
-          setBackendConnected(false);
+          console.log('[App] Using fallback categories:', fallbackCats.length);
         }
       }
     };
@@ -175,7 +172,7 @@ function App() {
       if (products.length === 0) {
         const result = await storageAdapter.getProducts();
 
-        if (result.ok) {
+        if (result.ok && result.value.length > 0) {
           const productsWithIcons = result.value.map((product) => ({
             ...product,
             icon: React.createElement(
@@ -183,15 +180,12 @@ function App() {
             ),
           }));
           setProducts(productsWithIcons);
-          if (result.value.length > 0) {
-            setBackendConnected(true);
-          }
+          setBackendConnected(true);
           console.log('[App] Products loaded:', result.value.length);
         } else {
-          console.error('[App] Error loading products:', result.error.code, result.error.message);
           // Use fallback products
           setProducts(getFallbackProducts());
-          setBackendConnected(false);
+          console.log('[App] Using fallback products');
         }
       }
     };
@@ -200,18 +194,14 @@ function App() {
       const result = await storageAdapter.getOrders();
 
       if (result.ok) {
-        // Filter to only include paid orders for history
         const paidOrders = result.value.filter((order) => order.status === 'paid');
         setOrderHistory(paidOrders);
         console.log('[App] Order history loaded:', paidOrders.length);
-      } else {
-        console.error('[App] Error loading orders:', result.error.code, result.error.message);
-        // Keep existing order history on error
       }
     };
 
-    initializeProducts();
     initializeCategories();
+    initializeProducts();
     initializeOrderHistory();
 
     if (users.length === 0) {
@@ -391,7 +381,7 @@ function App() {
     <div
       className={cn(
         'flex h-screen w-screen bg-background text-foreground overscroll-none',
-        isMobile ? 'pb-20 pt-0 px-0' : 'pt-4 pr-4 pb-4', // Add bottom padding for mobile nav
+        isMobile && 'pb-20 pt-0 px-0',
         touchOptimizationsEnabled && 'touch-optimized'
       )}
     >
@@ -437,7 +427,7 @@ function App() {
           <main
             className={cn(
               'flex-1 h-full relative overflow-hidden overscroll-y-none',
-              isMobile && 'w-full'
+              isMobile ? 'w-full' : 'py-4 pr-4'
             )}
           >
             <AnimatePresence custom={getDirection(activeSection)}>

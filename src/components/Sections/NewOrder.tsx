@@ -21,14 +21,12 @@ import type Order from '@/models/Order';
 import type { OrderItem } from '@/models/Order';
 import type Product from '@/models/Product';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
-import ProductService from '@/services/products.service.ts';
 import { useNewOrderData } from '@/store/selectors';
 
 const NewOrder = memo(() => {
   const {
     activeOrders,
     recentProducts,
-    setProducts,
     setRecentProducts,
     selectedOrderId,
     setSelectedOrderId,
@@ -44,7 +42,7 @@ const NewOrder = memo(() => {
     showTicketDialog,
     handleTableChange,
     handleCompleteOrder,
-    closeOrder, // Added
+    closeOrder,
     setPaymentMethod,
     setCashAmount,
     setShowTicketDialog,
@@ -61,9 +59,6 @@ const NewOrder = memo(() => {
   const [orderToClose, setOrderToClose] = useState<Order | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>('Fijados');
   const [showOrderPanel, setShowOrderPanel] = useState(false);
-
-  // Memoizar ProductService para evitar recreación
-  const productsService = useMemo(() => new ProductService(), []);
 
   useEffect(() => {
     const updatedTables = tables.map((table) => {
@@ -113,21 +108,15 @@ const NewOrder = memo(() => {
     }
   }, [selectedOrderId, activeOrders, setSelectedOrder]);
 
-  useEffect(() => {
-    if (selectedUser && products.length === 0) {
-      productsService.getProducts().then((fetchedProducts) => {
-        setProducts(fetchedProducts);
-      });
-    }
-  }, [selectedUser, products.length, productsService, setProducts]);
+  // Products are already loaded by App.tsx via storageAdapter
 
   useEffect(() => {
     if (selectedUser && products.length > 0) {
       const pinnedProductIds = selectedUser.pinnedProductIds || [];
-      const pinnedProducts = productsService.getProductsByIdArray(pinnedProductIds, products);
+      const pinnedProducts = products.filter((product) => pinnedProductIds.includes(product.id));
       setRecentProducts(pinnedProducts);
     }
-  }, [selectedUser, products, productsService, setRecentProducts]);
+  }, [selectedUser, products, setRecentProducts]);
 
   const handleAddToOrder = useCallback(
     (orderId: number, product: OrderItem | Product) => {
@@ -244,17 +233,9 @@ const NewOrder = memo(() => {
                 type="button"
                 onClick={() => handleTableChange(0)}
                 className={cn(
-                  'table-button bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border rounded-lg flex items-center font-medium transition-all duration-150 hover:bg-sidebar-accent/90 active:scale-[0.98] flex-shrink-0 snap-start',
-                  isMobile ? 'px-2 py-1.5 text-xs' : ''
+                  'table-button bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border rounded-lg flex items-center font-medium transition-all duration-150 hover:bg-sidebar-accent/90 active:scale-[0.98] flex-shrink-0 snap-start shadow-sm',
+                  isMobile ? 'px-2 py-1 gap-1.5 text-[0.7rem]' : 'px-3 py-1.5 gap-1.5 text-xs'
                 )}
-                style={{
-                  padding: isMobile
-                    ? 'calc(var(--spacing) * 1) calc(var(--spacing) * 2)'
-                    : 'calc(var(--spacing) * 1.5) calc(var(--spacing) * 3)',
-                  gap: 'calc(var(--spacing) * 1.5)',
-                  fontSize: isMobile ? '0.7rem' : '0.75rem',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
               >
                 <span className="w-2 h-2 bg-sidebar-accent-foreground rounded-full animate-pulse"></span>
                 Barra
@@ -268,17 +249,9 @@ const NewOrder = memo(() => {
                 key={`available-${table.id}`}
                 onClick={() => handleTableChange(table.id)}
                 className={cn(
-                  'table-button bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border rounded-lg flex items-center font-medium transition-all duration-150 hover:bg-sidebar-accent/90 active:scale-[0.98] flex-shrink-0 snap-start',
-                  isMobile ? 'px-2 py-1.5 text-xs' : ''
+                  'table-button bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border rounded-lg flex items-center font-medium transition-all duration-150 hover:bg-sidebar-accent/90 active:scale-[0.98] flex-shrink-0 snap-start shadow-sm',
+                  isMobile ? 'px-2 py-1 gap-1.5 text-[0.7rem]' : 'px-3 py-1.5 gap-1.5 text-xs'
                 )}
-                style={{
-                  padding: isMobile
-                    ? 'calc(var(--spacing) * 1) calc(var(--spacing) * 2)'
-                    : 'calc(var(--spacing) * 1.5) calc(var(--spacing) * 3)',
-                  gap: 'calc(var(--spacing) * 1.5)',
-                  fontSize: isMobile ? '0.7rem' : '0.75rem',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
               >
                 <span className="w-2 h-2 bg-sidebar-accent-foreground rounded-full animate-pulse"></span>
                 {table.name}
@@ -293,18 +266,10 @@ const NewOrder = memo(() => {
                 className={cn(
                   'table-button border rounded-lg flex items-center font-medium transition-all duration-150 active:scale-[0.98] flex-shrink-0 snap-start cursor-pointer',
                   selectedOrderId === order.id
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary'
-                    : 'bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted/80',
-                  isMobile ? 'px-2 py-1.5 text-xs' : ''
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md'
+                    : 'bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted/80 shadow-sm',
+                  isMobile ? 'px-2 py-1 gap-1.5 text-[0.7rem]' : 'px-3 py-1.5 gap-1.5 text-xs'
                 )}
-                style={{
-                  padding: isMobile
-                    ? 'calc(var(--spacing) * 1) calc(var(--spacing) * 2)'
-                    : 'calc(var(--spacing) * 1.5) calc(var(--spacing) * 3)',
-                  gap: 'calc(var(--spacing) * 1.5)',
-                  fontSize: isMobile ? '0.7rem' : '0.75rem',
-                  boxShadow: selectedOrderId === order.id ? 'var(--shadow-md)' : 'var(--shadow-sm)',
-                }}
                 onClick={() => setSelectedOrderId(order.id)}
               >
                 <span
