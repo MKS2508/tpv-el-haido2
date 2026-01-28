@@ -1,0 +1,244 @@
+---
+title: Instalación
+description: 'Guía completa de instalación de TPV El Haido en Windows, macOS, Linux y Raspberry Pi'
+---
+
+# Instalación
+
+Guía detallada para instalar TPV El Haido en tu sistema operativo.
+
+## Requisitos Previos
+
+Antes de instalar, verifica que tu sistema cumple los requisitos mínimos:
+
+| Requisito | Mínimo | Recomendado |
+|-----------|--------|-------------|
+| **RAM** | 512 MB | 1 GB |
+| **Almacenamiento** | 100 MB | 500 MB |
+| **Pantalla** | 800x600 | 1024x768+ |
+| **Conexión** | Opcional | Requerida para VERI*FACTU |
+
+## Instalación por Sistema
+
+<Tabs items={['Windows', 'macOS', 'Linux', 'Raspberry Pi']}>
+<Tab value="Windows">
+
+### Windows 10/11
+
+<Steps>
+
+### Descargar el instalador
+
+1. Ve a [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases/latest)
+2. Descarga el archivo `TPV.El.Haido_x.x.x_x64-setup.exe`
+
+### Ejecutar el instalador
+
+1. Haz doble clic en el archivo descargado
+2. Si aparece Windows SmartScreen, haz clic en "Más información" → "Ejecutar de todas formas"
+3. Sigue el asistente de instalación
+
+### Verificar instalación
+
+1. Busca "TPV El Haido" en el menú de inicio
+2. Haz clic para abrir la aplicación
+3. Deberías ver la pantalla de login o el asistente de configuración
+
+</Steps>
+
+<Callout type="warning">
+  **Windows SmartScreen**: Al ser una aplicación no firmada por Microsoft, Windows puede mostrar una advertencia. Esto es normal para software independiente.
+</Callout>
+
+</Tab>
+<Tab value="macOS">
+
+### macOS 11 Big Sur o superior
+
+<Steps>
+
+### Descargar el DMG
+
+1. Ve a [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases/latest)
+2. Descarga el archivo correspondiente a tu Mac:
+   - **Intel**: `TPV.El.Haido_x64.dmg`
+   - **Apple Silicon (M1/M2/M3/M4)**: `TPV.El.Haido_aarch64.dmg`
+
+### Instalar la aplicación
+
+1. Abre el archivo DMG descargado
+2. Arrastra el icono de TPV El Haido a la carpeta "Aplicaciones"
+3. Expulsa el volumen DMG
+
+### Primera ejecución
+
+1. Abre la carpeta Aplicaciones
+2. Haz clic derecho en "TPV El Haido" → "Abrir"
+3. En el diálogo de seguridad, haz clic en "Abrir"
+
+</Steps>
+
+<Callout type="info">
+  **Gatekeeper**: macOS puede bloquear la primera ejecución. Usa clic derecho → Abrir para evitar ir a Preferencias del Sistema.
+</Callout>
+
+</Tab>
+<Tab value="Linux">
+
+### Ubuntu, Debian y derivados
+
+<Steps>
+
+### Instalar dependencias
+
+```bash
+sudo apt update
+sudo apt install -y libwebkit2gtk-4.1-0 libgtk-3-0
+```
+
+### Descargar e instalar el paquete
+
+```bash
+# Descargar la última versión
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_amd64.deb
+
+# Instalar
+sudo dpkg -i tpv-el-haido_amd64.deb
+
+# Resolver dependencias si es necesario
+sudo apt-get install -f
+```
+
+### Ejecutar
+
+```bash
+# Desde terminal
+tpv-el-haido
+
+# O buscar en el menú de aplicaciones
+```
+
+</Steps>
+
+### Alternativa: AppImage (cualquier distribución)
+
+```bash
+# Descargar
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido.AppImage
+
+# Hacer ejecutable
+chmod +x tpv-el-haido.AppImage
+
+# Ejecutar
+./tpv-el-haido.AppImage
+```
+
+</Tab>
+<Tab value="Raspberry Pi">
+
+### Raspberry Pi 4/5 (64-bit)
+
+<Steps>
+
+### Verificar sistema operativo
+
+```bash
+# Debe mostrar aarch64
+uname -m
+```
+
+<Callout type="warning">
+  Raspberry Pi OS debe ser la versión de **64 bits**. La versión de 32 bits no es compatible.
+</Callout>
+
+### Instalar dependencias
+
+```bash
+sudo apt update
+sudo apt install -y libwebkit2gtk-4.1-0 libgtk-3-0
+```
+
+### Descargar e instalar
+
+```bash
+# Descargar versión ARM64
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_arm64.deb
+
+# Instalar
+sudo dpkg -i tpv-el-haido_arm64.deb
+sudo apt-get install -f
+```
+
+### Ejecutar
+
+```bash
+tpv-el-haido
+```
+
+</Steps>
+
+### Optimizaciones para Raspberry Pi
+
+Para mejorar el rendimiento:
+
+1. Usa el tema de alto contraste (menos efectos visuales)
+2. Desactiva animaciones en Ajustes
+3. Asigna al menos 256MB a la GPU en `raspi-config`
+
+</Tab>
+</Tabs>
+
+## Solución de Problemas
+
+### La aplicación no abre
+
+<Tabs items={['Windows', 'macOS', 'Linux']}>
+<Tab value="Windows">
+
+1. Verifica que tienes Windows 10 o superior
+2. Intenta ejecutar como administrador
+3. Revisa si hay un antivirus bloqueando la ejecución
+4. Reinstala la aplicación
+
+</Tab>
+<Tab value="macOS">
+
+1. Ve a **Preferencias del Sistema → Seguridad y Privacidad**
+2. En la pestaña General, haz clic en "Abrir de todas formas"
+3. Si persiste, prueba: `xattr -cr /Applications/TPV\ El\ Haido.app`
+
+</Tab>
+<Tab value="Linux">
+
+1. Verifica las dependencias: `apt list --installed | grep webkit`
+2. Comprueba permisos: `chmod +x /usr/bin/tpv-el-haido`
+3. Ejecuta desde terminal para ver errores: `tpv-el-haido`
+
+</Tab>
+</Tabs>
+
+### Error de base de datos
+
+Si ves un error relacionado con SQLite:
+
+1. Cierra la aplicación
+2. Borra el archivo de base de datos:
+   - **Windows**: `%APPDATA%\com.elhaido.tpv\tpv-haido.db`
+   - **macOS**: `~/Library/Application Support/com.elhaido.tpv/tpv-haido.db`
+   - **Linux**: `~/.config/com.elhaido.tpv/tpv-haido.db`
+3. Reinicia la aplicación (se creará una nueva base de datos)
+
+<Callout type="warning">
+  Borrar la base de datos eliminará todos tus datos. Haz una copia de seguridad primero si es posible.
+</Callout>
+
+### Problemas de rendimiento
+
+1. Verifica que cumples los requisitos mínimos
+2. Cierra otras aplicaciones pesadas
+3. En Raspberry Pi, desactiva animaciones
+4. Considera usar el modo de almacenamiento SQLite (más rápido)
+
+## Siguiente Paso
+
+Una vez instalado, sigue con [Primeros Pasos](/docs/guia-usuario/primeros-pasos) para configurar tu TPV.

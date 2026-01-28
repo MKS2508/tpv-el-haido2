@@ -1,0 +1,374 @@
+---
+title: Design Patterns
+description: 'Architectural patterns used in TPV El Haido: Strategy and Result Pattern'
+---
+
+# Design Patterns
+
+TPV El Haido uses several design patterns to keep code clean, testable, and extensible.
+
+## Strategy Pattern (Storage Adapters)
+
+The Strategy pattern allows swapping storage implementations without changing client code.
+
+### Problem
+
+We need to support multiple storage backends:
+- SQLite (native production)
+- HTTP REST API (development)
+- IndexedDB (web fallback)
+
+### Solution
+
+We define a common interface `IStorageAdapter` that all implementations must follow:
+
+```typescript
+// src/services/storage-adapter.interface.ts
+
+import type { StorageResult } from '@/lib/result';
+import type { Product, Category, Order, Customer } from '@/models';
+
+export interface IStorageAdapter {
+  // Products
+  getProducts(): Promise<StorageResult<Product[]>>;
+  createProduct(product: Product): Promise<StorageResult<void>>;
+  updateProduct(product: Product): Promise<StorageResult<void>>;
+  deleteProduct(product: Product): Promise<StorageResult<void>>;
+
+  // Categories
+  getCategories(): Promise<StorageResult<Category[]>>;
+  createCategory(category: Category): Promise<StorageResult<void>>;
+  updateCategory(category: Category): Promise<StorageResult<void>>;
+  deleteCategory(category: Category): Promise<StorageResult<void>>;
+
+  // Orders
+  getOrders(): Promise<StorageResult<Order[]>>;
+  createOrder(order: Order): Promise<StorageResult<void>>;
+  updateOrder(order: Order): Promise<StorageResult<void>>;
+
+  // Customers
+  getCustomers(): Promise<StorageResult<Customer[]>>;
+  createCustomer(customer: Customer): Promise<StorageResult<void>>;
+  updateCustomer(customer: Customer): Promise<StorageResult<void>>;
+  deleteCustomer(customer: Customer): Promise<StorageResult<void>>;
+}
+```
+
+### Implementations
+
+```mermaid
+classDiagram
+    class IStorageAdapter {
+        <<interface>>
+        +getProducts()
+        +createProduct()
+        +getOrders()
+        ...
+    }
+
+    class SqliteStorageAdapter {
+        -invoke()
+        +getProducts()
+        +createProduct()
+    }
+
+    class HttpStorageAdapter {
+        -baseUrl: string
+        -fetch()
+        +getProducts()
+        +createProduct()
+    }
+
+    class IndexedDbStorageAdapter {
+        -db: IDBDatabase
+        +getProducts()
+        +createProduct()
+    }
+
+    IStorageAdapter <|.. SqliteStorageAdapter
+    IStorageAdapter <|.. HttpStorageAdapter
+    IStorageAdapter <|.. IndexedDbStorageAdapter
+```
+
+### Example: SqliteStorageAdapter
+
+```typescript
+// src/services/sqlite-storage-adapter.ts
+
+import { invoke } from '@tauri-apps/api/core';
+import { tryCatchAsync, type StorageResult } from '@mks2508/no-throw';
+import { StorageErrorCode } from '@/lib/error-codes';
+import type { IStorageAdapter } from './storage-adapter.interface';
+import type { Product } from '@/models/Product';
+
+export class SqliteStorageAdapter implements IStorageAdapter {
+  async getProducts(): Promise<StorageResult<Product[]>> {
+    return tryCatchAsync(
+      async () => invoke<Product[]>('get_products'),
+      StorageErrorCode.ReadFailed
+    );
+  }
+
+  async createProduct(product: Product): Promise<StorageResult<void>> {
+    return tryCatchAsync(
+      async () => invoke('create_product', { product }),
+      StorageErrorCode.WriteFailed
+    );
+  }
+
+  // ... rest of methods
+}
+```
+
+### Usage in the Store
+
+```typescript
+// src/store/store.ts
+
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+import type { IStorageAdapter } from '@/services/storage-adapter.interface';
+
+interface AppState {
+  storageAdapter: IStorageAdapter;
+  setStorageAdapter: (adapter: IStorageAdapter) => void;
+  products: Product[];
+  loadProducts: () => Promise<void>;
+}
+
+export const useStore = create<AppState>()(
+  immer((set, get) => ({
+    storageAdapter: new SqliteStorageAdapter(),
+
+    setStorageAdapter: (adapter) => {
+      set({ storageAdapter: adapter });
+    },
+
+    loadProducts: async () => {
+      const result = await get().storageAdapter.getProducts();
+      if (!isErr(result)) {
+        set({ products: result.value });
+      }
+    },
+  }))
+);
+```
+
+## Result Pattern (Error Handling)
+
+The Result Pattern avoids using exceptions, making error handling explicit and typed.
+
+### Problem
+
+Exceptions in JavaScript/TypeScript:
+- Are not typed (anything can be `throw`n)
+- Propagate implicitly
+- Easy to forget in the `catch`
+
+### Solution
+
+We use `@mks2508/no-throw` to return errors as values:
+
+```typescript
+import {
+  ok,
+  err,
+  isOk,
+  isErr,
+  tryCatch,
+  tryCatchAsync,
+  tapErr,
+  unwrapOr,
+  type Result,
+  type ResultError
+} from '@mks2508/no-throw';
+```
+
+### Basic Types
+
+```typescript
+// A Result can be Ok(value) or Err(error)
+type Result<T, E = ResultError> =
+  | { ok: true; value: T }
+  | { ok: false; error: E };
+
+// A ResultError has code and message
+interface ResultError {
+  code: string;
+  message: string;
+  cause?: unknown;
+}
+```
+
+### Creating Results
+
+```typescript
+// Create an Ok
+const success = ok(42);
+// { ok: true, value: 42 }
+
+// Create an Err
+const failure = err('FAILED', 'Something went wrong');
+// { ok: false, error: { code: 'FAILED', message: 'Something went wrong' } }
+```
+
+### Catching Exceptions
+
+```typescript
+// Synchronous
+const result = tryCatch(
+  () => JSON.parse(invalidJson),
+  'PARSE_ERROR'
+);
+
+// Asynchronous
+const result = await tryCatchAsync(
+  async () => fetch('/api/products'),
+  'NETWORK_ERROR'
+);
+```
+
+### Handling Results
+
+```typescript
+// Check type
+if (isOk(result)) {
+  console.log(result.value);
+}
+
+if (isErr(result)) {
+  console.error(result.error.code);
+}
+
+// Execute effect on error
+tapErr(result, (error) => {
+  logError(error);
+});
+
+// Default value
+const products = unwrapOr(result, []);
+```
+
+### Complete Example
+
+```typescript
+import {
+  tryCatchAsync,
+  isErr,
+  tapErr,
+  unwrapOr
+} from '@mks2508/no-throw';
+import { StorageErrorCode } from '@/lib/error-codes';
+
+async function loadAndDisplayProducts() {
+  // Try to load products
+  const result = await tryCatchAsync(
+    async () => storageAdapter.getProducts(),
+    StorageErrorCode.ReadFailed
+  );
+
+  // Error logging
+  tapErr(result, (error) => {
+    console.error(`[${error.code}] ${error.message}`);
+    notifyUser('Error loading products');
+  });
+
+  // Use value or empty array
+  const products = unwrapOr(result, []);
+
+  // Continue with products (may be [] if there was an error)
+  renderProducts(products);
+}
+```
+
+## Error Codes by Domain
+
+We organize error codes by functional domain:
+
+```typescript
+// src/lib/error-codes.ts
+
+export const StorageErrorCode = {
+  ReadFailed: 'STORAGE_READ_FAILED',
+  WriteFailed: 'STORAGE_WRITE_FAILED',
+  DeleteFailed: 'STORAGE_DELETE_FAILED',
+  NotFound: 'STORAGE_NOT_FOUND',
+} as const;
+
+export const PrinterErrorCode = {
+  ConnectionFailed: 'PRINTER_CONNECTION_FAILED',
+  PrintFailed: 'PRINTER_PRINT_FAILED',
+  NotConfigured: 'PRINTER_NOT_CONFIGURED',
+} as const;
+
+export const OrderErrorCode = {
+  CreateFailed: 'ORDER_CREATE_FAILED',
+  InvalidState: 'ORDER_INVALID_STATE',
+  EmptyOrder: 'ORDER_EMPTY',
+} as const;
+
+export const AuthErrorCode = {
+  InvalidPin: 'AUTH_INVALID_PIN',
+  UserNotFound: 'AUTH_USER_NOT_FOUND',
+  SessionExpired: 'AUTH_SESSION_EXPIRED',
+} as const;
+
+export const AEATErrorCode = {
+  CertExpired: 'AEAT_CERT_EXPIRED',
+  CertInvalid: 'AEAT_CERT_INVALID',
+  ConnectionFailed: 'AEAT_CONNECTION_FAILED',
+  Rejected: 'AEAT_REJECTED',
+} as const;
+```
+
+## ErrorBoundary Pattern
+
+For rendering errors, we use ErrorBoundary with three levels:
+
+```typescript
+// src/components/ErrorBoundary.tsx
+
+type ErrorLevel = 'app' | 'section' | 'component';
+
+interface Props {
+  level: ErrorLevel;
+  fallback?: ReactNode;
+  children: ReactNode;
+}
+
+export function ErrorBoundary({ level, fallback, children }: Props) {
+  // Implementation...
+}
+```
+
+### Levels
+
+| Level | Fallback | Use |
+|-------|----------|-----|
+| `app` | Full screen | Wraps entire app |
+| `section` | Card with message | Main sections |
+| `component` | Minimal inline | Individual components |
+
+### Usage
+
+```tsx
+// App level
+<ErrorBoundary level="app">
+  <App />
+</ErrorBoundary>
+
+// Section level
+<ErrorBoundary level="section" fallback={<ErrorCard />}>
+  <ProductList />
+</ErrorBoundary>
+
+// Component level
+<ErrorBoundary level="component">
+  <PriceDisplay price={product.price} />
+</ErrorBoundary>
+```
+
+## Next Step
+
+- [Storage](/en/docs/development/storage)
+- [Error Handling](/en/docs/development/errors)

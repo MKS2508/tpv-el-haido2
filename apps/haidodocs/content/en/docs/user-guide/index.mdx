@@ -1,0 +1,81 @@
+---
+title: User Guide
+description: 'Learn how to use TPV El Haido to manage your hospitality business'
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+# User Guide
+
+Welcome to the TPV El Haido user guide. Here you'll find everything you need to get the most out of your point of sale system.
+
+<Callout type="info">
+  This guide is intended for end users. If you're a developer, check the [development section](/en/docs/development).
+</Callout>
+
+## Getting Started
+
+<Cards>
+  <Card title="Installation" href="/en/docs/user-guide/installation">
+    Install TPV El Haido on your operating system
+  </Card>
+  <Card title="Getting Started" href="/en/docs/user-guide/getting-started">
+    Initial setup and your first sale
+  </Card>
+</Cards>
+
+## Features
+
+<Cards>
+  <Card title="Products" href="/en/docs/user-guide/products">
+    Manage your product catalog and categories
+  </Card>
+  <Card title="Orders" href="/en/docs/user-guide/orders">
+    Create and manage orders
+  </Card>
+  <Card title="Payments" href="/en/docs/user-guide/payments">
+    Process payments and print receipts
+  </Card>
+  <Card title="Printer" href="/en/docs/user-guide/printer">
+    Configure your thermal printer
+  </Card>
+  <Card title="Invoicing" href="/en/docs/user-guide/invoicing">
+    AEAT VERI*FACTU integration
+  </Card>
+  <Card title="Themes" href="/en/docs/user-guide/themes">
+    Customize the appearance
+  </Card>
+</Cards>
+
+## Typical Workflow
+
+```mermaid
+graph LR
+    A[Login] --> B[Select Table]
+    B --> C[Add Products]
+    C --> D[Checkout]
+    D --> E[Print Receipt]
+    E --> F[Send Invoice to AEAT]
+```
+
+## Main Screen
+
+The TPV El Haido interface is organized into sections accessible from the side menu:
+
+| Section | Description |
+|---------|-------------|
+| **Home** | Main panel with daily summary |
+| **New Order** | Create orders and add products |
+| **History** | View previous orders |
+| **Products** | Manage catalog |
+| **Customers** | Customer database |
+| **Invoices** | AEAT invoices and statuses |
+| **Settings** | System configuration |
+
+## Support
+
+If you have questions or encounter problems:
+
+1. Check this documentation
+2. Review the [issues on GitHub](https://github.com/MKS2508/tpv-el-haido2/issues)
+3. Open a new issue describing your problem

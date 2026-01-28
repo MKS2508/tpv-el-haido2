@@ -1,0 +1,189 @@
+---
+title: Download
+description: 'Download TPV El Haido for Windows, macOS, Linux or Raspberry Pi'
+---
+
+# Download TPV El Haido
+
+Download the latest version for your operating system.
+
+<Callout type="info">
+  All downloads are available on [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases).
+</Callout>
+
+## Available Versions
+
+| Platform | Architecture | Format | Link |
+|----------|--------------|--------|------|
+| **Windows** | x64 | `.msi` / `.exe` | [Download](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+| **macOS Intel** | x64 | `.dmg` | [Download](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+| **macOS Apple Silicon** | ARM64 | `.dmg` | [Download](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+| **Linux** | x64 | `.deb` / `.AppImage` | [Download](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+| **Raspberry Pi** | ARM64 | `.deb` | [Download](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+
+## Installation by Operating System
+
+<Tabs items={['Windows', 'macOS', 'Linux', 'Raspberry Pi']}>
+<Tab value="Windows">
+
+### Windows 10/11 (x64)
+
+<Steps>
+### Download the installer
+
+Download the `.msi` or `.exe` file from [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases/latest).
+
+### Run the installer
+
+Double-click the downloaded file and follow the installation wizard.
+
+<Callout type="warning">
+  Windows may show a SmartScreen warning. Click "More info" and then "Run anyway".
+</Callout>
+
+### Launch the application
+
+Search for "TPV El Haido" in the Start menu or double-click the desktop shortcut.
+
+</Steps>
+
+</Tab>
+<Tab value="macOS">
+
+### macOS 11+ (Intel and Apple Silicon)
+
+<Steps>
+### Download the DMG
+
+Download the `.dmg` file for your architecture:
+- **Intel**: `TPV.El.Haido_x64.dmg`
+- **Apple Silicon (M1/M2/M3)**: `TPV.El.Haido_aarch64.dmg`
+
+### Install the application
+
+1. Open the downloaded DMG file
+2. Drag "TPV El Haido" to the Applications folder
+
+### First launch
+
+<Callout type="warning">
+  On first launch, macOS may block the app. Go to **System Preferences → Security & Privacy** and click "Open Anyway".
+</Callout>
+
+</Steps>
+
+</Tab>
+<Tab value="Linux">
+
+### Linux (Ubuntu, Debian, Fedora)
+
+<Steps>
+### Install DEB package (Ubuntu/Debian)
+
+```bash
+# Download the package
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_amd64.deb
+
+# Install
+sudo dpkg -i tpv-el-haido_amd64.deb
+
+# Resolve dependencies if needed
+sudo apt-get install -f
+```
+
+### Or use AppImage (any distro)
+
+```bash
+# Download
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido.AppImage
+
+# Make executable
+chmod +x tpv-el-haido.AppImage
+
+# Run
+./tpv-el-haido.AppImage
+```
+
+</Steps>
+
+</Tab>
+<Tab value="Raspberry Pi">
+
+### Raspberry Pi 4/5 (ARM64)
+
+<Steps>
+### Prerequisites
+
+- Raspberry Pi 4 or 5
+- Raspberry Pi OS (64-bit)
+- Minimum 1GB available RAM
+
+### Install the DEB package
+
+```bash
+# Download the ARM64 package
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_arm64.deb
+
+# Install
+sudo dpkg -i tpv-el-haido_arm64.deb
+
+# Resolve dependencies
+sudo apt-get install -f
+```
+
+### Run
+
+```bash
+tpv-el-haido
+```
+
+<Callout type="tip">
+  For optimal performance on Raspberry Pi, consider disabling animations in **Settings → Performance**.
+</Callout>
+
+</Steps>
+
+</Tab>
+</Tabs>
+
+## System Requirements
+
+### Minimum
+
+| Requirement | Specification |
+|-------------|---------------|
+| **Operating System** | Windows 10, macOS 11, Ubuntu 20.04, Raspberry Pi OS |
+| **RAM** | 512 MB |
+| **Storage** | 100 MB |
+| **Screen** | 800x600 |
+
+### Recommended
+
+| Requirement | Specification |
+|-------------|---------------|
+| **RAM** | 1 GB or more |
+| **Storage** | 500 MB (for database) |
+| **Screen** | 1024x768 or higher |
+| **Touch screen** | Recommended for POS use |
+
+## Verify Installation
+
+After installing, you can verify everything works correctly:
+
+1. Open TPV El Haido
+2. You should see the login screen or the initial setup wizard
+3. If it's your first time, follow the [getting started guide](/en/docs/user-guide/getting-started)
+
+<Callout type="info">
+  If you encounter problems during installation, check the [troubleshooting section](/en/docs/user-guide/installation#troubleshooting).
+</Callout>
+
+## Updates
+
+TPV El Haido includes an automatic update system:
+
+1. The application automatically checks for new versions
+2. You'll receive a notification when an update is available
+3. You can update with one click from **Settings → About**
+
+For more information about the change history, see the [Changelog](/en/docs/changelog).

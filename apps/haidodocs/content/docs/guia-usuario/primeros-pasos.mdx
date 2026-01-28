@@ -1,0 +1,204 @@
+---
+title: Primeros Pasos
+description: 'Configuración inicial de TPV El Haido: usuarios, productos y primera venta'
+---
+
+# Primeros Pasos
+
+Después de instalar TPV El Haido, sigue esta guía para configurar tu sistema y realizar tu primera venta.
+
+## Asistente de Configuración
+
+La primera vez que abras la aplicación, verás el asistente de configuración:
+
+<Steps>
+
+### Bienvenida
+
+El asistente te guiará a través de la configuración inicial. Haz clic en "Comenzar".
+
+### Modo de Almacenamiento
+
+Selecciona cómo quieres guardar tus datos:
+
+| Modo | Descripción | Recomendado para |
+|------|-------------|------------------|
+| **SQLite** | Base de datos local | Un solo terminal |
+| **HTTP** | Servidor externo | Múltiples terminales |
+| **IndexedDB** | Navegador | Modo web/demo |
+
+<Callout type="tip">
+  Para la mayoría de usuarios, **SQLite** es la mejor opción. Es rápido y no requiere configuración adicional.
+</Callout>
+
+### Crear Usuario Administrador
+
+1. Introduce el nombre del usuario (ej: "Admin")
+2. Selecciona un avatar o sube una foto
+3. Crea un PIN de 4 dígitos
+4. Confirma el PIN
+
+### Tema Visual
+
+Elige el tema que mejor se adapte a tu negocio:
+- **Restaurant Professional**: Colores cálidos y elegantes
+- **Modern Cafe**: Verde minimalista
+- **Night Bar**: Tema oscuro con acentos
+- **High Contrast**: Máxima legibilidad
+
+### Completar
+
+Haz clic en "Finalizar" para completar la configuración.
+
+</Steps>
+
+## Pantalla de Login
+
+Después de la configuración, verás la pantalla de login:
+
+1. **Selecciona tu usuario** tocando el avatar
+2. **Introduce tu PIN** de 4 dígitos
+3. **Accede** al panel principal
+
+<Callout type="info">
+  Puedes crear más usuarios desde **Ajustes → Usuarios**.
+</Callout>
+
+## Crear tu Primera Categoría
+
+Antes de añadir productos, crea al menos una categoría:
+
+<Steps>
+
+### Ir a Productos
+
+1. En el menú lateral, haz clic en **Productos**
+2. Haz clic en el botón **Categorías** o el icono de carpeta
+
+### Crear Categoría
+
+1. Haz clic en **Nueva Categoría**
+2. Introduce el nombre (ej: "Bebidas", "Tapas", "Postres")
+3. Opcionalmente, añade una descripción
+4. Selecciona un icono
+5. Haz clic en **Guardar**
+
+</Steps>
+
+## Crear tu Primer Producto
+
+<Steps>
+
+### Ir a Nuevo Producto
+
+1. En la sección **Productos**, haz clic en **Nuevo Producto**
+
+### Rellenar Datos
+
+| Campo | Ejemplo | Descripción |
+|-------|---------|-------------|
+| **Nombre** | Cerveza | Nombre visible en el TPV |
+| **Precio** | 2.50 | Precio sin IVA |
+| **Categoría** | Bebidas | Categoría creada anteriormente |
+| **IVA** | 21% | Tipo de IVA aplicable |
+
+### Añadir Icono (Opcional)
+
+- Selecciona un icono predefinido, o
+- Sube una imagen del producto
+
+### Guardar
+
+Haz clic en **Crear Producto** para guardarlo.
+
+</Steps>
+
+## Realizar tu Primera Venta
+
+<Steps>
+
+### Crear Nueva Comanda
+
+1. En el menú lateral, haz clic en **Nueva Comanda**
+2. (Opcional) Selecciona una mesa
+
+### Añadir Productos
+
+1. Navega por las categorías en la barra lateral
+2. Haz clic en los productos para añadirlos
+3. El resumen aparece en el panel derecho
+
+### Ajustar Cantidades
+
+- **+** / **-**: Aumentar o reducir cantidad
+- **Eliminar**: Quitar producto del pedido
+
+### Cobrar
+
+1. Haz clic en el botón **Cobrar**
+2. Selecciona el método de pago:
+   - Efectivo
+   - Tarjeta
+   - Otro
+3. Si es efectivo, introduce el importe recibido
+4. El sistema calcula el cambio automáticamente
+
+### Finalizar
+
+1. Haz clic en **Confirmar Pago**
+2. El ticket se imprime automáticamente (si hay impresora configurada)
+3. La comanda se guarda en el historial
+
+</Steps>
+
+## Configuración Adicional
+
+### Impresora Térmica
+
+Para imprimir tickets, configura tu impresora:
+
+1. Ve a **Ajustes → Impresora**
+2. Selecciona el puerto (USB/Serial)
+3. Configura el ancho de papel (58mm o 80mm)
+4. Haz clic en **Probar Conexión**
+
+Más detalles en [Configurar Impresora](/docs/guia-usuario/impresora).
+
+### Facturación AEAT
+
+Para enviar facturas a la AEAT:
+
+1. Ve a **Ajustes → VERI*FACTU**
+2. Introduce tus datos fiscales (NIF, Razón Social)
+3. Configura el certificado digital
+4. Activa el envío automático
+
+Más detalles en [Facturación VERI*FACTU](/docs/guia-usuario/facturacion).
+
+### Más Usuarios
+
+Para añadir más operarios:
+
+1. Ve a **Ajustes → Usuarios**
+2. Haz clic en **Nuevo Usuario**
+3. Rellena nombre, avatar y PIN
+
+## Resumen
+
+Has completado la configuración inicial:
+
+- [x] Asistente de configuración completado
+- [x] Usuario administrador creado
+- [x] Primera categoría creada
+- [x] Primer producto añadido
+- [x] Primera venta realizada
+
+<Callout type="success">
+  ¡Tu TPV está listo! Explora el resto de la documentación para aprovechar todas las funcionalidades.
+</Callout>
+
+## Siguiente Paso
+
+- [Gestionar Productos](/docs/guia-usuario/productos) - Catálogo completo
+- [Configurar Impresora](/docs/guia-usuario/impresora) - Tickets térmicos
+- [Facturación AEAT](/docs/guia-usuario/facturacion) - VERI*FACTU

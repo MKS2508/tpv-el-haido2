@@ -1,0 +1,275 @@
+---
+title: Thermal Printer
+description: 'Configure ESC/POS thermal printer for receipts in TPV El Haido'
+---
+
+# Configure Thermal Printer
+
+Guide to configure your thermal printer and print sales receipts.
+
+## Compatible Printers
+
+TPV El Haido supports any printer compatible with the ESC/POS protocol:
+
+| Brand | Tested Models |
+|-------|---------------|
+| **Epson** | TM-T20, TM-T88, TM-T82 |
+| **Star** | TSP100, TSP650, mPOP |
+| **Bixolon** | SRP-330, SRP-350 |
+| **Sewoo** | LK-TL200, LK-TL320 |
+| **Generic** | USB/Serial printers 58mm, 80mm |
+
+<Callout type="info">
+  Most POS thermal printers use the ESC/POS standard and are compatible.
+</Callout>
+
+## Physical Connection
+
+### USB (Recommended)
+
+<Steps>
+
+### Connect the printer
+
+1. Connect the USB cable from the printer to your computer
+2. Turn on the printer
+3. Wait for the operating system to detect it
+
+### Identify the port
+
+**Windows:**
+- Open "Device Manager"
+- Look under "Ports (COM & LPT)"
+- Note the COM number (e.g., COM3)
+
+**macOS/Linux:**
+- Open terminal
+- Run: `ls /dev/tty.*` (macOS) or `ls /dev/ttyUSB*` (Linux)
+- Note the device (e.g., `/dev/ttyUSB0`)
+
+</Steps>
+
+### Network (Ethernet/WiFi)
+
+<Steps>
+
+### Configure IP on the printer
+
+1. Check your printer's manual
+2. Configure a static IP (recommended)
+3. Example: `192.168.1.100`
+
+### Configure in TPV
+
+1. In **Settings → Printer**
+2. Select connection type: **Network**
+3. Enter the IP and port (usually 9100)
+
+</Steps>
+
+### Bluetooth
+
+<Steps>
+
+### Pair the printer
+
+1. Put the printer in pairing mode
+2. On your system, search for Bluetooth devices
+3. Pair the printer
+
+### Configure in TPV
+
+1. In **Settings → Printer**
+2. Select connection type: **Bluetooth**
+3. Select the printer from the list
+
+</Steps>
+
+<Callout type="warning">
+  Bluetooth support may vary depending on the operating system and printer model.
+</Callout>
+
+## Configuration in TPV El Haido
+
+<Steps>
+
+### Access Settings
+
+1. In the side menu, click **Settings**
+2. Go to the **Printer** section
+
+### Configure connection
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Type** | USB, Network, Bluetooth | USB |
+| **Port/IP** | COM port or IP address | COM3, 192.168.1.100 |
+| **Network port** | Only for network connection | 9100 |
+
+### Paper width
+
+| Width | Characters per line | Common use |
+|-------|---------------------|------------|
+| **58mm** | ~32 characters | Portable, small |
+| **80mm** | ~48 characters | Counter standard |
+
+### Test connection
+
+Click **Test Printer** to print a test receipt.
+
+</Steps>
+
+## Customize Receipts
+
+### Receipt Header
+
+In **Settings → Printer → Receipt**:
+
+| Field | Description |
+|-------|-------------|
+| **Business name** | Displayed large in the header |
+| **Address** | Address line 1 |
+| **Location** | City and postal code |
+| **Tax ID** | Tax identification |
+| **Phone** | Contact number |
+
+### Logo
+
+To add a logo:
+1. Prepare the image in **monochrome BMP** format
+2. Recommended size: 384px wide for 80mm, 256px for 58mm
+3. In Settings, click "Upload logo"
+4. Select the file
+
+<Callout type="tip">
+  Use a high-contrast image for better thermal printing.
+</Callout>
+
+### Receipt Footer
+
+Configure a custom message at the end of the receipt:
+- "Thank you for your visit!"
+- "Follow us @yourbusiness"
+- Opening hours
+
+## Supported Commands
+
+TPV El Haido uses the `thermal-printer-cli` sidecar that supports:
+
+| Command | Function |
+|---------|----------|
+| **text** | Print formatted text |
+| **cut** | Cut paper (if printer supports it) |
+| **feed** | Advance paper (line feeds) |
+| **cashdrawer** | Open cash drawer |
+| **barcode** | Print barcode |
+| **qr** | Print QR code |
+| **image** | Print image/logo |
+
+## Cash Drawer
+
+### Configure drawer
+
+1. Connect the drawer to the printer's RJ-11 port
+2. In **Settings → Printer**, enable "Open drawer automatically"
+
+### Automatic opening
+
+The drawer opens automatically when:
+- Completing a cash payment
+- Configurable for all payments or cash only
+
+### Manual opening
+
+In the toolbar or Settings, **Open Drawer** button.
+
+## Kitchen Printer
+
+If you have a second printer for the kitchen:
+
+<Steps>
+
+### Add kitchen printer
+
+1. In **Settings → Printer → Additional printers**
+2. Click **Add printer**
+3. Configure as "Kitchen"
+4. Enter connection details
+
+### Assign categories
+
+1. Go to **Categories**
+2. For each food category, enable "Send to kitchen"
+3. Products from those categories will print on the kitchen printer
+
+</Steps>
+
+## Troubleshooting
+
+### Printer won't print
+
+<Tabs items={['Windows', 'macOS', 'Linux']}>
+<Tab value="Windows">
+
+1. Verify the COM port is correct
+2. Check Device Manager for errors
+3. Reinstall the driver if necessary
+4. Try a different USB cable
+
+</Tab>
+<Tab value="macOS">
+
+1. Verify permissions: `sudo chmod 666 /dev/tty.*`
+2. Check that the printer appears in `/dev/`
+3. Restart the printer
+
+</Tab>
+<Tab value="Linux">
+
+1. Add your user to the dialout group: `sudo usermod -a -G dialout $USER`
+2. Log out and back in
+3. Verify device permissions
+
+</Tab>
+</Tabs>
+
+### Strange characters
+
+- Verify paper width is correct (58mm vs 80mm)
+- Check encoding (should be ESC/POS compatible)
+
+### Drawer won't open
+
+1. Verify the RJ-11 cable is properly connected
+2. Check drawer voltage (12V or 24V)
+3. Some drawers require specific configuration
+
+### Slow printing
+
+1. Use USB connection instead of network/Bluetooth
+2. Reduce logo size
+3. Simplify receipt design
+
+## Technical Specifications
+
+### ESC/POS Protocol
+
+The system sends standard ESC/POS commands:
+
+```
+ESC @ - Initialize printer
+ESC a - Alignment
+ESC ! - Text style
+GS V - Cut paper
+ESC p - Open drawer
+```
+
+### Network port
+
+- Standard port: **9100** (raw printing)
+- Protocol: Direct TCP/IP
+
+## Next Step
+
+- [VERI*FACTU Invoicing](/en/docs/user-guide/invoicing)
+- [Customize Themes](/en/docs/user-guide/themes)

@@ -1,0 +1,214 @@
+---
+title: Temas y Personalización
+description: 'Personalizar la apariencia de TPV El Haido con temas y modo oscuro'
+---
+
+# Temas y Personalización
+
+TPV El Haido incluye un sistema de temas completo para adaptar la interfaz a tu negocio.
+
+## Temas Disponibles
+
+La aplicación incluye 6 temas predefinidos:
+
+| ID | Nombre | Estilo | Ideal para |
+|----|--------|--------|------------|
+| `amethyst-haze` | Amethyst Haze | Violeta elegante | Locales sofisticados |
+| `bubble` | Bubble | Rosa vibrante | Ambiente juvenil |
+| `restaurant-professional` | Restaurant Professional | Dorado cálido | Restaurantes clásicos |
+| `modern-cafe` | Modern Cafe | Verde minimalista | Cafeterías modernas |
+| `night-bar` | Night Bar | Oscuro con neón | Bares nocturnos |
+| `accessibility-high-contrast` | High Contrast | Blanco/Negro | Máxima legibilidad |
+
+## Cambiar Tema
+
+<Steps>
+
+### Acceder a Ajustes
+
+1. En el menú lateral, haz clic en **Ajustes**
+2. Ve a la sección **Apariencia** o **Tema**
+
+### Seleccionar Tema
+
+1. Verás una vista previa de cada tema
+2. Haz clic en el tema que prefieras
+3. El cambio se aplica inmediatamente
+
+### Elegir Modo
+
+Cada tema soporta modo claro y oscuro:
+- **Claro**: Fondos claros, texto oscuro
+- **Oscuro**: Fondos oscuros, texto claro
+- **Sistema**: Sigue la preferencia del sistema operativo
+
+</Steps>
+
+## Vista Previa de Temas
+
+### Amethyst Haze
+
+Tema elegante con tonos violeta y púrpura.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
+| Fondo | Lavanda suave | Púrpura profundo |
+| Primario | Violeta | Violeta brillante |
+| Acento | Rosa | Magenta |
+
+### Bubble
+
+Tema vibrante con tonos rosados y burbujas.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
+| Fondo | Rosa claro | Rosa oscuro |
+| Primario | Fucsia | Rosa neón |
+| Acento | Coral | Salmón |
+
+### Restaurant Professional
+
+Tema clásico con tonos cálidos y dorados.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
+| Fondo | Crema | Marrón oscuro |
+| Primario | Dorado | Ámbar |
+| Acento | Terracota | Cobre |
+
+### Modern Cafe
+
+Tema minimalista con tonos verdes y naturales.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
+| Fondo | Verde menta | Verde bosque |
+| Primario | Verde esmeralda | Verde lima |
+| Acento | Aguamarina | Turquesa |
+
+### Night Bar
+
+Tema oscuro con acentos de neón.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
+| Fondo | Gris azulado | Negro |
+| Primario | Azul eléctrico | Cian neón |
+| Acento | Púrpura | Rosa neón |
+
+### High Contrast
+
+Tema de alto contraste para máxima accesibilidad.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
+| Fondo | Blanco puro | Negro puro |
+| Primario | Negro | Blanco |
+| Acento | Azul oscuro | Amarillo |
+
+## Modo Claro/Oscuro
+
+### Cambio Manual
+
+1. En **Ajustes → Apariencia**
+2. Selecciona: **Claro**, **Oscuro** o **Sistema**
+
+### Cambio Rápido
+
+- Haz clic en el icono de sol/luna en la barra superior
+- O usa el atajo de teclado (si está configurado)
+
+### Seguir Sistema
+
+Cuando seleccionas "Sistema":
+- De día: modo claro
+- De noche: modo oscuro
+- Sigue la configuración de tu sistema operativo
+
+## Optimizaciones Táctiles
+
+Los temas incluyen optimizaciones para pantallas táctiles:
+
+### Tamaños de Botón
+
+| Elemento | Tamaño | Variable CSS |
+|----------|--------|--------------|
+| Estándar | 44×44px | `--touch-target-size` |
+| Grande | 48×48px | `--touch-target-large` |
+| Extra grande | 56×56px | `--touch-target-xl` |
+
+Estos tamaños siguen las [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/).
+
+### Espaciado
+
+Los temas incluyen espaciado extra entre elementos para evitar toques accidentales en pantallas táctiles.
+
+## Accesibilidad
+
+### Modo de Alto Contraste
+
+El tema **High Contrast** está diseñado para:
+- Usuarios con dificultades visuales
+- Entornos con mucha luz
+- Pantallas de baja calidad
+
+### Respeta Preferencias del Sistema
+
+TPV El Haido detecta automáticamente:
+- `prefers-reduced-motion`: Desactiva animaciones
+- `prefers-contrast: high`: Activa bordes adicionales
+- `prefers-color-scheme`: Modo claro/oscuro
+
+### Navegación por Teclado
+
+Todos los temas mantienen:
+- Focus visible para navegación por teclado
+- Contraste suficiente según WCAG 2.1
+- Tamaños de texto legibles
+
+## Variables CSS
+
+Los temas usan variables CSS que puedes inspeccionar:
+
+```css
+:root {
+  --background: ...;
+  --foreground: ...;
+  --primary: ...;
+  --primary-foreground: ...;
+  --secondary: ...;
+  --accent: ...;
+  --muted: ...;
+  --destructive: ...;
+  --border: ...;
+  --ring: ...;
+}
+```
+
+## Consejos
+
+### Elegir el Tema Adecuado
+
+| Tu Negocio | Tema Recomendado |
+|------------|------------------|
+| Restaurante clásico | Restaurant Professional |
+| Cafetería moderna | Modern Cafe |
+| Bar de copas | Night Bar |
+| Local juvenil | Bubble |
+| Accesibilidad | High Contrast |
+| Elegante/boutique | Amethyst Haze |
+
+### Rendimiento
+
+- En dispositivos lentos, considera usar el tema High Contrast (menos efectos)
+- El modo oscuro puede ahorrar batería en pantallas OLED
+
+### Consistencia
+
+- Elige un tema y mantenlo para que tu equipo se familiarice
+- El modo oscuro es útil para turnos nocturnos
+
+## Siguiente Paso
+
+- [Volver a Guía de Usuario](/docs/guia-usuario)
+- [Desarrollo](/docs/desarrollo) - Para desarrolladores

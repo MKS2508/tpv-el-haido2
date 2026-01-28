@@ -1,0 +1,189 @@
+---
+title: Descargar
+description: 'Descarga TPV El Haido para Windows, macOS, Linux o Raspberry Pi'
+---
+
+# Descargar TPV El Haido
+
+Descarga la versión más reciente para tu sistema operativo.
+
+<Callout type="info">
+  Todas las descargas están disponibles en [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases).
+</Callout>
+
+## Versiones Disponibles
+
+| Plataforma | Arquitectura | Formato | Enlace |
+|------------|--------------|---------|--------|
+| **Windows** | x64 | `.msi` / `.exe` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+| **macOS Intel** | x64 | `.dmg` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+| **macOS Apple Silicon** | ARM64 | `.dmg` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+| **Linux** | x64 | `.deb` / `.AppImage` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+| **Raspberry Pi** | ARM64 | `.deb` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+
+## Instalación por Sistema Operativo
+
+<Tabs items={['Windows', 'macOS', 'Linux', 'Raspberry Pi']}>
+<Tab value="Windows">
+
+### Windows 10/11 (x64)
+
+<Steps>
+### Descargar el instalador
+
+Descarga el archivo `.msi` o `.exe` desde [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases/latest).
+
+### Ejecutar el instalador
+
+Haz doble clic en el archivo descargado y sigue el asistente de instalación.
+
+<Callout type="warning">
+  Windows puede mostrar una advertencia de SmartScreen. Haz clic en "Más información" y luego "Ejecutar de todas formas".
+</Callout>
+
+### Iniciar la aplicación
+
+Busca "TPV El Haido" en el menú de inicio o haz doble clic en el acceso directo del escritorio.
+
+</Steps>
+
+</Tab>
+<Tab value="macOS">
+
+### macOS 11+ (Intel y Apple Silicon)
+
+<Steps>
+### Descargar el DMG
+
+Descarga el archivo `.dmg` correspondiente a tu arquitectura:
+- **Intel**: `TPV.El.Haido_x64.dmg`
+- **Apple Silicon (M1/M2/M3)**: `TPV.El.Haido_aarch64.dmg`
+
+### Instalar la aplicación
+
+1. Abre el archivo DMG descargado
+2. Arrastra "TPV El Haido" a la carpeta Aplicaciones
+
+### Primera ejecución
+
+<Callout type="warning">
+  Al abrir por primera vez, macOS puede bloquear la app. Ve a **Preferencias del Sistema → Seguridad y Privacidad** y haz clic en "Abrir de todas formas".
+</Callout>
+
+</Steps>
+
+</Tab>
+<Tab value="Linux">
+
+### Linux (Ubuntu, Debian, Fedora)
+
+<Steps>
+### Instalar paquete DEB (Ubuntu/Debian)
+
+```bash
+# Descargar el paquete
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_amd64.deb
+
+# Instalar
+sudo dpkg -i tpv-el-haido_amd64.deb
+
+# Resolver dependencias si es necesario
+sudo apt-get install -f
+```
+
+### O usar AppImage (cualquier distro)
+
+```bash
+# Descargar
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido.AppImage
+
+# Dar permisos de ejecución
+chmod +x tpv-el-haido.AppImage
+
+# Ejecutar
+./tpv-el-haido.AppImage
+```
+
+</Steps>
+
+</Tab>
+<Tab value="Raspberry Pi">
+
+### Raspberry Pi 4/5 (ARM64)
+
+<Steps>
+### Requisitos previos
+
+- Raspberry Pi 4 o 5
+- Raspberry Pi OS (64-bit)
+- Mínimo 1GB RAM disponible
+
+### Instalar el paquete DEB
+
+```bash
+# Descargar el paquete ARM64
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_arm64.deb
+
+# Instalar
+sudo dpkg -i tpv-el-haido_arm64.deb
+
+# Resolver dependencias
+sudo apt-get install -f
+```
+
+### Ejecutar
+
+```bash
+tpv-el-haido
+```
+
+<Callout type="tip">
+  Para un rendimiento óptimo en Raspberry Pi, considera desactivar las animaciones en **Ajustes → Rendimiento**.
+</Callout>
+
+</Steps>
+
+</Tab>
+</Tabs>
+
+## Requisitos del Sistema
+
+### Mínimos
+
+| Requisito | Especificación |
+|-----------|----------------|
+| **Sistema Operativo** | Windows 10, macOS 11, Ubuntu 20.04, Raspberry Pi OS |
+| **RAM** | 512 MB |
+| **Almacenamiento** | 100 MB |
+| **Pantalla** | 800x600 |
+
+### Recomendados
+
+| Requisito | Especificación |
+|-----------|----------------|
+| **RAM** | 1 GB o más |
+| **Almacenamiento** | 500 MB (para base de datos) |
+| **Pantalla** | 1024x768 o superior |
+| **Pantalla táctil** | Recomendada para uso TPV |
+
+## Verificar Instalación
+
+Después de instalar, puedes verificar que todo funciona correctamente:
+
+1. Abre TPV El Haido
+2. Deberías ver la pantalla de login o el asistente de configuración inicial
+3. Si es la primera vez, sigue el [asistente de primeros pasos](/docs/guia-usuario/primeros-pasos)
+
+<Callout type="info">
+  Si encuentras problemas durante la instalación, consulta la sección de [solución de problemas](/docs/guia-usuario/instalacion#solucion-de-problemas).
+</Callout>
+
+## Actualizaciones
+
+TPV El Haido incluye un sistema de actualizaciones automáticas:
+
+1. La aplicación comprueba automáticamente si hay nuevas versiones
+2. Recibirás una notificación cuando haya una actualización disponible
+3. Puedes actualizar con un solo clic desde **Ajustes → Acerca de**
+
+Para más información sobre el historial de cambios, consulta el [Changelog](/docs/changelog).

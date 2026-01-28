@@ -1,0 +1,318 @@
+---
+title: Commands
+description: 'npm/bun scripts available in TPV El Haido'
+---
+
+# Development Commands
+
+Complete list of scripts available for development, build, and maintenance.
+
+## Development
+
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Vite development server (port 1420) |
+| `bun run tauri dev` | Full Tauri + frontend development |
+| `bun run tauri:dev` | Alias for `tauri dev` |
+
+### Frontend Development
+
+```bash
+# Start development server
+bun run dev
+
+# Server available at http://localhost:1420
+# Hot Module Replacement (HMR) enabled
+```
+
+### Full Development
+
+```bash
+# Start Tauri with frontend
+bun run tauri dev
+
+# Opens desktop window with hot-reload
+# Code changes are reflected instantly
+```
+
+## Build
+
+| Command | Description |
+|---------|-------------|
+| `bun run build` | Production build (frontend only) |
+| `bun run tauri build` | Complete Tauri application build |
+| `bun run package` | Alias for `tauri build` |
+
+### Frontend Build
+
+```bash
+# Generate optimized files in dist/
+bun run build
+
+# Output:
+# dist/
+# ├── index.html
+# ├── assets/
+# │   ├── index-[hash].js
+# │   └── index-[hash].css
+```
+
+### Tauri Build
+
+```bash
+# Generate installers for current platform
+bun run tauri build
+
+# Output (Windows):
+# src-tauri/target/release/bundle/
+# ├── msi/
+# │   └── TPV El Haido_x.x.x_x64_en-US.msi
+# └── nsis/
+#     └── TPV El Haido_x.x.x_x64-setup.exe
+```
+
+## Multi-platform Build
+
+| Command | Target |
+|---------|--------|
+| `bun run deploy:rpi` | Raspberry Pi (ARM64 Linux) |
+| `bun run build:rpi` | Frontend build for RPi |
+| `bun run build:rpi-full` | Complete build for RPi |
+
+### Raspberry Pi
+
+```bash
+# Add ARM64 target
+rustup target add aarch64-unknown-linux-gnu
+
+# Complete build
+bun run deploy:rpi
+
+# Or step by step:
+bun run build:rpi
+bun run tauri build -- --target aarch64-unknown-linux-gnu
+```
+
+## Linting and Formatting
+
+| Command | Description |
+|---------|-------------|
+| `bun run lint` | Run Biome check |
+| `bun run lint:fix` | Auto-fix with Biome |
+| `bun run check` | Biome + Oxlint |
+| `bun run format` | Format with Biome |
+
+### Linting
+
+```bash
+# Verify code
+bun run lint
+
+# Auto-fix issues
+bun run lint:fix
+
+# Complete check (Biome + Oxlint)
+bun run check
+```
+
+### Formatting
+
+```bash
+# Format all files
+bun run format
+
+# Verify formatting without modifying
+bun run format:check
+```
+
+## Type Checking
+
+| Command | Description |
+|---------|-------------|
+| `bun run typecheck` | Type check with tsgo (fast) |
+| `bun run typecheck:tsc` | Type check with tsc (complete) |
+
+### tsgo (Recommended)
+
+```bash
+# Fast type check with native compiler
+bun run typecheck
+
+# Much faster than traditional tsc
+```
+
+### Traditional TypeScript
+
+```bash
+# Complete type check with tsc
+bun run typecheck:tsc
+
+# Slower but more thorough
+```
+
+## Test Data
+
+| Command | Description |
+|---------|-------------|
+| `bun run seed` | Populate database with sample data |
+| `bun run seed:clear` | Clear and repopulate database |
+
+### Seed
+
+```bash
+# Add sample data
+bun run seed
+
+# Data included:
+# - Sample products (drinks, tapas, desserts)
+# - Categories
+# - Admin user (PIN: 1234)
+```
+
+### Reset
+
+```bash
+# Clear everything and repopulate
+bun run seed:clear
+
+# ⚠️ Deletes all existing data
+```
+
+## Preview
+
+| Command | Description |
+|---------|-------------|
+| `bun run preview` | Preview production build |
+
+```bash
+# First build
+bun run build
+
+# Then preview
+bun run preview
+
+# Server at http://localhost:4173
+```
+
+## Documentation (haidodocs)
+
+| Command | Description |
+|---------|-------------|
+| `bun run docs:dev` | Documentation development server |
+| `bun run docs:build` | Build documentation |
+
+```bash
+# From project root
+cd apps/haidodocs
+
+# Development
+bun run dev
+
+# Build
+bun run build
+```
+
+## Complete Scripts (package.json)
+
+```json
+{
+  "scripts": {
+    "dev": "vite --port 1420",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "package": "tauri build",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "check": "biome check && oxlint",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "typecheck": "tsgo",
+    "typecheck:tsc": "tsc --noEmit",
+    "seed": "bun run scripts/seed.ts",
+    "seed:clear": "bun run scripts/seed.ts --clear",
+    "deploy:rpi": "bun run build:rpi && tauri build --target aarch64-unknown-linux-gnu",
+    "build:rpi": "vite build",
+    "build:rpi-full": "bun run build:rpi && tauri build --target aarch64-unknown-linux-gnu"
+  }
+}
+```
+
+## Useful Tauri Commands
+
+```bash
+# View Tauri project info
+bunx tauri info
+
+# Generate icons from a PNG
+bunx tauri icon src-tauri/icons/app-icon.png
+
+# Update Tauri dependencies
+bunx tauri upgrade
+
+# View help
+bunx tauri --help
+```
+
+## Rust Commands
+
+```bash
+# From src-tauri/
+
+# Development build
+cargo build
+
+# Production build
+cargo build --release
+
+# Verify Rust code
+cargo check
+
+# Format Rust code
+cargo fmt
+
+# Rust linter
+cargo clippy
+
+# Update dependencies
+cargo update
+```
+
+## Environment Variables
+
+```bash
+# Optional: configure development port
+VITE_PORT=1420
+
+# Optional: default storage mode
+VITE_STORAGE_MODE=sqlite
+
+# For production builds
+TAURI_PRIVATE_KEY=...  # For signing updates
+TAURI_KEY_PASSWORD=... # Key password
+```
+
+## Typical Workflow
+
+```bash
+# 1. Clone and install
+git clone https://github.com/MKS2508/tpv-el-haido2.git
+cd tpv-el-haido2
+bun install
+
+# 2. Development
+bun run tauri dev
+
+# 3. Before commit
+bun run lint:fix
+bun run typecheck
+
+# 4. Build for production
+bun run tauri build
+```
+
+## Next Step
+
+- [Error Handling](/en/docs/development/errors)
+- [Platforms](/en/docs/development/platforms)

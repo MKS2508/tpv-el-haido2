@@ -1,0 +1,81 @@
+---
+title: Guía de Usuario
+description: 'Aprende a usar TPV El Haido para gestionar tu negocio de hostelería'
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+# Guía de Usuario
+
+Bienvenido a la guía de usuario de TPV El Haido. Aquí encontrarás todo lo necesario para sacar el máximo partido a tu sistema de punto de venta.
+
+<Callout type="info">
+  Esta guía está pensada para usuarios finales. Si eres desarrollador, consulta la [sección de desarrollo](/docs/desarrollo).
+</Callout>
+
+## Empezar
+
+<Cards>
+  <Card title="Instalación" href="/docs/guia-usuario/instalacion">
+    Instala TPV El Haido en tu sistema operativo
+  </Card>
+  <Card title="Primeros Pasos" href="/docs/guia-usuario/primeros-pasos">
+    Configuración inicial y primera venta
+  </Card>
+</Cards>
+
+## Funcionalidades
+
+<Cards>
+  <Card title="Productos" href="/docs/guia-usuario/productos">
+    Gestiona tu catálogo de productos y categorías
+  </Card>
+  <Card title="Pedidos" href="/docs/guia-usuario/pedidos">
+    Crea y gestiona comandas
+  </Card>
+  <Card title="Pagos" href="/docs/guia-usuario/pagos">
+    Procesa pagos e imprime tickets
+  </Card>
+  <Card title="Impresora" href="/docs/guia-usuario/impresora">
+    Configura tu impresora térmica
+  </Card>
+  <Card title="Facturación" href="/docs/guia-usuario/facturacion">
+    Integración con AEAT VERI*FACTU
+  </Card>
+  <Card title="Temas" href="/docs/guia-usuario/temas">
+    Personaliza la apariencia
+  </Card>
+</Cards>
+
+## Flujo de Trabajo Típico
+
+```mermaid
+graph LR
+    A[Login] --> B[Seleccionar Mesa]
+    B --> C[Añadir Productos]
+    C --> D[Cobrar]
+    D --> E[Imprimir Ticket]
+    E --> F[Enviar Factura AEAT]
+```
+
+## Pantalla Principal
+
+La interfaz de TPV El Haido está organizada en secciones accesibles desde el menú lateral:
+
+| Sección | Descripción |
+|---------|-------------|
+| **Inicio** | Panel principal con resumen del día |
+| **Nueva Comanda** | Crear pedidos y añadir productos |
+| **Historial** | Ver pedidos anteriores |
+| **Productos** | Gestionar catálogo |
+| **Clientes** | Base de datos de clientes |
+| **Facturas** | Facturas AEAT y estados |
+| **Ajustes** | Configuración del sistema |
+
+## Soporte
+
+Si tienes preguntas o encuentras problemas:
+
+1. Consulta esta documentación
+2. Revisa los [issues en GitHub](https://github.com/MKS2508/tpv-el-haido2/issues)
+3. Abre un nuevo issue describiendo tu problema

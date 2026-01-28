@@ -1,68 +1,106 @@
 ---
-title: Bienvenido
-description: 'Bienvenido a haidodocs -  Sistema TPV (Terminal Punto de Venta) de escritorio para hostelería. Construido con Tauri, SolidJS y SQL         ite.'
+title: TPV El Haido
+description: 'Sistema TPV (Terminal Punto de Venta) de escritorio para hostelería. Construido con Tauri, React y SQLite.'
 ---
 
-# Bienvenido a haidodocs
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+# TPV El Haido
+
+**Sistema de Punto de Venta moderno para hostelería**
+
+TPV El Haido es una aplicación de escritorio diseñada específicamente para restaurantes, bares y cafeterías. Combina una interfaz intuitiva con potentes funcionalidades de gestión y cumplimiento fiscal.
 
 <Callout type="info">
-  Este es un template de Fumadocs. Reemplaza este contenido con tu propia documentación.
+  Disponible para **Windows**, **macOS**, **Linux** y **Raspberry Pi**.
 </Callout>
 
-## Características
+## Características Principales
 
-Este template incluye:
+<Cards>
+  <Card title="Gestión de Pedidos" href="/docs/guia-usuario/pedidos">
+    Crea y gestiona comandas con una interfaz táctil optimizada. Asignación a mesas y control de estados en tiempo real.
+  </Card>
+  <Card title="Catálogo de Productos" href="/docs/guia-usuario/productos">
+    CRUD completo con categorías, filtros, búsqueda y gestión de precios con IVA configurable.
+  </Card>
+  <Card title="Facturación VERI*FACTU" href="/docs/guia-usuario/facturacion">
+    Integración completa con AEAT para facturación electrónica conforme a la normativa española.
+  </Card>
+  <Card title="Impresión Térmica" href="/docs/guia-usuario/impresora">
+    Soporte para impresoras ESC/POS, tickets personalizables y apertura automática de cajón.
+  </Card>
+</Cards>
 
-- **Soporte bilingüe** - Español e inglés listos para usar
-- **Buscador integrado** - Búsqueda instantánea de contenido
-- **Tema oscuro/claro** - Cambio automático según preferencia del sistema
-- **MDX completo** - Usa componentes de React en tu markdown
-- **GitHub Pages ready** - Configurado para despliegue estático
+## Arquitectura
 
-## Comenzando
+```mermaid
+graph TB
+    subgraph Frontend["Frontend (React)"]
+        UI[Componentes UI]
+        Store[Zustand Store]
+        Services[Servicios]
+    end
 
-<Steps>
-### Instalación
+    subgraph Tauri["Tauri (Rust)"]
+        IPC[IPC Bridge]
+        Commands[Rust Commands]
+        SQLite[(SQLite)]
+    end
 
-```bash
-# Copia el contenido de content-template/ a content/
-cp -r content-template/* content/
+    subgraph Sidecars["Procesos Externos"]
+        AEAT[aeat-bridge<br/>Puerto 3001]
+        Printer[thermal-printer-cli]
+    end
+
+    UI --> Store
+    Store --> Services
+    Services --> IPC
+    IPC --> Commands
+    Commands --> SQLite
+    IPC --> AEAT
+    IPC --> Printer
 ```
 
-### Desarrollo
+## Para Quién es TPV El Haido
 
-```bash
-bun install
-bun run dev
-```
+| Usuario | Descripción |
+|---------|-------------|
+| **Hostelería** | Restaurantes, bares, cafeterías que necesitan un TPV fiable |
+| **Autónomos** | Pequeños negocios que requieren cumplir con VERI*FACTU |
+| **Desarrolladores** | Profesionales que quieren extender o contribuir al proyecto |
 
-Abre [http://localhost:3000](http://localhost:3000) para ver tu documentación.
+## Comenzar
 
-### Build
+<Cards>
+  <Card title="Descargar" href="/docs/descarga">
+    Descarga la versión para tu sistema operativo
+  </Card>
+  <Card title="Guía de Usuario" href="/docs/guia-usuario">
+    Aprende a usar todas las funcionalidades
+  </Card>
+  <Card title="Desarrollo" href="/docs/desarrollo">
+    Configura tu entorno de desarrollo
+  </Card>
+</Cards>
 
-```bash
-bun run build
-```
+## Requisitos Mínimos
 
-Los archivos estáticos se generan en `out/`.
+| Requisito | Mínimo | Recomendado |
+|-----------|--------|-------------|
+| **RAM** | 512 MB | 1 GB |
+| **CPU** | 1 GHz (1 núcleo) | 1.5 GHz (2 núcleos) |
+| **Almacenamiento** | 100 MB | 500 MB |
+| **Pantalla** | 800x600 | 1024x768 o superior |
 
-</Steps>
-
-## Configuración
-
-Edita las variables de entorno en `.env.local`:
-
-```bash
-PROJECT_NAME=Mi Proyecto
-DESCRIPTION=Descripción de mi proyecto
-AUTHOR=Tu Nombre
-BASE_PATH=/mi-proyecto
-```
-
-<Callout type="warning">
-  Recuerda configurar <code>BASE_PATH</code> si despliegas en GitHub Pages con un nombre de repositorio personalizado.
+<Callout type="tip">
+  TPV El Haido está optimizado para funcionar en hardware de bajo consumo como **Raspberry Pi 4/5**.
 </Callout>
 
-## Siguiente paso
+## Repositorio
 
-Consulta la sección de [Introducción](/docs/getting-started) para más detalles.
+El código fuente está disponible en GitHub:
+
+```bash
+git clone https://github.com/MKS2508/tpv-el-haido2.git
+```

@@ -1,0 +1,389 @@
+---
+title: Manejo de Errores
+description: 'Sistema de códigos de error y Result Pattern en TPV El Haido'
+---
+
+# Manejo de Errores
+
+TPV El Haido usa el Result Pattern con `@mks2508/no-throw` para un manejo de errores explícito y tipado.
+
+## Filosofía
+
+En lugar de usar `try/catch` y excepciones:
+
+```typescript
+// ❌ Evitar
+try {
+  const products = await getProducts();
+  // usar products
+} catch (error) {
+  // ¿Qué tipo de error es? No sabemos
+  console.error(error);
+}
+```
+
+Usamos Results que hacen los errores explícitos:
+
+```typescript
+// ✅ Preferido
+const result = await getProducts();
+if (isErr(result)) {
+  // Sabemos exactamente qué error es
+  console.error(`[${result.error.code}] ${result.error.message}`);
+  return;
+}
+// TypeScript sabe que result.value existe aquí
+const products = result.value;
+```
+
+## Códigos de Error por Dominio
+
+Los errores se organizan por dominio funcional:
+
+### Storage Errors
+
+| Código | Descripción | Causa Común |
+|--------|-------------|-------------|
+| `STORAGE_READ_FAILED` | Error al leer datos | DB corrupta, permisos |
+| `STORAGE_WRITE_FAILED` | Error al escribir datos | Disco lleno, permisos |
+| `STORAGE_DELETE_FAILED` | Error al eliminar datos | Restricción FK |
+| `STORAGE_NOT_FOUND` | Registro no encontrado | ID inválido |
+
+```typescript
+// src/lib/error-codes.ts
+
+export const StorageErrorCode = {
+  ReadFailed: 'STORAGE_READ_FAILED',
+  WriteFailed: 'STORAGE_WRITE_FAILED',
+  DeleteFailed: 'STORAGE_DELETE_FAILED',
+  NotFound: 'STORAGE_NOT_FOUND',
+} as const;
+```
+
+### Printer Errors
+
+| Código | Descripción | Causa Común |
+|--------|-------------|-------------|
+| `PRINTER_CONNECTION_FAILED` | No se puede conectar | Puerto incorrecto, impresora apagada |
+| `PRINTER_PRINT_FAILED` | Error al imprimir | Sin papel, tapa abierta |
+| `PRINTER_NOT_CONFIGURED` | Impresora no configurada | Falta configuración |
+
+```typescript
+export const PrinterErrorCode = {
+  ConnectionFailed: 'PRINTER_CONNECTION_FAILED',
+  PrintFailed: 'PRINTER_PRINT_FAILED',
+  NotConfigured: 'PRINTER_NOT_CONFIGURED',
+} as const;
+```
+
+### Order Errors
+
+| Código | Descripción | Causa Común |
+|--------|-------------|-------------|
+| `ORDER_CREATE_FAILED` | Error al crear pedido | Error de validación |
+| `ORDER_INVALID_STATE` | Estado inválido | Transición no permitida |
+| `ORDER_EMPTY` | Pedido vacío | Sin productos |
+
+```typescript
+export const OrderErrorCode = {
+  CreateFailed: 'ORDER_CREATE_FAILED',
+  InvalidState: 'ORDER_INVALID_STATE',
+  EmptyOrder: 'ORDER_EMPTY',
+} as const;
+```
+
+### Product Errors
+
+| Código | Descripción | Causa Común |
+|--------|-------------|-------------|
+| `PRODUCT_LOAD_FAILED` | Error al cargar productos | Error de DB |
+| `PRODUCT_CREATE_FAILED` | Error al crear producto | Datos inválidos |
+| `PRODUCT_UPDATE_FAILED` | Error al actualizar | ID no existe |
+| `PRODUCT_DELETE_FAILED` | Error al eliminar | Producto en uso |
+
+```typescript
+export const ProductErrorCode = {
+  LoadFailed: 'PRODUCT_LOAD_FAILED',
+  CreateFailed: 'PRODUCT_CREATE_FAILED',
+  UpdateFailed: 'PRODUCT_UPDATE_FAILED',
+  DeleteFailed: 'PRODUCT_DELETE_FAILED',
+} as const;
+```
+
+### Category Errors
+
+| Código | Descripción | Causa Común |
+|--------|-------------|-------------|
+| `CATEGORY_LOAD_FAILED` | Error al cargar categorías | Error de DB |
+| `CATEGORY_CREATE_FAILED` | Error al crear | Nombre duplicado |
+| `CATEGORY_DELETE_FAILED` | Error al eliminar | Tiene productos |
+
+```typescript
+export const CategoryErrorCode = {
+  LoadFailed: 'CATEGORY_LOAD_FAILED',
+  CreateFailed: 'CATEGORY_CREATE_FAILED',
+  DeleteFailed: 'CATEGORY_DELETE_FAILED',
+} as const;
+```
+
+### Auth Errors
+
+| Código | Descripción | Causa Común |
+|--------|-------------|-------------|
+| `AUTH_INVALID_PIN` | PIN incorrecto | Usuario escribió mal |
+| `AUTH_USER_NOT_FOUND` | Usuario no existe | ID inválido |
+| `AUTH_SESSION_EXPIRED` | Sesión expirada | Timeout |
+
+```typescript
+export const AuthErrorCode = {
+  InvalidPin: 'AUTH_INVALID_PIN',
+  UserNotFound: 'AUTH_USER_NOT_FOUND',
+  SessionExpired: 'AUTH_SESSION_EXPIRED',
+} as const;
+```
+
+### Network Errors
+
+| Código | Descripción | Causa Común |
+|--------|-------------|-------------|
+| `NETWORK_TIMEOUT` | Timeout de red | Servidor lento |
+| `NETWORK_OFFLINE` | Sin conexión | WiFi desconectado |
+| `NETWORK_ERROR` | Error genérico de red | DNS, firewall |
+
+```typescript
+export const NetworkErrorCode = {
+  Timeout: 'NETWORK_TIMEOUT',
+  Offline: 'NETWORK_OFFLINE',
+  Error: 'NETWORK_ERROR',
+} as const;
+```
+
+### AEAT Errors
+
+| Código | Descripción | Causa Común |
+|--------|-------------|-------------|
+| `AEAT_CERT_EXPIRED` | Certificado caducado | Renovar certificado |
+| `AEAT_CERT_INVALID` | Certificado inválido | Archivo corrupto |
+| `AEAT_CONNECTION_FAILED` | Error de conexión | AEAT caído |
+| `AEAT_REJECTED` | Factura rechazada | Datos incorrectos |
+
+```typescript
+export const AEATErrorCode = {
+  CertExpired: 'AEAT_CERT_EXPIRED',
+  CertInvalid: 'AEAT_CERT_INVALID',
+  ConnectionFailed: 'AEAT_CONNECTION_FAILED',
+  Rejected: 'AEAT_REJECTED',
+} as const;
+```
+
+## API de @mks2508/no-throw
+
+### Crear Results
+
+```typescript
+import { ok, err } from '@mks2508/no-throw';
+
+// Crear un resultado exitoso
+const success = ok(42);
+// { ok: true, value: 42 }
+
+// Crear un error
+const failure = err('ERROR_CODE', 'Mensaje de error');
+// { ok: false, error: { code: 'ERROR_CODE', message: 'Mensaje de error' } }
+
+// Error con causa original
+const failureWithCause = err('ERROR_CODE', 'Mensaje', originalError);
+```
+
+### Verificar Tipo
+
+```typescript
+import { isOk, isErr } from '@mks2508/no-throw';
+
+const result = await someOperation();
+
+if (isOk(result)) {
+  // TypeScript sabe que result.value existe
+  console.log(result.value);
+}
+
+if (isErr(result)) {
+  // TypeScript sabe que result.error existe
+  console.error(result.error.code);
+}
+```
+
+### Capturar Excepciones
+
+```typescript
+import { tryCatch, tryCatchAsync } from '@mks2508/no-throw';
+
+// Síncrono
+const parseResult = tryCatch(
+  () => JSON.parse(jsonString),
+  'PARSE_ERROR'
+);
+
+// Asíncrono
+const fetchResult = await tryCatchAsync(
+  async () => {
+    const response = await fetch('/api/data');
+    if (!response.ok) throw new Error('HTTP error');
+    return response.json();
+  },
+  'FETCH_ERROR'
+);
+```
+
+### Efectos sobre Errores
+
+```typescript
+import { tapErr } from '@mks2508/no-throw';
+
+const result = await loadProducts();
+
+// Ejecutar efecto si es error (logging, notificaciones)
+tapErr(result, (error) => {
+  console.error(`[${error.code}] ${error.message}`);
+  notifyUser('Error cargando productos');
+});
+
+// El result original no se modifica
+```
+
+### Valores por Defecto
+
+```typescript
+import { unwrapOr } from '@mks2508/no-throw';
+
+const result = await loadProducts();
+
+// Si es error, usa el valor por defecto
+const products = unwrapOr(result, []);
+```
+
+### Transformar Valores
+
+```typescript
+import { map, mapErr } from '@mks2508/no-throw';
+
+const result = await loadProducts();
+
+// Transformar el valor si es Ok
+const names = map(result, (products) => products.map(p => p.name));
+
+// Transformar el error si es Err
+const userFriendly = mapErr(result, (error) => ({
+  ...error,
+  message: translateError(error.code),
+}));
+```
+
+## ErrorBoundary
+
+Para errores de renderizado de React, usamos ErrorBoundary:
+
+### Niveles
+
+| Nivel | Uso | Fallback |
+|-------|-----|----------|
+| `app` | Envuelve toda la app | Pantalla completa de error |
+| `section` | Secciones principales | Card con mensaje |
+| `component` | Componentes individuales | Inline mínimo |
+
+### Implementación
+
+```tsx
+// src/components/ErrorBoundary.tsx
+
+interface Props {
+  level: 'app' | 'section' | 'component';
+  fallback?: ReactNode;
+  children: ReactNode;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <DefaultFallback level={this.props.level} />;
+    }
+    return this.props.children;
+  }
+}
+```
+
+### Uso
+
+```tsx
+// App level - main.tsx
+<ErrorBoundary level="app">
+  <App />
+</ErrorBoundary>
+
+// Section level - App.tsx
+<ErrorBoundary level="section" fallback={<SectionError />}>
+  <ProductList />
+</ErrorBoundary>
+
+// Component level
+<ErrorBoundary level="component">
+  <PriceDisplay price={price} />
+</ErrorBoundary>
+```
+
+## Ejemplo Completo
+
+```typescript
+// src/services/product.service.ts
+
+import { tryCatchAsync, isErr, tapErr, unwrapOr } from '@mks2508/no-throw';
+import { StorageErrorCode, ProductErrorCode } from '@/lib/error-codes';
+import type { Product } from '@/models/Product';
+import type { StorageResult } from '@/services/storage-adapter.interface';
+
+export async function loadProducts(
+  adapter: IStorageAdapter
+): Promise<StorageResult<Product[]>> {
+  const result = await adapter.getProducts();
+
+  // Log de errores
+  tapErr(result, (error) => {
+    console.error(`[ProductService] Failed to load products: ${error.code}`);
+  });
+
+  return result;
+}
+
+export async function createProduct(
+  adapter: IStorageAdapter,
+  product: Product
+): Promise<StorageResult<void>> {
+  // Validar producto
+  if (!product.name || product.price < 0) {
+    return err(ProductErrorCode.CreateFailed, 'Invalid product data');
+  }
+
+  const result = await adapter.createProduct(product);
+
+  tapErr(result, (error) => {
+    console.error(`[ProductService] Failed to create product: ${error.code}`);
+  });
+
+  return result;
+}
+```
+
+## Siguiente Paso
+
+- [Plataformas](/docs/desarrollo/plataformas)
+- [Volver a Desarrollo](/docs/desarrollo)

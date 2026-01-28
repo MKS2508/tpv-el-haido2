@@ -1,0 +1,310 @@
+---
+title: Arquitectura
+description: 'Arquitectura técnica de TPV El Haido: capas, flujo de datos y componentes'
+---
+
+# Arquitectura
+
+TPV El Haido sigue una arquitectura de capas con separación clara entre frontend, backend y servicios externos.
+
+## Diagrama General
+
+```mermaid
+graph TB
+    subgraph Frontend["Frontend (React 19)"]
+        UI[Componentes UI<br/>Radix + shadcn]
+        Store[Zustand Store<br/>+ Immer]
+        Services[Servicios<br/>TypeScript]
+        Hooks[Custom Hooks]
+    end
+
+    subgraph Tauri["Tauri 2.0 (Rust)"]
+        IPC[IPC Bridge<br/>invoke/listen]
+        Commands[Rust Commands]
+        SQLite[(SQLite<br/>rusqlite)]
+        Shell[Plugin Shell]
+    end
+
+    subgraph Sidecars["Procesos Externos"]
+        AEAT[aeat-bridge<br/>Node.js :3001]
+        Printer[thermal-printer-cli<br/>Node.js]
+    end
+
+    subgraph External["Servicios Externos"]
+        AEATWS[AEAT SOAP API]
+        PrinterHW[Impresora ESC/POS]
+    end
+
+    UI --> Hooks
+    Hooks --> Store
+    Store --> Services
+    Services --> IPC
+    IPC --> Commands
+    Commands --> SQLite
+    Shell --> AEAT
+    Shell --> Printer
+    AEAT --> AEATWS
+    Printer --> PrinterHW
+```
+
+## Capas
+
+### Frontend (React)
+
+| Capa | Responsabilidad | Ubicación |
+|------|-----------------|-----------|
+| **UI** | Renderizado, interacción | `src/components/` |
+| **Hooks** | Lógica de componentes | `src/hooks/` |
+| **Store** | Estado global | `src/store/` |
+| **Services** | Lógica de negocio | `src/services/` |
+| **Models** | Tipos TypeScript | `src/models/` |
+
+### Backend (Tauri/Rust)
+
+| Capa | Responsabilidad | Ubicación |
+|------|-----------------|-----------|
+| **Commands** | API para frontend | `src-tauri/src/lib.rs` |
+| **Database** | Operaciones SQLite | `src-tauri/src/database.rs` |
+| **Models** | Structs Rust | `src-tauri/src/models.rs` |
+
+### Sidecars
+
+| Sidecar | Función | Puerto |
+|---------|---------|--------|
+| **aeat-bridge** | Comunicación SOAP con AEAT | 3001 |
+| **thermal-printer-cli** | Impresión ESC/POS | CLI |
+
+## Flujo de Datos
+
+### Lectura de Productos
+
+```mermaid
+sequenceDiagram
+    participant UI as ProductList
+    participant Hook as useProducts
+    participant Store as Zustand
+    participant Service as StorageAdapter
+    participant Tauri as invoke()
+    participant Rust as Rust Command
+    participant DB as SQLite
+
+    UI->>Hook: mount
+    Hook->>Store: getProducts()
+    Store->>Service: storageAdapter.getProducts()
+    Service->>Tauri: invoke('get_products')
+    Tauri->>Rust: get_products()
+    Rust->>DB: SELECT * FROM products
+    DB-->>Rust: Vec<Product>
+    Rust-->>Tauri: Result<Vec<Product>>
+    Tauri-->>Service: Product[]
+    Service-->>Store: StorageResult<Product[]>
+    Store-->>Hook: products
+    Hook-->>UI: render
+```
+
+### Creación de Pedido
+
+```mermaid
+sequenceDiagram
+    participant UI as NewOrder
+    participant Store as Zustand
+    participant Service as OrderService
+    participant Tauri as invoke()
+    participant DB as SQLite
+    participant AEAT as aeat-bridge
+
+    UI->>Store: addToOrder(product)
+    Store->>Store: update state
+    UI->>Store: completeOrder()
+    Store->>Service: createOrder(order)
+    Service->>Tauri: invoke('create_order')
+    Tauri->>DB: INSERT INTO orders
+    DB-->>Tauri: Ok
+
+    alt VERI*FACTU enabled
+        Tauri->>AEAT: POST /facturas/alta
+        AEAT-->>Tauri: { csv: "..." }
+    end
+
+    Tauri-->>Service: Result<Order>
+    Service-->>Store: order created
+    Store-->>UI: update
+```
+
+## Patrones de Arquitectura
+
+### Strategy Pattern (Storage)
+
+El sistema usa el patrón Strategy para abstraer el almacenamiento:
+
+```mermaid
+classDiagram
+    class IStorageAdapter {
+        <<interface>>
+        +getProducts() StorageResult~Product[]~
+        +createProduct(product) StorageResult~void~
+        +getOrders() StorageResult~Order[]~
+        ...
+    }
+
+    class SqliteStorageAdapter {
+        +getProducts()
+        +createProduct()
+    }
+
+    class HttpStorageAdapter {
+        +getProducts()
+        +createProduct()
+    }
+
+    class IndexedDbStorageAdapter {
+        +getProducts()
+        +createProduct()
+    }
+
+    IStorageAdapter <|.. SqliteStorageAdapter
+    IStorageAdapter <|.. HttpStorageAdapter
+    IStorageAdapter <|.. IndexedDbStorageAdapter
+```
+
+### Result Pattern (Errores)
+
+Todas las operaciones asíncronas retornan `Result<T, E>`:
+
+```typescript
+// En lugar de:
+try {
+  const products = await getProducts();
+} catch (e) {
+  // handle error
+}
+
+// Usamos:
+const result = await getProducts();
+if (isErr(result)) {
+  console.error(result.error.code);
+} else {
+  const products = result.value;
+}
+```
+
+## Comunicación IPC
+
+### Frontend → Rust
+
+```typescript
+// TypeScript
+import { invoke } from '@tauri-apps/api/core';
+
+const products = await invoke<Product[]>('get_products');
+```
+
+```rust
+// Rust
+#[tauri::command]
+fn get_products(state: State<AppState>) -> Result<Vec<Product>, String> {
+    state.db.get_products()
+}
+```
+
+### Rust → Frontend (Eventos)
+
+```rust
+// Rust
+app.emit("order-created", &order)?;
+```
+
+```typescript
+// TypeScript
+import { listen } from '@tauri-apps/api/event';
+
+await listen('order-created', (event) => {
+  console.log('New order:', event.payload);
+});
+```
+
+## Base de Datos
+
+### Schema SQLite
+
+```sql
+-- Productos
+CREATE TABLE products (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    price REAL NOT NULL,
+    category TEXT NOT NULL,
+    brand TEXT,
+    icon_type TEXT,
+    selected_icon TEXT,
+    uploaded_image TEXT,
+    stock INTEGER DEFAULT 0
+);
+
+-- Categorías
+CREATE TABLE categories (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    icon TEXT
+);
+
+-- Pedidos
+CREATE TABLE orders (
+    id TEXT PRIMARY KEY,
+    date TEXT NOT NULL,
+    total REAL NOT NULL,
+    status TEXT DEFAULT 'inProgress',
+    payment_method TEXT DEFAULT 'efectivo',
+    table_number INTEGER,
+    user_id TEXT
+);
+
+-- Items de pedido
+CREATE TABLE order_items (
+    id TEXT PRIMARY KEY,
+    order_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    price REAL NOT NULL,
+    quantity INTEGER DEFAULT 1,
+    FOREIGN KEY (order_id) REFERENCES orders(id)
+);
+```
+
+### Ubicación del Archivo
+
+| Sistema | Ruta |
+|---------|------|
+| Windows | `%APPDATA%\com.elhaido.tpv\tpv-haido.db` |
+| macOS | `~/Library/Application Support/com.elhaido.tpv/tpv-haido.db` |
+| Linux | `~/.config/com.elhaido.tpv/tpv-haido.db` |
+
+## Seguridad
+
+### Sandboxing Tauri
+
+Tauri aplica sandboxing por defecto:
+- Acceso a sistema de archivos restringido
+- Red solo a dominios permitidos
+- IPC tipado entre Rust y JS
+
+### Permisos
+
+Configurados en `src-tauri/capabilities/`:
+
+```json
+{
+  "permissions": [
+    "shell:allow-spawn",
+    "http:default",
+    "updater:default"
+  ]
+}
+```
+
+## Siguiente Paso
+
+- [Stack Tecnológico](/docs/desarrollo/stack)
+- [Patrones](/docs/desarrollo/patrones)
+- [Almacenamiento](/docs/desarrollo/almacenamiento)

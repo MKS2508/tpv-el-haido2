@@ -1,0 +1,201 @@
+---
+title: Products
+description: 'Product and category management in TPV El Haido'
+---
+
+# Product Management
+
+Learn how to manage your product catalog and categories in TPV El Haido.
+
+## Access the Catalog
+
+1. In the side menu, click **Products**
+2. You'll see the product grid with filters and search
+
+## Categories
+
+Categories organize your products to facilitate navigation during sales.
+
+### Create Category
+
+<Steps>
+
+### Open category management
+
+In the Products section, click the **Categories** button or folder icon.
+
+### New category
+
+Click **New Category**.
+
+### Fill in details
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Name** | Category name | "Cold Drinks" |
+| **Description** | Optional description | "Sodas, juices, water..." |
+| **Icon** | Visual icon | 🍺 |
+
+### Save
+
+Click **Create** to save the category.
+
+</Steps>
+
+### Edit Category
+
+1. In the category list, click the edit icon (pencil)
+2. Modify the necessary fields
+3. Click **Save**
+
+### Delete Category
+
+1. Click the delete icon (trash)
+2. Confirm the deletion
+
+<Callout type="warning">
+  When deleting a category, associated products will be moved to "Uncategorized".
+</Callout>
+
+## Products
+
+### Create Product
+
+<Steps>
+
+### Open form
+
+In the Products section, click **New Product**.
+
+### Basic information
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| **Name** | Product name | Yes |
+| **Price** | Selling price (without VAT) | Yes |
+| **Category** | Product category | Yes |
+| **Brand** | Brand (optional) | No |
+
+### VAT configuration
+
+| Type | Percentage | Application |
+|------|------------|-------------|
+| **Standard** | 21% | Most products |
+| **Reduced** | 10% | Food, transport |
+| **Super-reduced** | 4% | Bread, milk, fruits, vegetables |
+
+### Product image
+
+You have two options:
+- **Predefined icon**: Select from the icon library
+- **Custom image**: Upload a product photo
+
+### Save
+
+Click **Create Product**.
+
+</Steps>
+
+### Edit Product
+
+1. In the product grid, click on the product
+2. The edit dialog will open
+3. Modify the necessary fields
+4. Click **Save Changes**
+
+### Delete Product
+
+1. In the product dialog, click **Delete**
+2. Confirm the deletion
+
+<Callout type="info">
+  Deleted products won't appear in new orders but are kept in the history of previous orders.
+</Callout>
+
+## Search and Filters
+
+### Search bar
+
+Type in the search bar to find products by:
+- Name
+- Brand
+- Category
+
+### Category filters
+
+In the left sidebar:
+1. Click a category to see only those products
+2. Click "All" to see all products
+
+### Sorting
+
+Sort products by:
+- Name (A-Z, Z-A)
+- Price (low to high, high to low)
+- Most recent
+
+## Bulk Import
+
+If you have many products, you can import them from a file:
+
+<Steps>
+
+### Prepare CSV file
+
+Create a CSV file with columns:
+```csv
+name,price,category,brand,vat
+Coca-Cola,1.80,Drinks,Coca-Cola,21
+Espresso,1.20,Coffee,,21
+Toast,2.50,Breakfast,,10
+```
+
+### Import
+
+1. Go to **Settings → Import/Export**
+2. Select **Import Products**
+3. Load your CSV file
+4. Review the preview
+5. Confirm the import
+
+</Steps>
+
+## Export Catalog
+
+To back up or migrate data:
+
+1. Go to **Settings → Import/Export**
+2. Select **Export Products**
+3. Choose the format (CSV or JSON)
+4. Download the file
+
+## Tips
+
+### Efficient organization
+
+- Create categories that reflect your menu or card
+- Use short, clear names
+- Best-selling products can have a distinctive icon
+
+### Prices
+
+- Always enter price **without VAT**
+- The system calculates the retail price automatically
+- You can change prices at any time (doesn't affect previous orders)
+
+### Images
+
+| Format | Recommendation |
+|--------|----------------|
+| **Size** | 200x200px minimum |
+| **Format** | PNG or JPG |
+| **Weight** | Less than 500KB |
+
+<Callout type="tip">
+  Square images display better in the product grid.
+</Callout>
+
+## Next Step
+
+- [Manage Orders](/en/docs/user-guide/orders)
+- [Configure Payments](/en/docs/user-guide/payments)

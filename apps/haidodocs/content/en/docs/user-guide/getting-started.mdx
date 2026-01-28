@@ -1,0 +1,204 @@
+---
+title: Getting Started
+description: 'Initial setup of TPV El Haido: users, products, and first sale'
+---
+
+# Getting Started
+
+After installing TPV El Haido, follow this guide to configure your system and make your first sale.
+
+## Setup Wizard
+
+The first time you open the application, you'll see the setup wizard:
+
+<Steps>
+
+### Welcome
+
+The wizard will guide you through the initial setup. Click "Get Started".
+
+### Storage Mode
+
+Select how you want to save your data:
+
+| Mode | Description | Recommended for |
+|------|-------------|-----------------|
+| **SQLite** | Local database | Single terminal |
+| **HTTP** | External server | Multiple terminals |
+| **IndexedDB** | Browser | Web mode/demo |
+
+<Callout type="tip">
+  For most users, **SQLite** is the best option. It's fast and requires no additional configuration.
+</Callout>
+
+### Create Admin User
+
+1. Enter the user name (e.g., "Admin")
+2. Select an avatar or upload a photo
+3. Create a 4-digit PIN
+4. Confirm the PIN
+
+### Visual Theme
+
+Choose the theme that best suits your business:
+- **Restaurant Professional**: Warm and elegant colors
+- **Modern Cafe**: Minimalist green
+- **Night Bar**: Dark theme with accents
+- **High Contrast**: Maximum readability
+
+### Complete
+
+Click "Finish" to complete the setup.
+
+</Steps>
+
+## Login Screen
+
+After setup, you'll see the login screen:
+
+1. **Select your user** by tapping the avatar
+2. **Enter your PIN** (4 digits)
+3. **Access** the main panel
+
+<Callout type="info">
+  You can create more users from **Settings → Users**.
+</Callout>
+
+## Create Your First Category
+
+Before adding products, create at least one category:
+
+<Steps>
+
+### Go to Products
+
+1. In the side menu, click **Products**
+2. Click the **Categories** button or folder icon
+
+### Create Category
+
+1. Click **New Category**
+2. Enter the name (e.g., "Drinks", "Tapas", "Desserts")
+3. Optionally, add a description
+4. Select an icon
+5. Click **Save**
+
+</Steps>
+
+## Create Your First Product
+
+<Steps>
+
+### Go to New Product
+
+1. In the **Products** section, click **New Product**
+
+### Fill in Details
+
+| Field | Example | Description |
+|-------|---------|-------------|
+| **Name** | Beer | Name visible in the POS |
+| **Price** | 2.50 | Price without VAT |
+| **Category** | Drinks | Previously created category |
+| **VAT** | 21% | Applicable VAT rate |
+
+### Add Icon (Optional)
+
+- Select a predefined icon, or
+- Upload a product image
+
+### Save
+
+Click **Create Product** to save it.
+
+</Steps>
+
+## Make Your First Sale
+
+<Steps>
+
+### Create New Order
+
+1. In the side menu, click **New Order**
+2. (Optional) Select a table
+
+### Add Products
+
+1. Navigate categories in the left sidebar
+2. Click products to add them
+3. The summary appears in the right panel
+
+### Adjust Quantities
+
+- **+** / **-**: Increase or decrease quantity
+- **Delete**: Remove product from order
+
+### Checkout
+
+1. Click the **Checkout** button
+2. Select payment method:
+   - Cash
+   - Card
+   - Other
+3. If cash, enter the amount received
+4. The system calculates change automatically
+
+### Finish
+
+1. Click **Confirm Payment**
+2. The receipt prints automatically (if printer is configured)
+3. The order is saved to history
+
+</Steps>
+
+## Additional Configuration
+
+### Thermal Printer
+
+To print receipts, configure your printer:
+
+1. Go to **Settings → Printer**
+2. Select the port (USB/Serial)
+3. Configure paper width (58mm or 80mm)
+4. Click **Test Connection**
+
+More details in [Configure Printer](/en/docs/user-guide/printer).
+
+### AEAT Invoicing
+
+To send invoices to AEAT:
+
+1. Go to **Settings → VERI*FACTU**
+2. Enter your tax details (NIF, Company Name)
+3. Configure the digital certificate
+4. Enable automatic sending
+
+More details in [VERI*FACTU Invoicing](/en/docs/user-guide/invoicing).
+
+### More Users
+
+To add more operators:
+
+1. Go to **Settings → Users**
+2. Click **New User**
+3. Fill in name, avatar, and PIN
+
+## Summary
+
+You've completed the initial setup:
+
+- [x] Setup wizard completed
+- [x] Admin user created
+- [x] First category created
+- [x] First product added
+- [x] First sale completed
+
+<Callout type="success">
+  Your POS is ready! Explore the rest of the documentation to take advantage of all features.
+</Callout>
+
+## Next Step
+
+- [Manage Products](/en/docs/user-guide/products) - Complete catalog
+- [Configure Printer](/en/docs/user-guide/printer) - Thermal receipts
+- [AEAT Invoicing](/en/docs/user-guide/invoicing) - VERI*FACTU

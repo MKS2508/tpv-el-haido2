@@ -1,68 +1,106 @@
 ---
-title: Welcome
-description: 'Welcome to haidodocs -  Sistema TPV (Terminal Punto de Venta) de escritorio para hostelería. Construido con Tauri, SolidJS y SQL         ite.'
+title: TPV El Haido
+description: 'Desktop Point of Sale (POS) system for hospitality. Built with Tauri, React and SQLite.'
 ---
 
-# Welcome to haidodocs
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+# TPV El Haido
+
+**Modern Point of Sale System for Hospitality**
+
+TPV El Haido is a desktop application specifically designed for restaurants, bars, and cafes. It combines an intuitive interface with powerful management and tax compliance features.
 
 <Callout type="info">
-  This is a Fumadocs template. Replace this content with your own documentation.
+  Available for **Windows**, **macOS**, **Linux** and **Raspberry Pi**.
 </Callout>
 
-## Features
+## Key Features
 
-This template includes:
+<Cards>
+  <Card title="Order Management" href="/en/docs/user-guide/orders">
+    Create and manage orders with a touch-optimized interface. Table assignment and real-time status tracking.
+  </Card>
+  <Card title="Product Catalog" href="/en/docs/user-guide/products">
+    Complete CRUD with categories, filters, search, and configurable VAT price management.
+  </Card>
+  <Card title="VERI*FACTU Invoicing" href="/en/docs/user-guide/invoicing">
+    Full integration with AEAT for electronic invoicing compliant with Spanish regulations.
+  </Card>
+  <Card title="Thermal Printing" href="/en/docs/user-guide/printer">
+    Support for ESC/POS printers, customizable receipts, and automatic cash drawer opening.
+  </Card>
+</Cards>
 
-- **Bilingual support** - Spanish and English ready to use
-- **Integrated search** - Instant content search
-- **Dark/light theme** - Automatic switching based on system preference
-- **Full MDX** - Use React components in your markdown
-- **GitHub Pages ready** - Configured for static deployment
+## Architecture
 
-## Getting Started
+```mermaid
+graph TB
+    subgraph Frontend["Frontend (React)"]
+        UI[UI Components]
+        Store[Zustand Store]
+        Services[Services]
+    end
 
-<Steps>
-### Installation
+    subgraph Tauri["Tauri (Rust)"]
+        IPC[IPC Bridge]
+        Commands[Rust Commands]
+        SQLite[(SQLite)]
+    end
 
-```bash
-# Copy content-template/ content to content/
-cp -r content-template/* content/
+    subgraph Sidecars["External Processes"]
+        AEAT[aeat-bridge<br/>Port 3001]
+        Printer[thermal-printer-cli]
+    end
+
+    UI --> Store
+    Store --> Services
+    Services --> IPC
+    IPC --> Commands
+    Commands --> SQLite
+    IPC --> AEAT
+    IPC --> Printer
 ```
 
-### Development
+## Who is TPV El Haido For
 
-```bash
-bun install
-bun run dev
-```
+| User | Description |
+|------|-------------|
+| **Hospitality** | Restaurants, bars, cafes that need a reliable POS |
+| **Self-employed** | Small businesses required to comply with VERI*FACTU |
+| **Developers** | Professionals who want to extend or contribute to the project |
 
-Open [http://localhost:3000](http://localhost:3000) to view your documentation.
+## Get Started
 
-### Build
+<Cards>
+  <Card title="Download" href="/en/docs/download">
+    Download the version for your operating system
+  </Card>
+  <Card title="User Guide" href="/en/docs/user-guide">
+    Learn to use all features
+  </Card>
+  <Card title="Development" href="/en/docs/development">
+    Set up your development environment
+  </Card>
+</Cards>
 
-```bash
-bun run build
-```
+## Minimum Requirements
 
-Static files are generated in `out/`.
+| Requirement | Minimum | Recommended |
+|-------------|---------|-------------|
+| **RAM** | 512 MB | 1 GB |
+| **CPU** | 1 GHz (1 core) | 1.5 GHz (2 cores) |
+| **Storage** | 100 MB | 500 MB |
+| **Screen** | 800x600 | 1024x768 or higher |
 
-</Steps>
-
-## Configuration
-
-Edit environment variables in `.env.local`:
-
-```bash
-PROJECT_NAME=My Project
-DESCRIPTION=Description of my project
-AUTHOR=Your Name
-BASE_PATH=/my-project
-```
-
-<Callout type="warning">
-  Remember to configure <code>BASE_PATH</code> if deploying to GitHub Pages with a custom repository name.
+<Callout type="tip">
+  TPV El Haido is optimized to run on low-power hardware like **Raspberry Pi 4/5**.
 </Callout>
 
-## Next Step
+## Repository
 
-See the [Introduction](/en/docs/getting-started) section for more details.
+The source code is available on GitHub:
+
+```bash
+git clone https://github.com/MKS2508/tpv-el-haido2.git
+```

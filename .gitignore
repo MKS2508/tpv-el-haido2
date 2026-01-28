@@ -29,3 +29,4 @@ dist-ssr
 !*.key.pub
 /target/rust-analyzer
 /apps/haidodocs/.source
+src-tauri/sidecars/aeat-bridge-x86_64-pc-windows-msvc.exe

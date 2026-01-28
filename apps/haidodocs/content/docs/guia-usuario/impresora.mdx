@@ -1,0 +1,275 @@
+---
+title: Impresora Térmica
+description: 'Configurar impresora térmica ESC/POS para tickets en TPV El Haido'
+---
+
+# Configurar Impresora Térmica
+
+Guía para configurar tu impresora térmica y poder imprimir tickets de venta.
+
+## Impresoras Compatibles
+
+TPV El Haido soporta cualquier impresora compatible con el protocolo ESC/POS:
+
+| Marca | Modelos Probados |
+|-------|------------------|
+| **Epson** | TM-T20, TM-T88, TM-T82 |
+| **Star** | TSP100, TSP650, mPOP |
+| **Bixolon** | SRP-330, SRP-350 |
+| **Sewoo** | LK-TL200, LK-TL320 |
+| **Genéricas** | Impresoras USB/Serial 58mm, 80mm |
+
+<Callout type="info">
+  La mayoría de impresoras térmicas de TPV usan el estándar ESC/POS y son compatibles.
+</Callout>
+
+## Conexión Física
+
+### USB (Recomendado)
+
+<Steps>
+
+### Conectar la impresora
+
+1. Conecta el cable USB de la impresora a tu ordenador
+2. Enciende la impresora
+3. Espera a que el sistema operativo la detecte
+
+### Identificar el puerto
+
+**Windows:**
+- Abre "Administrador de dispositivos"
+- Busca en "Puertos (COM y LPT)"
+- Anota el número COM (ej: COM3)
+
+**macOS/Linux:**
+- Abre terminal
+- Ejecuta: `ls /dev/tty.*` (macOS) o `ls /dev/ttyUSB*` (Linux)
+- Anota el dispositivo (ej: `/dev/ttyUSB0`)
+
+</Steps>
+
+### Red (Ethernet/WiFi)
+
+<Steps>
+
+### Configurar IP en la impresora
+
+1. Consulta el manual de tu impresora
+2. Configura una IP estática (recomendado)
+3. Ejemplo: `192.168.1.100`
+
+### Configurar en TPV
+
+1. En **Ajustes → Impresora**
+2. Selecciona tipo de conexión: **Red**
+3. Introduce la IP y puerto (normalmente 9100)
+
+</Steps>
+
+### Bluetooth
+
+<Steps>
+
+### Emparejar la impresora
+
+1. Pon la impresora en modo de emparejamiento
+2. En tu sistema, busca dispositivos Bluetooth
+3. Empareja la impresora
+
+### Configurar en TPV
+
+1. En **Ajustes → Impresora**
+2. Selecciona tipo de conexión: **Bluetooth**
+3. Selecciona la impresora de la lista
+
+</Steps>
+
+<Callout type="warning">
+  El soporte Bluetooth puede variar según el sistema operativo y modelo de impresora.
+</Callout>
+
+## Configuración en TPV El Haido
+
+<Steps>
+
+### Acceder a Ajustes
+
+1. En el menú lateral, haz clic en **Ajustes**
+2. Ve a la sección **Impresora**
+
+### Configurar conexión
+
+| Campo | Descripción | Ejemplo |
+|-------|-------------|---------|
+| **Tipo** | USB, Red, Bluetooth | USB |
+| **Puerto/IP** | Puerto COM o dirección IP | COM3, 192.168.1.100 |
+| **Puerto de red** | Solo para conexión de red | 9100 |
+
+### Ancho de papel
+
+| Ancho | Caracteres por línea | Uso común |
+|-------|---------------------|-----------|
+| **58mm** | ~32 caracteres | Portátiles, pequeñas |
+| **80mm** | ~48 caracteres | Estándar de mostrador |
+
+### Probar conexión
+
+Haz clic en **Probar Impresora** para imprimir un ticket de prueba.
+
+</Steps>
+
+## Personalizar Tickets
+
+### Cabecera del Ticket
+
+En **Ajustes → Impresora → Ticket**:
+
+| Campo | Descripción |
+|-------|-------------|
+| **Nombre negocio** | Se muestra en grande en la cabecera |
+| **Dirección** | Línea 1 de la dirección |
+| **Localidad** | Ciudad y código postal |
+| **CIF/NIF** | Identificación fiscal |
+| **Teléfono** | Número de contacto |
+
+### Logo
+
+Para añadir un logo:
+1. Prepara la imagen en formato **BMP monocromo**
+2. Tamaño recomendado: 384px de ancho para 80mm, 256px para 58mm
+3. En Ajustes, haz clic en "Subir logo"
+4. Selecciona el archivo
+
+<Callout type="tip">
+  Usa una imagen de alto contraste para mejor impresión térmica.
+</Callout>
+
+### Pie del Ticket
+
+Configura un mensaje personalizado al final del ticket:
+- "¡Gracias por su visita!"
+- "Síguenos en @tunegocio"
+- Horario de apertura
+
+## Comandos Soportados
+
+TPV El Haido usa el sidecar `thermal-printer-cli` que soporta:
+
+| Comando | Función |
+|---------|---------|
+| **text** | Imprimir texto con formato |
+| **cut** | Cortar papel (si la impresora lo soporta) |
+| **feed** | Avanzar papel (saltos de línea) |
+| **cashdrawer** | Abrir cajón portamonedas |
+| **barcode** | Imprimir código de barras |
+| **qr** | Imprimir código QR |
+| **image** | Imprimir imagen/logo |
+
+## Apertura de Cajón
+
+### Configurar cajón
+
+1. Conecta el cajón al puerto RJ-11 de la impresora
+2. En **Ajustes → Impresora**, activa "Abrir cajón automáticamente"
+
+### Apertura automática
+
+El cajón se abre automáticamente cuando:
+- Se completa un pago en efectivo
+- Configurable para todos los pagos o solo efectivo
+
+### Apertura manual
+
+En la barra de herramientas o en Ajustes, botón **Abrir Cajón**.
+
+## Impresora de Cocina
+
+Si tienes una segunda impresora para cocina:
+
+<Steps>
+
+### Añadir impresora de cocina
+
+1. En **Ajustes → Impresora → Impresoras adicionales**
+2. Haz clic en **Añadir impresora**
+3. Configura como "Cocina"
+4. Introduce los datos de conexión
+
+### Asignar categorías
+
+1. Ve a **Categorías**
+2. Para cada categoría de comida, activa "Enviar a cocina"
+3. Los productos de esas categorías se imprimirán en la impresora de cocina
+
+</Steps>
+
+## Solución de Problemas
+
+### La impresora no imprime
+
+<Tabs items={['Windows', 'macOS', 'Linux']}>
+<Tab value="Windows">
+
+1. Verifica que el puerto COM es correcto
+2. Comprueba en Administrador de dispositivos que no hay errores
+3. Reinstala el driver si es necesario
+4. Prueba con otro cable USB
+
+</Tab>
+<Tab value="macOS">
+
+1. Verifica permisos: `sudo chmod 666 /dev/tty.*`
+2. Comprueba que la impresora aparece en `/dev/`
+3. Reinicia la impresora
+
+</Tab>
+<Tab value="Linux">
+
+1. Añade tu usuario al grupo dialout: `sudo usermod -a -G dialout $USER`
+2. Cierra sesión y vuelve a entrar
+3. Verifica permisos del dispositivo
+
+</Tab>
+</Tabs>
+
+### Caracteres extraños
+
+- Verifica que el ancho de papel es correcto (58mm vs 80mm)
+- Comprueba la codificación (debería ser compatible con ESC/POS)
+
+### El cajón no abre
+
+1. Verifica que el cable RJ-11 está bien conectado
+2. Comprueba el voltaje del cajón (12V o 24V)
+3. Algunos cajones requieren configuración específica
+
+### Impresión lenta
+
+1. Usa conexión USB en lugar de red/Bluetooth
+2. Reduce el tamaño del logo
+3. Simplifica el diseño del ticket
+
+## Especificaciones Técnicas
+
+### Protocolo ESC/POS
+
+El sistema envía comandos ESC/POS estándar:
+
+```
+ESC @ - Inicializar impresora
+ESC a - Alineación
+ESC ! - Estilo de texto
+GS V - Cortar papel
+ESC p - Abrir cajón
+```
+
+### Puerto de red
+
+- Puerto estándar: **9100** (raw printing)
+- Protocolo: TCP/IP directo
+
+## Siguiente Paso
+
+- [Facturación VERI*FACTU](/docs/guia-usuario/facturacion)
+- [Personalizar Temas](/docs/guia-usuario/temas)
