@@ -1,6 +1,6 @@
-import { createMemo, createEffect, createSignal, onCleanup, Show, For } from 'solid-js';
-import { Presence, Motion } from '@motionone/solid';
+import { Motion, Presence } from '@motionone/solid';
 import { ClockIcon, CreditCardIcon, EuroIcon, PrinterIcon, XIcon } from 'lucide-solid';
+import { createEffect, createMemo, createSignal, For, onCleanup, Show } from 'solid-js';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent } from '@/components/ui/card.tsx';
 import {
@@ -179,12 +179,7 @@ function PaymentModal(props: PaymentModalProps) {
                 Completar Pedido
               </DialogTitle>
 
-              <div
-                class={cn(
-                  'flex items-center gap-3',
-                  isMobile() ? 'flex-col' : 'flex-row'
-                )}
-              >
+              <div class={cn('flex items-center gap-3', isMobile() ? 'flex-col' : 'flex-row')}>
                 <Button
                   variant={localPaymentMethod() === 'efectivo' ? 'default' : 'outline'}
                   onClick={() => setLocalPaymentMethod('efectivo')}
@@ -269,9 +264,7 @@ function PaymentModal(props: PaymentModalProps) {
                       <CardContent class={cn(isMobile() ? 'p-4' : 'p-6')}>
                         <div class="space-y-6">
                           <div class="flex justify-between items-center">
-                            <span
-                              class={cn('font-semibold', isMobile() ? 'text-2xl' : 'text-4xl')}
-                            >
+                            <span class={cn('font-semibold', isMobile() ? 'text-2xl' : 'text-4xl')}>
                               Total:
                             </span>
                             <span
@@ -285,9 +278,7 @@ function PaymentModal(props: PaymentModalProps) {
                             </span>
                           </div>
                           <div class="flex justify-between items-center">
-                            <span
-                              class={cn('font-semibold', isMobile() ? 'text-lg' : 'text-2xl')}
-                            >
+                            <span class={cn('font-semibold', isMobile() ? 'text-lg' : 'text-2xl')}>
                               Cantidad Ingresada:
                             </span>
                             <span
@@ -301,9 +292,7 @@ function PaymentModal(props: PaymentModalProps) {
                             </span>
                           </div>
                           <div class="flex justify-between items-center">
-                            <span
-                              class={cn('font-semibold', isMobile() ? 'text-lg' : 'text-2xl')}
-                            >
+                            <span class={cn('font-semibold', isMobile() ? 'text-lg' : 'text-2xl')}>
                               Cambio:
                             </span>
                             <span
@@ -368,9 +357,7 @@ function PaymentModal(props: PaymentModalProps) {
                 </Card>
               </Show>
             </Presence>
-            <DialogFooter
-              class={cn('gap-3 mt-auto pt-4', isMobile() ? 'flex-col' : 'flex-row')}
-            >
+            <DialogFooter class={cn('gap-3 mt-auto pt-4', isMobile() ? 'flex-col' : 'flex-row')}>
               <Button
                 variant="outline"
                 onClick={() => props.setIsPaymentModalOpen(false)}
@@ -406,18 +393,10 @@ function PaymentModal(props: PaymentModalProps) {
               Desea imprimir el ticket?
             </DialogTitle>
           </DialogHeader>
-          <div
-            class={cn(
-              'flex justify-center mt-8',
-              isMobile() ? 'flex-col gap-4' : 'gap-6'
-            )}
-          >
+          <div class={cn('flex justify-center mt-8', isMobile() ? 'flex-col gap-4' : 'gap-6')}>
             <Button
               onClick={() => handleCompleteTransaction(true)}
-              class={cn(
-                'flex-1 touch-manipulation',
-                isMobile() ? 'h-20 text-xl' : 'h-28 text-3xl'
-              )}
+              class={cn('flex-1 touch-manipulation', isMobile() ? 'h-20 text-xl' : 'h-28 text-3xl')}
             >
               <PrinterIcon class={cn('mr-3', isMobile() ? 'h-7 w-7' : 'h-10 w-10')} />
               Si, imprimir
@@ -425,10 +404,7 @@ function PaymentModal(props: PaymentModalProps) {
             <Button
               onClick={() => handleCompleteTransaction(false)}
               variant="outline"
-              class={cn(
-                'flex-1 touch-manipulation',
-                isMobile() ? 'h-20 text-xl' : 'h-28 text-3xl'
-              )}
+              class={cn('flex-1 touch-manipulation', isMobile() ? 'h-20 text-xl' : 'h-28 text-3xl')}
             >
               <XIcon class={cn('mr-3', isMobile() ? 'h-7 w-7' : 'h-10 w-10')} />
               No, gracias

@@ -1,13 +1,12 @@
 // Re-export everything from @mks2508/theme-manager-react for compatibility
+// Compatibility alias for existing code
 export {
-  ThemeProvider,
-  useTheme,
-  ThemeSelector,
+  FontSettingsModal,
   ModeToggle,
   ThemeManagementModal,
-  FontSettingsModal,
+  ThemeProvider,
+  ThemeSelector,
+  useTheme,
+  useTheme as useAppTheme,
+  useTheme as useThemeContext,
 } from '@mks2508/theme-manager-react';
-
-// Compatibility alias for existing code
-export { useTheme as useAppTheme } from '@mks2508/theme-manager-react';
-export { useTheme as useThemeContext } from '@mks2508/theme-manager-react';

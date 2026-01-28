@@ -5,7 +5,6 @@
  * Permite configurar el modo de conexion, entorno y gestionar el sidecar.
  */
 
-import { createSignal, Show } from 'solid-js';
 import {
   AlertCircle,
   AlertTriangle,
@@ -24,6 +23,7 @@ import {
   WifiOff,
   X,
 } from 'lucide-solid';
+import { createSignal, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -235,7 +235,10 @@ export default function AEATSettings(props: AEATSettingsProps) {
           {/* Selector de Modo */}
           <div class="space-y-2">
             <Label>Modo de Conexion</Label>
-            <Select value={config.mode} onChange={(v: string | null) => v && handleModeChange(v as AEATMode)}>
+            <Select
+              value={config.mode}
+              onChange={(v: string | null) => v && handleModeChange(v as AEATMode)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona modo" />
               </SelectTrigger>
@@ -539,7 +542,8 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 <Select
                   value={config.businessData.tipoFactura}
                   onChange={(v: string | null) =>
-                    v && updateConfig({
+                    v &&
+                    updateConfig({
                       businessData: { ...config.businessData, tipoFactura: v as 'F1' | 'F2' },
                     })
                   }

@@ -1,6 +1,12 @@
 import { Motion, Presence } from '@motionone/solid';
-import { AwardIcon, DollarSignIcon, ShoppingCartIcon, TrendingUpIcon, CalendarIcon } from 'lucide-solid';
-import { createMemo, createSignal, For, Show, type Component, type JSX } from 'solid-js';
+import {
+  AwardIcon,
+  CalendarIcon,
+  DollarSignIcon,
+  ShoppingCartIcon,
+  TrendingUpIcon,
+} from 'lucide-solid';
+import { type Component, createMemo, createSignal, For, type JSX, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 // TODO: recharts is React-specific and needs a SolidJS alternative
 // import {
@@ -82,7 +88,8 @@ const HomeHeader: Component<HomeHeaderProps> = (props) => (
         <div class="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background text-sm text-muted-foreground">
           <CalendarIcon class="h-4 w-4" />
           <span>
-            {props.dateRange.from.toLocaleDateString('es-ES')} - {props.dateRange.to.toLocaleDateString('es-ES')}
+            {props.dateRange.from.toLocaleDateString('es-ES')} -{' '}
+            {props.dateRange.to.toLocaleDateString('es-ES')}
           </span>
         </div>
       </Show>
@@ -138,9 +145,8 @@ const StatCard: Component<StatCardProps> = (props) => {
   // Format number for display
   const formattedValue = createMemo(() => {
     if (props.isAnimated && props.numericValue !== undefined) {
-      const formatted = props.suffix === '€'
-        ? props.numericValue.toFixed(2)
-        : props.numericValue.toString();
+      const formatted =
+        props.suffix === '€' ? props.numericValue.toFixed(2) : props.numericValue.toString();
       return `${props.prefix ?? ''}${formatted}${props.suffix ?? ''}`;
     }
     return props.value;
@@ -191,7 +197,10 @@ const StatCard: Component<StatCardProps> = (props) => {
         </CardHeader>
         <CardContent class={cn('pt-0', responsive.isMobile() ? 'px-3 pb-3' : '')}>
           <Motion.div
-            class={cn('font-bold text-card-foreground', responsive.isMobile() ? 'text-lg' : 'text-3xl')}
+            class={cn(
+              'font-bold text-card-foreground',
+              responsive.isMobile() ? 'text-lg' : 'text-3xl'
+            )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{
@@ -295,10 +304,15 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
         <CardHeader class={cn(responsive.isMobile() ? 'pb-2 px-4 pt-4' : 'pb-4')}>
           <div class="flex items-center gap-2">
             <div class={cn('bg-primary/10 rounded-lg', responsive.isMobile() ? 'p-1.5' : 'p-2')}>
-              <TrendingUpIcon class={cn('text-primary', responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')} />
+              <TrendingUpIcon
+                class={cn('text-primary', responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')}
+              />
             </div>
             <CardTitle
-              class={cn('font-semibold text-card-foreground', responsive.isMobile() ? 'text-sm' : 'text-lg')}
+              class={cn(
+                'font-semibold text-card-foreground',
+                responsive.isMobile() ? 'text-sm' : 'text-lg'
+              )}
             >
               {props.title}
             </CardTitle>
@@ -359,7 +373,9 @@ const PieChartCard: Component<PieChartCardProps> = (props) => {
             )}
           >
             <div class={cn('bg-success/10 rounded-lg', responsive.isMobile() ? 'p-1.5' : 'p-2')}>
-              <DollarSignIcon class={cn('text-success', responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')} />
+              <DollarSignIcon
+                class={cn('text-success', responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')}
+              />
             </div>
             {props.title}
           </CardTitle>
@@ -379,7 +395,9 @@ const PieChartCard: Component<PieChartCardProps> = (props) => {
               <ul class="mt-2 text-xs space-y-1">
                 <For each={props.data.slice(0, 3)}>
                   {(item) => (
-                    <li>{item.name}: {item.value}</li>
+                    <li>
+                      {item.name}: {item.value}
+                    </li>
                   )}
                 </For>
                 <Show when={props.data.length > 3}>
@@ -698,22 +716,34 @@ const Home: Component<HomeProps> = (props) => {
         <div
           class={cn(
             'grid gap-3',
-            responsive.isMobile() ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
+            responsive.isMobile()
+              ? 'grid-cols-1'
+              : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
             'lg:gap-4'
           )}
         >
           {/* Line Chart - Takes more space on larger screens */}
-          <div class={cn(responsive.isMobile() ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}>
+          <div
+            class={cn(responsive.isMobile() ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}
+          >
             <LineChartCard title="Tendencia de Ventas" data={chartData().salesTrend} index={0} />
           </div>
 
           {/* Category Pie Chart */}
-          <div class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
-            <PieChartCard title="Ventas por Categoria" data={chartData().salesByCategory} index={0} />
+          <div
+            class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}
+          >
+            <PieChartCard
+              title="Ventas por Categoria"
+              data={chartData().salesByCategory}
+              index={0}
+            />
           </div>
 
           {/* Location Pie Chart */}
-          <div class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
+          <div
+            class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}
+          >
             <PieChartCard
               title="Pedidos por Ubicacion"
               data={chartData().ordersByLocation}

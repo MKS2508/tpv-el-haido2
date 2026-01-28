@@ -1,6 +1,6 @@
-import { BeerIcon } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
+import { BeerIcon } from 'lucide-solid';
+import { createMemo, createSignal, onMount } from 'solid-js';
+import seedData from '@/assets/seed-data.json';
 import iconOptions from '@/assets/utils/icons/iconOptions';
 import { config } from '@/lib/config';
 import {
@@ -12,10 +12,10 @@ import {
 } from '@/lib/onboarding-utils';
 import type Category from '@/models/Category';
 import {
+  type ImportData,
   INITIAL_ONBOARDING_STATE,
   ONBOARDING_STEPS,
   ONBOARDING_STORAGE_KEY,
-  type ImportData,
   type OnboardingState,
   type OnboardingStep,
 } from '@/models/Onboarding';
@@ -23,11 +23,10 @@ import type Product from '@/models/Product';
 import type User from '@/models/User';
 import type { StorageMode } from '@/services/storage-adapter.interface';
 import useStore from '@/store/store';
-import seedData from '@/assets/seed-data.json';
 
 interface UseOnboardingReturn {
-  state: OnboardingState;
-  shouldShow: boolean;
+  state: () => OnboardingState;
+  shouldShow: () => boolean;
 
   // Navigation
   goToStep: (step: OnboardingStep) => void;
@@ -61,32 +60,12 @@ interface UseOnboardingReturn {
 }
 
 export function useOnboarding(): UseOnboardingReturn {
-  const [state, setState] = useState<OnboardingState>(INITIAL_ONBOARDING_STATE);
+  const [state, setState] = createSignal<OnboardingState>(INITIAL_ONBOARDING_STATE);
 
-  const {
-    products,
-    users,
-    storageAdapter,
-    setStorageMode: setStoreStorageMode,
-    setProducts,
-    setCategories,
-    setUsers,
-    setTables,
-  } = useStore(
-    useShallow((s) => ({
-      products: s.products,
-      users: s.users,
-      storageAdapter: s.storageAdapter,
-      setStorageMode: s.setStorageMode,
-      setProducts: s.setProducts,
-      setCategories: s.setCategories,
-      setUsers: s.setUsers,
-      setTables: s.setTables,
-    }))
-  );
+  const store = useStore();
 
   // Check localStorage for completion status on mount
-  useEffect(() => {
+  onMount(() => {
     try {
       const completed = localStorage.getItem(ONBOARDING_STORAGE_KEY);
       if (completed === 'true') {
@@ -95,30 +74,31 @@ export function useOnboarding(): UseOnboardingReturn {
     } catch {
       // Ignore localStorage errors
     }
-  }, []);
+  });
 
   // Determine if onboarding should be shown
-  const shouldShow = useMemo(() => {
-    if (!state.isActive) return false;
+  const shouldShow = createMemo(() => {
+    const currentState = state();
+    if (!currentState.isActive) return false;
 
     return shouldShowOnboarding({
       forceOnboarding: config.onboarding?.forceOnboarding ?? false,
-      onboardingCompleted: !state.isActive,
-      productsCount: products.length,
-      usersCount: users.length,
+      onboardingCompleted: !currentState.isActive,
+      productsCount: store.state.products.length,
+      usersCount: store.state.users.length,
     });
-  }, [state.isActive, products.length, users.length]);
+  });
 
   // Navigation helpers
-  const getStepIndex = useCallback((step: OnboardingStep): number => {
+  const getStepIndex = (step: OnboardingStep): number => {
     return ONBOARDING_STEPS.indexOf(step);
-  }, []);
+  };
 
-  const goToStep = useCallback((step: OnboardingStep) => {
+  const goToStep = (step: OnboardingStep) => {
     setState((prev) => ({ ...prev, currentStep: step }));
-  }, []);
+  };
 
-  const nextStep = useCallback(() => {
+  const nextStep = () => {
     setState((prev) => {
       const currentIndex = getStepIndex(prev.currentStep);
       const nextIndex = currentIndex + 1;
@@ -135,9 +115,9 @@ export function useOnboarding(): UseOnboardingReturn {
           : [...prev.completedSteps, prev.currentStep],
       };
     });
-  }, [getStepIndex]);
+  };
 
-  const previousStep = useCallback(() => {
+  const previousStep = () => {
     setState((prev) => {
       const currentIndex = getStepIndex(prev.currentStep);
       const prevIndex = currentIndex - 1;
@@ -151,9 +131,9 @@ export function useOnboarding(): UseOnboardingReturn {
         currentStep: ONBOARDING_STEPS[prevIndex],
       };
     });
-  }, [getStepIndex]);
+  };
 
-  const skipStep = useCallback(() => {
+  const skipStep = () => {
     setState((prev) => {
       const currentIndex = getStepIndex(prev.currentStep);
       const nextIndex = currentIndex + 1;
@@ -170,22 +150,19 @@ export function useOnboarding(): UseOnboardingReturn {
           : [...prev.skippedSteps, prev.currentStep],
       };
     });
-  }, [getStepIndex]);
+  };
 
-  const canSkipStep = useCallback((step: OnboardingStep): boolean => {
+  const canSkipStep = (step: OnboardingStep): boolean => {
     // Welcome and complete steps cannot be skipped
     return step !== 'welcome' && step !== 'complete';
-  }, []);
+  };
 
-  const isStepCompleted = useCallback(
-    (step: OnboardingStep): boolean => {
-      return state.completedSteps.includes(step);
-    },
-    [state.completedSteps]
-  );
+  const isStepCompleted = (step: OnboardingStep): boolean => {
+    return state().completedSteps.includes(step);
+  };
 
   // Import actions
-  const importFromFile = useCallback(async (file: File): Promise<boolean> => {
+  const importFromFile = async (file: File): Promise<boolean> => {
     const data = await readFileAsImportData(file);
     if (!data) {
       console.error('[Onboarding] Failed to parse import file');
@@ -198,9 +175,9 @@ export function useOnboarding(): UseOnboardingReturn {
     }));
 
     return true;
-  }, []);
+  };
 
-  const importFromJson = useCallback(async (jsonString: string): Promise<boolean> => {
+  const importFromJson = async (jsonString: string): Promise<boolean> => {
     const data = parseImportJson(jsonString);
     if (!data) {
       console.error('[Onboarding] Failed to parse JSON');
@@ -213,9 +190,9 @@ export function useOnboarding(): UseOnboardingReturn {
     }));
 
     return true;
-  }, []);
+  };
 
-  const loadSeedData = useCallback(async (): Promise<boolean> => {
+  const loadSeedData = async (): Promise<boolean> => {
     try {
       const data = seedData as ImportData;
 
@@ -229,23 +206,28 @@ export function useOnboarding(): UseOnboardingReturn {
       console.error('[Onboarding] Failed to load seed data:', error);
       return false;
     }
-  }, []);
+  };
 
-  const applyImportedData = useCallback(async (): Promise<boolean> => {
-    const importedData = state.importedData;
+  const applyImportedData = async (): Promise<boolean> => {
+    const importedData = state().importedData;
     if (!importedData) {
       console.warn('[Onboarding] No imported data to apply');
       return false;
     }
 
     try {
-      // Convert products with icons
-      const productsWithIcons: Product[] = importedData.products.map((product) => ({
-        ...product,
-        icon: React.createElement(
-          iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
-        ),
-      }));
+      // Get the storage adapter (it's a signal, so call it)
+      const adapter = store.storageAdapter();
+
+      // Convert products with icon component references (not React elements)
+      const productsWithIcons: Product[] = importedData.products.map((product) => {
+        const iconOption = iconOptions.find((option) => option.value === product.selectedIcon);
+        return {
+          ...product,
+          // Store the icon component reference, not a rendered element
+          icon: iconOption?.icon || BeerIcon,
+        };
+      });
 
       // Convert categories with icons
       const categoriesWithIcons: Category[] = importedData.categories.map((category) => ({
@@ -255,25 +237,25 @@ export function useOnboarding(): UseOnboardingReturn {
 
       // Save to storage
       for (const product of productsWithIcons) {
-        await storageAdapter.createProduct(product);
+        await adapter.createProduct(product);
       }
 
       for (const category of categoriesWithIcons) {
-        await storageAdapter.createCategory(category);
+        await adapter.createCategory(category);
       }
 
       // Update store
-      setProducts(productsWithIcons);
-      setCategories(categoriesWithIcons);
+      store.setProducts(productsWithIcons);
+      store.setCategories(categoriesWithIcons);
 
       // Handle tables if present
       if (importedData.tables && importedData.tables.length > 0) {
-        setTables(importedData.tables);
+        store.setTables(importedData.tables);
       }
 
       // Handle users if present and no users exist yet
-      if (importedData.users && importedData.users.length > 0 && users.length === 0) {
-        setUsers(importedData.users);
+      if (importedData.users && importedData.users.length > 0 && store.state.users.length === 0) {
+        store.setUsers(importedData.users);
         setState((prev) => ({
           ...prev,
           createdUsers: importedData.users!,
@@ -286,77 +268,65 @@ export function useOnboarding(): UseOnboardingReturn {
       console.error('[Onboarding] Failed to apply imported data:', error);
       return false;
     }
-  }, [state.importedData, storageAdapter, setProducts, setCategories, setTables, setUsers, users.length]);
+  };
 
   // User actions
-  const createUser = useCallback(
-    (userData: Omit<User, 'id'>) => {
-      if (!validatePin(userData.pin)) {
-        console.error('[Onboarding] Invalid PIN');
-        return;
-      }
+  const createUser = (userData: Omit<User, 'id'>) => {
+    if (!validatePin(userData.pin)) {
+      console.error('[Onboarding] Invalid PIN');
+      return;
+    }
 
-      const allUsers = [...users, ...state.createdUsers];
-      const newId = generateUserId(allUsers);
-      const newUser: User = { ...userData, id: newId };
+    const allUsers = [...store.state.users, ...state().createdUsers];
+    const newId = generateUserId(allUsers);
+    const newUser: User = { ...userData, id: newId };
 
-      setState((prev) => ({
-        ...prev,
-        createdUsers: [...prev.createdUsers, newUser],
-      }));
+    setState((prev) => ({
+      ...prev,
+      createdUsers: [...prev.createdUsers, newUser],
+    }));
 
-      // Also update the store
-      setUsers([...users, newUser]);
-    },
-    [users, state.createdUsers, setUsers]
-  );
+    // Also update the store
+    store.setUsers([...store.state.users, newUser]);
+  };
 
-  const updateUser = useCallback(
-    (user: User) => {
-      setState((prev) => ({
-        ...prev,
-        createdUsers: prev.createdUsers.map((u) => (u.id === user.id ? user : u)),
-      }));
+  const updateUser = (user: User) => {
+    setState((prev) => ({
+      ...prev,
+      createdUsers: prev.createdUsers.map((u) => (u.id === user.id ? user : u)),
+    }));
 
-      setUsers(users.map((u) => (u.id === user.id ? user : u)));
-    },
-    [users, setUsers]
-  );
+    store.setUsers(store.state.users.map((u) => (u.id === user.id ? user : u)));
+  };
 
-  const deleteUser = useCallback(
-    (userId: number) => {
-      setState((prev) => ({
-        ...prev,
-        createdUsers: prev.createdUsers.filter((u) => u.id !== userId),
-      }));
+  const deleteUser = (userId: number) => {
+    setState((prev) => ({
+      ...prev,
+      createdUsers: prev.createdUsers.filter((u) => u.id !== userId),
+    }));
 
-      setUsers(users.filter((u) => u.id !== userId));
-    },
-    [users, setUsers]
-  );
+    store.setUsers(store.state.users.filter((u) => u.id !== userId));
+  };
 
   // Configuration actions
-  const setStorageMode = useCallback(
-    (mode: StorageMode) => {
-      setState((prev) => ({
-        ...prev,
-        selectedStorageMode: mode,
-      }));
+  const setStorageMode = (mode: StorageMode) => {
+    setState((prev) => ({
+      ...prev,
+      selectedStorageMode: mode,
+    }));
 
-      setStoreStorageMode(mode);
-    },
-    [setStoreStorageMode]
-  );
+    store.setStorageMode(mode);
+  };
 
-  const setTheme = useCallback((theme: string) => {
+  const setTheme = (theme: string) => {
     setState((prev) => ({
       ...prev,
       selectedTheme: theme,
     }));
-  }, []);
+  };
 
   // Completion actions
-  const completeOnboarding = useCallback(() => {
+  const completeOnboarding = () => {
     try {
       localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
     } catch {
@@ -368,9 +338,9 @@ export function useOnboarding(): UseOnboardingReturn {
       isActive: false,
       completedSteps: [...prev.completedSteps, prev.currentStep],
     }));
-  }, []);
+  };
 
-  const restartOnboarding = useCallback(() => {
+  const restartOnboarding = () => {
     try {
       localStorage.removeItem(ONBOARDING_STORAGE_KEY);
     } catch {
@@ -378,7 +348,7 @@ export function useOnboarding(): UseOnboardingReturn {
     }
 
     setState(INITIAL_ONBOARDING_STATE);
-  }, []);
+  };
 
   return {
     state,

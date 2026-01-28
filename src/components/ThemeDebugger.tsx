@@ -1,7 +1,7 @@
 'use client';
 
-import { createMemo, createEffect, createSignal, onCleanup } from 'solid-js';
 import { useTheme } from '@mks2508/theme-manager-react';
+import { createEffect, createSignal, For, onCleanup } from 'solid-js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,7 +63,7 @@ export function ThemeDebugger() {
 
   const [copyStatus, setCopyStatus] = createSignal('');
 
-  const refreshDebugInfo = useCallback(() => {
+  const refreshDebugInfo = () => {
     if (typeof window === 'undefined') return;
 
     // Get DOM info
@@ -95,10 +95,12 @@ export function ThemeDebugger() {
     });
 
     setCssVariables(variables);
-  }, []);
+  };
 
   const handleCopyAll = () => {
-    const textToCopy = cssVariables().map((v) => `${v.name}: ${v.computed}`).join('\n');
+    const textToCopy = cssVariables()
+      .map((v) => `${v.name}: ${v.computed}`)
+      .join('\n');
     navigator.clipboard
       .writeText(textToCopy)
       .then(() => {
@@ -199,19 +201,21 @@ export function ThemeDebugger() {
               <div>Preview</div>
             </div>
             <div class="divide-y">
-              {cssVariables().map((variable) => (
-                <div key={variable.name} class="p-2 grid grid-cols-3 gap-2 text-xs">
-                  <div class="font-mono">{variable.name}</div>
-                  <div class="font-mono break-all">{variable.computed || 'undefined'}</div>
-                  <div class="flex items-center gap-1">
-                    <div
-                      class="w-4 h-4 border rounded"
-                      style={{ backgroundColor: variable.computed }}
-                      title={variable.computed}
-                    />
+              <For each={cssVariables()}>
+                {(variable) => (
+                  <div class="p-2 grid grid-cols-3 gap-2 text-xs">
+                    <div class="font-mono">{variable.name}</div>
+                    <div class="font-mono break-all">{variable.computed || 'undefined'}</div>
+                    <div class="flex items-center gap-1">
+                      <div
+                        class="w-4 h-4 border rounded"
+                        style={{ 'background-color': variable.computed }}
+                        title={variable.computed}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                )}
+              </For>
             </div>
           </div>
         </div>

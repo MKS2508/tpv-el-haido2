@@ -1,6 +1,6 @@
-import { createEffect, createSignal, onCleanup, onMount, Show, For, type JSX } from 'solid-js';
-import { Presence, Motion } from '@motionone/solid';
+import { Motion, Presence } from '@motionone/solid';
 import { Loader2 } from 'lucide-solid';
+import { createEffect, createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -22,7 +22,10 @@ const Login = (props: LoginProps) => {
 
   // Helper to determine if we should use desktop layout
   const isDesktopLayout = () =>
-    responsive.isLaptop() || responsive.isDesktop() || responsive.isLargeDesktop() || responsive.isUltraWide();
+    responsive.isLaptop() ||
+    responsive.isDesktop() ||
+    responsive.isLargeDesktop() ||
+    responsive.isUltraWide();
 
   // Define handlers
   const handlePinInput = (digit: string) => {
@@ -185,7 +188,7 @@ const Login = (props: LoginProps) => {
       fallback={
         <div
           class="h-screen w-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-fixed"
-          style={{ "background-image": "url('/wallpaper.jpeg')" }}
+          style={{ 'background-image': "url('/wallpaper.jpeg')" }}
         >
           <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 z-0" />
           <Motion.div
@@ -200,7 +203,7 @@ const Login = (props: LoginProps) => {
     >
       <div
         class="h-screen w-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-fixed"
-        style={{ "background-image": "url('/wallpaper.jpeg')" }}
+        style={{ 'background-image': "url('/wallpaper.jpeg')" }}
       >
         <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 z-0" />
         <div class="z-10 flex flex-col items-center justify-center w-full">
@@ -324,7 +327,9 @@ const Login = (props: LoginProps) => {
                         when={isDesktopLayout()}
                         fallback={
                           // Mobile/Tablet Layout - Vertical Single Column
-                          <div class={`${responsive.isMobile() ? 'space-y-3' : 'space-y-4 sm:space-y-6'}`}>
+                          <div
+                            class={`${responsive.isMobile() ? 'space-y-3' : 'space-y-4 sm:space-y-6'}`}
+                          >
                             {/* User avatar - smaller in PIN view */}
                             <Motion.div
                               initial={{ scale: 0.5, opacity: 0 }}

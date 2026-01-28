@@ -4,13 +4,7 @@ import type ITable from '@/models/Table';
 import type User from '@/models/User';
 import type { StorageMode } from '@/services/storage-adapter.interface';
 
-export type OnboardingStep =
-  | 'welcome'
-  | 'storage'
-  | 'import'
-  | 'users'
-  | 'theme'
-  | 'complete';
+export type OnboardingStep = 'welcome' | 'storage' | 'import' | 'users' | 'theme' | 'complete';
 
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   'welcome',

@@ -1,5 +1,5 @@
-import { For } from 'solid-js';
 import { Grid3X3 } from 'lucide-solid';
+import { For } from 'solid-js';
 import CategoryCard from '@/components/ui/CategoryCard';
 import type Category from '@/models/Category';
 

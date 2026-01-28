@@ -5,18 +5,18 @@
  * Útil para capturas de pantalla del Kit Digital.
  */
 
-import { createSignal, Show } from 'solid-js';
 import {
+  AlertCircle,
+  CheckCircle2,
   Database,
   Download,
   Loader2,
-  Trash2,
-  CheckCircle2,
-  AlertCircle,
-  Users,
   Receipt,
+  Trash2,
   TrendingUp,
+  Users,
 } from 'lucide-solid';
+import { createSignal, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,8 +26,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { loadDemoData, clearDemoData, hasDemoData } from '@/services/demo-seed.service';
 import { getDemoStats } from '@/data/demo-seed';
+import { clearDemoData, hasDemoData, loadDemoData } from '@/services/demo-seed.service';
 
 export function DemoDataLoader() {
   const [isLoading, setIsLoading] = createSignal(false);
@@ -111,9 +111,7 @@ export function DemoDataLoader() {
       <Show when={result()}>
         <div
           class={`flex items-center gap-2 rounded-lg p-3 text-sm ${
-            result()!.success
-              ? 'bg-success/10 text-success'
-              : 'bg-destructive/10 text-destructive'
+            result()!.success ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
           }`}
         >
           <Show when={result()!.success} fallback={<AlertCircle class="h-4 w-4" />}>
@@ -130,10 +128,7 @@ export function DemoDataLoader() {
           disabled={isLoading() || isClearing()}
           class="flex-1"
         >
-          <Show
-            when={!isLoading()}
-            fallback={<Loader2 class="mr-2 h-4 w-4 animate-spin" />}
-          >
+          <Show when={!isLoading()} fallback={<Loader2 class="mr-2 h-4 w-4 animate-spin" />}>
             <Download class="mr-2 h-4 w-4" />
           </Show>
           Cargar Datos Demo
@@ -144,10 +139,7 @@ export function DemoDataLoader() {
           onClick={() => openConfirmDialog('clear')}
           disabled={isLoading() || isClearing()}
         >
-          <Show
-            when={!isClearing()}
-            fallback={<Loader2 class="mr-2 h-4 w-4 animate-spin" />}
-          >
+          <Show when={!isClearing()} fallback={<Loader2 class="mr-2 h-4 w-4 animate-spin" />}>
             <Trash2 class="mr-2 h-4 w-4" />
           </Show>
           Limpiar
@@ -168,12 +160,24 @@ export function DemoDataLoader() {
               >
                 Se cargarán los siguientes datos de ejemplo:
                 <ul class="mt-2 space-y-1 text-sm">
-                  <li>• <strong>{stats.customers}</strong> clientes con datos fiscales</li>
-                  <li>• <strong>{stats.totalOrders}</strong> pedidos históricos</li>
-                  <li>• <strong>{stats.invoiced.accepted}</strong> facturas aceptadas por AEAT</li>
-                  <li>• <strong>{stats.invoiced.pending}</strong> facturas pendientes</li>
-                  <li>• <strong>{stats.invoiced.rejected}</strong> facturas rechazadas</li>
-                  <li>• <strong>{stats.notInvoiced}</strong> pedidos sin facturar</li>
+                  <li>
+                    • <strong>{stats.customers}</strong> clientes con datos fiscales
+                  </li>
+                  <li>
+                    • <strong>{stats.totalOrders}</strong> pedidos históricos
+                  </li>
+                  <li>
+                    • <strong>{stats.invoiced.accepted}</strong> facturas aceptadas por AEAT
+                  </li>
+                  <li>
+                    • <strong>{stats.invoiced.pending}</strong> facturas pendientes
+                  </li>
+                  <li>
+                    • <strong>{stats.invoiced.rejected}</strong> facturas rechazadas
+                  </li>
+                  <li>
+                    • <strong>{stats.notInvoiced}</strong> pedidos sin facturar
+                  </li>
                 </ul>
               </Show>
             </DialogDescription>

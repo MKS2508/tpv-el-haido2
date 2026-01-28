@@ -1,12 +1,12 @@
 import { Motion, Presence } from '@motionone/solid';
 import { LogOut } from 'lucide-solid';
-import { Show, For, splitProps, type Component, type JSX } from 'solid-js';
+import { type Component, For, type JSX, Show, splitProps } from 'solid-js';
 
 import MoonSunSwitch from '@/components/MoonSunSwitch.tsx';
 import { useResponsive } from '@/hooks/useResponsive';
+import { cn } from '@/lib/utils';
 import type User from '@/models/User';
 import { Card, CardContent } from './ui/card';
-import { cn } from '@/lib/utils';
 
 // Simple Avatar components for SolidJS (replacing Radix-based ones)
 interface AvatarProps extends JSX.HTMLAttributes<HTMLDivElement> {
@@ -29,12 +29,7 @@ interface AvatarImageProps extends JSX.ImgHTMLAttributes<HTMLImageElement> {}
 
 function AvatarImage(props: AvatarImageProps) {
   const [local, others] = splitProps(props, ['class']);
-  return (
-    <img
-      class={cn('aspect-square h-full w-full object-cover', local.class)}
-      {...others}
-    />
-  );
+  return <img class={cn('aspect-square h-full w-full object-cover', local.class)} {...others} />;
 }
 
 interface AvatarFallbackProps extends JSX.HTMLAttributes<HTMLSpanElement> {
@@ -64,10 +59,7 @@ interface ScrollAreaProps extends JSX.HTMLAttributes<HTMLDivElement> {
 function ScrollArea(props: ScrollAreaProps) {
   const [local, others] = splitProps(props, ['class', 'children']);
   return (
-    <div
-      class={cn('relative overflow-auto', local.class)}
-      {...others}
-    >
+    <div class={cn('relative overflow-auto', local.class)} {...others}>
       {local.children}
     </div>
   );

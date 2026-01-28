@@ -1,5 +1,5 @@
 import { BeerIcon } from 'lucide-solid';
-import { createSignal, For, Show, type Component } from 'solid-js';
+import { type Component, createSignal, For, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import iconOptions from '@/assets/utils/icons/iconOptions.ts';
 import { Button } from '@/components/ui/button.tsx';
@@ -40,7 +40,9 @@ const ProductForm: Component<ProductFormProps> = (props) => {
   const [brand, setBrand] = createSignal(props.product?.brand || '');
   const [iconType, setIconType] = createSignal(props.product?.iconType || 'preset');
   const [selectedIcon, setSelectedIcon] = createSignal(props.product?.selectedIcon || '');
-  const [uploadedImage, setUploadedImage] = createSignal<string | null>(props.product?.uploadedImage || null);
+  const [uploadedImage, setUploadedImage] = createSignal<string | null>(
+    props.product?.uploadedImage || null
+  );
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
@@ -89,11 +91,7 @@ const ProductForm: Component<ProductFormProps> = (props) => {
           </SelectTrigger>
           <SelectContent>
             <For each={props.categories}>
-              {(cat) => (
-                <SelectItem value={cat.name}>
-                  {cat.name}
-                </SelectItem>
-              )}
+              {(cat) => <SelectItem value={cat.name}>{cat.name}</SelectItem>}
             </For>
           </SelectContent>
         </Select>

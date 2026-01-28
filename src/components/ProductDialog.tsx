@@ -52,7 +52,11 @@ export function ProductDialogContent(props: ProductDialogContentProps) {
       <Show when={!props.editingProduct && props.editingCategory}>
         {(category) => (
           <>
-            <CategoryForm category={category()} onSave={props.onCategorySave} onCancel={props.onCancel} />
+            <CategoryForm
+              category={category()}
+              onSave={props.onCategorySave}
+              onCancel={props.onCancel}
+            />
             <DialogFooter>
               <Show when={category().id > 0}>
                 <Button variant="destructive" onClick={() => props.onCategoryDelete(category().id)}>
@@ -75,11 +79,16 @@ interface ProductDialogProps extends ProductDialogContentProps {}
  */
 function ProductDialog(props: ProductDialogProps) {
   const isOpen = () => !!(props.editingProduct || props.editingCategory);
-  const title = () => props.editingProduct
-    ? props.editingProduct.id ? 'Editar Producto' : 'Anadir Producto'
-    : props.editingCategory
-      ? props.editingCategory.id ? 'Editar Categoria' : 'Anadir Categoria'
-      : '';
+  const title = () =>
+    props.editingProduct
+      ? props.editingProduct.id
+        ? 'Editar Producto'
+        : 'Anadir Producto'
+      : props.editingCategory
+        ? props.editingCategory.id
+          ? 'Editar Categoria'
+          : 'Anadir Categoria'
+        : '';
 
   return (
     <Show when={isOpen()}>

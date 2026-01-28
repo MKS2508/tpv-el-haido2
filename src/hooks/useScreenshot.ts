@@ -1,5 +1,5 @@
-import { createSignal } from 'solid-js';
 import { domToPng } from 'modern-screenshot';
+import { createSignal } from 'solid-js';
 
 export interface ScreenshotOptions {
   filename: string;
@@ -34,9 +34,7 @@ export function useScreenshot() {
 
       // Copiar al clipboard
       if (options.copyToClipboard) {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob })
-        ]);
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       }
 
       // Guardar archivo

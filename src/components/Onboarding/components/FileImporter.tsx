@@ -1,5 +1,5 @@
-import { createSignal, Show } from 'solid-js';
 import { FileIcon, UploadIcon, XIcon } from 'lucide-solid';
+import { createSignal, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { getImportDataCounts } from '@/lib/onboarding-utils';
 import { cn } from '@/lib/utils';
@@ -93,18 +93,20 @@ export function FileImporter(props: FileImporterProps) {
             onClick={handleClick}
             class={cn(
               'relative border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer',
-              isDragging() ? 'border-primary bg-primary/10' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+              isDragging()
+                ? 'border-primary bg-primary/10'
+                : 'border-muted-foreground/25 hover:border-muted-foreground/50',
               isLoading() && 'opacity-50 pointer-events-none'
             )}
           >
-            <UploadIcon class={cn('h-10 w-10', isDragging() ? 'text-primary' : 'text-muted-foreground')} />
+            <UploadIcon
+              class={cn('h-10 w-10', isDragging() ? 'text-primary' : 'text-muted-foreground')}
+            />
             <div class="text-center">
               <p class="font-medium">
                 {isLoading() ? 'Procesando...' : 'Arrastra un archivo JSON aqui'}
               </p>
-              <p class="text-sm text-muted-foreground">
-                o haz clic para seleccionar
-              </p>
+              <p class="text-sm text-muted-foreground">o haz clic para seleccionar</p>
             </div>
             <input
               ref={inputRef}

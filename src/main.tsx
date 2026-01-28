@@ -1,6 +1,6 @@
-import { render } from 'solid-js/web';
 import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { ErrorBoundary } from 'solid-js';
+import { render } from 'solid-js/web';
 import App from './App';
 import './styles/optimized-product-card.css';
 import './styles/optimized-order-history.css';

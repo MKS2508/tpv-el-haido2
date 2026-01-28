@@ -1,6 +1,6 @@
-import { createEffect, createSignal, Show } from 'solid-js';
 import { Motion } from '@motionone/solid';
 import { Receipt, ShoppingCartIcon } from 'lucide-solid';
+import { createEffect, createSignal, Show } from 'solid-js';
 import OrderTable from '@/components/OrderTable';
 import { Button } from '@/components/ui/button';
 import type Order from '@/models/Order';

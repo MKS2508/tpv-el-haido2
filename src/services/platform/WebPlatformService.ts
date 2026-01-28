@@ -1,5 +1,5 @@
-import type { PlatformService } from './PlatformService';
 import type Order from '@/models/Order';
+import type { PlatformService } from './PlatformService';
 
 /**
  * PlatformService implementation for PWA (Web Standalone)
@@ -31,7 +31,7 @@ export class WebPlatformService implements PlatformService {
     console.warn('[WebPlatformService] Receipt printing not available in PWA version');
     alert(
       'Impresión de recibo no disponible en la versión web.\n' +
-      'Usa el ticket completo en su lugar.'
+        'Usa el ticket completo en su lugar.'
     );
   }
 
@@ -45,8 +45,7 @@ export class WebPlatformService implements PlatformService {
 
     try {
       const filePath = prompt(
-        'Introduce la ruta del archivo que quieres importar:\n' +
-        '(O déjalo vacío para cancelar)',
+        'Introduce la ruta del archivo que quieres importar:\n' + '(O déjalo vacío para cancelar)',
         ''
       );
 
@@ -69,8 +68,7 @@ export class WebPlatformService implements PlatformService {
 
     try {
       const filename = prompt(
-        'Introduce el nombre para guardar el archivo:\n' +
-        '(O déjalo vacío para cancelar)',
+        'Introduce el nombre para guardar el archivo:\n' + '(O déjalo vacío para cancelar)',
         'datos_exportados.json'
       );
 

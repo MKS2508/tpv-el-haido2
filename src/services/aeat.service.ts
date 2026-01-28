@@ -6,8 +6,8 @@
  */
 
 import { err, type Result, tryCatchAsync } from '@mks2508/no-throw';
-import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
 import { config } from '@/lib/config';
+import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
 import type {
   AEATApiResponse,
   AEATConfig,

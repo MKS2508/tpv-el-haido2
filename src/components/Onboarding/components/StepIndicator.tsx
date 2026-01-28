@@ -1,7 +1,7 @@
-import { For, Show } from 'solid-js';
 import { CheckIcon } from 'lucide-solid';
-import { ONBOARDING_STEPS, type OnboardingStep } from '@/models/Onboarding';
+import { For, Show } from 'solid-js';
 import { cn } from '@/lib/utils';
+import { ONBOARDING_STEPS, type OnboardingStep } from '@/models/Onboarding';
 
 interface StepIndicatorProps {
   currentStep: OnboardingStep;
@@ -39,9 +39,16 @@ export function StepIndicator(props: StepIndicatorProps) {
                     class={cn(
                       'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors',
                       isCurrent() && 'border-primary bg-primary text-primary-foreground',
-                      isCompleted() && !isCurrent() && 'border-primary bg-primary text-primary-foreground',
-                      isSkipped() && !isCurrent() && 'border-muted-foreground bg-muted text-muted-foreground',
-                      !isCurrent() && !isCompleted() && !isSkipped() && 'border-muted-foreground bg-background text-muted-foreground'
+                      isCompleted() &&
+                        !isCurrent() &&
+                        'border-primary bg-primary text-primary-foreground',
+                      isSkipped() &&
+                        !isCurrent() &&
+                        'border-muted-foreground bg-muted text-muted-foreground',
+                      !isCurrent() &&
+                        !isCompleted() &&
+                        !isSkipped() &&
+                        'border-muted-foreground bg-background text-muted-foreground'
                     )}
                   >
                     <Show

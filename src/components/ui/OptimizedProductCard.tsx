@@ -1,5 +1,5 @@
-import { createSignal, onCleanup, onMount, type JSX } from 'solid-js';
 import { Check, Plus, Star } from 'lucide-solid';
+import { createSignal, type JSX, onCleanup, onMount } from 'solid-js';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
 import stockImagesService from '@/services/stock-images.service';
@@ -168,7 +168,9 @@ function OptimizedProductCard(props: OptimizedProductCardProps): JSX.Element {
         class={cn(
           'relative overflow-hidden',
           mode() === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
-          !isRealImage() ? `bg-gradient-to-br ${getCategoryColors(props.product.category)}` : 'bg-muted/10'
+          !isRealImage()
+            ? `bg-gradient-to-br ${getCategoryColors(props.product.category)}`
+            : 'bg-muted/10'
         )}
         style={isRealImage() ? imageStyle() : {}}
       >
@@ -218,19 +220,21 @@ function OptimizedProductCard(props: OptimizedProductCardProps): JSX.Element {
             </div>
           ) : (
             // Mode 'manage' - show favorite star
-            (props.onFavoriteToggle && (<Button
-              variant="ghost"
-              size="sm"
-              class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
-              onClick={handleFavoriteClick}
-            >
-              <Star
-                class={cn(
-                  'h-4 w-4',
-                  isPinned() ? 'text-warning fill-warning' : 'text-muted-foreground'
-                )}
-              />
-            </Button>))
+            props.onFavoriteToggle && (
+              <Button
+                variant="ghost"
+                size="sm"
+                class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+                onClick={handleFavoriteClick}
+              >
+                <Star
+                  class={cn(
+                    'h-4 w-4',
+                    isPinned() ? 'text-warning fill-warning' : 'text-muted-foreground'
+                  )}
+                />
+              </Button>
+            )
           )}
         </div>
       </div>

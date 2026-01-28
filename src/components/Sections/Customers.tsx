@@ -1,13 +1,21 @@
-import { createSignal, createMemo, For, Show } from 'solid-js';
-import { PlusIcon, PencilIcon, TrashIcon, SearchIcon, UsersIcon, Building2, FileText } from 'lucide-solid';
+import {
+  Building2,
+  FileText,
+  PencilIcon,
+  PlusIcon,
+  SearchIcon,
+  TrashIcon,
+  UsersIcon,
+} from 'lucide-solid';
+import { createMemo, createSignal, For, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -220,7 +228,9 @@ function Customers() {
                     <td class="p-4 align-middle hidden md:table-cell text-muted-foreground">
                       {customer.nombreComercial || '-'}
                     </td>
-                    <td class="p-4 align-middle hidden lg:table-cell">{customer.telefono || '-'}</td>
+                    <td class="p-4 align-middle hidden lg:table-cell">
+                      {customer.telefono || '-'}
+                    </td>
                     <td class="p-4 align-middle hidden lg:table-cell text-muted-foreground">
                       {customer.email || '-'}
                     </td>
@@ -238,7 +248,11 @@ function Customers() {
                     </td>
                     <td class="p-4 align-middle text-right">
                       <div class="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(customer)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(customer)}
+                        >
                           <PencilIcon class="h-4 w-4" />
                         </Button>
                         <Button
@@ -262,9 +276,7 @@ function Customers() {
       <Dialog open={isDialogOpen()} onOpenChange={setIsDialogOpen}>
         <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingCustomer() ? 'Editar Cliente' : 'Nuevo Cliente'}
-            </DialogTitle>
+            <DialogTitle>{editingCustomer() ? 'Editar Cliente' : 'Nuevo Cliente'}</DialogTitle>
             <DialogDescription>
               {editingCustomer()
                 ? 'Modifica los datos del cliente'

@@ -11,6 +11,7 @@ import {
   XCircle,
 } from 'lucide-solid';
 import {
+  type Component,
   createEffect,
   createMemo,
   createSignal,
@@ -18,7 +19,6 @@ import {
   onCleanup,
   onMount,
   Show,
-  type Component,
 } from 'solid-js';
 import { renderTicketPreview } from '@/assets/utils/utils.ts';
 import { InvoiceStatusBadge } from '@/components/InvoiceStatusBadge';
@@ -34,7 +34,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -124,7 +123,8 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
     if (isEmitting) return 'Emitiendo factura...';
     if (!isAEATConnected) return 'Sin conexion con AEAT';
     if (props.selectedOrder.aeat?.invoiceStatus === 'accepted') return 'Factura ya aceptada';
-    if (props.selectedOrder.aeat?.invoiceStatus === 'pending') return 'Factura pendiente de respuesta';
+    if (props.selectedOrder.aeat?.invoiceStatus === 'pending')
+      return 'Factura pendiente de respuesta';
     return 'Emitir factura a AEAT';
   };
 
@@ -180,7 +180,12 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
       }
       return acc;
     }, []);
-    console.log({ orderHistory: orderHistory(), activeOrders: activeOrders(), filteredOrders, uniqueOrders });
+    console.log({
+      orderHistory: orderHistory(),
+      activeOrders: activeOrders(),
+      filteredOrders,
+      uniqueOrders,
+    });
     if (filterStatus() !== 'all') {
       filteredOrders = filteredOrders
         .filter((order) => order.status === filterStatus())
@@ -259,7 +264,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
     };
 
     const currentRef = tableRef;
-    if (currentRef && !responsive.isMobile) {
+    if (currentRef && !responsive.isMobile()) {
       // Only add wheel listener on non-mobile
       currentRef.addEventListener('wheel', handleWheel, { passive: false });
     }
@@ -304,7 +309,9 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
     const getStatusText = () => {
       switch (cardProps.order.status) {
         case 'paid':
-          return cardProps.order.paymentMethod === 'efectivo' ? 'Pagado - Efectivo' : 'Pagado - Tarjeta';
+          return cardProps.order.paymentMethod === 'efectivo'
+            ? 'Pagado - Efectivo'
+            : 'Pagado - Tarjeta';
         case 'unpaid':
           return 'No pagado';
         case 'canceled':
@@ -337,7 +344,9 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
           <div class="space-y-2">
             <div class="flex justify-between items-center">
               <span class="text-sm text-muted-foreground">Total:</span>
-              <span class="font-bold text-lg text-success">{cardProps.order.total.toFixed(2)}€</span>
+              <span class="font-bold text-lg text-success">
+                {cardProps.order.total.toFixed(2)}€
+              </span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-sm text-muted-foreground">Articulos:</span>
@@ -356,12 +365,12 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
   return (
     <div class="space-y-4 text-foreground w-full overflow-y-hidden">
       <div class="flex items-center justify-between">
-        <h2 class={cn('font-semibold', responsive.isMobile ? 'text-xl' : 'text-2xl')}>
+        <h2 class={cn('font-semibold', responsive.isMobile() ? 'text-xl' : 'text-2xl')}>
           Historial de Cuentas
         </h2>
 
         {/* Sort button for mobile */}
-        <Show when={responsive.isMobile}>
+        <Show when={responsive.isMobile()}>
           <Button
             variant="outline"
             size="sm"
@@ -374,12 +383,14 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
         </Show>
       </div>
 
-      <div class={cn('flex items-center', responsive.isMobile ? 'flex-col gap-3' : 'justify-between')}>
+      <div
+        class={cn('flex items-center', responsive.isMobile() ? 'flex-col gap-3' : 'justify-between')}
+      >
         <Select value={filterStatus()} onChange={setFilterStatus}>
           <SelectTrigger
             class={cn(
               'bg-background border-border touch-manipulation',
-              responsive.isMobile ? 'w-full h-12' : 'w-[180px]'
+              responsive.isMobile() ? 'w-full h-12' : 'w-[180px]'
             )}
           >
             <SelectValue placeholder="Filtrar por estado" />
@@ -412,7 +423,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
 
       {/* Mobile Card View */}
       <Show
-        when={responsive.isMobile}
+        when={responsive.isMobile()}
         fallback={
           /* Desktop Table View */
           <div
@@ -458,9 +469,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                   {(order) => (
                     <TableRow class="hover:bg-muted/50 touch-manipulation">
                       <TableCell class="border border-border">{order.date}</TableCell>
-                      <TableCell class="border border-border">
-                        {order.total.toFixed(2)}€
-                      </TableCell>
+                      <TableCell class="border border-border">{order.total.toFixed(2)}€</TableCell>
                       <TableCell class="border border-border">{order.itemCount}</TableCell>
                       <TableCell class="border border-border">
                         {order.tableNumber === 0 ? 'Barra' : order.tableNumber}
@@ -531,14 +540,10 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
           <Show
             when={sortedAndFilteredOrders().length > 0}
             fallback={
-              <div class="text-center text-muted-foreground py-8">
-                No hay pedidos que mostrar
-              </div>
+              <div class="text-center text-muted-foreground py-8">No hay pedidos que mostrar</div>
             }
           >
-            <For each={sortedAndFilteredOrders()}>
-              {(order) => <OrderCard order={order} />}
-            </For>
+            <For each={sortedAndFilteredOrders()}>{(order) => <OrderCard order={order} />}</For>
           </Show>
         </div>
       </Show>
@@ -547,7 +552,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
         <DialogContent
           class={cn(
             'flex flex-col bg-background text-foreground overflow-y-hidden',
-            responsive.isMobile ? 'max-w-[95vw] max-h-[90vh] p-3' : 'sm:max-w-[1200px]'
+            responsive.isMobile() ? 'max-w-[95vw] max-h-[90vh] p-3' : 'sm:max-w-[1200px]'
           )}
         >
           <DialogHeader>
@@ -556,23 +561,26 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
           <Show when={props.selectedOrder}>
             {(selectedOrder) => (
               <div
-                class={cn('flex flex-1 overflow-hidden', responsive.isMobile ? 'flex-col gap-3' : 'gap-4')}
+                class={cn(
+                  'flex flex-1 overflow-hidden',
+                  responsive.isMobile() ? 'flex-col gap-3' : 'gap-4'
+                )}
               >
-                <div class={cn('overflow-y-auto', responsive.isMobile ? 'flex-1' : 'flex-1')}>
-                  <ScrollArea
+                <div class={cn('overflow-y-auto', responsive.isMobile() ? 'flex-1' : 'flex-1')}>
+                  <div
                     class={cn(
-                      'pr-4',
-                      responsive.isMobile ? 'h-[calc(70vh-120px)]' : 'h-[calc(80vh-120px)]'
+                      'pr-4 overflow-auto',
+                      responsive.isMobile() ? 'h-[calc(70vh-120px)]' : 'h-[calc(80vh-120px)]'
                     )}
                   >
                     <div class="space-y-4">
-                      <div class={cn(responsive.isMobile ? 'grid grid-cols-2 gap-2' : 'space-y-4')}>
+                      <div class={cn(responsive.isMobile() ? 'grid grid-cols-2 gap-2' : 'space-y-4')}>
                         <div>
                           <Label class="text-sm">Fecha</Label>
                           <Input
                             value={selectedOrder().date}
                             readOnly
-                            class={cn('bg-muted', responsive.isMobile ? 'h-10 text-sm' : '')}
+                            class={cn('bg-muted', responsive.isMobile() ? 'h-10 text-sm' : '')}
                           />
                         </div>
                         <div>
@@ -582,7 +590,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                             readOnly
                             class={cn(
                               'bg-muted font-semibold text-success',
-                              responsive.isMobile ? 'h-10 text-sm' : ''
+                              responsive.isMobile() ? 'h-10 text-sm' : ''
                             )}
                           />
                         </div>
@@ -591,7 +599,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                           <Input
                             value={selectedOrder().status}
                             readOnly
-                            class={cn('bg-muted', responsive.isMobile ? 'h-10 text-sm' : '')}
+                            class={cn('bg-muted', responsive.isMobile() ? 'h-10 text-sm' : '')}
                           />
                         </div>
                         <div>
@@ -603,10 +611,10 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                                 : selectedOrder().tableNumber.toString()
                             }
                             readOnly
-                            class={cn('bg-muted', responsive.isMobile ? 'h-10 text-sm' : '')}
+                            class={cn('bg-muted', responsive.isMobile() ? 'h-10 text-sm' : '')}
                           />
                         </div>
-                        <Show when={!responsive.isMobile}>
+                        <Show when={!responsive.isMobile()}>
                           <div>
                             <Label class="text-sm">Metodo de Pago</Label>
                             <Input
@@ -618,7 +626,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                         </Show>
                         {/* AEAT invoice status */}
                         <Show when={isAEATEnabled && selectedOrder().status === 'paid'}>
-                          <div class={cn(responsive.isMobile ? 'col-span-2' : '')}>
+                          <div class={cn(responsive.isMobile() ? 'col-span-2' : '')}>
                             <Label class="text-sm">Factura AEAT</Label>
                             <div class="mt-1.5">
                               <InvoiceStatusBadge aeat={selectedOrder().aeat} />
@@ -630,7 +638,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                       <div>
                         <Label class="text-sm">Elementos</Label>
                         <Show
-                          when={responsive.isMobile}
+                          when={responsive.isMobile()}
                           fallback={
                             /* Desktop: Table layout */
                             <Table class="border-collapse border border-border mt-2">
@@ -692,10 +700,10 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                         </Show>
                       </div>
                     </div>
-                  </ScrollArea>
+                  </div>
                 </div>
 
-                <Show when={!responsive.isMobile}>
+                <Show when={!responsive.isMobile()}>
                   <div class="w-1/3 border-l border-border pl-4">
                     <Label>Vista previa del ticket</Label>
                     <div class="mt-2 bg-muted p-4 h-[calc(80vh-180px)] overflow-y-auto border border-border rounded">
@@ -708,54 +716,54 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
               </div>
             )}
           </Show>
-          <DialogFooter class={cn('gap-2', responsive.isMobile ? 'flex-col sm:flex-row' : '')}>
+          <DialogFooter class={cn('gap-2', responsive.isMobile() ? 'flex-col sm:flex-row' : '')}>
             <Button
               variant="outline"
               onClick={handlePrintTicket}
               class={cn(
                 'bg-background text-foreground border-border hover:bg-muted touch-manipulation',
-                responsive.isMobile ? 'w-full h-12' : 'w-1/3 h-20'
+                responsive.isMobile() ? 'w-full h-12' : 'w-1/3 h-20'
               )}
             >
-              <FileText class={cn('mr-2', responsive.isMobile ? 'h-4 w-4' : 'h-4 w-4')} />
+              <FileText class={cn('mr-2', responsive.isMobile() ? 'h-4 w-4' : 'h-4 w-4')} />
               Imprimir Ticket
             </Button>
             {/* Emit Invoice Button - only for paid orders with AEAT enabled */}
             <Show when={props.selectedOrder?.status === 'paid' && isAEATEnabled}>
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div class={cn(responsive.isMobile ? 'w-full' : '')}>
-                      <Button
-                        variant="outline"
-                        onClick={handleEmitInvoice}
-                        disabled={isInvoiceButtonDisabled()}
-                        class={cn(
-                          'bg-background text-foreground border-border hover:bg-muted touch-manipulation',
-                          responsive.isMobile ? 'w-full h-12' : 'w-full h-20',
-                          props.selectedOrder?.aeat?.invoiceStatus === 'accepted' &&
-                            'border-green-500 text-green-600 dark:text-green-400'
-                        )}
+                  <TooltipTrigger
+                    as="div"
+                    class={cn(responsive.isMobile() ? 'w-full' : '')}
+                  >
+                    <Button
+                      variant="outline"
+                      onClick={handleEmitInvoice}
+                      disabled={isInvoiceButtonDisabled()}
+                      class={cn(
+                        'bg-background text-foreground border-border hover:bg-muted touch-manipulation',
+                        responsive.isMobile() ? 'w-full h-12' : 'w-full h-20',
+                        props.selectedOrder?.aeat?.invoiceStatus === 'accepted' &&
+                          'border-green-500 text-green-600 dark:text-green-400'
+                      )}
+                    >
+                      <Show
+                        when={!isEmitting}
+                        fallback={<Loader2 class="mr-2 h-4 w-4 animate-spin" />}
                       >
+                        <Receipt
+                          class={cn('mr-2', responsive.isMobile() ? 'h-4 w-4' : 'h-4 w-4')}
+                        />
+                      </Show>
+                      <Show when={!isEmitting} fallback="Emitiendo...">
                         <Show
-                          when={!isEmitting}
-                          fallback={<Loader2 class="mr-2 h-4 w-4 animate-spin" />}
+                          when={props.selectedOrder?.aeat?.invoiceStatus !== 'accepted'}
+                          fallback="Factura Emitida"
                         >
-                          <Receipt class={cn('mr-2', responsive.isMobile ? 'h-4 w-4' : 'h-4 w-4')} />
+                          Emitir Factura
                         </Show>
-                        <Show
-                          when={!isEmitting}
-                          fallback="Emitiendo..."
-                        >
-                          <Show
-                            when={props.selectedOrder?.aeat?.invoiceStatus !== 'accepted'}
-                            fallback="Factura Emitida"
-                          >
-                            Emitir Factura
-                          </Show>
-                        </Show>
-                      </Button>
-                    </div>
+                      </Show>
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>{getInvoiceButtonTooltip()}</p>
@@ -768,7 +776,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                 onClick={handleConfirmPayment}
                 class={cn(
                   'bg-info hover:bg-info/80 text-info-foreground touch-manipulation',
-                  responsive.isMobile ? 'w-full h-12' : ''
+                  responsive.isMobile() ? 'w-full h-12' : ''
                 )}
               >
                 <CreditCard class="mr-2 h-4 w-4" />
@@ -780,12 +788,12 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                 onClick={handleContinueOrder}
                 class={cn(
                   'bg-success hover:bg-success/80 text-success-foreground touch-manipulation',
-                  responsive.isMobile ? 'w-full h-12' : ''
+                  responsive.isMobile() ? 'w-full h-12' : ''
                 )}
               >
                 <CreditCard class="mr-2 h-4 w-4" />
                 <Show
-                  when={!responsive.isMobile}
+                  when={!responsive.isMobile()}
                   fallback={`Continuar Mesa ${props.selectedOrder?.tableNumber}`}
                 >
                   {`Continuar cuenta de la mesa ${props.selectedOrder?.tableNumber}`}

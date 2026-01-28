@@ -1,10 +1,10 @@
 import type { Result, ResultError } from '@mks2508/no-throw';
+import type { StorageErrorCode } from '@/lib/error-codes';
 import type Category from '@/models/Category';
 import type Customer from '@/models/Customer';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import type Table from '@/models/Table';
-import type { StorageErrorCode } from '@/lib/error-codes';
 
 export type StorageMode = 'sqlite' | 'http' | 'indexeddb';
 

@@ -11,8 +11,8 @@
 import { err, isErr, ok, type Result, tryCatchAsync } from '@mks2508/no-throw';
 import { type Child, Command } from '@tauri-apps/plugin-shell';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
 import { config } from '@/lib/config';
+import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
 import type { AEATSidecarState } from '@/models/AEAT';
 
 // ==================== Types ====================

@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import ProductCard from '@/components/ui/ProductCard';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import type Category from '@/models/Category';
 import type Product from '@/models/Product';
@@ -153,7 +152,7 @@ function Products() {
     price: 0,
     brand: '',
     category: '',
-    icon: null,
+    icon: undefined,
     iconType: 'preset',
     selectedIcon: '',
     uploadedImage: null,
@@ -271,9 +270,7 @@ function Products() {
                     <h3 class="text-sm font-medium">Categorias</h3>
                     <For each={availableCategories()}>
                       {(category, index) => (
-                        <div
-                          class="flex items-center space-x-2 bg-destructive/10 border border-destructive/30 rounded p-2"
-                        >
+                        <div class="flex items-center space-x-2 bg-destructive/10 border border-destructive/30 rounded p-2">
                           <Checkbox
                             class="border-red-500"
                             id={`category-${category}-${index()}`}
@@ -354,11 +351,9 @@ function Products() {
           </div>
         </div>
 
-        <ScrollArea class="flex-1 min-h-0">
+        <div class="flex-1 min-h-0 overflow-auto">
           <Presence>
-            <div
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4"
-            >
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               <For each={filteredProducts()}>
                 {(product) => (
                   <Motion.div
@@ -380,7 +375,7 @@ function Products() {
               </For>
             </div>
           </Presence>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Categories */}
@@ -397,7 +392,7 @@ function Products() {
           </Button>
         </div>
 
-        <ScrollArea class="flex-1 min-h-0">
+        <div class="flex-1 min-h-0 overflow-auto">
           <Presence>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <For each={filteredCategories()}>
@@ -418,7 +413,7 @@ function Products() {
               </For>
             </div>
           </Presence>
-        </ScrollArea>
+        </div>
       </div>
 
       <Dialog open={isProductDialogOpen()} onOpenChange={setIsProductDialogOpen}>

@@ -1,5 +1,5 @@
-import { Component, For, Show, splitProps } from 'solid-js';
 import { Motion } from '@motionone/solid';
+import { type Component, For, Show, splitProps } from 'solid-js';
 import { cn } from '@/lib/utils';
 import type User from '@/models/User';
 

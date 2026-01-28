@@ -1,7 +1,7 @@
 'use client';
-import { onMount, onCleanup, Show, For, createMemo } from 'solid-js';
-import { Presence, Motion } from '@motionone/solid';
+import { Motion, Presence } from '@motionone/solid';
 import { MinusIcon, PlusIcon } from 'lucide-solid';
+import { createMemo, For, onCleanup, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -246,7 +246,10 @@ function OrderTable(props: OrderTableProps) {
                             delay: 0.2 + index() * 0.05,
                             easing: 'ease-out',
                           }}
-                          style={{ display: 'inline-block', 'font-variant-numeric': 'tabular-nums' }}
+                          style={{
+                            display: 'inline-block',
+                            'font-variant-numeric': 'tabular-nums',
+                          }}
                         >
                           <span class="font-medium">{item.quantity}</span>
                         </Motion.div>
@@ -259,7 +262,10 @@ function OrderTable(props: OrderTableProps) {
                             duration: 0.3,
                             delay: 0.25 + index() * 0.05,
                           }}
-                          style={{ display: 'inline-block', 'font-variant-numeric': 'tabular-nums' }}
+                          style={{
+                            display: 'inline-block',
+                            'font-variant-numeric': 'tabular-nums',
+                          }}
                         >
                           <span>{formatCurrency(item.price * item.quantity)}</span>
                         </Motion.div>

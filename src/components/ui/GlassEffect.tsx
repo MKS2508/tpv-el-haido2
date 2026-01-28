@@ -1,5 +1,5 @@
-import { createEffect, createSignal } from 'solid-js';
 import { Motion } from '@motionone/solid';
+import { createEffect, createSignal } from 'solid-js';
 
 interface GlassEffectProps {
   children: React.ReactNode;
@@ -72,12 +72,7 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
   return (
     <>
       {/* SVG Filter Definition */}
-      <svg
-        class="absolute opacity-0 pointer-events-none"
-        width="0"
-        height="0"
-        aria-hidden="true"
-      >
+      <svg class="absolute opacity-0 pointer-events-none" width="0" height="0" aria-hidden="true">
         <title>Glass Effect Filter</title>
         <defs>
           <filter id={filterId}>

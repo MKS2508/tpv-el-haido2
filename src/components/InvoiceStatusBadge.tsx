@@ -4,8 +4,8 @@
  * Muestra el estado de facturación AEAT de un pedido
  */
 
+import { AlertCircle, Check, Clock, FileX, type LucideIcon, Receipt } from 'lucide-solid';
 import { Show } from 'solid-js';
-import { AlertCircle, Check, Clock, FileX, Receipt, type LucideIcon } from 'lucide-solid';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';

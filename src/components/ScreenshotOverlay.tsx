@@ -1,9 +1,9 @@
-import { createSignal, createMemo, Show } from 'solid-js';
-import { CameraIcon, XIcon, CheckIcon, Loader2Icon } from 'lucide-solid';
+import { CameraIcon, CheckIcon, Loader2Icon, XIcon } from 'lucide-solid';
+import { createMemo, createSignal, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
 import { useScreenshot } from '@/hooks/useScreenshot';
+import { cn } from '@/lib/utils';
 
 // Mapeo de secciones a nombres de archivo
 const SECTION_CONFIG: Record<string, { number: string; label: string }> = {
@@ -35,26 +35,22 @@ function ScreenshotOverlay(props: ScreenshotOverlayProps) {
   const [saveToFile, setSaveToFile] = createSignal(true);
   const [showSuccess, setShowSuccess] = createSignal(false);
 
-  const sectionConfig = createMemo(() =>
-    SECTION_CONFIG[props.activeSection] || { number: '00', label: props.activeSection }
+  const sectionConfig = createMemo(
+    () => SECTION_CONFIG[props.activeSection] || { number: '00', label: props.activeSection }
   );
 
-  const suggestedFilename = createMemo(() =>
-    `${sectionConfig().number}_${props.activeSection}`
-  );
+  const suggestedFilename = createMemo(() => `${sectionConfig().number}_${props.activeSection}`);
 
-  const finalFilename = createMemo(() =>
-    customName() || suggestedFilename()
-  );
+  const finalFilename = createMemo(() => customName() || suggestedFilename());
 
   const handleCapture = async () => {
     // Ocultar overlay temporalmente
     setIsExpanded(false);
 
     // Pequeño delay para que se oculte el overlay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const target = document.querySelector('main') as HTMLElement || document.body;
+    const target = (document.querySelector('main') as HTMLElement) || document.body;
 
     const success = await screenshot.capture(target, {
       filename: finalFilename(),
@@ -115,9 +111,7 @@ function ScreenshotOverlay(props: ScreenshotOverlayProps) {
                 onInput={(e) => setCustomName(e.currentTarget.value)}
                 placeholder={suggestedFilename()}
               />
-              <p class="text-xs text-muted-foreground">
-                Se guardará como: {finalFilename()}.png
-              </p>
+              <p class="text-xs text-muted-foreground">Se guardará como: {finalFilename()}.png</p>
             </div>
 
             {/* Opciones */}
@@ -155,7 +149,11 @@ function ScreenshotOverlay(props: ScreenshotOverlayProps) {
             >
               <Show
                 when={!screenshot.isCapturing()}
-                fallback={<><Loader2Icon class="h-4 w-4 mr-2 animate-spin" /> Capturando...</>}
+                fallback={
+                  <>
+                    <Loader2Icon class="h-4 w-4 mr-2 animate-spin" /> Capturando...
+                  </>
+                }
               >
                 <CameraIcon class="h-4 w-4 mr-2" />
                 Capturar

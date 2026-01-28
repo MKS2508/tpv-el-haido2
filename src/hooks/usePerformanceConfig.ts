@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
+import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 
 // Environment variable to force high performance mode
 const FORCE_HIGH_PERFORMANCE = import.meta.env.VITE_FORCE_HIGH_PERFORMANCE === 'true';
@@ -78,13 +78,15 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   // If forced high performance, return early with optimal config
   if (FORCE_HIGH_PERFORMANCE) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('Performance Configuration: FORCED HIGH PERFORMANCE MODE (VITE_FORCE_HIGH_PERFORMANCE=true)');
+      console.log(
+        'Performance Configuration: FORCED HIGH PERFORMANCE MODE (VITE_FORCE_HIGH_PERFORMANCE=true)'
+      );
     }
     return HIGH_PERFORMANCE_CONFIG;
   }
 
   // Device detection con cleanup adecuado
-  const deviceInfo = useMemo(() => {
+  const deviceInfo = createMemo(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     const hardwareConcurrency = navigator.hardwareConcurrency || 4;
     const deviceMemoryRaw = (navigator as NavigatorWithExtensions).deviceMemory;
@@ -92,9 +94,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     const deviceMemory = deviceMemoryRaw || 4;
 
     // Raspberry Pi detection - only detect by user agent
-    const isRaspberryPi =
-      /raspberry/i.test(userAgent) ||
-      /armv[67]/i.test(userAgent);
+    const isRaspberryPi = /raspberry/i.test(userAgent) || /armv[67]/i.test(userAgent);
 
     // Mobile detection
     const isMobile =
@@ -103,14 +103,11 @@ export const usePerformanceConfig = (): PerformanceConfig => {
 
     // Very low: only Raspberry Pi or single-core with <1GB confirmed
     const isVeryLowPerformance =
-      isRaspberryPi ||
-      (hardwareConcurrency === 1 && hasDeviceMemoryAPI && deviceMemory < 1);
+      isRaspberryPi || (hardwareConcurrency === 1 && hasDeviceMemoryAPI && deviceMemory < 1);
 
     // Low performance: only truly constrained devices
     // Removed deviceMemory < 2 check as Chrome often misreports this
-    const isLowPerformance =
-      isVeryLowPerformance ||
-      isRaspberryPi;
+    const isLowPerformance = isVeryLowPerformance || isRaspberryPi;
 
     if (process.env.NODE_ENV === 'development') {
       console.log('Device Detection:', {
@@ -132,7 +129,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
       hardwareConcurrency,
       deviceMemory,
     };
-  }, []);
+  });
 
   // Memory pressure detection - only check actual heap usage, not long tasks
   onMount(() => {
@@ -202,8 +199,8 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   });
 
   // Generate performance configuration
-  const performanceConfig = useMemo((): PerformanceConfig => {
-    const { isRaspberryPi, isMobile, isLowPerformance, isVeryLowPerformance } = deviceInfo;
+  const performanceConfig = createMemo((): PerformanceConfig => {
+    const { isRaspberryPi, isMobile, isLowPerformance, isVeryLowPerformance } = deviceInfo();
 
     const isNetworkConstrained = networkSpeed() === 'slow';
     // Note: memoryPressure is monitored but not currently used for performance decisions
@@ -245,27 +242,24 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     }
 
     return config;
-  }, [deviceInfo, memoryPressure(), networkSpeed(), prefersReducedMotion()]);
+  });
 
-  return performanceConfig;
+  return performanceConfig();
 };
 
 // Hook para aplicar clases CSS basadas en performance
 export const usePerformanceClasses = () => {
   const config = usePerformanceConfig();
 
-  return useMemo(
-    () => ({
-      'reduced-motion': config.reduceMotion,
-      'low-performance': config.isLowPerformance,
-      'very-low-performance': config.isVeryLowPerformance,
-      'raspberry-pi': config.isRaspberryPi,
-      'mobile-device': config.isMobile,
-      'animations-disabled': !config.enableAnimations,
-      'hover-disabled': !config.enableHoverEffects,
-    }),
-    [config]
-  );
+  return createMemo(() => ({
+    'reduced-motion': config.reduceMotion,
+    'low-performance': config.isLowPerformance,
+    'very-low-performance': config.isVeryLowPerformance,
+    'raspberry-pi': config.isRaspberryPi,
+    'mobile-device': config.isMobile,
+    'animations-disabled': !config.enableAnimations,
+    'hover-disabled': !config.enableHoverEffects,
+  }));
 };
 
 export default usePerformanceConfig;

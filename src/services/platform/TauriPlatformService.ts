@@ -1,5 +1,5 @@
-import type { PlatformService } from './PlatformService';
 import type Order from '@/models/Order';
+import type { PlatformService } from './PlatformService';
 
 /**
  * PlatformService implementation for Tauri (Desktop)

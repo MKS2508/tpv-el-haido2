@@ -1,10 +1,10 @@
+import { err, ok, tryCatchAsync } from '@mks2508/no-throw';
 import { invoke } from '@tauri-apps/api/core';
-import { tryCatchAsync, ok, err } from '@mks2508/no-throw';
+import { StorageErrorCode } from '@/lib/error-codes';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import type Table from '@/models/Table';
-import { StorageErrorCode } from '@/lib/error-codes';
 import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
 
 /**
@@ -26,7 +26,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('create_product', { product }),
       StorageErrorCode.WriteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async updateProduct(product: Product): Promise<StorageResult<void>> {
@@ -34,7 +36,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('update_product', { product }),
       StorageErrorCode.WriteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async deleteProduct(product: Product): Promise<StorageResult<void>> {
@@ -42,7 +46,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('delete_product', { id: product.id }),
       StorageErrorCode.DeleteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // ==================== Categories ====================
@@ -59,7 +65,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('create_category', { category }),
       StorageErrorCode.WriteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async updateCategory(category: Category): Promise<StorageResult<void>> {
@@ -67,7 +75,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('update_category', { category }),
       StorageErrorCode.WriteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async deleteCategory(category: Category): Promise<StorageResult<void>> {
@@ -75,16 +85,15 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('delete_category', { id: category.id }),
       StorageErrorCode.DeleteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // ==================== Orders ====================
 
   async getOrders(): Promise<StorageResult<Order[]>> {
-    return tryCatchAsync(
-      async () => invoke<Order[]>('get_orders'),
-      StorageErrorCode.ReadFailed
-    );
+    return tryCatchAsync(async () => invoke<Order[]>('get_orders'), StorageErrorCode.ReadFailed);
   }
 
   async createOrder(order: Order): Promise<StorageResult<void>> {
@@ -92,7 +101,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('create_order', { order }),
       StorageErrorCode.WriteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async updateOrder(order: Order): Promise<StorageResult<void>> {
@@ -100,7 +111,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('update_order', { order }),
       StorageErrorCode.WriteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async deleteOrder(order: Order): Promise<StorageResult<void>> {
@@ -108,16 +121,15 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('delete_order', { id: order.id }),
       StorageErrorCode.DeleteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // ==================== Tables ====================
 
   async getTables(): Promise<StorageResult<Table[]>> {
-    return tryCatchAsync(
-      async () => invoke<Table[]>('get_tables'),
-      StorageErrorCode.ReadFailed
-    );
+    return tryCatchAsync(async () => invoke<Table[]>('get_tables'), StorageErrorCode.ReadFailed);
   }
 
   async createTable(table: Table): Promise<StorageResult<void>> {
@@ -125,7 +137,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('create_table', { table }),
       StorageErrorCode.WriteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async updateTable(table: Table): Promise<StorageResult<void>> {
@@ -133,7 +147,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('update_table', { table }),
       StorageErrorCode.WriteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async deleteTable(table: Table): Promise<StorageResult<void>> {
@@ -141,7 +157,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('delete_table', { id: table.id }),
       StorageErrorCode.DeleteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // ==================== Utility ====================
@@ -151,7 +169,9 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('clear_all_data'),
       StorageErrorCode.DeleteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   async exportData(): Promise<
@@ -173,6 +193,8 @@ export class SqliteStorageAdapter implements IStorageAdapter {
       async () => invoke('import_data', { data }),
       StorageErrorCode.WriteFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 }

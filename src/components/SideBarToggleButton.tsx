@@ -1,6 +1,6 @@
-import { splitProps, type Component } from 'solid-js';
 import { Motion } from '@motionone/solid';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-solid';
+import { type Component, splitProps } from 'solid-js';
 import { Button } from '@/components/ui/button.tsx';
 
 type SidebarToggleButtonProps = {

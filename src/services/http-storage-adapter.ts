@@ -1,10 +1,10 @@
+import { err, ok, tryCatchAsync } from '@mks2508/no-throw';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
-import { tryCatchAsync, err, ok } from '@mks2508/no-throw';
+import { config } from '@/lib/config';
+import { StorageErrorCode } from '@/lib/error-codes';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
-import { StorageErrorCode } from '@/lib/error-codes';
-import { config } from '@/lib/config';
 import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
 
 export class HttpStorageAdapter implements IStorageAdapter {
@@ -58,30 +58,27 @@ export class HttpStorageAdapter implements IStorageAdapter {
     const requestId = `${method}-${endpoint}-${Date.now()}`;
     const controller = this.createController(requestId, timeout);
 
-    const result = await tryCatchAsync(
-      async () => {
-        const url = `${this.baseUrl}${endpoint}`;
+    const result = await tryCatchAsync(async () => {
+      const url = `${this.baseUrl}${endpoint}`;
 
-        const options: RequestInit = {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-        };
+      const options: RequestInit = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      };
 
-        if (data && (method === 'POST' || method === 'PUT')) {
-          options.body = JSON.stringify(data);
-        }
+      if (data && (method === 'POST' || method === 'PUT')) {
+        options.body = JSON.stringify(data);
+      }
 
-        const response = await this.getFetchFn()(url, options);
+      const response = await this.getFetchFn()(url, options);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-        return (await response.json()) as T;
-      },
-      StorageErrorCode.ConnectionFailed
-    );
+      return (await response.json()) as T;
+    }, StorageErrorCode.ConnectionFailed);
 
     this.activeControllers.delete(requestId);
     return result;

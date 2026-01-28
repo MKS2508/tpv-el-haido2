@@ -1,6 +1,4 @@
 import './App.css';
-import { createSignal, createEffect, onMount, Show, ErrorBoundary } from 'solid-js';
-// @ts-ignore - no types available
 import { Motion, Presence } from '@motionone/solid';
 import {
   BeerIcon,
@@ -12,8 +10,9 @@ import {
   SettingsIcon,
   UsersIcon,
 } from 'lucide-solid';
-import iconOptions from '@/assets/utils/icons/iconOptions';
+import { createEffect, createSignal, ErrorBoundary, onMount, Show } from 'solid-js';
 import fallbackProducts from '@/assets/products.json';
+import iconOptions from '@/assets/utils/icons/iconOptions';
 import BottomNavigation from '@/components/BottomNavigation';
 import DebugIndicator from '@/components/DebugIndicator';
 import ScreenshotOverlay from '@/components/ScreenshotOverlay';
@@ -58,7 +57,9 @@ function App() {
 
   // Responsive state
   const [isMobile, setIsMobile] = createSignal(window.innerWidth < 768);
-  const [isTablet, setIsTablet] = createSignal(window.innerWidth >= 768 && window.innerWidth < 1024);
+  const [isTablet, setIsTablet] = createSignal(
+    window.innerWidth >= 768 && window.innerWidth < 1024
+  );
 
   // Section state
   const [activeSection, setActiveSection] = createSignal('home');
@@ -120,7 +121,9 @@ function App() {
   // Helper function to get fallback categories
   const getFallbackCategories = () => {
     console.log('[App] Extracting fallback categories from products.json');
-    const uniqueCategories = [...new Set(fallbackProducts.map((product) => product.category))].filter(Boolean);
+    const uniqueCategories = [
+      ...new Set(fallbackProducts.map((product) => product.category)),
+    ].filter(Boolean);
     return uniqueCategories.map((categoryName, index) => ({
       id: index + 1,
       name: categoryName,
@@ -151,7 +154,8 @@ function App() {
       if (result.ok && result.value.length > 0) {
         const productsWithIcons = result.value.map((product) => ({
           ...product,
-          icon: iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
+          icon:
+            iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
         })) as Product[];
         store.setProducts(productsWithIcons);
         store.setBackendConnected(true);
@@ -245,7 +249,15 @@ function App() {
   });
 
   const getDirection = (current: string) => {
-    const menuOrder = ['home', 'products', 'newOrder', 'orderHistory', 'customers', 'aeatInvoices', 'settings'];
+    const menuOrder = [
+      'home',
+      'products',
+      'newOrder',
+      'orderHistory',
+      'customers',
+      'aeatInvoices',
+      'settings',
+    ];
     const currentIndex = menuOrder.indexOf(current);
     const previousIndex = menuOrder.indexOf(prevSection);
     const direction = currentIndex === previousIndex ? 0 : currentIndex > previousIndex ? 1 : -1;
@@ -258,8 +270,10 @@ function App() {
   // Animation variants for Motion
   const getAnimationProps = (section: string) => {
     const dir = getDirection(section);
-    const enterValue = dir.value > 0 ? (dir.axis === 'x' ? '100%' : '30vh') : (dir.axis === 'x' ? '-100%' : '-30vh');
-    const exitValue = dir.value > 0 ? (dir.axis === 'x' ? '-100%' : '-30vh') : (dir.axis === 'x' ? '100%' : '30vh');
+    const enterValue =
+      dir.value > 0 ? (dir.axis === 'x' ? '100%' : '30vh') : dir.axis === 'x' ? '-100%' : '-30vh';
+    const exitValue =
+      dir.value > 0 ? (dir.axis === 'x' ? '-100%' : '-30vh') : dir.axis === 'x' ? '100%' : '30vh';
 
     return {
       initial: { [dir.axis]: enterValue, opacity: 0 },
@@ -335,22 +349,47 @@ function App() {
                 )}
               >
                 <CardContent class="p-0 h-full flex flex-col overflow-hidden bg-card text-card-foreground">
-                  <div class={cn('flex-shrink-0', isMobile() ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6')}>
+                  <div
+                    class={cn(
+                      'flex-shrink-0',
+                      isMobile() ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6'
+                    )}
+                  >
                     <SectionHeader menuItems={menuItems} activeSection={activeSection()} />
                   </div>
 
                   <div class="flex-1 overflow-hidden">
                     <Show when={activeSection() === 'home'}>
-                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
-                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Inicio: {err.message}</div>}>
-                          <Home userName={store.state.selectedUser?.name || 'Usuario desconocido'} />
+                      <div
+                        class={cn(
+                          'h-full overflow-y-auto',
+                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        )}
+                      >
+                        <ErrorBoundary
+                          fallback={(err) => (
+                            <div class="text-destructive">Error en Inicio: {err.message}</div>
+                          )}
+                        >
+                          <Home
+                            userName={store.state.selectedUser?.name || 'Usuario desconocido'}
+                          />
                         </ErrorBoundary>
                       </div>
                     </Show>
 
                     <Show when={activeSection() === 'products'}>
-                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
-                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Productos: {err.message}</div>}>
+                      <div
+                        class={cn(
+                          'h-full overflow-y-auto',
+                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        )}
+                      >
+                        <ErrorBoundary
+                          fallback={(err) => (
+                            <div class="text-destructive">Error en Productos: {err.message}</div>
+                          )}
+                        >
                           <Products />
                         </ErrorBoundary>
                       </div>
@@ -358,15 +397,30 @@ function App() {
 
                     <Show when={activeSection() === 'newOrder'}>
                       <div class="h-full overflow-hidden">
-                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Nueva Comanda: {err.message}</div>}>
+                        <ErrorBoundary
+                          fallback={(err) => (
+                            <div class="text-destructive">
+                              Error en Nueva Comanda: {err.message}
+                            </div>
+                          )}
+                        >
                           <NewOrder />
                         </ErrorBoundary>
                       </div>
                     </Show>
 
                     <Show when={activeSection() === 'orderHistory'}>
-                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
-                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Historial: {err.message}</div>}>
+                      <div
+                        class={cn(
+                          'h-full overflow-y-auto',
+                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        )}
+                      >
+                        <ErrorBoundary
+                          fallback={(err) => (
+                            <div class="text-destructive">Error en Historial: {err.message}</div>
+                          )}
+                        >
                           <OrderHistory
                             setSelectedOrderId={store.setSelectedOrderId}
                             setActiveSection={setActiveSection}
@@ -378,29 +432,60 @@ function App() {
                     </Show>
 
                     <Show when={activeSection() === 'customers'}>
-                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
-                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Clientes: {err.message}</div>}>
+                      <div
+                        class={cn(
+                          'h-full overflow-y-auto',
+                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        )}
+                      >
+                        <ErrorBoundary
+                          fallback={(err) => (
+                            <div class="text-destructive">Error en Clientes: {err.message}</div>
+                          )}
+                        >
                           <Customers />
                         </ErrorBoundary>
                       </div>
                     </Show>
 
                     <Show when={activeSection() === 'aeatInvoices'}>
-                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
-                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Facturas AEAT: {err.message}</div>}>
+                      <div
+                        class={cn(
+                          'h-full overflow-y-auto',
+                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        )}
+                      >
+                        <ErrorBoundary
+                          fallback={(err) => (
+                            <div class="text-destructive">
+                              Error en Facturas AEAT: {err.message}
+                            </div>
+                          )}
+                        >
                           <AEATInvoices />
                         </ErrorBoundary>
                       </div>
                     </Show>
 
                     <Show when={activeSection() === 'settings' && store.state.selectedUser}>
-                      <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6')}>
-                        <ErrorBoundary fallback={(err) => <div class="text-destructive">Error en Ajustes: {err.message}</div>}>
+                      <div
+                        class={cn(
+                          'h-full overflow-y-auto',
+                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        )}
+                      >
+                        <ErrorBoundary
+                          fallback={(err) => (
+                            <div class="text-destructive">Error en Ajustes: {err.message}</div>
+                          )}
+                        >
                           <SettingsPanel
                             users={store.state.users}
                             selectedUser={store.state.selectedUser!}
                             handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
-                            thermalPrinterOptions={store.state.thermalPrinterOptions as ThermalPrinterServiceOptions}
+                            thermalPrinterOptions={
+                              store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
+                            }
                             isDarkMode={currentMode() === 'dark'}
                             toggleDarkMode={toggleDarkMode}
                             isSidebarOpen={isSidebarOpen()}

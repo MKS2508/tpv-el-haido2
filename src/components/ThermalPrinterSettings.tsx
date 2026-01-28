@@ -1,5 +1,5 @@
-import { createSignal } from 'solid-js';
 import { Printer, Wifi } from 'lucide-solid';
+import { createSignal, For } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import {
   BreakLine,
@@ -76,11 +75,13 @@ export default function ThermalPrinterSettings({
               <SelectValue placeholder="Seleccionar tipo" />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(PrinterTypes).map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
+              <For each={Object.values(PrinterTypes)}>
+                {(type: PrinterTypes) => (
+                  <SelectItem value={type}>
+                    {type}
+                  </SelectItem>
+                )}
+              </For>
             </SelectContent>
           </Select>
         </div>
@@ -106,11 +107,13 @@ export default function ThermalPrinterSettings({
               <SelectValue placeholder="Seleccionar conjunto" />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(CharacterSet).map((set) => (
-                <SelectItem key={set} value={set}>
-                  {set}
-                </SelectItem>
-              ))}
+              <For each={Object.values(CharacterSet)}>
+                {(set: CharacterSet) => (
+                  <SelectItem value={set}>
+                    {set}
+                  </SelectItem>
+                )}
+              </For>
             </SelectContent>
           </Select>
         </div>
@@ -125,11 +128,13 @@ export default function ThermalPrinterSettings({
               <SelectValue placeholder="Seleccionar modo" />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(BreakLine).map((mode) => (
-                <SelectItem key={mode} value={mode}>
-                  {mode}
-                </SelectItem>
-              ))}
+              <For each={Object.values(BreakLine)}>
+                {(mode: BreakLine) => (
+                  <SelectItem value={mode}>
+                    {mode}
+                  </SelectItem>
+                )}
+              </For>
             </SelectContent>
           </Select>
         </div>
@@ -145,11 +150,13 @@ export default function ThermalPrinterSettings({
               <SelectValue placeholder="Seleccionar" />
             </SelectTrigger>
             <SelectContent>
-              {['-', '_', '=', '*'].map((char) => (
-                <SelectItem key={char} value={char}>
-                  {char}
-                </SelectItem>
-              ))}
+              <For each={['-', '_', '=', '*']}>
+                {(char: string) => (
+                  <SelectItem value={char}>
+                    {char}
+                  </SelectItem>
+                )}
+              </For>
             </SelectContent>
           </Select>
         </div>
@@ -158,15 +165,17 @@ export default function ThermalPrinterSettings({
           <Label for="timeout">
             Tiempo de Espera: {(options.options as { timeout: number }).timeout}ms
           </Label>
-          <Slider
+          <input
+            type="range"
             id="timeout"
             min={1000}
             max={10000}
             step={100}
-            value={[(options.options as { timeout: number }).timeout]}
-            onValueChange={(value) =>
-              handleChange('options', { ...options.options, timeout: value[0] })
+            value={(options.options as { timeout: number }).timeout}
+            onInput={(e: InputEvent) =>
+              handleChange('options', { ...options.options, timeout: Number((e.currentTarget as HTMLInputElement).value) })
             }
+            class="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
           />
         </div>
       </div>
@@ -174,7 +183,7 @@ export default function ThermalPrinterSettings({
         <Switch
           id="removeSpecialCharacters"
           checked={options.removeSpecialCharacters}
-          onCheckedChange={(checked) => handleChange('removeSpecialCharacters', checked)}
+          onChange={(checked: boolean) => handleChange('removeSpecialCharacters', checked)}
         />
         <Label for="removeSpecialCharacters">Eliminar Caracteres Especiales</Label>
       </div>

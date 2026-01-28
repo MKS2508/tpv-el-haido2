@@ -1,16 +1,9 @@
-import { createSignal, createEffect, onMount, Show } from 'solid-js';
-import {
-  AlertCircle,
-  CheckCircle2,
-  Download,
-  Info,
-  RefreshCw,
-  Sparkles,
-} from 'lucide-solid';
 import { getVersion } from '@tauri-apps/api/app';
+import { AlertCircle, CheckCircle2, Download, Info, RefreshCw, Sparkles } from 'lucide-solid';
+import { createEffect, createSignal, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { useUpdater } from '@/hooks/useUpdater';
+import { cn } from '@/lib/utils';
 
 interface VersionInfoProps {
   class?: string;
@@ -93,8 +86,8 @@ export function VersionInfo(props: VersionInfoProps) {
           available()
             ? 'border-primary/50 bg-primary/5'
             : error()
-            ? 'border-destructive/50 bg-destructive/5'
-            : 'border-success/50 bg-success/5'
+              ? 'border-destructive/50 bg-destructive/5'
+              : 'border-success/50 bg-success/5'
         )}
       >
         <div class="flex items-start gap-3">
@@ -104,8 +97,8 @@ export function VersionInfo(props: VersionInfoProps) {
               available()
                 ? 'bg-primary/10 text-primary'
                 : error()
-                ? 'bg-destructive/10 text-destructive'
-                : 'bg-success/10 text-success'
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-success/10 text-success'
             )}
           >
             <Show when={available()}>
@@ -139,12 +132,8 @@ export function VersionInfo(props: VersionInfoProps) {
                 </Show>
               }
             >
-              <p class="font-medium text-primary">
-                Nueva versión disponible: {newVersion()}
-              </p>
-              <p class="text-sm text-muted-foreground">
-                Hay una actualización lista para instalar
-              </p>
+              <p class="font-medium text-primary">Nueva versión disponible: {newVersion()}</p>
+              <p class="text-sm text-muted-foreground">Hay una actualización lista para instalar</p>
             </Show>
           </div>
         </div>
@@ -235,13 +224,10 @@ export function VersionInfo(props: VersionInfoProps) {
           <Info class="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
           <div class="space-y-2 text-sm text-muted-foreground">
             <p>
-              Las actualizaciones incluyen nuevas funciones, mejoras de rendimiento
-              y correcciones de seguridad.
+              Las actualizaciones incluyen nuevas funciones, mejoras de rendimiento y correcciones
+              de seguridad.
             </p>
-            <p>
-              El sistema verifica automáticamente si hay actualizaciones disponibles
-              cada hora.
-            </p>
+            <p>El sistema verifica automáticamente si hay actualizaciones disponibles cada hora.</p>
           </div>
         </div>
       </div>

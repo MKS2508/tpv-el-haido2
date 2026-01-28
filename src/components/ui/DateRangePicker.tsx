@@ -1,5 +1,14 @@
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-solid';
-import { createEffect, createSignal, For, on, onCleanup, onMount, Show, type Component } from 'solid-js';
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  For,
+  on,
+  onCleanup,
+  onMount,
+  Show,
+} from 'solid-js';
 import { Calendar } from '@/components/ui/calendar.tsx';
 import { DateInput } from '@/components/ui/date-input.tsx';
 import { cn } from '@/lib/utils';
@@ -103,8 +112,8 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
   );
 
   // Store the values of range and rangeCompare when the date picker is opened
-  let openedRangeRef: DateRange | undefined = undefined;
-  let openedRangeCompareRef: DateRange | undefined = undefined;
+  let openedRangeRef: DateRange | undefined;
+  let openedRangeCompareRef: DateRange | undefined;
 
   const [selectedPreset, setSelectedPreset] = createSignal<string | undefined>(undefined);
 
@@ -190,7 +199,11 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
     setRange(newRange);
     if (rangeCompare()) {
       const newRangeCompare = {
-        from: new Date(newRange.from.getFullYear() - 1, newRange.from.getMonth(), newRange.from.getDate()),
+        from: new Date(
+          newRange.from.getFullYear() - 1,
+          newRange.from.getMonth(),
+          newRange.from.getDate()
+        ),
         to: newRange.to
           ? new Date(newRange.to.getFullYear() - 1, newRange.to.getMonth(), newRange.to.getDate())
           : undefined,
@@ -227,10 +240,7 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
   const resetValues = (): void => {
     const initFrom = initialDateFrom();
     setRange({
-      from:
-        typeof initFrom === 'string'
-          ? getDateAdjustedForTimezone(initFrom)
-          : initFrom,
+      from: typeof initFrom === 'string' ? getDateAdjustedForTimezone(initFrom) : initFrom,
       to: props.initialDateTo
         ? typeof props.initialDateTo === 'string'
           ? getDateAdjustedForTimezone(props.initialDateTo)
@@ -321,7 +331,9 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
               <Show when={rangeCompare() != null}>
                 <div class="opacity-60 text-xs -mt-1">
                   vs. {formatDate(rangeCompare()!.from, locale())}
-                  {rangeCompare()!.to != null ? ` - ${formatDate(rangeCompare()!.to!, locale())}` : ''}
+                  {rangeCompare()!.to != null
+                    ? ` - ${formatDate(rangeCompare()!.to!, locale())}`
+                    : ''}
                 </div>
               </Show>
             </div>
@@ -384,7 +396,10 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
                       value={range().from}
                       onChange={(date) => {
                         const currentRange = range();
-                        const toDate = currentRange.to == null || date > currentRange.to ? date : currentRange.to;
+                        const toDate =
+                          currentRange.to == null || date > currentRange.to
+                            ? date
+                            : currentRange.to;
                         setRange((prevRange) => ({
                           ...prevRange,
                           from: date,
@@ -462,11 +477,7 @@ export const DateRangePicker: Component<DateRangePickerProps> & {
                   </SelectTrigger>
                   <SelectContent>
                     <For each={PRESETS}>
-                      {(preset) => (
-                        <SelectItem value={preset.name}>
-                          {preset.label}
-                        </SelectItem>
-                      )}
+                      {(preset) => <SelectItem value={preset.name}>{preset.label}</SelectItem>}
                     </For>
                   </SelectContent>
                 </Select>

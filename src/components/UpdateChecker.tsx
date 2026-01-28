@@ -1,5 +1,5 @@
-import { createEffect, onCleanup, Show } from 'solid-js';
 import { AlertCircle, CheckCircle2, Download, RefreshCw, X } from 'lucide-solid';
+import { createEffect, onCleanup, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -50,7 +50,9 @@ export function UpdateChecker(props: UpdateCheckerProps) {
             <Download class="h-5 w-5 text-primary" />
             Nueva actualización disponible
           </DialogTitle>
-          <DialogDescription>Versión {updater.version()} está disponible para descargar.</DialogDescription>
+          <DialogDescription>
+            Versión {updater.version()} está disponible para descargar.
+          </DialogDescription>
         </DialogHeader>
 
         <Show when={updater.notes()}>
@@ -89,7 +91,11 @@ export function UpdateChecker(props: UpdateCheckerProps) {
         </Show>
 
         <DialogFooter class="flex gap-2 sm:gap-0">
-          <Button variant="outline" onClick={updater.dismissUpdate} disabled={updater.downloading()}>
+          <Button
+            variant="outline"
+            onClick={updater.dismissUpdate}
+            disabled={updater.downloading()}
+          >
             <X class="h-4 w-4 mr-2" />
             Más tarde
           </Button>
@@ -118,7 +124,12 @@ export function UpdateCheckButton() {
   const updater = useUpdater();
 
   return (
-    <Button variant="outline" onClick={updater.checkForUpdates} disabled={updater.checking()} class="w-full">
+    <Button
+      variant="outline"
+      onClick={updater.checkForUpdates}
+      disabled={updater.checking()}
+      class="w-full"
+    >
       <Show
         when={!updater.checking()}
         fallback={

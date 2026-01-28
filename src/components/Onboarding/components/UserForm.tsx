@@ -1,5 +1,5 @@
-import { createSignal, For, Show } from 'solid-js';
 import { EyeIcon, EyeOffIcon } from 'lucide-solid';
+import { createSignal, For, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,12 +13,7 @@ interface UserFormProps {
   submitLabel?: string;
 }
 
-const AVATAR_OPTIONS = [
-  '/panxo.svg',
-  '/nuka.svg',
-  '/avatar-1.svg',
-  '/avatar-2.svg',
-];
+const AVATAR_OPTIONS = ['/panxo.svg', '/nuka.svg', '/avatar-1.svg', '/avatar-2.svg'];
 
 export function UserForm(props: UserFormProps) {
   const [name, setName] = createSignal(props.initialData?.name || '');

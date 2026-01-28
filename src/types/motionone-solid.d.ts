@@ -21,9 +21,7 @@ declare module '@motionone/solid' {
   }
 
   type HTMLMotionComponents = {
-    [K in keyof JSX.IntrinsicElements]: Component<
-      MotionComponentProps & JSX.IntrinsicElements[K]
-    >;
+    [K in keyof JSX.IntrinsicElements]: Component<MotionComponentProps & JSX.IntrinsicElements[K]>;
   };
 
   export const Motion: HTMLMotionComponents;

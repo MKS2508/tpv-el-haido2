@@ -3,24 +3,22 @@
 // ================================
 // This module provides unified access to platform-specific services.
 
-// Export the main interface
-export * from './PlatformService';
-
 // Export platform detection utility
 export * from './PlatformDetector';
-
+// Export the main interface
+export * from './PlatformService';
+export * from './TauriPlatformService';
 // Export platform implementations
 export * from './WebPlatformService';
-export * from './TauriPlatformService';
 
 // ================================
 // PLATFORM DETECTION FACTORY
 // ================================
 
 import { isTauri } from './PlatformDetector';
-import { PlatformService } from './PlatformService';
-import { WebPlatformService } from './WebPlatformService';
+import type { PlatformService } from './PlatformService';
 import { TauriPlatformService } from './TauriPlatformService';
+import { WebPlatformService } from './WebPlatformService';
 
 /**
  * Get the appropriate PlatformService implementation
@@ -33,9 +31,7 @@ import { TauriPlatformService } from './TauriPlatformService';
 export function getPlatformService(): PlatformService {
   const isTauriEnv = isTauri();
 
-  console.log(
-    `[Platform Index] Detected environment: ${isTauriEnv ? 'Tauri' : 'PWA (Web)'}`
-  );
+  console.log(`[Platform Index] Detected environment: ${isTauriEnv ? 'Tauri' : 'PWA (Web)'}`);
 
   // Return the appropriate service based on environment
   if (isTauriEnv) {

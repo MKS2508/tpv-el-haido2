@@ -1,5 +1,5 @@
+import { batch, createMemo, createRoot, createSignal } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
-import { createSignal, createRoot, createMemo, batch } from 'solid-js';
 import { config } from '@/lib/config';
 import type Category from '@/models/Category';
 import type Customer from '@/models/Customer';

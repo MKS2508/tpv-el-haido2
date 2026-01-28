@@ -1,8 +1,8 @@
 'use client';
 
+import { ModeToggle, ThemeSelector } from '@mks2508/theme-manager-react';
+import { Palette, Settings } from 'lucide-solid';
 import { createSignal, lazy, Suspense } from 'solid-js';
-import { Settings, Palette } from 'lucide-solid';
-import { ThemeSelector, ModeToggle } from '@mks2508/theme-manager-react';
 import { Button } from '@/components/ui/button';
 
 const ThemeManagementModal = lazy(() =>

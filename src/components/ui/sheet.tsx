@@ -1,43 +1,48 @@
-import * as SheetPrimitive from '@radix-ui/react-dialog';
+import { Dialog as KobalteDialog } from '@kobalte/core/dialog';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-solid';
+import type { JSX, ParentProps } from 'solid-js';
+import { splitProps } from 'solid-js';
 
 import { cn } from '@/lib/utils';
 
-const Sheet = SheetPrimitive.Root;
+const Sheet = KobalteDialog;
 
-const SheetTrigger = SheetPrimitive.Trigger;
+const SheetTrigger = KobalteDialog.Trigger;
 
-const SheetClose = SheetPrimitive.Close;
+const SheetClose = KobalteDialog.CloseButton;
 
-const SheetPortal = SheetPrimitive.Portal;
+const SheetPortal = KobalteDialog.Portal;
 
-const SheetOverlay = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <SheetPrimitive.Overlay
-    class={cn(
-      'fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-      className
-    )}
-    {...props}
-    ref={ref}
-  />
-));
-SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
+interface SheetOverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {
+  ref?: HTMLDivElement | ((el: HTMLDivElement) => void);
+}
+
+function SheetOverlay(props: SheetOverlayProps) {
+  const [local, others] = splitProps(props, ['class', 'ref']);
+  return (
+    <KobalteDialog.Overlay
+      ref={local.ref}
+      class={cn(
+        'fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0',
+        local.class
+      )}
+      {...others}
+    />
+  );
+}
 
 const sheetVariants = cva(
-  'fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
+  'fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:duration-300 data-[expanded]:duration-500',
   {
     variants: {
       side: {
-        top: 'inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top',
+        top: 'inset-x-0 top-0 border-b data-[closed]:slide-out-to-top data-[expanded]:slide-in-from-top',
         bottom:
-          'inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
-        left: 'inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm',
+          'inset-x-0 bottom-0 border-t data-[closed]:slide-out-to-bottom data-[expanded]:slide-in-from-bottom',
+        left: 'inset-y-0 left-0 h-full w-3/4 border-r data-[closed]:slide-out-to-left data-[expanded]:slide-in-from-left sm:max-w-sm',
         right:
-          'inset-y-0 right-0 h-full w-3/4  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm',
+          'inset-y-0 right-0 h-full w-3/4 border-l data-[closed]:slide-out-to-right data-[expanded]:slide-in-from-right sm:max-w-sm',
       },
     },
     defaultVariants: {
@@ -47,62 +52,81 @@ const sheetVariants = cva(
 );
 
 interface SheetContentProps
-  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+  extends ParentProps<JSX.HTMLAttributes<HTMLDivElement>>,
+    VariantProps<typeof sheetVariants> {
+  ref?: HTMLDivElement | ((el: HTMLDivElement) => void);
+}
 
-const SheetContent = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Content>,
-  SheetContentProps
->(({ side = 'right', className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content ref={ref} class={cn(sheetVariants({ side }), className)} {...props}>
-      {children}
-      <SheetPrimitive.Close class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-        <X class="h-4 w-4" />
-        <span class="sr-only">Close</span>
-      </SheetPrimitive.Close>
-    </SheetPrimitive.Content>
-  </SheetPortal>
-));
-SheetContent.displayName = SheetPrimitive.Content.displayName;
+function SheetContent(props: SheetContentProps) {
+  const [local, others] = splitProps(props, ['side', 'class', 'children', 'ref']);
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+      <KobalteDialog.Content
+        ref={local.ref}
+        class={cn(sheetVariants({ side: local.side }), local.class)}
+        {...others}
+      >
+        {local.children}
+        <KobalteDialog.CloseButton class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[expanded]:bg-secondary">
+          <X class="h-4 w-4" />
+          <span class="sr-only">Close</span>
+        </KobalteDialog.CloseButton>
+      </KobalteDialog.Content>
+    </SheetPortal>
+  );
+}
 
-const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div class={cn('flex flex-col space-y-2 text-center sm:text-left', className)} {...props} />
-);
-SheetHeader.displayName = 'SheetHeader';
+interface SheetHeaderProps extends JSX.HTMLAttributes<HTMLDivElement> {}
 
-const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    class={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)}
-    {...props}
-  />
-);
-SheetFooter.displayName = 'SheetFooter';
+function SheetHeader(props: SheetHeaderProps) {
+  const [local, others] = splitProps(props, ['class']);
+  return (
+    <div class={cn('flex flex-col space-y-2 text-center sm:text-left', local.class)} {...others} />
+  );
+}
 
-const SheetTitle = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <SheetPrimitive.Title
-    ref={ref}
-    class={cn('text-lg font-semibold text-foreground', className)}
-    {...props}
-  />
-));
-SheetTitle.displayName = SheetPrimitive.Title.displayName;
+interface SheetFooterProps extends JSX.HTMLAttributes<HTMLDivElement> {}
 
-const SheetDescription = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Description>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <SheetPrimitive.Description
-    ref={ref}
-    class={cn('text-sm text-muted-foreground', className)}
-    {...props}
-  />
-));
-SheetDescription.displayName = SheetPrimitive.Description.displayName;
+function SheetFooter(props: SheetFooterProps) {
+  const [local, others] = splitProps(props, ['class']);
+  return (
+    <div
+      class={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', local.class)}
+      {...others}
+    />
+  );
+}
+
+interface SheetTitleProps extends JSX.HTMLAttributes<HTMLHeadingElement> {
+  ref?: HTMLHeadingElement | ((el: HTMLHeadingElement) => void);
+}
+
+function SheetTitle(props: SheetTitleProps) {
+  const [local, others] = splitProps(props, ['class', 'ref']);
+  return (
+    <KobalteDialog.Title
+      ref={local.ref}
+      class={cn('text-lg font-semibold text-foreground', local.class)}
+      {...others}
+    />
+  );
+}
+
+interface SheetDescriptionProps extends JSX.HTMLAttributes<HTMLParagraphElement> {
+  ref?: HTMLParagraphElement | ((el: HTMLParagraphElement) => void);
+}
+
+function SheetDescription(props: SheetDescriptionProps) {
+  const [local, others] = splitProps(props, ['class', 'ref']);
+  return (
+    <KobalteDialog.Description
+      ref={local.ref}
+      class={cn('text-sm text-muted-foreground', local.class)}
+      {...others}
+    />
+  );
+}
 
 export {
   Sheet,

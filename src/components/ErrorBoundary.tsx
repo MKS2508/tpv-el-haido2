@@ -1,5 +1,12 @@
-import { AlertTriangle, ChevronDown, ChevronUp, ClipboardCopy, Home, RefreshCw } from 'lucide-solid';
-import { createSignal, ErrorBoundary as SolidErrorBoundary, For, type JSX, Show } from 'solid-js';
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  ClipboardCopy,
+  Home,
+  RefreshCw,
+} from 'lucide-solid';
+import { createSignal, For, type JSX, Show, ErrorBoundary as SolidErrorBoundary } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -99,7 +106,12 @@ if (isDev && typeof window !== 'undefined') {
   // Capture failed network requests
   const originalFetch = window.fetch;
   window.fetch = async (...args) => {
-    const url = typeof args[0] === 'string' ? args[0] : args[0] instanceof URL ? args[0].href : (args[0] as Request).url;
+    const url =
+      typeof args[0] === 'string'
+        ? args[0]
+        : args[0] instanceof URL
+          ? args[0].href
+          : (args[0] as Request).url;
     try {
       const response = await originalFetch(...args);
       if (!response.ok) {
@@ -161,7 +173,9 @@ function generateErrorReport(errorDetails: ErrorDetails): string {
     sections.push(
       '',
       '=== RECENT CONSOLE LOGS ===',
-      ...errorDetails.consoleLogs.map((log) => `[${log.timestamp}] [${log.type.toUpperCase()}] ${log.message}`)
+      ...errorDetails.consoleLogs.map(
+        (log) => `[${log.timestamp}] [${log.type.toUpperCase()}] ${log.message}`
+      )
     );
   }
 
@@ -235,12 +249,16 @@ function TechnicalDetails(props: { errorDetails: ErrorDetails }) {
             {/* Network Errors */}
             <Show when={props.errorDetails.networkErrors.length > 0}>
               <div>
-                <div class="text-chart-1 font-bold mb-1">Network Errors ({props.errorDetails.networkErrors.length}):</div>
+                <div class="text-chart-1 font-bold mb-1">
+                  Network Errors ({props.errorDetails.networkErrors.length}):
+                </div>
                 <div class="space-y-1">
                   <For each={props.errorDetails.networkErrors.slice(0, 10)}>
                     {(ne) => (
                       <div class="text-muted-foreground text-[10px]">
-                        <span class="text-chart-1">[{ne.timestamp.split('T')[1]?.slice(0, 8)}]</span>{' '}
+                        <span class="text-chart-1">
+                          [{ne.timestamp.split('T')[1]?.slice(0, 8)}]
+                        </span>{' '}
                         <span class="text-destructive">{ne.message}</span>
                         <div class="pl-4 opacity-70 break-all">{ne.url}</div>
                       </div>
@@ -253,7 +271,9 @@ function TechnicalDetails(props: { errorDetails: ErrorDetails }) {
             {/* Console Logs */}
             <Show when={props.errorDetails.consoleLogs.length > 0}>
               <div>
-                <div class="text-chart-2 font-bold mb-1">Recent Logs ({props.errorDetails.consoleLogs.length}):</div>
+                <div class="text-chart-2 font-bold mb-1">
+                  Recent Logs ({props.errorDetails.consoleLogs.length}):
+                </div>
                 <div class="space-y-0.5">
                   <For each={props.errorDetails.consoleLogs.slice(0, 20)}>
                     {(log) => (
@@ -344,7 +364,9 @@ function ErrorFallback(props: {
             </p>
             <Show when={props.error && !isDev}>
               <div class="rounded-md bg-muted p-3">
-                <p class="text-xs font-mono text-muted-foreground break-all">{props.error.message}</p>
+                <p class="text-xs font-mono text-muted-foreground break-all">
+                  {props.error.message}
+                </p>
               </div>
             </Show>
             <div class="flex flex-col gap-2">
@@ -373,7 +395,9 @@ function ErrorFallback(props: {
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
               <AlertTriangle class="h-5 w-5 text-destructive" />
             </div>
-            <CardTitle class="text-base">{props.fallbackTitle || 'Error en esta seccion'}</CardTitle>
+            <CardTitle class="text-base">
+              {props.fallbackTitle || 'Error en esta seccion'}
+            </CardTitle>
           </div>
         </CardHeader>
         <CardContent class="space-y-3">
@@ -418,11 +442,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
 
   // If custom fallback is provided, use it
   if (props.fallback) {
-    return (
-      <SolidErrorBoundary fallback={props.fallback}>
-        {props.children}
-      </SolidErrorBoundary>
-    );
+    return <SolidErrorBoundary fallback={props.fallback}>{props.children}</SolidErrorBoundary>;
   }
 
   return (

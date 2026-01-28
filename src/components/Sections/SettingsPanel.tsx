@@ -1,4 +1,3 @@
-import { createSignal, For, Match, onMount, Show, Switch, type Component } from 'solid-js';
 import {
   Cloud,
   Database,
@@ -12,13 +11,13 @@ import {
   Trash2,
   Wand2,
 } from 'lucide-solid';
+import { type Component, createSignal, For, Match, onMount, Show, Switch } from 'solid-js';
 import AEATSettings from '@/components/AEATSettings';
 import DemoDataLoader from '@/components/DemoDataLoader';
+import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
 import { ThemeDebugger } from '@/components/ThemeDebugger';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import ThermalPrinterSettings from '@/components/ThermalPrinterSettings.tsx';
-import VersionInfo from '@/components/VersionInfo';
-import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.tsx';
@@ -42,6 +41,7 @@ import {
 import { Switch as SwitchUI } from '@/components/ui/switch.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { toast } from '@/components/ui/use-toast.ts';
+import VersionInfo from '@/components/VersionInfo';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
 import type User from '@/models/User.ts';
 import type { StorageMode } from '@/services/storage-adapter.interface';
@@ -76,7 +76,11 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
 
   const [isUserDialogOpen, setIsUserDialogOpen] = createSignal(false);
   const [editingUser, setEditingUser] = createSignal<User | null>(null);
-  const [newUser, setNewUser] = createSignal<Partial<User>>({ name: '', profilePicture: '', pin: '' });
+  const [newUser, setNewUser] = createSignal<Partial<User>>({
+    name: '',
+    profilePicture: '',
+    pin: '',
+  });
   const [activeTab, setActiveTab] = createSignal('general');
   const [isStorageModeDialogOpen, setIsStorageModeDialogOpen] = createSignal(false);
   const [pendingStorageMode, setPendingStorageMode] = createSignal<StorageMode | null>(null);
@@ -246,7 +250,11 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
             <CardContent class="space-y-4">
               <div class="flex items-center justify-between">
                 <Label for="darkMode">Modo Oscuro</Label>
-                <SwitchUI id="darkMode" checked={props.isDarkMode} onChange={props.toggleDarkMode} />
+                <SwitchUI
+                  id="darkMode"
+                  checked={props.isDarkMode}
+                  onChange={props.toggleDarkMode}
+                />
               </div>
               <div class="flex items-center justify-between">
                 <Label for="touchOptimizations">Optimizaciones Tactiles</Label>
@@ -377,12 +385,17 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
               </div>
 
               <div class="pt-4 border-t">
-                <Button variant="outline" class="w-full justify-start h-12" onClick={restartOnboarding}>
+                <Button
+                  variant="outline"
+                  class="w-full justify-start h-12"
+                  onClick={restartOnboarding}
+                >
                   <Wand2 class="mr-2 h-4 w-4 text-primary" />
                   Ejecutar Asistente de Configuracion
                 </Button>
                 <p class="text-[10px] text-muted-foreground mt-2 px-1">
-                  Reinicia el asistente para volver a configurar el almacenamiento, importar datos o crear usuarios iniciales.
+                  Reinicia el asistente para volver a configurar el almacenamiento, importar datos o
+                  crear usuarios iniciales.
                 </p>
               </div>
 
@@ -453,7 +466,10 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
               <CardContent>
                 <div class="flex items-center space-x-4 mb-4">
                   <Avatar>
-                    <AvatarImage src={props.selectedUser.profilePicture} alt={props.selectedUser.name} />
+                    <AvatarImage
+                      src={props.selectedUser.profilePicture}
+                      alt={props.selectedUser.name}
+                    />
                     <AvatarFallback>{props.selectedUser.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <span class="text-lg font-semibold">{props.selectedUser.name}</span>
@@ -483,7 +499,11 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                           <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
                             <Pencil class="h-4 w-4 text-muted-foreground" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
                             <Trash2 class="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </div>

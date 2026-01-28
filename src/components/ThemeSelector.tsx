@@ -1,5 +1,5 @@
-import { createEffect, createSignal } from 'solid-js';
 import { Check, Download, Moon, Palette, Sun, Upload } from 'lucide-solid';
+import { createEffect, createSignal, For } from 'solid-js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,10 +26,10 @@ import {
 } from '@/lib/themes/theme-config';
 
 interface ThemeSelectorProps {
-  className?: string;
+  class?: string;
 }
 
-const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
+const ThemeSelector = (props: ThemeSelectorProps) => {
   const [settings, setSettings] = createSignal<ThemeSettings>(loadThemeSettings());
   const [isImportDialogOpen, setIsImportDialogOpen] = createSignal(false);
   const [importUrl, setImportUrl] = createSignal('');
@@ -187,7 +187,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
   };
 
   return (
-    <div class={className}>
+    <div class={props.class}>
       <Card>
         <CardHeader>
           <CardTitle class="flex items-center gap-2">
@@ -210,7 +210,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
             <Switch
               id="darkMode"
               checked={settings().darkMode}
-              onCheckedChange={handleDarkModeToggle}
+              onChange={handleDarkModeToggle}
             />
           </div>
 
@@ -224,7 +224,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
             <Switch
               id="touchMode"
               checked={settings().touchMode}
-              onCheckedChange={handleTouchModeToggle}
+              onChange={handleTouchModeToggle}
             />
           </div>
 
@@ -265,59 +265,60 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({ className }) => {
           <div class="space-y-4">
             <h4 class="font-medium">Temas Disponibles</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {PRESET_THEMES.map((theme) => (
-                <Card
-                  key={theme.id}
-                  class={`cursor-pointer transition-all touch-enhanced ${
-                    settings().currentTheme === theme.id
-                      ? 'ring-2 ring-primary shadow-md'
-                      : 'hover:shadow-md'
-                  } ${previewTheme() === theme.id ? 'ring-2 ring-accent' : ''}`}
-                  onClick={() =>
-                    previewTheme() ? handleConfirmPreview() : handlePreviewTheme(theme.id)
-                  }
-                >
-                  <CardHeader class="pb-2">
-                    <div class="flex items-center justify-between">
-                      <CardTitle class="text-sm flex items-center gap-2">
-                        <span class="text-base">{getCategoryIcon(theme.category)}</span>
-                        {theme.name}
-                      </CardTitle>
-                      {settings().currentTheme === theme.id && (
-                        <Check class="h-4 w-4 text-primary" />
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent class="space-y-3">
-                    <p class="text-xs text-muted-foreground">{theme.description}</p>
-
-                    <Badge variant="secondary" class={getCategoryColor(theme.category)}>
-                      {theme.category}
-                    </Badge>
-
-                    {/* Color Preview */}
-                    {theme.preview && (
-                      <div class="flex gap-1">
-                        <div
-                          class="w-4 h-4 rounded-full border border-border"
-                          style={{ backgroundColor: theme.preview.primaryColor }}
-                          title="Color primario"
-                        />
-                        <div
-                          class="w-4 h-4 rounded-full border border-border"
-                          style={{ backgroundColor: theme.preview.secondaryColor }}
-                          title="Color secundario"
-                        />
-                        <div
-                          class="w-4 h-4 rounded-full border border-border"
-                          style={{ backgroundColor: theme.preview.backgroundColor }}
-                          title="Color de fondo"
-                        />
+              <For each={PRESET_THEMES}>
+                {(theme) => (
+                  <Card
+                    class={`cursor-pointer transition-all touch-enhanced ${
+                      settings().currentTheme === theme.id
+                        ? 'ring-2 ring-primary shadow-md'
+                        : 'hover:shadow-md'
+                    } ${previewTheme() === theme.id ? 'ring-2 ring-accent' : ''}`}
+                    onClick={() =>
+                      previewTheme() ? handleConfirmPreview() : handlePreviewTheme(theme.id)
+                    }
+                  >
+                    <CardHeader class="pb-2">
+                      <div class="flex items-center justify-between">
+                        <CardTitle class="text-sm flex items-center gap-2">
+                          <span class="text-base">{getCategoryIcon(theme.category)}</span>
+                          {theme.name}
+                        </CardTitle>
+                        {settings().currentTheme === theme.id && (
+                          <Check class="h-4 w-4 text-primary" />
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardHeader>
+                    <CardContent class="space-y-3">
+                      <p class="text-xs text-muted-foreground">{theme.description}</p>
+
+                      <Badge variant="secondary" class={getCategoryColor(theme.category)}>
+                        {theme.category}
+                      </Badge>
+
+                      {/* Color Preview */}
+                      {theme.preview && (
+                        <div class="flex gap-1">
+                          <div
+                            class="w-4 h-4 rounded-full border border-border"
+                            style={{ 'background-color': theme.preview.primaryColor }}
+                            title="Color primario"
+                          />
+                          <div
+                            class="w-4 h-4 rounded-full border border-border"
+                            style={{ 'background-color': theme.preview.secondaryColor }}
+                            title="Color secundario"
+                          />
+                          <div
+                            class="w-4 h-4 rounded-full border border-border"
+                            style={{ 'background-color': theme.preview.backgroundColor }}
+                            title="Color de fondo"
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </For>
             </div>
           </div>
         </CardContent>

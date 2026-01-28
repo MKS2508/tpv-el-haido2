@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onCleanup, createMemo, Accessor } from 'solid-js';
+import { type Accessor, createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
 
 export type BreakpointSize =
   | 'mobile'
@@ -62,8 +62,12 @@ export function useResponsive(): ResponsiveGetters {
   const isMobile = createMemo(() => width() < BREAKPOINTS.mobile);
   const isTablet = createMemo(() => width() >= BREAKPOINTS.mobile && width() < BREAKPOINTS.tablet);
   const isLaptop = createMemo(() => width() >= BREAKPOINTS.tablet && width() < BREAKPOINTS.laptop);
-  const isDesktop = createMemo(() => width() >= BREAKPOINTS.laptop && width() < BREAKPOINTS.desktop);
-  const isLargeDesktop = createMemo(() => width() >= BREAKPOINTS.desktop && width() < BREAKPOINTS.largeDesktop);
+  const isDesktop = createMemo(
+    () => width() >= BREAKPOINTS.laptop && width() < BREAKPOINTS.desktop
+  );
+  const isLargeDesktop = createMemo(
+    () => width() >= BREAKPOINTS.desktop && width() < BREAKPOINTS.largeDesktop
+  );
   const isUltraWide = createMemo(() => width() >= BREAKPOINTS.ultraWide);
   const breakpoint = createMemo(() => getBreakpoint(width()));
 

@@ -1,4 +1,4 @@
-import { Component, splitProps, Show } from 'solid-js';
+import { type Component, Show, splitProps } from 'solid-js';
 
 interface MenuItem {
   id: string;

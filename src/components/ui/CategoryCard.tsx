@@ -1,4 +1,3 @@
-import { Show, splitProps, type Component, type JSX } from 'solid-js';
 import { Motion } from '@motionone/solid';
 import {
   Beer,
@@ -11,6 +10,7 @@ import {
   Utensils,
   Wine,
 } from 'lucide-solid';
+import { type Component, type JSX, Show, splitProps } from 'solid-js';
 import { cn } from '@/lib/utils.ts';
 import type Category from '@/models/Category.ts';
 import { Button } from './button';

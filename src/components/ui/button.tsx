@@ -41,7 +41,9 @@ function Button(props: ButtonProps) {
 
   return (
     <button
-      class={cn(buttonVariants({ variant: local.variant, size: local.size, className: local.class }))}
+      class={cn(
+        buttonVariants({ variant: local.variant, size: local.size, className: local.class })
+      )}
       ref={local.ref}
       {...others}
     />

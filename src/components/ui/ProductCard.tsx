@@ -1,6 +1,6 @@
-import { createSignal } from 'solid-js';
-import { Presence, Motion } from '@motionone/solid';
+import { Motion, Presence } from '@motionone/solid';
 import { Check, Plus, Star } from 'lucide-solid';
+import { createSignal } from 'solid-js';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
 import stockImagesService from '@/services/stock-images.service';
@@ -244,19 +244,21 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </AnimatePresence>
           ) : (
             // Mode 'manage' - show favorite star
-            (onFavoriteToggle && (<Button
-              variant="ghost"
-              size="sm"
-              class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
-              onClick={handleFavoriteClick}
-            >
-              <Star
-                class={cn(
-                  'h-4 w-4',
-                  isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
-                )}
-              />
-            </Button>))
+            onFavoriteToggle && (
+              <Button
+                variant="ghost"
+                size="sm"
+                class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+                onClick={handleFavoriteClick}
+              >
+                <Star
+                  class={cn(
+                    'h-4 w-4',
+                    isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
+                  )}
+                />
+              </Button>
+            )
           )}
         </div>
       </div>

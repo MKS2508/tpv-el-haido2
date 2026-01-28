@@ -1,6 +1,6 @@
 import { isErr, tryCatchAsync } from '@mks2508/no-throw';
-import type { ImportData } from '@/models/Onboarding';
 import type Category from '@/models/Category';
+import type { ImportData } from '@/models/Onboarding';
 import type Product from '@/models/Product';
 import type ITable from '@/models/Table';
 import type User from '@/models/User';
@@ -72,10 +72,7 @@ export function validateImportData(data: unknown): data is ImportData {
   const categoriesValid = obj.categories.every((c: unknown) => {
     if (!c || typeof c !== 'object') return false;
     const category = c as Record<string, unknown>;
-    return (
-      typeof category.id === 'number' &&
-      typeof category.name === 'string'
-    );
+    return typeof category.id === 'number' && typeof category.name === 'string';
   });
 
   if (!categoriesValid) {
@@ -100,9 +97,7 @@ export function validateImportData(data: unknown): data is ImportData {
       if (!u || typeof u !== 'object') return false;
       const user = u as Record<string, unknown>;
       return (
-        typeof user.id === 'number' &&
-        typeof user.name === 'string' &&
-        typeof user.pin === 'string'
+        typeof user.id === 'number' && typeof user.name === 'string' && typeof user.pin === 'string'
       );
     });
     if (!usersValid) return false;
@@ -115,13 +110,10 @@ export function validateImportData(data: unknown): data is ImportData {
  * Read a file and parse it as JSON ImportData
  */
 export async function readFileAsImportData(file: File): Promise<ImportData | null> {
-  const result = await tryCatchAsync(
-    async () => {
-      const text = await file.text();
-      return parseImportJson(text);
-    },
-    OnboardingErrorCode.FileReadFailed
-  );
+  const result = await tryCatchAsync(async () => {
+    const text = await file.text();
+    return parseImportJson(text);
+  }, OnboardingErrorCode.FileReadFailed);
 
   if (isErr(result)) {
     console.error('[Onboarding] Failed to read file:', result.error);
@@ -155,9 +147,7 @@ export function validateCategory(category: unknown): category is Omit<Category, 
   if (!category || typeof category !== 'object') return false;
   const c = category as Record<string, unknown>;
   return (
-    typeof c.id === 'number' &&
-    typeof c.name === 'string' &&
-    typeof c.description === 'string'
+    typeof c.id === 'number' && typeof c.name === 'string' && typeof c.description === 'string'
   );
 }
 
@@ -167,11 +157,7 @@ export function validateCategory(category: unknown): category is Omit<Category, 
 export function validateTable(table: unknown): table is ITable {
   if (!table || typeof table !== 'object') return false;
   const t = table as Record<string, unknown>;
-  return (
-    typeof t.id === 'number' &&
-    typeof t.name === 'string' &&
-    typeof t.available === 'boolean'
-  );
+  return typeof t.id === 'number' && typeof t.name === 'string' && typeof t.available === 'boolean';
 }
 
 /**
@@ -224,10 +210,7 @@ export function getImportDataCounts(data: ImportData): {
 /**
  * Merge import data with existing data, avoiding duplicates by ID
  */
-export function mergeImportData<T extends { id: number }>(
-  existing: T[],
-  imported: T[]
-): T[] {
+export function mergeImportData<T extends { id: number }>(existing: T[], imported: T[]): T[] {
   const existingIds = new Set(existing.map((item) => item.id));
   const newItems = imported.filter((item) => !existingIds.has(item.id));
   return [...existing, ...newItems];

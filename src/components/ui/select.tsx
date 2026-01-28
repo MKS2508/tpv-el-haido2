@@ -1,17 +1,17 @@
 import { Select as KobalteSelect } from '@kobalte/core/select';
 import { Check, ChevronDown } from 'lucide-solid';
 import {
+  type Accessor,
+  createContext,
   createEffect,
   createMemo,
   createSignal,
   type JSX,
+  onMount,
   type ParentProps,
   Show,
   splitProps,
-  createContext,
   useContext,
-  onMount,
-  type Accessor,
 } from 'solid-js';
 
 import { cn } from '@/lib/utils';
@@ -93,7 +93,8 @@ function Select<T extends string = string>(props: SelectRootProps<T>) {
         name={local.name}
         itemComponent={
           local.itemComponent
-            ? (itemProps) => local.itemComponent!({ item: { rawValue: itemProps.item.rawValue as T } })
+            ? (itemProps) =>
+                local.itemComponent!({ item: { rawValue: itemProps.item.rawValue as T } })
             : (itemProps) => (
                 <KobalteSelect.Item
                   item={itemProps.item}
@@ -104,7 +105,9 @@ function Select<T extends string = string>(props: SelectRootProps<T>) {
                       <Check class="h-4 w-4" />
                     </KobalteSelect.ItemIndicator>
                   </span>
-                  <KobalteSelect.ItemLabel>{String(itemProps.item.rawValue)}</KobalteSelect.ItemLabel>
+                  <KobalteSelect.ItemLabel>
+                    {String(itemProps.item.rawValue)}
+                  </KobalteSelect.ItemLabel>
                 </KobalteSelect.Item>
               )
         }

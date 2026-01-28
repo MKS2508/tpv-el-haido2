@@ -16,7 +16,7 @@ import {
   Search,
   XCircle,
 } from 'lucide-solid';
-import { createMemo, createSignal, For, Show, type Component } from 'solid-js';
+import { type Component, createMemo, createSignal, For, Show } from 'solid-js';
 import { InvoiceStatusBadge } from '@/components/InvoiceStatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,7 +96,9 @@ const InvoiceCard: Component<InvoiceCardProps> = (props) => (
         </CardTitle>
         <InvoiceStatusBadge aeat={props.invoice.order.aeat} compact />
       </div>
-      <CardDescription>{formatDate(props.invoice.sentAt || props.invoice.order.date)}</CardDescription>
+      <CardDescription>
+        {formatDate(props.invoice.sentAt || props.invoice.order.date)}
+      </CardDescription>
     </CardHeader>
     <CardContent class="pt-0">
       <div class="flex justify-between items-center">
@@ -249,7 +251,12 @@ const AEATInvoices: Component = () => {
         </div>
 
         {/* Estadisticas */}
-        <div class={cn('grid gap-2 flex-shrink-0', responsive.isMobile() ? 'grid-cols-2' : 'grid-cols-5')}>
+        <div
+          class={cn(
+            'grid gap-2 flex-shrink-0',
+            responsive.isMobile() ? 'grid-cols-2' : 'grid-cols-5'
+          )}
+        >
           <Card class="p-3">
             <div class="text-2xl font-bold">{stats().total}</div>
             <div class="text-xs text-muted-foreground">Total pedidos</div>
@@ -283,7 +290,9 @@ const AEATInvoices: Component = () => {
         >
           <div class="flex gap-2 items-center">
             <Select value={filterStatus()} onChange={(v) => setFilterStatus(v as InvoiceFilter)}>
-              <SelectTrigger class={cn('bg-background', responsive.isMobile() ? 'w-full' : 'w-[180px]')}>
+              <SelectTrigger
+                class={cn('bg-background', responsive.isMobile() ? 'w-full' : 'w-[180px]')}
+              >
                 <SelectValue placeholder="Filtrar por estado" />
               </SelectTrigger>
               <SelectContent>
@@ -366,8 +375,8 @@ const AEATInvoices: Component = () => {
                                 {searchQuery()
                                   ? `No se encontraron facturas que coincidan con "${searchQuery()}"`
                                   : filterStatus() !== 'all'
-                                  ? 'No hay facturas con el filtro seleccionado'
-                                  : 'Las facturas apareceran aqui cuando se emitan desde los pedidos'}
+                                    ? 'No hay facturas con el filtro seleccionado'
+                                    : 'Las facturas apareceran aqui cuando se emitan desde los pedidos'}
                               </p>
                             </div>
                           </TableCell>
@@ -463,15 +472,11 @@ const AEATInvoices: Component = () => {
                     </div>
                     <div>
                       <Label class="text-sm text-muted-foreground">Total</Label>
-                      <div class="mt-1 font-bold text-lg">
-                        {invoice().order.total.toFixed(2)}€
-                      </div>
+                      <div class="mt-1 font-bold text-lg">{invoice().order.total.toFixed(2)}€</div>
                     </div>
                     <div>
                       <Label class="text-sm text-muted-foreground">N Factura</Label>
-                      <div class="mt-1 font-mono">
-                        {invoice().invoiceNumber || 'Sin facturar'}
-                      </div>
+                      <div class="mt-1 font-mono">{invoice().invoiceNumber || 'Sin facturar'}</div>
                     </div>
                     <div>
                       <Label class="text-sm text-muted-foreground">CSV</Label>
@@ -485,9 +490,7 @@ const AEATInvoices: Component = () => {
                       <Label class="text-sm text-muted-foreground">Pedido</Label>
                       <div class="mt-1">
                         #{invoice().order.id} - Mesa{' '}
-                        {invoice().order.tableNumber === 0
-                          ? 'Barra'
-                          : invoice().order.tableNumber}
+                        {invoice().order.tableNumber === 0 ? 'Barra' : invoice().order.tableNumber}
                       </div>
                     </div>
                   </div>

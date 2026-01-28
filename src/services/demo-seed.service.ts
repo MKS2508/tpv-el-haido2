@@ -26,7 +26,7 @@ export async function loadDemoData(): Promise<LoadDemoDataResult> {
     store.setCustomers(demoData.customers);
 
     // Cargar historial de pedidos (solo los que están pagados)
-    const paidOrders = demoData.orders.filter(o => o.status === 'paid');
+    const paidOrders = demoData.orders.filter((o) => o.status === 'paid');
     store.setOrderHistory(paidOrders);
 
     // Opcional: Cargar usuarios si están vacíos

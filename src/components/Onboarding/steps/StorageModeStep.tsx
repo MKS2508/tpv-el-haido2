@@ -1,7 +1,14 @@
-import { For, Show } from 'solid-js';
 import { CloudIcon, DatabaseIcon, HardDriveIcon } from 'lucide-solid';
+import { For, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { StorageMode } from '@/services/storage-adapter.interface';
 
@@ -24,13 +31,15 @@ export function StorageModeStep(props: StorageModeStepProps) {
     {
       id: 'http' as StorageMode,
       title: 'HTTP API',
-      description: 'Conecta con un servidor centralizado para sincronizar datos entre dispositivos.',
+      description:
+        'Conecta con un servidor centralizado para sincronizar datos entre dispositivos.',
       icon: CloudIcon,
     },
     {
       id: 'indexeddb' as StorageMode,
       title: 'IndexedDB',
-      description: 'Almacenamiento nativo del navegador. Sencillo pero limitado al navegador actual.',
+      description:
+        'Almacenamiento nativo del navegador. Sencillo pero limitado al navegador actual.',
       icon: DatabaseIcon,
     },
   ];
@@ -59,7 +68,9 @@ export function StorageModeStep(props: StorageModeStepProps) {
                 <div
                   class={cn(
                     'mt-1 p-2 rounded-md',
-                    props.selectedMode === mode.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                    props.selectedMode === mode.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
                   )}
                 >
                   <mode.icon class="h-5 w-5" />

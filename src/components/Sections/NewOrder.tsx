@@ -1,5 +1,5 @@
 import { Package } from 'lucide-solid';
-import { createEffect, createMemo, createSignal, onMount, Show, For } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, onMount, Show } from 'solid-js';
 import { connectToThermalPrinter } from '@/assets/utils/utils';
 import CategorySidebar from '@/components/CategorySidebar';
 import OrderPanel from '@/components/OrderPanel';
@@ -481,9 +481,7 @@ function NewOrder() {
             >
               Esta seguro de eliminar esta comanda?
             </DialogTitle>
-            <DialogDescription
-              class={cn('text-center mt-4', isMobile() ? 'text-base' : 'text-xl')}
-            >
+            <DialogDescription class={cn('text-center mt-4', isMobile() ? 'text-base' : 'text-xl')}>
               Esta accion eliminara la comanda en progreso para la{' '}
               {orderToClose()?.tableNumber === 0 ? 'Barra' : `Mesa ${orderToClose()?.tableNumber}`}.
             </DialogDescription>
@@ -492,10 +490,7 @@ function NewOrder() {
             <Button
               variant="outline"
               onClick={() => setIsConfirmCloseModalOpen(false)}
-              class={cn(
-                'flex-1 touch-manipulation',
-                isMobile() ? 'h-16 text-xl' : 'h-20 text-2xl'
-              )}
+              class={cn('flex-1 touch-manipulation', isMobile() ? 'h-16 text-xl' : 'h-20 text-2xl')}
             >
               Cancelar
             </Button>
@@ -508,10 +503,7 @@ function NewOrder() {
                 }
                 setIsConfirmCloseModalOpen(false);
               }}
-              class={cn(
-                'flex-1 touch-manipulation',
-                isMobile() ? 'h-16 text-xl' : 'h-20 text-2xl'
-              )}
+              class={cn('flex-1 touch-manipulation', isMobile() ? 'h-16 text-xl' : 'h-20 text-2xl')}
             >
               Eliminar
             </Button>
