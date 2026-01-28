@@ -67,6 +67,19 @@ export const NetworkErrorCode = {
   ServerError: 'NETWORK_SERVER_ERROR',
 } as const;
 
+// ==================== License Errors ====================
+export const LicenseErrorCode = {
+  NotActivated: 'LICENSE_NOT_ACTIVATED',
+  InvalidKey: 'LICENSE_INVALID_KEY',
+  Expired: 'LICENSE_EXPIRED',
+  MaxActivations: 'LICENSE_MAX_ACTIVATIONS',
+  ServerError: 'LICENSE_SERVER_ERROR',
+  Offline: 'LICENSE_OFFLINE',
+  NetworkError: 'LICENSE_NETWORK_ERROR',
+  Deactivated: 'LICENSE_DEACTIVATED',
+  MachineMismatch: 'LICENSE_MACHINE_MISMATCH',
+} as const;
+
 // ==================== AEAT VERI*FACTU Errors ====================
 export const AEATErrorCode = {
   // Conexión
@@ -110,6 +123,7 @@ export type CategoryErrorCode = ErrorCode<typeof CategoryErrorCode>;
 export type CustomerErrorCode = ErrorCode<typeof CustomerErrorCode>;
 export type AuthErrorCode = ErrorCode<typeof AuthErrorCode>;
 export type NetworkErrorCode = ErrorCode<typeof NetworkErrorCode>;
+export type LicenseErrorCode = ErrorCode<typeof LicenseErrorCode>;
 export type AEATErrorCode = ErrorCode<typeof AEATErrorCode>;
 
 // All error codes union
@@ -122,6 +136,7 @@ export type AppErrorCode =
   | CustomerErrorCode
   | AuthErrorCode
   | NetworkErrorCode
+  | LicenseErrorCode
   | AEATErrorCode;
 
 // Type alias for storage-related Result errors

@@ -9,6 +9,7 @@ import type Product from '@/models/Product';
 import type ITable from '@/models/Table';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter';
 import type User from '@/models/User';
+import type { LicenseStatus } from '@/types/license';
 import { HttpStorageAdapter } from '@/services/http-storage-adapter';
 import { IndexedDbStorageAdapter } from '@/services/indexeddb-storage-adapter';
 import { SqliteStorageAdapter } from '@/services/sqlite-storage-adapter';
@@ -56,6 +57,8 @@ export interface AppState {
   taxRate: number;
   activeOrders: Order[];
   recentProducts: Product[];
+  licenseStatus: LicenseStatus | null;
+  showLicenseDialog: boolean;
 }
 
 // Initialize storage adapters
@@ -160,6 +163,8 @@ function createAppStore() {
     touchOptimizationsEnabled: false,
     autoOpenCashDrawer: getInitialAutoOpenCashDrawer(),
     taxRate: getInitialTaxRate(),
+    licenseStatus: null,
+    showLicenseDialog: false,
   });
 
   // Storage adapter signal (non-serializable)
@@ -320,6 +325,10 @@ function createAppStore() {
     });
     localStorage.setItem('tpv-storage-mode', mode);
   };
+
+  const setLicenseStatus = (status: LicenseStatus | null) => setState('licenseStatus', status);
+
+  const setShowLicenseDialog = (show: boolean) => setState('showLicenseDialog', show);
 
   // === COMPLEX ACTIONS ===
 
@@ -553,6 +562,8 @@ function createAppStore() {
     setAutoOpenCashDrawer,
     setTaxRate,
     setStorageMode,
+    setLicenseStatus,
+    setShowLicenseDialog,
     // Complex actions
     handleTableChange,
     handleCompleteOrder,

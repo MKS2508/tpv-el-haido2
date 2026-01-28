@@ -5,6 +5,7 @@ import {
   FileText,
   HardDrive,
   Info,
+  Key,
   Pencil,
   PlusCircle,
   ShieldCheck,
@@ -15,6 +16,7 @@ import { type Component, createSignal, For, Match, onMount, Show, Switch } from 
 import AEATSettings from '@/components/AEATSettings';
 import DemoDataLoader from '@/components/DemoDataLoader';
 import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
+import LicenseStatusCard from '@/components/LicenseStatus';
 import { ThemeDebugger } from '@/components/ThemeDebugger';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import ThermalPrinterSettings from '@/components/ThermalPrinterSettings.tsx';
@@ -50,6 +52,7 @@ import {
   runThermalPrinterCommand,
 } from '@/services/thermal-printer.service.ts';
 import useStore from '@/store/store';
+import { invoke } from '@tauri-apps/api/core';
 
 type SettingsPanelProps = {
   isSidebarOpen: boolean;
@@ -84,6 +87,15 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   const [activeTab, setActiveTab] = createSignal('general');
   const [isStorageModeDialogOpen, setIsStorageModeDialogOpen] = createSignal(false);
   const [pendingStorageMode, setPendingStorageMode] = createSignal<StorageMode | null>(null);
+
+  const refreshLicenseStatus = async () => {
+    try {
+      const status = await invoke('check_license_status');
+      useStore().setLicenseStatus(status as any);
+    } catch (error) {
+      console.error('Error refreshing license status:', error);
+    }
+  };
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
@@ -233,6 +245,10 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
           <TabsTrigger value="verifactu" class="flex items-center gap-1">
             <FileText class="h-3 w-3" />
             VERI*FACTU
+          </TabsTrigger>
+          <TabsTrigger value="license" class="flex items-center gap-1">
+            <Key class="h-3 w-3" />
+            Licencia
           </TabsTrigger>
           <TabsTrigger value="security">Seguridad</TabsTrigger>
           <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
@@ -455,6 +471,24 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="license">
+          <LicenseStatusCard
+            licenseStatus={state.licenseStatus}
+            onRefresh={refreshLicenseStatus}
+            onClearLicense={() => {
+              invoke('clear_license')
+                .then(() => {
+                  toast({ title: 'Licencia eliminada', description: 'La licencia ha sido eliminada correctamente' });
+                  refreshLicenseStatus();
+                })
+                .catch((error) => {
+                  toast({ title: 'Error', description: 'No se pudo eliminar la licencia', variant: 'destructive' });
+                  console.error('Error clearing license:', error);
+                });
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="users">

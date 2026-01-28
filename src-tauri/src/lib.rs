@@ -2,6 +2,7 @@
 
 mod database;
 mod models;
+mod license;
 
 use std::fs;
 use std::sync::Mutex;
@@ -11,6 +12,8 @@ use serde_json::Value;
 
 use database::Database;
 use models::{Product, Category, Order, Table, User, ExportData, ImportData};
+use models::license::{LicenseKey, LicenseStatus};
+use license::{generate_machine_fingerprint, hash_license_key, validate_license_online};
 
 // Database state
 struct DbState {
@@ -223,6 +226,114 @@ async fn write_json_config(app: tauri::AppHandle, config: Value) -> Result<Strin
     Ok(format!("Configuration saved to: {}", config_path.display()))
 }
 
+// ==================== License Commands ====================
+
+#[tauri::command]
+async fn check_license_status(state: State<'_, DbState>) -> Result<LicenseStatus, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db.as_ref().ok_or("Database not initialized")?;
+
+    match db.get_active_license().map_err(|e| e.to_string())? {
+        Some(license) => {
+            let now = chrono::Utc::now().timestamp();
+            let is_valid = if let Some(expires) = license.expires_at {
+                now < expires
+            } else {
+                true
+            };
+
+            let days_remaining = license.expires_at.map(|exp| (exp - now) / 86400);
+
+            Ok(LicenseStatus {
+                is_activated: true,
+                is_valid,
+                expires_at: license.expires_at,
+                email: Some(license.email),
+                days_remaining,
+                license_type: Some(license.license_type),
+                error_message: None,
+            })
+        }
+        None => Ok(LicenseStatus {
+            is_activated: false,
+            is_valid: false,
+            expires_at: None,
+            email: None,
+            days_remaining: None,
+            license_type: None,
+            error_message: Some("No license found".to_string()),
+        })
+    }
+}
+
+#[tauri::command]
+async fn validate_and_activate_license(
+    key: String,
+    email: String,
+    state: State<'_, DbState>
+) -> Result<LicenseStatus, String> {
+    let machine_fingerprint = generate_machine_fingerprint()?;
+
+    let response = validate_license_online(key.clone(), email.clone(), machine_fingerprint.clone()).await?;
+
+    if !response.valid {
+        return Ok(LicenseStatus {
+            is_activated: false,
+            is_valid: false,
+            expires_at: response.expires_at,
+            email: Some(response.user_email.clone()),
+            days_remaining: response.expires_at.map(|exp| {
+                let now = chrono::Utc::now().timestamp();
+                (exp - now) / 86400
+            }),
+            license_type: Some(response.license_type),
+            error_message: response.error,
+        });
+    }
+
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db.as_ref().ok_or("Database not initialized")?;
+
+    let license = LicenseKey {
+        key_hash: hash_license_key(&key),
+        email: response.user_email.clone(),
+        machine_fingerprint,
+        activated_at: chrono::Utc::now().timestamp(),
+        expires_at: response.expires_at,
+        is_active: true,
+        license_type: response.license_type.clone(),
+    };
+
+    db.save_license(&license).map_err(|e| e.to_string())?;
+
+    let days_remaining = response.expires_at.map(|exp| {
+        let now = chrono::Utc::now().timestamp();
+        (exp - now) / 86400
+    });
+
+    Ok(LicenseStatus {
+        is_activated: true,
+        is_valid: true,
+        expires_at: response.expires_at,
+        email: Some(response.user_email),
+        days_remaining,
+        license_type: Some(response.license_type),
+        error_message: None,
+    })
+}
+
+#[tauri::command]
+async fn get_machine_fingerprint() -> Result<String, String> {
+    generate_machine_fingerprint()
+}
+
+#[tauri::command]
+async fn clear_license(state: State<'_, DbState>) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.clear_license().map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -284,6 +395,11 @@ pub fn run() {
             import_data,
             clear_all_data,
             write_json_config,
+            // License
+            check_license_status,
+            validate_and_activate_license,
+            get_machine_fingerprint,
+            clear_license,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

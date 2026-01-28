@@ -28,6 +28,7 @@ import SettingsPanel from '@/components/Sections/SettingsPanel';
 import Sidebar from '@/components/SideBar';
 import SidebarToggleButton from '@/components/SideBarToggleButton';
 import UpdateChecker from '@/components/UpdateChecker';
+import LicenseSplashScreen from '@/components/LicenseSplashScreen';
 import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
@@ -39,9 +40,14 @@ import {
   type ThermalPrinterServiceOptions,
 } from '@/models/ThermalPrinter';
 import useStore from '@/store/store';
+import { invoke } from '@tauri-apps/api/core';
+import type { LicenseStatus } from '@/types/license';
 
 function App() {
   const store = useStore();
+
+  // License state
+  const [showLicenseSplash, setShowLicenseSplash] = createSignal(true);
 
   // Theme state - get initial from localStorage or default
   const getInitialMode = (): 'light' | 'dark' => {
@@ -132,8 +138,51 @@ function App() {
     }));
   };
 
+  // License check function
+  const checkLicense = async () => {
+    try {
+      const status = await invoke<LicenseStatus>('check_license_status');
+      console.log('[License] Status:', status);
+
+      store.setLicenseStatus(status);
+
+      if (!status.is_activated || !status.is_valid) {
+        setShowLicenseSplash(true);
+        return;
+      }
+
+      setShowLicenseSplash(false);
+    } catch (error) {
+      console.error('[License] Error checking license:', error);
+      setShowLicenseSplash(true);
+    }
+  };
+
+  // Handle license activation complete
+  const handleLicenseComplete = (status: LicenseStatus) => {
+    store.setLicenseStatus(status);
+    setShowLicenseSplash(false);
+
+    if (!status.is_valid) {
+      console.error('[License] Invalid license activated:', status);
+    }
+  };
+
+  // Refresh license status
+  const refreshLicenseStatus = async () => {
+    await checkLicense();
+  };
+
   // Initialize data
   onMount(async () => {
+    // Check license first before initializing anything else
+    await checkLicense();
+
+    // If license is not valid, don't initialize other data
+    if (showLicenseSplash()) {
+      return;
+    }
+
     // Initialize categories
     if (store.state.categories.length === 0) {
       const result = await store.storageAdapter().getCategories();
@@ -294,30 +343,37 @@ function App() {
       <Toaster />
       <UpdateChecker autoCheck={true} checkInterval={3600000} />
 
+      {/* License Splash Screen */}
+      <Show when={showLicenseSplash()}>
+        <LicenseSplashScreen onComplete={handleLicenseComplete} />
+      </Show>
+
       {/* Main Content */}
       <Show
-        when={store.state.selectedUser}
+        when={!showLicenseSplash() && store.state.selectedUser}
         fallback={
-          <Presence>
-            <Motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              class="absolute inset-0 bg-transparent"
-            >
-              <ErrorBoundary
-                fallback={(err) => (
-                  <div class="p-4 text-destructive">
-                    <h2>Error en Login</h2>
-                    <p>{err.message}</p>
-                  </div>
-                )}
+          <Show when={!showLicenseSplash()}>
+            <Presence>
+              <Motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                class="absolute inset-0 bg-transparent"
               >
-                <Login users={store.state.users} onLogin={store.setSelectedUser} />
-              </ErrorBoundary>
-            </Motion.div>
-          </Presence>
+                <ErrorBoundary
+                  fallback={(err) => (
+                    <div class="p-4 text-destructive">
+                      <h2>Error en Login</h2>
+                      <p>{err.message}</p>
+                    </div>
+                  )}
+                >
+                  <Login users={store.state.users} onLogin={store.setSelectedUser} />
+                </ErrorBoundary>
+              </Motion.div>
+            </Presence>
+          </Show>
         }
       >
         <Sidebar
