@@ -1,7 +1,7 @@
-import { tryCatchAsync } from '@mks2508/no-throw';
+import { tryCatchAsync, fail, ok, flatMap } from '@mks2508/no-throw';
 import type { Result, ResultError } from '@mks2508/no-throw';
 import { CryptoService } from './crypto.service.js';
-import { db } from '../db/schema.js';
+import { db, type License } from '../db/schema.js';
 import { LicenseErrorCode } from '../lib/error-codes.js';
 import { licenseLogger } from '../lib/logger.js';
 
@@ -110,7 +110,7 @@ export class LicenseService {
         const hashResult = await CryptoService.hashLicenseKey(key);
 
         if (!hashResult.ok) {
-          return hashResult;
+          throw new Error(`Crypto error: ${hashResult.error.message}`);
         }
 
         // Calculate expiration if provided
@@ -128,7 +128,7 @@ export class LicenseService {
         });
 
         if (!createResult.ok) {
-          return createResult;
+          throw new Error(`Database error: ${createResult.error.message}`);
         }
 
         const licenseDto: LicenseDto = {
@@ -146,8 +146,7 @@ export class LicenseService {
 
         return licenseDto;
       },
-      LicenseErrorCode.InternalError,
-      { context: { operation: 'createLicense', email: data.email } }
+      LicenseErrorCode.InternalError
     );
   }
 
@@ -192,7 +191,7 @@ export class LicenseService {
         // Hash the provided key
         const hashResult = await CryptoService.hashLicenseKey(data.key);
         if (!hashResult.ok) {
-          return hashResult;
+          throw new Error(`Crypto error: ${hashResult.error.message}`);
         }
 
         // Look up license in database
@@ -275,14 +274,20 @@ export class LicenseService {
         }
 
         // Update activation information
-        await db.updateActivation(license.id, data.machine_fingerprint);
+        const updateResult = await db.updateActivation(license.id, data.machine_fingerprint);
+        if (!updateResult.ok) {
+          throw new Error(`Database error: ${updateResult.error.message}`);
+        }
 
         // Log the validation
-        await db.logValidation({
+        const logResult = await db.logValidation({
           licenseId: license.id,
           machineFingerprint: data.machine_fingerprint,
           valid: true
         });
+        if (!logResult.ok) {
+          throw new Error(`Database error: ${logResult.error.message}`);
+        }
 
         const successResponse: LicenseValidationDto = {
           valid: true,
@@ -298,8 +303,7 @@ export class LicenseService {
 
         return successResponse;
       },
-      LicenseErrorCode.InternalError,
-      { context: { operation: 'validateLicense', email: data.email } }
+      LicenseErrorCode.InternalError
     );
   }
 
@@ -320,7 +324,7 @@ export class LicenseService {
    *   console.log(`Found ${result.value.length} licenses`);
    * }
    */
-  static async listLicenses(): Promise<Result<unknown[], ResultError<LicenseErrorCode>>> {
+  static async listLicenses(): Promise<Result<License[], ResultError<LicenseErrorCode>>> {
     licenseLogger.info('Listing all licenses');
     return db.listLicenses();
   }
@@ -391,7 +395,7 @@ export class LicenseService {
    *   console.log(`Found ${result.value.length} licenses for user`);
    * }
    */
-  static async getLicensesByEmail(email: string): Promise<Result<unknown[], ResultError<LicenseErrorCode>>> {
+  static async getLicensesByEmail(email: string): Promise<Result<License[], ResultError<LicenseErrorCode>>> {
     licenseLogger.info('Retrieving licenses by email', { email });
     return db.getLicensesByEmail(email);
   }
@@ -411,16 +415,9 @@ export class LicenseService {
 
     if (!emailRegex.test(email)) {
       licenseLogger.warn('Invalid email format', { email });
-      return {
-        ok: false,
-        error: {
-          code: LicenseErrorCode.InvalidEmail,
-          message: 'Invalid email format',
-          context: { email }
-        }
-      };
+      return fail(LicenseErrorCode.InvalidEmail, 'Invalid email format');
     }
 
-    return { ok: true, value: undefined };
+    return ok(undefined);
   }
 }

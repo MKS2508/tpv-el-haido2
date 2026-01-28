@@ -1,7 +1,7 @@
 import { Database } from 'bun:sqlite';
 import { tryCatchAsync } from '@mks2508/no-throw';
 import type { Result, ResultError } from '@mks2508/no-throw';
-import { LicenseErrorCode } from '../lib/error-codes.js';
+import { LicenseErrorCode, type LicenseResultError } from '../lib/error-codes.js';
 import { dbLogger } from '../lib/logger.js';
 
 /**
@@ -47,71 +47,68 @@ export interface ValidationLog {
  */
 export class LicenseDatabase {
   private db: Database;
+  private initialized: boolean = false;
 
   constructor(path: string) {
     dbLogger.info('Initializing database', { path });
     this.db = new Database(path);
-    this.initSchema();
+    this.initSchemaSync();
   }
 
   /**
-   * Initializes database schema with licenses and validation_logs tables
+   * Initializes database schema synchronously
    * Creates tables if they don't exist with proper indexes
-   *
-   * @returns {Result<void, ResultError<LicenseErrorCode>>}
-   *
-   * @error LICENSE_DATABASE_ERROR - If schema initialization fails
    */
-  async initSchema(): Promise<Result<void, ResultError<LicenseErrorCode>>> {
-    return tryCatchAsync(
-      async () => {
-        dbLogger.info('Creating database schema');
+  private initSchemaSync(): void {
+    try {
+      dbLogger.info('Creating database schema');
 
-        // Create licenses table
-        this.db.exec(`
-          CREATE TABLE IF NOT EXISTS licenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key_hash TEXT NOT NULL UNIQUE,
-            key_plain TEXT NOT NULL,
-            email TEXT NOT NULL,
-            machine_fingerprint TEXT,
-            license_type TEXT NOT NULL,
-            expires_at INTEGER,
-            activated_at INTEGER,
-            is_active BOOLEAN NOT NULL DEFAULT 1,
-            activation_count INTEGER DEFAULT 0,
-            max_activations INTEGER DEFAULT 1,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
-          );
-        `);
+      // Create licenses table
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS licenses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          key_hash TEXT NOT NULL UNIQUE,
+          key_plain TEXT NOT NULL,
+          email TEXT NOT NULL,
+          machine_fingerprint TEXT,
+          license_type TEXT NOT NULL,
+          expires_at INTEGER,
+          activated_at INTEGER,
+          is_active BOOLEAN NOT NULL DEFAULT 1,
+          activation_count INTEGER DEFAULT 0,
+          max_activations INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+        );
+      `);
 
-        // Create validation_logs table
-        this.db.exec(`
-          CREATE TABLE IF NOT EXISTS validation_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            license_id INTEGER NOT NULL,
-            machine_fingerprint TEXT NOT NULL,
-            valid BOOLEAN NOT NULL,
-            ip_address TEXT,
-            user_agent TEXT,
-            validated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            FOREIGN KEY (license_id) REFERENCES licenses(id)
-          );
-        `);
+      // Create validation_logs table
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS validation_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          license_id INTEGER NOT NULL,
+          machine_fingerprint TEXT NOT NULL,
+          valid BOOLEAN NOT NULL,
+          ip_address TEXT,
+          user_agent TEXT,
+          validated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+          FOREIGN KEY (license_id) REFERENCES licenses(id)
+        );
+      `);
 
-        // Create indexes for better query performance
-        this.db.exec(`
-          CREATE INDEX IF NOT EXISTS idx_licenses_key_hash ON licenses(key_hash);
-          CREATE INDEX IF NOT EXISTS idx_licenses_email ON licenses(email);
-          CREATE INDEX IF NOT EXISTS idx_licenses_is_active ON licenses(is_active);
-          CREATE INDEX IF NOT EXISTS idx_validation_logs_license_id ON validation_logs(license_id);
-        `);
+      // Create indexes for better query performance
+      this.db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_licenses_key_hash ON licenses(key_hash);
+        CREATE INDEX IF NOT EXISTS idx_licenses_email ON licenses(email);
+        CREATE INDEX IF NOT EXISTS idx_licenses_is_active ON licenses(is_active);
+        CREATE INDEX IF NOT EXISTS idx_validation_logs_license_id ON validation_logs(license_id);
+      `);
 
-        dbLogger.success('Database schema created successfully');
-      },
-      LicenseErrorCode.DatabaseError,
-      { context: { operation: 'initSchema' } }
-    );
+      this.initialized = true;
+      dbLogger.success('Database schema created successfully');
+    } catch (error) {
+      dbLogger.error('Failed to initialize database schema', { error });
+      throw error;
+    }
   }
 
   /**
@@ -155,8 +152,7 @@ export class LicenseDatabase {
 
         return created;
       },
-      LicenseErrorCode.DatabaseError,
-      { context: { operation: 'createLicense', email: data.email } }
+      LicenseErrorCode.DatabaseError
     );
   }
 
@@ -199,14 +195,19 @@ export class LicenseDatabase {
           ORDER BY created_at DESC
         `);
 
-        const licenses = query.all() as License[];
+        const rows = query.all() as unknown[];
+
+        // Convert SQLite integer booleans to JavaScript booleans
+        const licenses = rows.map((row: any) => ({
+          ...row,
+          is_active: Boolean(row.is_active)
+        }));
 
         dbLogger.success('Licenses retrieved', { count: licenses.length });
 
-        return licenses;
+        return licenses as License[];
       },
-      LicenseErrorCode.DatabaseError,
-      { context: { operation: 'listLicenses' } }
+      LicenseErrorCode.DatabaseError
     );
   }
 
@@ -239,8 +240,7 @@ export class LicenseDatabase {
 
         return wasRevoked;
       },
-      LicenseErrorCode.DatabaseError,
-      { context: { operation: 'revokeLicense', licenseId } }
+      LicenseErrorCode.DatabaseError
     );
   }
 
@@ -273,8 +273,7 @@ export class LicenseDatabase {
 
         return wasReactivated;
       },
-      LicenseErrorCode.DatabaseError,
-      { context: { operation: 'reactivateLicense', licenseId } }
+      LicenseErrorCode.DatabaseError
     );
   }
 
@@ -306,8 +305,7 @@ export class LicenseDatabase {
 
         dbLogger.debug('License activation updated');
       },
-      LicenseErrorCode.DatabaseError,
-      { context: { operation: 'updateActivation', licenseId } }
+      LicenseErrorCode.DatabaseError
     );
   }
 
@@ -353,8 +351,7 @@ export class LicenseDatabase {
 
         dbLogger.debug('Validation logged');
       },
-      LicenseErrorCode.DatabaseError,
-      { context: { operation: 'logValidation', licenseId: data.licenseId } }
+      LicenseErrorCode.DatabaseError
     );
   }
 
@@ -372,18 +369,24 @@ export class LicenseDatabase {
         dbLogger.info('Retrieving licenses by email', { email });
 
         const query = this.db.prepare(`
-          SELECT id, license_type, expires_at, is_active, created_at
+          SELECT id, email, license_type, expires_at, is_active, activated_at,
+                 activation_count, created_at
           FROM licenses WHERE email = ?
         `);
 
-        const licenses = query.all(email) as License[];
+        const rows = query.all(email) as unknown[];
+
+        // Convert SQLite integer booleans to JavaScript booleans
+        const licenses = rows.map((row: any) => ({
+          ...row,
+          is_active: Boolean(row.is_active)
+        }));
 
         dbLogger.success('Licenses retrieved by email', { email, count: licenses.length });
 
-        return licenses;
+        return licenses as License[];
       },
-      LicenseErrorCode.DatabaseError,
-      { context: { operation: 'getLicensesByEmail', email } }
+      LicenseErrorCode.DatabaseError
     );
   }
 }

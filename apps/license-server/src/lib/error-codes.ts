@@ -1,4 +1,4 @@
-import type { ErrorCode } from '@mks2508/no-throw';
+import type { ErrorCode, ResultError } from '@mks2508/no-throw';
 
 /**
  * License server error codes
@@ -30,3 +30,4 @@ export const LicenseErrorCode = {
 } as const;
 
 export type LicenseErrorCode = ErrorCode<typeof LicenseErrorCode>;
+export type LicenseResultError = ResultError<LicenseErrorCode>;

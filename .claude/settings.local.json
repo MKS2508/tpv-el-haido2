@@ -22,7 +22,12 @@
       "Bash(bun run src/index.ts)",
       "Bash(curl:*)",
       "Bash(jq)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(bun run typecheck)",
+      "WebFetch(domain:bun.com)",
+      "Bash(bun run dev:*)",
+      "Bash(PRO_LICENSE=\"M8R8-4KWA-9EFJ-9N27\")",
+      "Bash(__NEW_LINE_a869e5064bea5c17__ echo \"=== TEST: Validate license \\(first time\\) ===\")"
     ]
   }
 }

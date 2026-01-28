@@ -1,5 +1,4 @@
 import { t } from 'elysia';
-import type { TSchema } from '@elysiajs/typebox';
 
 /**
  * TypeBox schemas for License Server API validation
@@ -88,7 +87,7 @@ export const LicenseListItemSchema = t.Object({
   id: t.Number(),
   email: t.String(),
   license_type: LicenseTypeSchema,
-  expires_at: t.Optional(t.Number()),
+  expires_at: t.Union([t.Number(), t.Null()]),
   is_active: t.Boolean(),
   activation_count: t.Number(),
   created_at: t.Number()

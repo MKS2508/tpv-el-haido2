@@ -39,6 +39,9 @@ pub async fn validate_license_online(
 ) -> Result<LicenseValidationResponse, String> {
     let client = reqwest::Client::new();
 
+    let license_server_url = std::env::var("LICENSE_SERVER_URL")
+        .unwrap_or_else(|_| "http://localhost:3002".to_string());
+
     let request_body = serde_json::json!({
         "key": key,
         "email": email,
@@ -46,7 +49,7 @@ pub async fn validate_license_online(
     });
 
     let response = client
-        .post("http://localhost:3002/api/license/validate")
+        .post(format!("{}/api/license/validate", license_server_url))
         .json(&request_body)
         .timeout(std::time::Duration::from_secs(10))
         .send()

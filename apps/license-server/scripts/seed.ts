@@ -57,9 +57,11 @@ async function main() {
   console.log('  # Check health');
   console.log('  curl http://localhost:3002/api/license/health');
   console.log('\n  # Validate a license');
-  console.log(`  curl -X POST http://localhost:3002/api/license/validate \\`);
-  console.log('    -H "Content-Type: application/json" \\');
-  console.log(`    -d '{"key":"${created[0].key}","email":"${licenses[0].email}","machine_fingerprint":"test-machine"}'`);
+  if (created[0] && licenses[0]) {
+    console.log(`  curl -X POST http://localhost:3002/api/license/validate \\`);
+    console.log('    -H "Content-Type: application/json" \\');
+    console.log(`    -d '{"key":"' + created[0].key + '","email":"' + licenses[0].email + '","machine_fingerprint":"test-machine"}'`);
+  }
   console.log('\n  # Create a new license (admin)');
   console.log('  curl -X POST http://localhost:3002/api/admin/licenses \\');
   console.log('    -H "Content-Type: application/json" \\');

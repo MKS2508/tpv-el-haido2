@@ -38,8 +38,11 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
       return {
         error: 'Unauthorized',
         message: 'Invalid or missing admin token'
-      };
+      } as const;
     }
+
+    // Return undefined to continue to next handler
+    return undefined;
   })
 
   /**
@@ -57,7 +60,7 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
         return {
           error: 'Failed to retrieve licenses',
           code: result.error.code
-        };
+        } as const;
       }
 
       return result.value;
@@ -190,7 +193,7 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
         return {
           error: 'Failed to retrieve licenses',
           code: result.error.code
-        };
+        } as const;
       }
 
       return result.value;

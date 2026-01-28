@@ -70,14 +70,15 @@ Admin endpoints require Bearer token authentication. Set the \`ADMIN_TOKEN\` env
    * Catches all errors and returns consistent error responses
    */
   .onError(({ code, error, set }) => {
-    apiLogger.error('Request error', { code, error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    apiLogger.error('Request error', { code, error: errorMessage });
 
     if (code === 'VALIDATION') {
       set.status = 400;
       return {
         error: 'Validation Error',
         code: LicenseErrorCode.InvalidKeyFormat,
-        details: error.all
+        details: (error as { all?: unknown }).all
       };
     }
 
@@ -85,7 +86,7 @@ Admin endpoints require Bearer token authentication. Set the \`ADMIN_TOKEN\` env
     return {
       error: 'Internal Server Error',
       code: LicenseErrorCode.InternalError,
-      message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     };
   })
 

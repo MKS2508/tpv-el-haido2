@@ -38,7 +38,7 @@ export class CryptoService {
 
   /**
    * Hashes a license key using SHA-256
-   * Uses Bun's crypto.subtle.digestSync for synchronous hashing
+   * Uses Bun's CryptoHasher for hashing
    *
    * @param {string} key - License key to hash
    * @returns {Result<string, ResultError<LicenseErrorCode>>}
@@ -57,20 +57,16 @@ export class CryptoService {
   ): Promise<Result<string, ResultError<LicenseErrorCode>>> {
     return tryCatchAsync(
       async () => {
-        const data = new TextEncoder().encode(key);
-        // Use Bun's crypto.subtle for SHA-256 hashing
-        const hashBuffer = crypto.subtle.digestSync('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+        // Use Bun's CryptoHasher for SHA-256 hashing
+        const hasher = new Bun.CryptoHasher('sha256');
+        hasher.update(key);
+        const hash = hasher.digest('hex');
 
         cryptoLogger.debug('License key hashed successfully');
 
         return hash;
       },
-      LicenseErrorCode.CryptoError,
-      {
-        context: { operation: 'hashLicenseKey', keyLength: key.length },
-      }
+      LicenseErrorCode.CryptoError
     );
   }
 
