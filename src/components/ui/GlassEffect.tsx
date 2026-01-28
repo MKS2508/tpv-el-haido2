@@ -107,11 +107,11 @@ const GlassEffect = (props: GlassEffectProps) => {
         </defs>
       </svg>
       <Motion.div
-        class={`relative overflow-hidden ${props.className ?? props.class ?? ''}`}
+        class={`relative overflow-hidden ${props.class ?? ''}`}
         style={{
           width: `${props.width ?? 400}px`,
           height: `${props.height ?? 300}px`,
-          borderRadius: `${props.radius ?? 20}px`,
+          'border-radius': `${props.radius ?? 20}px`,
           background: `hsl(0 0% 100% / ${props.frost ?? 0.1})`,
           backdropFilter: `url(#${filterId})`,
           'webkit-backdrop-filter': `url(#${filterId})`,

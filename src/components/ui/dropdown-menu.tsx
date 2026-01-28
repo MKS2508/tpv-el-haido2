@@ -1,5 +1,5 @@
 import { DropdownMenu as KobalteDropdownMenu } from '@kobalte/core/dropdown-menu';
-import { Check, ChevronRight, DotFilled } from 'lucide-solid';
+import { Check, ChevronRight, CircleDot } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { splitProps } from 'solid-js';
 
@@ -134,7 +134,7 @@ const DropdownMenuRadioItem = (props: DropdownMenuRadioItemProps) => {
       {...others}
     >
       <KobalteDropdownMenu.ItemIndicator class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-        <DotFilled class="h-2 w-2 fill-current" />
+        <CircleDot class="h-2 w-2 fill-current" />
       </KobalteDropdownMenu.ItemIndicator>
       {local.children}
     </KobalteDropdownMenu.RadioItem>
