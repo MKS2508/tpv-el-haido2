@@ -96,7 +96,7 @@ const NewOrder = memo(() => {
     inProgressOrders,
     setActiveOrders,
     setSelectedOrderId,
-    activeOrders[0].id,
+    activeOrders[0]?.id,
   ]);
 
   useEffect(() => {
