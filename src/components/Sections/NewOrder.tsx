@@ -27,7 +27,7 @@ function NewOrder() {
   const store = useStore();
 
   const responsive = useResponsive();
-  const isMobile = () => responsive.isMobile;
+  const isMobile = () => responsive.isMobile();
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = createSignal(false);
   const [isConfirmCloseModalOpen, setIsConfirmCloseModalOpen] = createSignal(false);

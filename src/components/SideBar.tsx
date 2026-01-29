@@ -103,9 +103,9 @@ function Sidebar(props: SidebarProps) {
 
   const responsive = useResponsive();
 
-  // Derive values from responsive state
-  const isMobile = () => responsive.isMobile;
-  const isTablet = () => responsive.isTablet;
+  // Derive values from responsive state (call the accessors)
+  const isMobile = () => responsive.isMobile();
+  const isTablet = () => responsive.isTablet();
 
   // Adjust sidebar behavior based on screen size
   const getWidth = () => {
