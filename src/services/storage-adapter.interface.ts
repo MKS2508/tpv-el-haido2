@@ -61,4 +61,9 @@ export interface IStorageAdapter {
 
   // Request cancellation
   cancelPendingRequests?(): void;
+
+  // Sync (PWA offline-first)
+  getPendingSyncCount?(): number;
+  getOnlineStatus?(): boolean;
+  processSyncQueue?(): Promise<void>;
 }

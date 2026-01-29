@@ -1,12 +1,46 @@
 import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
-import { ErrorBoundary } from 'solid-js';
 import { render } from 'solid-js/web';
-import App from './App';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ErrorBoundary';
 import { ThemeProvider } from '@/lib/theme-context';
+import { isTauri } from '@/services/platform/PlatformDetector';
+import App from './App';
 import './styles/optimized-product-card.css';
 import './styles/optimized-order-history.css';
 import './styles/optimized-login.css';
+
+async function registerServiceWorker() {
+  if (isTauri()) {
+    console.log('[SW] Skipping service worker registration in Tauri');
+    return;
+  }
+
+  if (!('serviceWorker' in navigator)) {
+    console.log('[SW] Service workers not supported');
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+    });
+
+    console.log('[SW] Service worker registered:', registration.scope);
+
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('[SW] New version available');
+            window.dispatchEvent(new CustomEvent('sw-update-available'));
+          }
+        });
+      }
+    });
+  } catch (error) {
+    console.error('[SW] Registration failed:', error);
+  }
+}
 
 async function initializeApp() {
   try {
@@ -75,6 +109,8 @@ async function initializeApp() {
     ),
     root
   );
+
+  registerServiceWorker();
 }
 
 initializeApp();

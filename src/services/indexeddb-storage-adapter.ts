@@ -7,13 +7,86 @@ import type Table from '@/models/Table';
 import type User from '@/models/User';
 import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
 
+type SyncOperation = {
+  id: string;
+  type: 'create' | 'update' | 'delete';
+  store: string;
+  data: unknown;
+  timestamp: number;
+};
+
+const SYNC_QUEUE_KEY = 'tpv-haido-sync-queue';
+
 export class IndexedDbStorageAdapter implements IStorageAdapter {
   private dbName = 'tpv-haido-db';
   private dbVersion = 1;
   private db: IDBDatabase | null = null;
+  private isOnline = navigator.onLine;
 
   constructor() {
     this.initDB();
+    this.setupOnlineListener();
+  }
+
+  private setupOnlineListener(): void {
+    window.addEventListener('online', () => {
+      console.log('[IndexedDB] Back online, triggering sync...');
+      this.isOnline = true;
+      this.processSyncQueue();
+    });
+
+    window.addEventListener('offline', () => {
+      console.log('[IndexedDB] Gone offline, operations will be queued');
+      this.isOnline = false;
+    });
+  }
+
+  private getSyncQueue(): SyncOperation[] {
+    try {
+      const queue = localStorage.getItem(SYNC_QUEUE_KEY);
+      return queue ? JSON.parse(queue) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveSyncQueue(queue: SyncOperation[]): void {
+    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+  }
+
+  private queueOperation(op: Omit<SyncOperation, 'id' | 'timestamp'>): void {
+    const queue = this.getSyncQueue();
+    queue.push({
+      ...op,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      timestamp: Date.now(),
+    });
+    this.saveSyncQueue(queue);
+    console.log('[IndexedDB] Operation queued for sync:', op.type, op.store);
+  }
+
+  async processSyncQueue(): Promise<void> {
+    if (!this.isOnline) return;
+
+    const queue = this.getSyncQueue();
+    if (queue.length === 0) return;
+
+    console.log(`[IndexedDB] Processing ${queue.length} queued operations...`);
+
+    // For now, just clear the queue since we don't have a remote server
+    // In a real implementation, this would sync with an HTTP API
+    this.saveSyncQueue([]);
+    console.log('[IndexedDB] Sync queue cleared');
+
+    window.dispatchEvent(new CustomEvent('sync-complete', { detail: { count: queue.length } }));
+  }
+
+  getPendingSyncCount(): number {
+    return this.getSyncQueue().length;
+  }
+
+  getOnlineStatus(): boolean {
+    return this.isOnline;
   }
 
   private async initDB(): Promise<void> {

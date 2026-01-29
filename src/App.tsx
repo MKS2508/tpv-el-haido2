@@ -18,6 +18,7 @@ import DebugIndicator from '@/components/DebugIndicator';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LicenseSplashScreen from '@/components/LicenseSplashScreen';
 import { OnboardingProvider } from '@/components/Onboarding/OnboardingProvider';
+import PWAStatus from '@/components/PWAStatus';
 import ScreenshotOverlay from '@/components/ScreenshotOverlay';
 import AEATInvoices from '@/components/Sections/AEATInvoices';
 import Customers from '@/components/Sections/Customers';
@@ -401,6 +402,7 @@ function App() {
       )}
     >
       <Toaster />
+      <PWAStatus />
       <UpdateChecker autoCheck={true} checkInterval={3600000} />
 
       {/* License Splash Screen */}
