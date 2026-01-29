@@ -39,6 +39,7 @@ import { config } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import type Product from '@/models/Product';
 import { useAboutDialog } from '@/hooks/useAboutDialog';
+import { setupNativeMenu } from '@/lib/setupNativeMenu';
 import {
   BreakLine,
   CharacterSet,
@@ -217,6 +218,9 @@ function App() {
 
   // Initialize data
   onMount(async () => {
+    // Setup native menu
+    setupNativeMenu();
+
     // Check license first before initializing anything else
     await checkLicense();
 

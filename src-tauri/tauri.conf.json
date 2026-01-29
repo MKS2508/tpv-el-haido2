@@ -54,7 +54,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "untrusted comment: minisign public key CF5C37360EC34A45\nRWRFSsMONjdcz25guaB/ACfXn9NF3Vik3S2fGAKomeDL12ftu2EUXPxL",
+      "pubkey": "untrusted comment: minisign public key D3FBFAC1DA2181FB\nRWT7gSHawfr70+hxCXoDylUw0uFOLS/MDnQF11zOmXrvF1U1zJBOFBQe",
       "endpoints": [
         "https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/latest.json"
       ]
