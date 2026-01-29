@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { Globe, ChevronDown } from 'lucide-react';
 
 const languages = [
-  { code: 'es', name: 'Español', path: '/docs' },
+  { code: 'es', name: 'Espanol', path: '/docs' },
   { code: 'en', name: 'English', path: '/en/docs' },
 ];
 
@@ -13,43 +14,55 @@ export function LanguageSelector() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Detect current language
   const currentLang = pathname.startsWith('/en') ? 'en' : 'es';
 
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-hover)] transition-all"
       >
-        <span className="text-sm font-medium">
-          {languages.find(l => l.code === currentLang)?.name}
+        <Globe className="w-4 h-4 text-[var(--accent-cyan)]" />
+        <span className="text-sm font-medium text-[var(--text-primary)]">
+          {languages.find((l) => l.code === currentLang)?.name}
         </span>
-        <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown
+          className={`w-4 h-4 text-[var(--text-muted)] transition-transform duration-200 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 py-1 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-default)] shadow-lg z-50">
-          {languages.map((lang) => (
-            <Link
-              key={lang.code}
-              href={lang.path}
-              onClick={() => setIsOpen(false)}
-              className={`block px-4 py-2 text-sm hover:bg-[var(--bg-tertiary)] transition-colors ${
-                currentLang === lang.code ? 'text-[var(--color-primary)] font-medium' : 'text-[var(--text-secondary)]'
-              }`}
-            >
-              {lang.name}
-            </Link>
-          ))}
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div
+            className="absolute top-full right-0 mt-2 py-1 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-lg backdrop-blur-sm z-50 min-w-[140px] animate-fade-in origin-top-right"
+            style={{
+              animation: 'fade-in 0.15s ease-out, scale-in 0.15s ease-out',
+            }}
+          >
+            {languages.map((lang) => (
+              <Link
+                key={lang.code}
+                href={lang.path}
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--bg-hover)] transition-colors ${
+                  currentLang === lang.code
+                    ? 'text-[var(--accent-cyan)] font-medium'
+                    : 'text-[var(--text-muted)]'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    currentLang === lang.code ? 'bg-[var(--accent-cyan)]' : 'bg-transparent'
+                  }`}
+                />
+                {lang.name}
+              </Link>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
