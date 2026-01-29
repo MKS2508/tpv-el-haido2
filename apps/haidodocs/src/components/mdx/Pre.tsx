@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type ComponentProps } from 'react';
 import mermaid from 'mermaid';
+import { CodeBlock } from 'fumadocs-ui/components/codeblock';
 
 mermaid.initialize({
   startOnLoad: false,
@@ -60,32 +61,44 @@ function MermaidRenderer({ chart }: { chart: string }) {
   return (
     <div
       ref={containerRef}
-      className="my-6 p-6 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg overflow-x-auto flex justify-center"
+      className="my-6 p-6 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg overflow-x-auto flex justify-center [&_svg]:max-w-full"
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
 }
 
-interface PreProps {
-  children?: ReactNode;
-  className?: string;
-  [key: string]: unknown;
-}
+// Extract text content from React children
+function getTextContent(node: ReactNode): string {
+  if (typeof node === 'string') return node;
+  if (typeof node === 'number') return String(node);
+  if (!node) return '';
 
-export function Pre({ children, ...props }: PreProps) {
-  // Check if this is a mermaid code block
-  if (children && typeof children === 'object' && 'props' in children) {
-    const codeElement = children as ReactElement<{ className?: string; children?: string }>;
-    const className = codeElement.props?.className || '';
-
-    if (className.includes('language-mermaid') || className.includes('mermaid')) {
-      const chart = codeElement.props?.children || '';
-      if (typeof chart === 'string') {
-        return <MermaidRenderer chart={chart.trim()} />;
-      }
-    }
+  if (Array.isArray(node)) {
+    return node.map(getTextContent).join('');
   }
 
-  // Default pre rendering
-  return <pre {...props}>{children}</pre>;
+  if (typeof node === 'object' && 'props' in node) {
+    return getTextContent(node.props.children);
+  }
+
+  return '';
+}
+
+type PreProps = ComponentProps<'pre'> & {
+  'data-language'?: string;
+};
+
+export function Pre(props: PreProps) {
+  const { children, ...rest } = props;
+
+  // Check for mermaid language
+  const lang = rest['data-language'];
+
+  if (lang === 'mermaid') {
+    const chart = getTextContent(children);
+    return <MermaidRenderer chart={chart.trim()} />;
+  }
+
+  // Default: use fumadocs CodeBlock
+  return <CodeBlock {...props}>{children}</CodeBlock>;
 }

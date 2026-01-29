@@ -5,4 +5,3 @@ export { Checklist, Check } from './Checklist';
 export { FileTree, Folder, File } from './FileTree';
 export { ComparisonTable } from './ComparisonTable';
 export { Pre } from './Pre';
-export { Mermaid } from './Mermaid';

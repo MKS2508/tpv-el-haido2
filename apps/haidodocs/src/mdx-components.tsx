@@ -32,15 +32,14 @@ import {
   File,
   ComparisonTable,
   Pre,
-  Mermaid,
 } from '@/components/mdx';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
-    // Fumadocs components (must come first to allow overrides)
+    // Fumadocs default components first
     ...defaultMdxComponents,
 
-    // Re-export fumadocs components explicitly
+    // Fumadocs components explicitly
     Steps,
     Tabs,
     Tab,
@@ -57,8 +56,6 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Folder,
     File,
     ComparisonTable,
-    Mermaid,
-    pre: Pre,
 
     // Lucide icons
     CheckCircle2,
@@ -76,6 +73,10 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Info,
     HelpCircle,
 
+    // User components
     ...components,
+
+    // Override pre LAST to handle mermaid
+    pre: Pre,
   };
 }
