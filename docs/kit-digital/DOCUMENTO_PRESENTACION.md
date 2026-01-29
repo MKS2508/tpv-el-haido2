@@ -3,15 +3,10 @@
 
 ---
 
-**Estado del documento:** ✅ 12/12 capturas disponibles (100% completo)
-**Empresa:** [Nombre de la empresa beneficiaria]
-**NIF:** [NIF de la empresa]
-**Fecha:** [Fecha de presentación]
-**Versión del software:** [X.X.X]
+**Fecha:** 29-01-2026
+**Versión del software:** [0.1.0]
 
-> **NOTAS:**
-> - ✅ Todas las capturas están disponibles y correctamente referenciadas
-> - ✅ Documento completo para presentación Kit Digital
+
 
 ---
 
@@ -355,7 +350,7 @@ Flexibilidad total para adaptarse a diferentes escenarios de uso:
 
 ---
 
-### 3.6 STACK TECNOLOGICO MODERNO
+### 3.6 STACK TECNOLOGICO 
 
 | Componente | Tecnología | Versión | Descripción |
 |------------|------------|---------|-------------|
@@ -400,20 +395,20 @@ Soporte completo para impresoras térmicas de punto de venta:
 ┌─────────────────────────────────────────────────────────────┐
 │                    TPV El Haido                             │
 ├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   SolidJS   │  │  Tailwind   │  │     Kobalte UI      │ │
-│  │  Frontend   │  │    CSS 4    │  │    Components       │ │
-│  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘ │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │   SolidJS   │  │  Tailwind   │  │     Kobalte UI      │  │
+│  │  Frontend   │  │    CSS 4    │  │    Components       │  │
+│  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘  │
 │         │                │                     │            │
 │  ┌──────┴────────────────┴─────────────────────┴──────────┐ │
-│  │                    Tauri Bridge                         │ │
-│  │              (IPC seguro Rust ↔ JS)                    │ │
+│  │                    Tauri Bridge                        │ │
+│  │              (IPC Rust ↔ JS)                           │ │
 │  └──────┬────────────────┬─────────────────────┬──────────┘ │
 │         │                │                     │            │
-│  ┌──────┴──────┐  ┌──────┴──────┐  ┌──────────┴──────────┐ │
-│  │   SQLite    │  │   AEAT      │  │   Thermal Printer   │ │
-│  │  Database   │  │  Sidecar    │  │      Sidecar        │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│  ┌──────┴──────┐  ┌──────┴──────┐  ┌──────────┴──────────┐  │
+│  │   SQLite    │  │   AEAT      │  │   Thermal Printer   │  │
+│  │  Database   │  │  Sidecar    │  │      Sidecar        │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -423,13 +418,10 @@ Soporte completo para impresoras térmicas de punto de venta:
 
 | Sistema | Descripción | Estado |
 |---------|-------------|--------|
-| **AEAT VERI*FACTU** | Facturación electrónica obligatoria | ✅ Implementado |
-| **Impresoras ESC/POS** | Tickets térmicos | ✅ Implementado |
-| **Cajón portamonedas** | Apertura automática | ✅ Implementado |
-| **Lector de códigos** | Escáner de barras | ✅ Compatible |
-| **Balanzas** | Pesaje de productos | 🔄 Planificado |
-| **Datáfonos** | Pago con tarjeta | 🔄 Planificado |
-
+| **AEAT VERI*FACTU** | Facturación electrónica obligatoria |
+| **Impresoras ESC/POS** | Tickets térmicos |
+| **Cajón portamonedas** | Apertura automática |
+| **Lector de códigos** | Escáner de barras | 
 ---
 
 ### 3.10 SEGURIDAD
@@ -444,79 +436,3 @@ Soporte completo para impresoras térmicas de punto de venta:
 | **Sandbox** | Aislamiento de procesos (Tauri) |
 
 ---
-
-## 4. CUMPLIMIENTO DE REQUISITOS
-
-### 4.1 Requisitos Funcionales
-
-| Requisito Kit Digital | Estado | Evidencia |
-|-----------------------|--------|-----------|
-| Control de acceso (Login) | ✅ Cumple | Sección 2.1 |
-| Gestión de operarios | ✅ Cumple | Sección 2.2 |
-| Gestión de artículos | ✅ Cumple | Sección 2.3 |
-| Gestión de clientes | ✅ Cumple | Sección 2.4 |
-| Gestión de pedidos | ✅ Cumple | Sección 2.5 |
-| Historial de operaciones | ✅ Cumple | Sección 2.6 |
-| Facturación | ✅ Cumple | Sección 2.7 |
-| Integración AEAT | ✅ Cumple | Sección 2.8 |
-| Actualizaciones | ✅ Cumple | Sección 2.9 |
-
-### 4.2 Requisitos Técnicos
-
-| Requisito | Estado | Evidencia |
-|-----------|--------|-----------|
-| Multiplataforma | ✅ Cumple | Sección 3.1 |
-| Rendimiento optimizado | ✅ Cumple | Sección 3.2 |
-| Personalización visual | ✅ Cumple | Sección 3.3 |
-| Accesibilidad táctil | ✅ Cumple | Sección 3.4 |
-| Flexibilidad de datos | ✅ Cumple | Sección 3.5 |
-| Stack moderno | ✅ Cumple | Sección 3.6 |
-| Impresión de tickets | ✅ Cumple | Sección 3.7 |
-| Seguridad | ✅ Cumple | Sección 3.10 |
-
----
-
-## 5. ANEXOS
-
-### 5.1 Listado de capturas de pantalla
-
-| # | Archivo | Estado | Descripción |
-|---|---------|--------|-------------|
-| 1 | `01_login.png` | ✅ Disponible | Pantalla de login con selección de operario |
-| 2 | `02_settings_usuarios.png` | ✅ Disponible | Gestión de usuarios en Ajustes |
-| 3 | `03_products.png` | ✅ Disponible | Catálogo de productos con filtros |
-| 4 | `04_customers.png` | ✅ Disponible | Gestión de clientes con datos fiscales |
-| 5 | `05_newOrder.png` | ✅ Disponible | Nueva comanda con productos |
-| 6 | `06_orderHistory.png` | ✅ Disponible | Historial de pedidos |
-| 7 | `07_aeatInvoices.png` | ✅ Disponible | Panel de facturas AEAT |
-| 8 | `08_settings_verifactu.png` | ✅ Disponible | Configuración VERI*FACTU |
-| 9 | `09_aeatInvoices_detail.png` | ✅ Disponible | Detalle de factura con CSV |
-| 10 | `10_settings_about.png` | ✅ Disponible | Versión y actualizaciones |
-| 11 | `11_settings.png` | ✅ Disponible | Panel de ajustes |
-| 12 | `12_themes.png` | ✅ Disponible | Sistema de temas |
-
-**Capturas adicionales disponibles:**
-- `01_home.png` - Dashboard/Home con estadísticas
-- `02_login.png` - Segunda variante de pantalla de login
-- `Licenciavalida.png` - Validación de licencia
-- `Verifactu2.png` - Segunda captura de configuración VERI*FACTU
-
-### 5.2 Especificaciones técnicas adicionales
-
-**Rendimiento medido:**
-- Tiempo de arranque: < 2 segundos
-- Uso de memoria: ~ 80-150 MB
-- Tamaño de instalación: ~ 25 MB (Windows)
-- Tiempo de respuesta UI: < 16ms (60fps)
-
-**Compatibilidad probada:**
-- Windows 10/11 (x64)
-- macOS 12+ (Intel/Apple Silicon)
-- Ubuntu 22.04+ (x64)
-- Raspberry Pi OS (ARM64)
-
----
-
-**Documento generado para la justificación del Kit Digital**
-**TPV El Haido - Sistema de Punto de Venta**
-**Versión del documento: 1.0**

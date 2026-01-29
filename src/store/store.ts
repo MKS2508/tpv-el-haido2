@@ -282,8 +282,9 @@ function createAppStore() {
   const setOrderHistory = (orderHistory: Order[]) => setState('orderHistory', () => [...orderHistory]);
 
   const setActiveOrders = (activeOrders: Order[]) => {
-    // Use a function updater to avoid SolidJS interpreting the array as a function
-    setState('activeOrders', () => [...activeOrders]);
+    // Ensure we always have a valid array and create a new reference
+    const orders = Array.isArray(activeOrders) ? activeOrders : [];
+    setState('activeOrders', orders);
   };
 
   const setRecentProducts = (recentProducts: Product[]) =>
