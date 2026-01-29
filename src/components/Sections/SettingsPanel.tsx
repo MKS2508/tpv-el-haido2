@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core';
 import {
   Bell,
   Cloud,
@@ -20,7 +19,16 @@ import {
   Wand2,
   X,
 } from 'lucide-solid';
-import { type Component, createSignal, For, Match, onMount, Show, Switch } from 'solid-js';
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  onMount,
+  Show,
+  Switch,
+} from 'solid-js';
 import AEATSettings from '@/components/AEATSettings';
 import DemoDataLoader from '@/components/DemoDataLoader';
 import LicenseStatusCard from '@/components/LicenseStatus';
@@ -52,17 +60,17 @@ import { Switch as SwitchUI } from '@/components/ui/switch.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { toast } from '@/components/ui/use-toast.ts';
 import VersionInfo from '@/components/VersionInfo';
+import { cn } from '@/lib/utils';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
 import type User from '@/models/User.ts';
+import { getPlatformService } from '@/services/platform';
 import type { StorageMode } from '@/services/storage-adapter.interface';
-import { createEffect } from 'solid-js';
 import {
   openCashDrawerOnly,
   runThermalPrinterCommand,
 } from '@/services/thermal-printer.service.ts';
 import useStore from '@/store/store';
 import type { LicenseStatus } from '@/types/license';
-import { cn } from '@/lib/utils';
 
 type SettingsPanelProps = {
   isSidebarOpen: boolean;
@@ -122,8 +130,9 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
 
   const refreshLicenseStatus = async () => {
     try {
-      const status = await invoke('check_license_status');
-      setLicenseStatus(status as LicenseStatus);
+      const platform = getPlatformService();
+      const status = await platform.checkLicense();
+      setLicenseStatus(status);
     } catch (error) {
       console.error('Error refreshing license status:', error);
     }
@@ -358,9 +367,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                         <Label for="darkMode" class="text-sm font-medium">
                           Modo Oscuro
                         </Label>
-                        <p class="text-xs text-muted-foreground">
-                          Alternar tema claro/oscuro
-                        </p>
+                        <p class="text-xs text-muted-foreground">Alternar tema claro/oscuro</p>
                       </div>
                       <SwitchUI
                         id="darkMode"
@@ -509,8 +516,8 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                     <span>Ejecutar Asistente de Configuración</span>
                   </Button>
                   <p class="text-xs text-muted-foreground px-1">
-                    Reinicia el asistente para volver a configurar el almacenamiento, importar datos o
-                    crear usuarios iniciales.
+                    Reinicia el asistente para volver a configurar el almacenamiento, importar datos
+                    o crear usuarios iniciales.
                   </p>
                 </div>
 
@@ -587,23 +594,23 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
             <LicenseStatusCard
               licenseStatus={state.licenseStatus}
               onRefresh={refreshLicenseStatus}
-              onClearLicense={() => {
-                invoke('clear_license')
-                  .then(() => {
-                    toast({
-                      title: 'Licencia eliminada',
-                      description: 'La licencia ha sido eliminada correctamente',
-                    });
-                    refreshLicenseStatus();
-                  })
-                  .catch((error) => {
-                    toast({
-                      title: 'Error',
-                      description: 'No se pudo eliminar la licencia',
-                      variant: 'destructive',
-                    });
-                    console.error('Error clearing license:', error);
+              onClearLicense={async () => {
+                try {
+                  const platform = getPlatformService();
+                  await platform.clearLicense();
+                  toast({
+                    title: 'Licencia eliminada',
+                    description: 'La licencia ha sido eliminada correctamente',
                   });
+                  refreshLicenseStatus();
+                } catch (error) {
+                  toast({
+                    title: 'Error',
+                    description: 'No se pudo eliminar la licencia',
+                    variant: 'destructive',
+                  });
+                  console.error('Error clearing license:', error);
+                }
               }}
             />
           </TabsContent>
@@ -633,10 +640,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                       <p class="text-xs text-muted-foreground">Usuario actual</p>
                     </div>
                   </div>
-                  <Button
-                    onClick={() => handleEditUser(props.selectedUser)}
-                    class="w-full gap-2"
-                  >
+                  <Button onClick={() => handleEditUser(props.selectedUser)} class="w-full gap-2">
                     <Pencil class="h-4 w-4" />
                     Editar Usuario
                   </Button>
@@ -821,12 +825,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                     <Label for="autoLogout" class="text-sm font-medium">
                       Cierre de Sesión Automático (minutos)
                     </Label>
-                    <Input
-                      id="autoLogout"
-                      type="number"
-                      placeholder="30"
-                      class="w-full"
-                    />
+                    <Input id="autoLogout" type="number" placeholder="30" class="w-full" />
                     <p class="text-xs text-muted-foreground">
                       Tiempo de inactividad antes de cerrar sesión automáticamente
                     </p>
@@ -921,7 +920,9 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
           </DialogHeader>
           <div class="space-y-4 py-4">
             <div class="space-y-2">
-              <Label for="name" class="text-sm font-medium">Nombre</Label>
+              <Label for="name" class="text-sm font-medium">
+                Nombre
+              </Label>
               <Input
                 id="name"
                 value={newUser().name}
@@ -941,7 +942,9 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
               />
             </div>
             <div class="space-y-2">
-              <Label for="pin" class="text-sm font-medium">PIN</Label>
+              <Label for="pin" class="text-sm font-medium">
+                PIN
+              </Label>
               <Input
                 id="pin"
                 type="password"
@@ -953,11 +956,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
             </div>
           </div>
           <DialogFooter class="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsUserDialogOpen(false)}
-              class="flex-1"
-            >
+            <Button variant="outline" onClick={() => setIsUserDialogOpen(false)} class="flex-1">
               <X class="h-4 w-4 mr-2" />
               Cancelar
             </Button>
@@ -996,18 +995,11 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
             </p>
           </div>
           <DialogFooter class="gap-2">
-            <Button
-              variant="outline"
-              onClick={cancelStorageModeChange}
-              class="flex-1"
-            >
+            <Button variant="outline" onClick={cancelStorageModeChange} class="flex-1">
               <X class="h-4 w-4 mr-2" />
               Cancelar
             </Button>
-            <Button
-              onClick={confirmStorageModeChange}
-              class="flex-1"
-            >
+            <Button onClick={confirmStorageModeChange} class="flex-1">
               Confirmar Cambio
             </Button>
           </DialogFooter>

@@ -1,5 +1,4 @@
 import { Motion } from '@motionone/solid';
-import { invoke } from '@tauri-apps/api/core';
 import { Loader2 } from 'lucide-solid';
 import { createSignal, onMount, Show } from 'solid-js';
 import { toast } from 'solid-sonner';
@@ -7,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { config } from '@/lib/config';
+import { getPlatformService } from '@/services/platform';
 import type { LicenseActivationRequest, LicenseStatus } from '@/types/license';
 
 interface LicenseSplashScreenProps {
@@ -54,15 +54,13 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
     setIsLoading(true);
 
     try {
+      const platform = getPlatformService();
       const request: LicenseActivationRequest = {
         key: key(),
         email: email(),
       };
 
-      const status = await invoke<LicenseStatus>('validate_and_activate_license', {
-        key: request.key,
-        email: request.email,
-      });
+      const status = await platform.validateLicense(request.key, request.email);
 
       if (status.is_valid) {
         toast.success('Licencia activada correctamente');
@@ -80,7 +78,8 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
 
   onMount(async () => {
     try {
-      const status = await invoke<LicenseStatus>('check_license_status');
+      const platform = getPlatformService();
+      const status = await platform.checkLicense();
 
       if (status.is_activated && status.is_valid) {
         props.onComplete(status);
@@ -104,11 +103,7 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
           <Show when={!isChecking()}>
             <div class="text-center space-y-4">
               <div class="flex justify-center">
-                <img
-                  src="/logo.svg"
-                  alt="TPV El Haido"
-                  class="h-24 w-32"
-                />
+                <img src="/logo.svg" alt="TPV El Haido" class="h-24 w-32" />
               </div>
               <h1 class="text-3xl font-bold">TPV El Haido</h1>
               <p class="text-muted-foreground">Activa tu licencia para comenzar</p>

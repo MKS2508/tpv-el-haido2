@@ -1,4 +1,5 @@
 import type Order from '@/models/Order';
+import type { LicenseStatus } from '@/types/license';
 
 export interface PlatformService {
   // ================================
@@ -71,4 +72,48 @@ export interface PlatformService {
    * @returns Version string (e.g., "1.0.0")
    */
   getVersion(): string;
+
+  // ================================
+  // LICENSE MANAGEMENT
+  // ================================
+  /**
+   * Check if the platform supports the license system
+   * In Tauri: true (has machine fingerprint)
+   * In PWA: false (no native fingerprinting)
+   * @returns true if license system is available
+   */
+  canUseLicenseSystem(): boolean;
+
+  /**
+   * Check current license status
+   * In Tauri: queries local SQLite database
+   * In PWA: returns always-valid status (skip license)
+   * @returns Current license status
+   */
+  checkLicense(): Promise<LicenseStatus>;
+
+  /**
+   * Validate and activate a license
+   * In Tauri: validates with server and stores locally
+   * In PWA: no-op, returns valid status
+   * @param key License key (format: XXXX-XXXX-XXXX-XXXX)
+   * @param email User email
+   * @returns Updated license status
+   */
+  validateLicense(key: string, email: string): Promise<LicenseStatus>;
+
+  /**
+   * Clear/revoke the current license
+   * In Tauri: removes from local SQLite database
+   * In PWA: no-op
+   */
+  clearLicense(): Promise<void>;
+
+  /**
+   * Get machine fingerprint for license binding
+   * In Tauri: generates unique machine ID
+   * In PWA: returns empty string (not available)
+   * @returns Machine fingerprint string
+   */
+  getMachineFingerprint(): Promise<string>;
 }

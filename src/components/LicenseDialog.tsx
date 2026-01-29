@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core';
 import { createSignal, Show } from 'solid-js';
 import { toast } from 'solid-sonner';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getPlatformService } from '@/services/platform';
 import type { LicenseActivationRequest, LicenseStatus } from '@/types/license';
 
 interface LicenseDialogProps {
@@ -63,15 +63,13 @@ export default function LicenseDialog(props: LicenseDialogProps) {
     setIsLoading(true);
 
     try {
+      const platform = getPlatformService();
       const request: LicenseActivationRequest = {
         key: key(),
         email: email(),
       };
 
-      const status = await invoke<LicenseStatus>('validate_and_activate_license', {
-        key: request.key,
-        email: request.email,
-      });
+      const status = await platform.validateLicense(request.key, request.email);
 
       if (status.is_valid) {
         toast.success('Licencia activada correctamente');

@@ -1,6 +1,5 @@
 import './App.css';
 import { Motion, Presence } from '@motionone/solid';
-import { invoke } from '@tauri-apps/api/core';
 import {
   BeerIcon,
   ClipboardListIcon,
@@ -11,12 +10,14 @@ import {
   SettingsIcon,
   UsersIcon,
 } from 'lucide-solid';
-import { Match, onMount, Show, Switch, createEffect, createSignal } from 'solid-js';
+import { createEffect, createSignal, Match, onMount, Show, Switch } from 'solid-js';
 import fallbackProducts from '@/assets/products.json';
 import iconOptions from '@/assets/utils/icons/iconOptions';
 import BottomNavigation from '@/components/BottomNavigation';
 import DebugIndicator from '@/components/DebugIndicator';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LicenseSplashScreen from '@/components/LicenseSplashScreen';
+import { OnboardingProvider } from '@/components/Onboarding/OnboardingProvider';
 import ScreenshotOverlay from '@/components/ScreenshotOverlay';
 import AEATInvoices from '@/components/Sections/AEATInvoices';
 import Customers from '@/components/Sections/Customers';
@@ -30,22 +31,21 @@ import SettingsPanel from '@/components/Sections/SettingsPanel';
 import Sidebar from '@/components/SideBar';
 import SidebarToggleButton from '@/components/SideBarToggleButton';
 import UpdateChecker from '@/components/UpdateChecker';
-import { OnboardingProvider } from '@/components/Onboarding/OnboardingProvider';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { useAppTheme } from '@/lib/theme-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
+import { useAboutDialog } from '@/hooks/useAboutDialog';
 import { config } from '@/lib/config';
+import { setupNativeMenu } from '@/lib/setupNativeMenu';
+import { useAppTheme } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
 import type Product from '@/models/Product';
-import { useAboutDialog } from '@/hooks/useAboutDialog';
-import { setupNativeMenu } from '@/lib/setupNativeMenu';
 import {
   BreakLine,
   CharacterSet,
   PrinterTypes,
   type ThermalPrinterServiceOptions,
 } from '@/models/ThermalPrinter';
+import { getPlatformService } from '@/services/platform';
 import useStore from '@/store/store';
 import type { LicenseStatus } from '@/types/license';
 
@@ -167,6 +167,24 @@ function App() {
 
   // License check function
   const checkLicense = async () => {
+    const platform = getPlatformService();
+
+    // PWA MODE: Skip license validation entirely (no native fingerprinting)
+    if (!platform.canUseLicenseSystem()) {
+      console.log('[License] PWA MODE - License system not available, skipping validation');
+      const pwaStatus: LicenseStatus = {
+        is_activated: true,
+        is_valid: true,
+        email: 'pwa@web.local',
+        license_type: 'pwa',
+        days_remaining: null,
+        expires_at: null,
+      };
+      store.setLicenseStatus(pwaStatus);
+      setShowLicenseSplash(false);
+      return;
+    }
+
     // DEBUG MODE: Skip license validation entirely
     if (config.debug.enabled) {
       console.log('[License] DEBUG MODE - Skipping license validation');
@@ -184,7 +202,7 @@ function App() {
     }
 
     try {
-      const status = await invoke<LicenseStatus>('check_license_status');
+      const status = await platform.checkLicense();
       console.log('[License] Status:', status);
 
       store.setLicenseStatus(status);
@@ -374,7 +392,6 @@ function App() {
     setTimeout(() => setForceAboutTab(false), 100);
   });
 
-
   return (
     <div
       class={cn(
@@ -441,10 +458,7 @@ function App() {
           >
             <CardContent class="p-0 h-full flex flex-col overflow-hidden bg-card text-card-foreground">
               <div
-                class={cn(
-                  'flex-shrink-0',
-                  isMobile() ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6'
-                )}
+                class={cn('flex-shrink-0', isMobile() ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6')}
               >
                 <SectionHeader menuItems={menuItems} activeSection={activeSection()} />
               </div>
@@ -463,9 +477,7 @@ function App() {
                         fallbackTitle="Error en Inicio"
                         fallbackMessage="No se ha podido cargar la pantalla de inicio."
                       >
-                        <Home
-                          userName={store.state.selectedUser?.name || 'Usuario desconocido'}
-                        />
+                        <Home userName={store.state.selectedUser?.name || 'Usuario desconocido'} />
                       </ErrorBoundary>
                     </div>
                   </Match>

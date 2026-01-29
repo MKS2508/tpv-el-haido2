@@ -1,10 +1,10 @@
-import { invoke } from '@tauri-apps/api/core';
 import { AlertCircle, CheckCircle, Key, XCircle } from 'lucide-solid';
 import { Show } from 'solid-js';
 import { toast } from 'solid-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getPlatformService } from '@/services/platform';
 import type { LicenseStatus } from '@/types/license';
 
 interface LicenseStatusCardProps {
@@ -34,7 +34,8 @@ const getLicenseTypeColor = (type: string): 'default' | 'secondary' | 'destructi
 export default function LicenseStatusCard(props: LicenseStatusCardProps) {
   const handleClearLicense = async () => {
     try {
-      await invoke('clear_license');
+      const platform = getPlatformService();
+      await platform.clearLicense();
       toast.success('Licencia eliminada correctamente');
       props.onRefresh();
     } catch (error) {

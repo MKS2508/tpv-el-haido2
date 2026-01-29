@@ -1,4 +1,5 @@
 import type Order from '@/models/Order';
+import type { LicenseStatus } from '@/types/license';
 import type { PlatformService } from './PlatformService';
 
 /**
@@ -148,5 +149,46 @@ export class WebPlatformService implements PlatformService {
     console.warn('[WebPlatformService] No version found, using default');
 
     return '1.0.0';
+  }
+
+  // ================================
+  // LICENSE MANAGEMENT - PWA FALLBACK
+  // ================================
+
+  canUseLicenseSystem(): boolean {
+    return false;
+  }
+
+  async checkLicense(): Promise<LicenseStatus> {
+    console.log('[WebPlatformService] License system not available in PWA');
+    return {
+      is_activated: true,
+      is_valid: true,
+      license_type: 'pwa',
+      email: 'pwa@web.local',
+      days_remaining: null,
+      expires_at: null,
+    };
+  }
+
+  async validateLicense(_key: string, _email: string): Promise<LicenseStatus> {
+    console.log('[WebPlatformService] License validation skipped in PWA');
+    return {
+      is_activated: true,
+      is_valid: true,
+      license_type: 'pwa',
+      email: 'pwa@web.local',
+      days_remaining: null,
+      expires_at: null,
+    };
+  }
+
+  async clearLicense(): Promise<void> {
+    console.log('[WebPlatformService] License clear not applicable in PWA');
+  }
+
+  async getMachineFingerprint(): Promise<string> {
+    console.log('[WebPlatformService] Machine fingerprint not available in PWA');
+    return '';
   }
 }
