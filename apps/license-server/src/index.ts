@@ -114,11 +114,14 @@ Admin endpoints require Bearer token authentication. Set the \`ADMIN_TOKEN\` env
    */
   .listen(PORT);
 
+console.log(`🦊 License Server running at ${app.server?.hostname}:${app.server?.port}`);
+
 apiLogger.success('License Server started', {
-  url: `http://localhost:${PORT}`,
-  docs: `http://localhost:${PORT}/openapi`,
-  health: `http://localhost:${PORT}/api/license/health`,
+  url: `http://${app.server?.hostname}:${app.server?.port}`,
+  docs: `http://${app.server?.hostname}:${app.server?.port}/openapi`,
+  health: `http://${app.server?.hostname}:${app.server?.port}/api/license/health`,
   environment: process.env.NODE_ENV || 'development'
 });
 
-export default app;
+// Export for testing only - don't re-import this module
+export type App = typeof app;
