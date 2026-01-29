@@ -19,6 +19,13 @@ import { adminLogger, apiLogger } from '../lib/logger.js';
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'admin-secret-token-change-me';
 
 /**
+ * Debug mode flag
+ * When enabled, allows "test" as a valid bearer token for development
+ */
+const DEBUG_MODE = process.env.DEBUG_MODE === 'true';
+const DEBUG_TOKEN = 'test';
+
+/**
  * Admin routes for license management
  * All endpoints require Bearer token authentication
  */
@@ -28,9 +35,12 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
   /**
    * Authentication guard
    * Validates bearer token before processing any admin request
+   * In DEBUG_MODE, accepts "test" as a valid token
    */
   .onBeforeHandle(({ bearer, set }) => {
-    if (bearer !== ADMIN_TOKEN) {
+    const isValidToken = bearer === ADMIN_TOKEN || (DEBUG_MODE && bearer === DEBUG_TOKEN);
+
+    if (!isValidToken) {
       adminLogger.warn('Unauthorized admin access attempt');
 
       set.status = 401;
@@ -39,6 +49,10 @@ export const adminRoutes = new Elysia({ prefix: '/api/admin' })
         error: 'Unauthorized',
         message: 'Invalid or missing admin token'
       } as const;
+    }
+
+    if (DEBUG_MODE && bearer === DEBUG_TOKEN) {
+      adminLogger.info('Debug mode authentication used');
     }
 
     // Return undefined to continue to next handler

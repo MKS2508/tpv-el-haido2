@@ -40,7 +40,8 @@
       "Bash(bun run lint:solid)",
       "Bash(git checkout:*)",
       "Bash(bun run lint:solid:*)",
-      "Bash(bunx:*)"
+      "Bash(bunx:*)",
+      "Bash(bun run build:*)"
     ]
   }
 }

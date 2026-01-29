@@ -1,10 +1,23 @@
 import { Motion, Presence } from '@motionone/solid';
 import { Loader2 } from 'lucide-solid';
-import { createEffect, createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useResponsive } from '@/hooks/useResponsive';
+import { config } from '@/lib/config';
 import type User from '@/models/User';
+
+/**
+ * Debug test user for development
+ * Only available when DEBUG_MODE is enabled (VITE_DEBUG_MODE=true)
+ * Credentials: PIN 1111
+ */
+const DEBUG_TEST_USER: User = {
+  id: 0,
+  name: 'Test',
+  pin: '1111',
+  profilePicture: ''
+};
 
 interface LoginProps {
   users: User[];
@@ -19,6 +32,14 @@ const Login = (props: LoginProps) => {
   const [isLoading, setIsLoading] = createSignal(false);
   const [isTauri, setIsTauri] = createSignal(false);
   const responsive = useResponsive();
+
+  // Include debug test user when DEBUG_MODE is enabled
+  const availableUsers = createMemo(() => {
+    if (config.debug.enabled) {
+      return [DEBUG_TEST_USER, ...props.users];
+    }
+    return props.users;
+  });
 
   // Helper to determine if we should use desktop layout
   const isDesktopLayout = () =>
@@ -287,7 +308,7 @@ const Login = (props: LoginProps) => {
                       transition={{ duration: 0.3, easing: [0.4, 0, 0.2, 1] }}
                       class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 w-full max-w-lg"
                     >
-                      <For each={props.users}>
+                      <For each={availableUsers()}>
                         {(user) => (
                           <button
                             type="button"
