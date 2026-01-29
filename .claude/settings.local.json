@@ -41,7 +41,10 @@
       "Bash(git checkout:*)",
       "Bash(bun run lint:solid:*)",
       "Bash(bunx:*)",
-      "Bash(bunx next build)"
+      "Bash(bunx next build)",
+      "Bash(taskkill:*)",
+      "Bash(bun add:*)",
+      "Bash(bunx playwright install:*)"
     ]
   }
 }

@@ -36,3 +36,4 @@ dist-ssr
 src-tauri/sidecars/aeat-bridge-x86_64-pc-windows-msvc.exe
 /apps/haidodocs/.next
 /apps/haidodocs/out
+.claude/settings.local.json
