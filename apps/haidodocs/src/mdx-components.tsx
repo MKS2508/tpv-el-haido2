@@ -1,4 +1,5 @@
 import defaultMdxComponents from 'fumadocs-ui/mdx';
+import { Mermaid } from 'fumadocs-ui/components/mermaid';
 import { Steps } from 'fumadocs-ui/components/steps';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Callout } from 'fumadocs-ui/components/callout';
@@ -43,6 +44,9 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Tabs,
     Tab,
     Callout,
+
+    // Mermaid diagrams
+    Mermaid,
 
     // Custom MDX components
     FeatureGrid,
