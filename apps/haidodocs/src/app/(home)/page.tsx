@@ -43,7 +43,7 @@ export default function HomePage() {
       <div
         className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, var(--accent-cyan) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, var(--accent-green) 0%, transparent 70%)',
         }}
       />
 
@@ -55,7 +55,7 @@ export default function HomePage() {
             className={`mb-6 opacity-0 ${mounted ? 'animate-fade-in' : ''}`}
             style={{ animationDelay: '0ms', animationFillMode: 'forwards' }}
           >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-medium tracking-wider uppercase text-[var(--accent-cyan)] bg-[var(--accent-glow)] border border-[var(--accent-cyan-dim)] rounded-full">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-medium tracking-wider uppercase text-[var(--accent-green)] bg-[var(--accent-glow)] border border-[var(--accent-green-dim)] rounded-full">
               <Zap className="w-3 h-3" />
               Documentacion TPV
             </span>
@@ -131,10 +131,10 @@ export default function HomePage() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="group p-6 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg transition-all duration-300 hover:border-[var(--accent-cyan-dim)] hover:shadow-[0_0_30px_var(--accent-glow)]"
+                className="group p-6 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg transition-all duration-300 hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_30px_var(--accent-glow)]"
               >
                 <div className="flex items-start gap-4">
-                  <span className="font-serif text-2xl text-[var(--text-subtle)] group-hover:text-[var(--accent-cyan)] transition-colors">
+                  <span className="font-serif text-2xl text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors">
                     {String(index + 1).padStart(2, '0')}
                   </span>
                   <div>
@@ -168,7 +168,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/docs/introduccion/installation/"
-                className="inline-flex items-center gap-2 text-[var(--accent-cyan)] hover:underline text-sm font-medium"
+                className="inline-flex items-center gap-2 text-[var(--accent-green)] hover:underline text-sm font-medium"
               >
                 <BookOpen className="w-4 h-4" />
                 Ver documentacion

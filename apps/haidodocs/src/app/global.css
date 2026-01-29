@@ -7,22 +7,22 @@
    =================================== */
 
 :root {
-  /* Dark Theme Colors */
-  --bg-void: #050506;
-  --bg-primary: #0a0a0b;
-  --bg-elevated: #111113;
-  --bg-hover: #1a1a1d;
+  /* Dark Theme - Supabase Green */
+  --bg-void: #030303;
+  --bg-primary: #0a0a0a;
+  --bg-elevated: #121212;
+  --bg-hover: #1a1a1a;
 
-  --text-primary: #fafafa;
-  --text-muted: #71717a;
-  --text-subtle: #52525b;
+  --text-primary: #ededed;
+  --text-muted: #888888;
+  --text-subtle: #666666;
 
-  --accent-cyan: #22d3ee;
-  --accent-cyan-dim: #0891b2;
-  --accent-glow: rgba(34, 211, 238, 0.12);
+  --accent-green: #3ecf8e;
+  --accent-green-dim: #2a9d6a;
+  --accent-glow: rgba(62, 207, 142, 0.15);
 
-  --border-subtle: #27272a;
-  --border-hover: #3f3f46;
+  --border-subtle: #222222;
+  --border-hover: #333333;
 
   /* Fonts */
   --font-serif: 'Instrument Serif', Georgia, serif;
@@ -155,14 +155,14 @@
    =================================== */
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-cyan-dim) 100%);
+  background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-green-dim) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .glow-border {
-  border: 1px solid var(--accent-cyan-dim);
+  border: 1px solid var(--accent-green-dim);
   box-shadow: 0 0 20px var(--accent-glow);
   transition: box-shadow 0.3s ease;
 }
@@ -235,14 +235,14 @@
 }
 
 .terminal-arrow {
-  color: var(--accent-cyan);
+  color: var(--accent-green);
 }
 
 .terminal-cursor {
   display: inline-block;
   width: 8px;
   height: 18px;
-  background: var(--accent-cyan);
+  background: var(--accent-green);
   margin-left: 2px;
   vertical-align: text-bottom;
 }
@@ -273,16 +273,16 @@
   gap: 8px;
   padding: 12px 24px;
   background: transparent;
-  color: var(--accent-cyan);
+  color: var(--accent-green);
   font-weight: 500;
-  border: 1px solid var(--accent-cyan-dim);
+  border: 1px solid var(--accent-green-dim);
   border-radius: 6px;
   transition: all 0.2s ease;
 }
 
 .btn-ghost:hover {
   background: var(--accent-glow);
-  border-color: var(--accent-cyan);
+  border-color: var(--accent-green);
 }
 
 /* ===================================
@@ -297,7 +297,7 @@
   --fd-foreground: var(--text-primary);
   --fd-muted-foreground: var(--text-muted);
   --fd-border: var(--border-subtle);
-  --fd-primary: var(--accent-cyan);
+  --fd-primary: var(--accent-green);
   --fd-primary-foreground: var(--bg-primary);
 }
 
@@ -320,8 +320,8 @@
 .prose {
   --tw-prose-body: var(--text-primary);
   --tw-prose-headings: var(--text-primary);
-  --tw-prose-links: var(--accent-cyan);
-  --tw-prose-code: var(--accent-cyan);
+  --tw-prose-links: var(--accent-green);
+  --tw-prose-code: var(--accent-green);
   --tw-prose-pre-bg: var(--bg-elevated);
   --tw-prose-pre-code: var(--text-primary);
 }
@@ -335,7 +335,7 @@
 }
 
 .prose pre:hover {
-  border-color: var(--accent-cyan-dim);
+  border-color: var(--accent-green-dim);
   box-shadow: 0 0 20px var(--accent-glow);
 }
 
@@ -349,7 +349,7 @@
 /* Links with animated underline */
 .prose a {
   text-decoration: none;
-  background-image: linear-gradient(var(--accent-cyan), var(--accent-cyan));
+  background-image: linear-gradient(var(--accent-green), var(--accent-green));
   background-size: 0% 1px;
   background-position: 0 100%;
   background-repeat: no-repeat;
@@ -390,12 +390,12 @@
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.875em;
-  color: var(--accent-cyan);
+  color: var(--accent-green);
 }
 
 /* Blockquotes */
 .prose blockquote {
-  border-left: 3px solid var(--accent-cyan-dim);
+  border-left: 3px solid var(--accent-green-dim);
   background: var(--bg-elevated);
   padding: 1rem;
   border-radius: 0 8px 8px 0;
@@ -432,7 +432,7 @@
 }
 
 .feature-row:hover .feature-number {
-  color: var(--accent-cyan);
+  color: var(--accent-green);
 }
 
 .feature-content h3 {
