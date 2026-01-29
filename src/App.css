@@ -316,3 +316,12 @@ body {
     box-shadow: inherit !important;
   }
 }
+
+/* ==================== Screenshot capture utilities ==================== */
+
+/* Hide elements marked with .screenshot-hide during screenshot capture */
+body.screenshot-capturing .screenshot-hide {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}

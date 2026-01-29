@@ -312,11 +312,11 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   });
 
   return (
-    <div class="space-y-6 bg-background text-foreground">
+    <div class="space-y-6 bg-background text-foreground max-w-6xl mx-auto px-4">
       <Tabs value={activeTab()} onChange={setActiveTab} class="w-full">
         <div class="relative">
-          <div class="overflow-x-auto scrollbar-hide pb-2 -mx-2 px-2">
-            <TabsList class="inline-flex h-auto bg-muted/40 border border-border/50 p-1.5 gap-1 rounded-xl min-w-max backdrop-blur-sm">
+          <div class="pb-2">
+            <TabsList class="flex flex-wrap h-auto bg-muted/40 border border-border/50 p-1.5 gap-1 rounded-xl backdrop-blur-sm">
               <For each={SETTINGS_TABS}>
                 {(tab) => {
                   const Icon = tab.icon;

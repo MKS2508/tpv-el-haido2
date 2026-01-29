@@ -50,7 +50,13 @@
       "mcp__plugin_context7_context7__resolve-library-id",
       "mcp__plugin_context7_context7__query-docs",
       "Bash(eslint:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(cargo search:*)",
+      "Bash(git commit:*)",
+      "Bash(export:*)",
+      "Bash(RWRTIU4ES50TIuj15TqtqdXx/+ZPOrsIutgA1Nx4LKXCqe997jlvyOkf\"\n\nTambién se corrigió el archivo .pub que tenía contenido incorrecto.\n</technical>\n\n<changelog>\n- **Corregido**: Formato de clave pública para Tauri Updater\n- **Solucionado**: Error de firma \"Missing encoded key in public key\"\n- **Generado**: Archivo .sig para updater \\(TPV El Haido.app.tar.gz.sig\\)\n- **Verificado**: Build con firma funciona correctamente\n</changelog>\nEOF\n\\)\")",
+      "Bash(ls:*)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -39,6 +39,7 @@
     "apps:docs": "bun run docs"
   },
   "dependencies": {
+    "@amad3v/solid-chart": "^1.0.4",
     "@kobalte/core": "^0.13.9",
     "@mks2508/better-logger": "^4.0.0",
     "@mks2508/no-throw": "^0.1.0",
@@ -51,6 +52,7 @@
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-shell": "^2.3.4",
     "@tauri-apps/plugin-updater": "^2.9.0",
+    "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

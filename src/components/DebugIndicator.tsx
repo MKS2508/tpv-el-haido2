@@ -24,7 +24,7 @@ function DebugIndicator(props: DebugIndicatorProps) {
 
   return (
     <Show when={store.state.debugMode}>
-      <div class={cn('fixed z-50', isMobile() ? 'top-2 right-2' : 'top-4 right-4', props.class)}>
+      <div class={cn('fixed z-50 screenshot-hide', isMobile() ? 'top-2 right-2' : 'top-4 right-4', props.class)}>
         <div class="flex flex-col gap-2 items-end">
           {/* Debug Mode Badge */}
           <Badge
