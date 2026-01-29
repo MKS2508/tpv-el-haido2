@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js';
+import { createEffect, createSignal } from 'solid-js';
 
 interface DateInputProps {
   value?: Date;
@@ -6,14 +6,18 @@ interface DateInputProps {
 }
 
 function DateInput(props: DateInputProps) {
-  const initialValue = props.value;
-  const [day, setDay] = createSignal(initialValue ? initialValue.getDate() : new Date().getDate());
-  const [month, setMonth] = createSignal(
-    initialValue ? initialValue.getMonth() + 1 : new Date().getMonth() + 1
-  );
-  const [year, setYear] = createSignal(
-    initialValue ? initialValue.getFullYear() : new Date().getFullYear()
-  );
+  const [day, setDay] = createSignal(new Date().getDate());
+  const [month, setMonth] = createSignal(new Date().getMonth() + 1);
+  const [year, setYear] = createSignal(new Date().getFullYear());
+
+  createEffect(() => {
+    const value = props.value;
+    if (value) {
+      setDay(value.getDate());
+      setMonth(value.getMonth() + 1);
+      setYear(value.getFullYear());
+    }
+  });
 
   const handleDayChange = (e: Event) => {
     const target = e.target as HTMLInputElement;

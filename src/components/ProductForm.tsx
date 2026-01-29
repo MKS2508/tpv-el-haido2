@@ -1,5 +1,5 @@
 import { BeerIcon } from 'lucide-solid';
-import { type Component, createSignal, For, Show } from 'solid-js';
+import { type Component, createEffect, createSignal, For, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import iconOptions from '@/assets/utils/icons/iconOptions.ts';
 import { Button } from '@/components/ui/button.tsx';
@@ -34,15 +34,23 @@ const BlobToBase64 = (file: Blob | null) => {
 };
 
 const ProductForm: Component<ProductFormProps> = (props) => {
-  const [name, setName] = createSignal(props.product?.name || '');
-  const [price, setPrice] = createSignal(props.product?.price ? props.product.price : 0);
-  const [category, setCategory] = createSignal(props.product?.category || '');
-  const [brand, setBrand] = createSignal(props.product?.brand || '');
-  const [iconType, setIconType] = createSignal(props.product?.iconType || 'preset');
-  const [selectedIcon, setSelectedIcon] = createSignal(props.product?.selectedIcon || '');
-  const [uploadedImage, setUploadedImage] = createSignal<string | null>(
-    props.product?.uploadedImage || null
-  );
+  const [name, setName] = createSignal('');
+  const [price, setPrice] = createSignal(0);
+  const [category, setCategory] = createSignal('');
+  const [brand, setBrand] = createSignal('');
+  const [iconType, setIconType] = createSignal('preset');
+  const [selectedIcon, setSelectedIcon] = createSignal('');
+  const [uploadedImage, setUploadedImage] = createSignal<string | null>(null);
+
+  createEffect(() => {
+    setName(props.product?.name || '');
+    setPrice(props.product?.price ? props.product.price : 0);
+    setCategory(props.product?.category || '');
+    setBrand(props.product?.brand || '');
+    setIconType(props.product?.iconType || 'preset');
+    setSelectedIcon(props.product?.selectedIcon || '');
+    setUploadedImage(props.product?.uploadedImage || null);
+  });
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();

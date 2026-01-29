@@ -3,6 +3,7 @@
 mod database;
 mod models;
 mod license;
+mod screenshot;
 
 use std::fs;
 use std::sync::Mutex;
@@ -14,6 +15,7 @@ use database::Database;
 use models::{Product, Category, Order, Table, User, ExportData, ImportData};
 use models::license::{LicenseKey, LicenseStatus};
 use license::{generate_machine_fingerprint, hash_license_key, validate_license_online};
+use screenshot::{save_screenshot_from_base64, get_screenshots_dir};
 
 // Database state
 struct DbState {
@@ -274,9 +276,51 @@ async fn validate_and_activate_license(
 ) -> Result<LicenseStatus, String> {
     let machine_fingerprint = generate_machine_fingerprint()?;
 
+    // Check if these are master credentials (local validation, no server required)
+    let master_email = std::env::var("MASTER_LICENSE_EMAIL")
+        .unwrap_or_else(|_| "admin@haido.local".to_string());
+    let master_key = std::env::var("MASTER_LICENSE_KEY")
+        .unwrap_or_else(|_| "HAI-MASTER-DEV-KEY-2026".to_string());
+
+    if email == master_email && key == master_key {
+        // Master license is valid - no online connection required
+        let key_hash = hash_license_key(&key);
+
+        let license = LicenseKey {
+            key_hash,
+            email: master_email.clone(),
+            machine_fingerprint,
+            activated_at: chrono::Utc::now().timestamp(),
+            expires_at: None, // Never expires
+            is_active: true,
+            license_type: "master".to_string(),
+        };
+
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = db.as_ref().ok_or("Database not initialized")?;
+        db.save_license(&license).map_err(|e| e.to_string())?;
+
+        return Ok(LicenseStatus {
+            is_activated: true,
+            is_valid: true,
+            expires_at: None,
+            email: Some(master_email),
+            days_remaining: None, // Indicates perpetual license
+            license_type: Some("master".to_string()),
+            error_message: None,
+        });
+    }
+
+    // Continue with normal online validation...
     let response = validate_license_online(key.clone(), email.clone(), machine_fingerprint.clone()).await?;
 
     if !response.valid {
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let db = db.as_ref().ok_or("Database not initialized")?;
+
+        let key_hash = hash_license_key(&key);
+        db.update_license_status(&key_hash, false).map_err(|e| e.to_string())?;
+
         return Ok(LicenseStatus {
             is_activated: false,
             is_valid: false,
@@ -400,6 +444,9 @@ pub fn run() {
             validate_and_activate_license,
             get_machine_fingerprint,
             clear_license,
+            // Screenshot
+            save_screenshot_from_base64,
+            get_screenshots_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

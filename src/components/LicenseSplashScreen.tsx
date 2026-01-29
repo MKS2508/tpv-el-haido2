@@ -1,6 +1,6 @@
 import { Motion } from '@motionone/solid';
 import { invoke } from '@tauri-apps/api/core';
-import { Bug, Key, Loader2 } from 'lucide-solid';
+import { Loader2 } from 'lucide-solid';
 import { createSignal, onMount, Show } from 'solid-js';
 import { toast } from 'solid-sonner';
 import { Button } from '@/components/ui/button';
@@ -78,29 +78,7 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
     }
   };
 
-  // Debug mode bypass
-  const handleDebugBypass = () => {
-    console.log('[License] DEBUG MODE - Bypassing license activation');
-    const debugStatus: LicenseStatus = {
-      is_activated: true,
-      is_valid: true,
-      email: 'debug@test.local',
-      license_type: 'enterprise',
-      days_remaining: 9999,
-      expires_at: null,
-    };
-    toast.success('DEBUG: Licencia activada en modo desarrollo');
-    props.onComplete(debugStatus);
-  };
-
   onMount(async () => {
-    // DEBUG MODE: Auto-bypass license check
-    if (config.debug.enabled) {
-      console.log('[License] DEBUG MODE - Auto-bypassing license check');
-      setIsChecking(false);
-      return;
-    }
-
     try {
       const status = await invoke<LicenseStatus>('check_license_status');
 
@@ -124,11 +102,13 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
       >
         <div class="bg-card border rounded-3xl shadow-2xl p-8 space-y-6">
           <Show when={!isChecking()}>
-            <div class="text-center space-y-2">
+            <div class="text-center space-y-4">
               <div class="flex justify-center">
-                <div class="p-4 bg-primary/10 rounded-full">
-                  <Key class="h-12 w-12 text-primary" />
-                </div>
+                <img
+                  src="/logo.svg"
+                  alt="TPV El Haido"
+                  class="h-24 w-32"
+                />
               </div>
               <h1 class="text-3xl font-bold">TPV El Haido</h1>
               <p class="text-muted-foreground">Activa tu licencia para comenzar</p>
@@ -179,19 +159,17 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
               </a>
             </div>
 
-            {/* Debug Mode Bypass Button */}
+            {/* Debug Mode: Show master credentials hint */}
             <Show when={config.debug.enabled}>
               <div class="pt-4 border-t border-border">
-                <Button
-                  onClick={handleDebugBypass}
-                  variant="outline"
-                  class="w-full border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
-                >
-                  <Bug class="mr-2 h-4 w-4" />
-                  DEBUG: Saltar validación
-                </Button>
-                <p class="text-xs text-orange-500 text-center mt-2">
+                <p class="text-xs text-muted-foreground text-center">
                   Modo desarrollo activo (VITE_DEBUG_MODE=true)
+                </p>
+                <p class="text-xs text-muted-foreground text-center mt-1">
+                  Master: {config.debug.masterEmail}
+                </p>
+                <p class="text-xs text-muted-foreground text-center">
+                  Key: {config.debug.masterKey}
                 </p>
               </div>
             </Show>

@@ -314,7 +314,7 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
     // Estado
     config,
     connectionStatus,
-    sidecarState: sidecar().state,
+    sidecarState: () => sidecar().state(),
     isLoading,
 
     // Configuración

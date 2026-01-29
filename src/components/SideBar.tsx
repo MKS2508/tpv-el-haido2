@@ -305,7 +305,7 @@ function Sidebar(props: SidebarProps) {
                     <button
                       type="button"
                       class="w-full flex items-center justify-center bg-sidebar-accent border border-sidebar-border/50 text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground hover:border-sidebar-border text-xs sm:text-sm rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-2 focus:ring-offset-sidebar"
-                      onClick={local.onLogout}
+                      onClick={() => local.onLogout?.()}
                       style={{
                         padding: 'calc(var(--spacing) * 2) calc(var(--spacing) * 3)',
                         'font-family': 'var(--font-sans)',

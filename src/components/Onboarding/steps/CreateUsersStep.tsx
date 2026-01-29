@@ -1,6 +1,6 @@
 import { Motion, Presence } from '@motionone/solid';
 import { PlusIcon, Trash2Icon, UserPlusIcon, UsersIcon } from 'lucide-solid';
-import { createSignal, For, Show } from 'solid-js';
+import { createEffect, createSignal, For, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,7 +22,11 @@ interface CreateUsersStepProps {
 }
 
 export function CreateUsersStep(props: CreateUsersStepProps) {
-  const [isAddingUser, setIsAddingUser] = createSignal(props.users.length === 0);
+  const [isAddingUser, setIsAddingUser] = createSignal(false);
+
+  createEffect(() => {
+    setIsAddingUser(props.users.length === 0);
+  });
 
   const handleSubmit = (userData: Omit<User, 'id'>) => {
     props.onCreateUser(userData);

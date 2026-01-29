@@ -42,16 +42,16 @@ const currencyFormatter = new Intl.NumberFormat('es-ES', {
 
 function PaymentModal(props: PaymentModalProps) {
   const { isMobile } = useResponsive();
-  const [localCashAmount, setLocalCashAmount] = createSignal(props.cashAmount);
-  const [localPaymentMethod, setLocalPaymentMethod] = createSignal(props.paymentMethod);
+  const [localCashAmount, setLocalCashAmount] = createSignal('');
+  const [localPaymentMethod, setLocalPaymentMethod] = createSignal('');
 
   // AEAT hooks
   const { isEnabled: isAEATEnabled, isConnected: isAEATConnected, config: aeatConfig } = useAEAT();
   const { emitInvoice } = useEmitInvoice();
 
   createEffect(() => {
-    setLocalCashAmount(props.cashAmount);
-    setLocalPaymentMethod(props.paymentMethod);
+    setLocalCashAmount(() => props.cashAmount);
+    setLocalPaymentMethod(() => props.paymentMethod);
   });
 
   const handleLocalCashInput = (value: string) => {
@@ -146,8 +146,7 @@ function PaymentModal(props: PaymentModalProps) {
   const numpadButtons = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'C'];
 
   const handleKeyPress = (event: KeyboardEvent) => {
-    const paymentMethod = localPaymentMethod();
-    if (paymentMethod !== 'efectivo') return;
+    if (localPaymentMethod() !== 'efectivo') return;
 
     const key = event.key;
     if (/^[0-9.]$/.test(key) || key === 'Backspace') {
@@ -161,11 +160,12 @@ function PaymentModal(props: PaymentModalProps) {
   };
 
   createEffect(() => {
-    window.addEventListener('keydown', handleKeyPress);
+    const handler = (event: Event) => handleKeyPress(event as KeyboardEvent);
+    window.addEventListener('keydown', handler);
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
+    onCleanup(() => {
+      window.removeEventListener('keydown', handler);
+    });
   });
 
   return (

@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js';
+import { createEffect, createSignal } from 'solid-js';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import type Category from '@/models/Category.ts';
@@ -11,8 +11,13 @@ type CategoryFormProps = {
 };
 
 const CategoryForm = (props: CategoryFormProps) => {
-  const [name, setName] = createSignal(props.category?.name || '');
-  const [description, setDescription] = createSignal(props.category?.description || '');
+  const [name, setName] = createSignal('');
+  const [description, setDescription] = createSignal('');
+
+  createEffect(() => {
+    setName(props.category?.name || '');
+    setDescription(props.category?.description || '');
+  });
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();

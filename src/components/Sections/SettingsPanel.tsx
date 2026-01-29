@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
+  Bell,
   Cloud,
   Database,
   DollarSign,
@@ -7,11 +8,17 @@ import {
   HardDrive,
   Info,
   Key,
+  Lock,
+  Palette,
   Pencil,
   PlusCircle,
+  Printer,
   ShieldCheck,
+  SlidersHorizontal,
   Trash2,
+  Users,
   Wand2,
+  X,
 } from 'lucide-solid';
 import { type Component, createSignal, For, Match, onMount, Show, Switch } from 'solid-js';
 import AEATSettings from '@/components/AEATSettings';
@@ -48,12 +55,14 @@ import VersionInfo from '@/components/VersionInfo';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
 import type User from '@/models/User.ts';
 import type { StorageMode } from '@/services/storage-adapter.interface';
+import { createEffect } from 'solid-js';
 import {
   openCashDrawerOnly,
   runThermalPrinterCommand,
 } from '@/services/thermal-printer.service.ts';
 import useStore from '@/store/store';
 import type { LicenseStatus } from '@/types/license';
+import { cn } from '@/lib/utils';
 
 type SettingsPanelProps = {
   isSidebarOpen: boolean;
@@ -65,7 +74,21 @@ type SettingsPanelProps = {
   toggleDarkMode: () => void;
   thermalPrinterOptions: ThermalPrinterServiceOptions;
   handleThermalPrinterOptionsChange: (options: ThermalPrinterServiceOptions) => void;
+  forceAboutTab?: boolean;
 };
+
+const SETTINGS_TABS = [
+  { value: 'general', label: 'General', icon: SlidersHorizontal },
+  { value: 'appearance', label: 'Apariencia', icon: Palette },
+  { value: 'users', label: 'Usuarios', icon: Users },
+  { value: 'printing', label: 'Impresión', icon: Printer },
+  { value: 'pos', label: 'Punto de Venta', icon: DollarSign },
+  { value: 'verifactu', label: 'VERI*FACTU', icon: FileText },
+  { value: 'license', label: 'Licencia', icon: Key },
+  { value: 'security', label: 'Seguridad', icon: ShieldCheck },
+  { value: 'notifications', label: 'Notificaciones', icon: Bell },
+  { value: 'about', label: 'Acerca de', icon: Info },
+] as const;
 
 const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   const store = useStore();
@@ -90,6 +113,12 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   const [activeTab, setActiveTab] = createSignal('general');
   const [isStorageModeDialogOpen, setIsStorageModeDialogOpen] = createSignal(false);
   const [pendingStorageMode, setPendingStorageMode] = createSignal<StorageMode | null>(null);
+
+  createEffect(() => {
+    if (props.forceAboutTab) {
+      setActiveTab('about');
+    }
+  });
 
   const refreshLicenseStatus = async () => {
     try {
@@ -117,7 +146,6 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     const updatedUser = { ...newUser() } as User;
 
     if (editing) {
-      // Update existing user
       const userToSave = { ...updatedUser, id: editing.id };
       const result = await store.storageAdapter().updateUser(userToSave);
       if (result.ok) {
@@ -137,7 +165,6 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
         });
       }
     } else {
-      // Create new user
       const newId = Math.max(...props.users.map((u) => u.id), 0) + 1;
       const userToCreate = { ...updatedUser, id: newId };
       const result = await store.storageAdapter().createUser(userToCreate);
@@ -269,7 +296,6 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     setPendingStorageMode(null);
   };
 
-  // Load storage mode and touch optimizations from localStorage on component mount
   onMount(() => {
     const savedMode = localStorage.getItem('tpv-storage-mode') as StorageMode | null;
     if (
@@ -286,561 +312,701 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   });
 
   return (
-    <div class={`space-y-0 p-0 ${props.isSidebarOpen ? 'ml-1' : ''} bg-background text-foreground`}>
-      <Tabs value={activeTab()} onChange={setActiveTab}>
-        <TabsList class="mb-0 flex-wrap">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="appearance">Apariencia</TabsTrigger>
-          <TabsTrigger value="users">Usuarios</TabsTrigger>
-          <TabsTrigger value="printing">Impresion</TabsTrigger>
-          <TabsTrigger value="pos">Punto de Venta</TabsTrigger>
-          <TabsTrigger value="verifactu" class="flex items-center gap-1">
-            <FileText class="h-3 w-3" />
-            VERI*FACTU
-          </TabsTrigger>
-          <TabsTrigger value="license" class="flex items-center gap-1">
-            <Key class="h-3 w-3" />
-            Licencia
-          </TabsTrigger>
-          <TabsTrigger value="security">Seguridad</TabsTrigger>
-          <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
-          <TabsTrigger value="about" class="flex items-center gap-1">
-            <Info class="h-3 w-3" />
-            Acerca de
-          </TabsTrigger>
-        </TabsList>
+    <div class="space-y-6 bg-background text-foreground">
+      <Tabs value={activeTab()} onChange={setActiveTab} class="w-full">
+        <div class="relative">
+          <div class="overflow-x-auto scrollbar-hide pb-2 -mx-2 px-2">
+            <TabsList class="inline-flex h-auto bg-muted/40 border border-border/50 p-1.5 gap-1 rounded-xl min-w-max backdrop-blur-sm">
+              <For each={SETTINGS_TABS}>
+                {(tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <TabsTrigger
+                      value={tab.value}
+                      class={cn(
+                        'relative px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
+                        'data-[state=active]:bg-background data-[state=active]:shadow-sm',
+                        'data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground',
+                        'data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-muted/50',
+                        'flex items-center gap-2 min-w-fit'
+                      )}
+                    >
+                      <Icon class="h-4 w-4" />
+                      <span class="hidden sm:inline">{tab.label}</span>
+                    </TabsTrigger>
+                  );
+                }}
+              </For>
+            </TabsList>
+          </div>
+        </div>
 
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuracion General</CardTitle>
-            </CardHeader>
-            <CardContent class="space-y-4">
-              <div class="flex items-center justify-between">
-                <Label for="darkMode">Modo Oscuro</Label>
-                <SwitchUI
-                  id="darkMode"
-                  checked={props.isDarkMode}
-                  onChange={props.toggleDarkMode}
-                />
-              </div>
-              <div class="flex items-center justify-between">
-                <Label for="touchOptimizations">Optimizaciones Tactiles</Label>
-                <SwitchUI
-                  id="touchOptimizations"
-                  checked={state.touchOptimizationsEnabled}
-                  onChange={setTouchOptimizationsEnabled}
-                />
-              </div>
+        <div class="mt-6">
+          <TabsContent value="general" class="space-y-4">
+            <Card class="border-border/50 shadow-sm">
+              <CardHeader class="border-b border-border/50">
+                <CardTitle class="flex items-center gap-2 text-lg">
+                  <SlidersHorizontal class="h-5 w-5 text-primary" />
+                  Configuración General
+                </CardTitle>
+              </CardHeader>
+              <CardContent class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/30">
+                      <div class="space-y-0.5">
+                        <Label for="darkMode" class="text-sm font-medium">
+                          Modo Oscuro
+                        </Label>
+                        <p class="text-xs text-muted-foreground">
+                          Alternar tema claro/oscuro
+                        </p>
+                      </div>
+                      <SwitchUI
+                        id="darkMode"
+                        checked={props.isDarkMode}
+                        onChange={props.toggleDarkMode}
+                      />
+                    </div>
 
-              <div class="space-y-3 border-t pt-4">
-                <div class="flex items-center justify-between">
-                  <div class="flex flex-col space-y-1">
-                    <Label for="storageMode" class="font-medium">
-                      Modo de Almacenamiento
-                    </Label>
-                    <p class="text-xs text-muted-foreground">
-                      <Switch>
-                        <Match when={state.storageMode === 'sqlite'}>
-                          SQLite integrado (recomendado)
-                        </Match>
-                        <Match when={state.storageMode === 'http'}>
-                          Base de datos externa HTTP
-                        </Match>
-                        <Match when={state.storageMode === 'indexeddb'}>
-                          IndexedDB local (navegador)
-                        </Match>
-                      </Switch>
-                    </p>
+                    <div class="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/30">
+                      <div class="space-y-0.5">
+                        <Label for="touchOptimizations" class="text-sm font-medium">
+                          Optimizaciones Táctiles
+                        </Label>
+                        <p class="text-xs text-muted-foreground">
+                          Mejora respuesta en pantallas táctiles
+                        </p>
+                      </div>
+                      <SwitchUI
+                        id="touchOptimizations"
+                        checked={state.touchOptimizationsEnabled}
+                        onChange={setTouchOptimizationsEnabled}
+                      />
+                    </div>
                   </div>
-                  <Select<string>
-                    value={state.storageMode}
-                    onChange={(value) => value && handleStorageModeToggle(value as StorageMode)}
-                    options={['sqlite', 'http', 'indexeddb']}
-                    itemComponent={(itemProps) => (
-                      <SelectItem value={itemProps.item.rawValue}>
+
+                  <div class="space-y-4">
+                    <div class="space-y-2">
+                      <Label for="language" class="text-sm font-medium">
+                        Idioma
+                      </Label>
+                      <Select<string> defaultValue="es" options={['es', 'en']}>
+                        <SelectTrigger class="w-full">
+                          <SelectValue placeholder="Selecciona un idioma" />
+                        </SelectTrigger>
+                        <SelectContent />
+                      </Select>
+                    </div>
+
+                    <div class="space-y-2">
+                      <Label for="currency" class="text-sm font-medium">
+                        Moneda
+                      </Label>
+                      <Select<string> defaultValue="eur" options={['eur', 'usd']}>
+                        <SelectTrigger class="w-full">
+                          <SelectValue placeholder="Selecciona una moneda" />
+                        </SelectTrigger>
+                        <SelectContent />
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-3 pt-4 border-t border-border/50">
+                  <div class="flex items-center justify-between">
+                    <div class="space-y-1">
+                      <Label for="storageMode" class="text-sm font-medium">
+                        Modo de Almacenamiento
+                      </Label>
+                      <p class="text-xs text-muted-foreground">
                         <Switch>
-                          <Match when={itemProps.item.rawValue === 'sqlite'}>
-                            <span class="flex items-center gap-2">
-                              <HardDrive class="h-4 w-4" />
-                              SQLite (Nativo)
-                            </span>
+                          <Match when={state.storageMode === 'sqlite'}>
+                            SQLite integrado (recomendado)
                           </Match>
-                          <Match when={itemProps.item.rawValue === 'http'}>
-                            <span class="flex items-center gap-2">
-                              <Cloud class="h-4 w-4" />
-                              HTTP API
-                            </span>
+                          <Match when={state.storageMode === 'http'}>
+                            Base de datos externa HTTP
                           </Match>
-                          <Match when={itemProps.item.rawValue === 'indexeddb'}>
-                            <span class="flex items-center gap-2">
-                              <Database class="h-4 w-4" />
-                              IndexedDB
-                            </span>
+                          <Match when={state.storageMode === 'indexeddb'}>
+                            IndexedDB local (navegador)
                           </Match>
                         </Switch>
-                      </SelectItem>
-                    )}
+                      </p>
+                    </div>
+                    <Select<string>
+                      value={state.storageMode}
+                      onChange={(value) => value && handleStorageModeToggle(value as StorageMode)}
+                      options={['sqlite', 'http', 'indexeddb']}
+                      itemComponent={(itemProps) => (
+                        <SelectItem value={itemProps.item.rawValue}>
+                          <Switch>
+                            <Match when={itemProps.item.rawValue === 'sqlite'}>
+                              <span class="flex items-center gap-2">
+                                <HardDrive class="h-4 w-4" />
+                                SQLite (Nativo)
+                              </span>
+                            </Match>
+                            <Match when={itemProps.item.rawValue === 'http'}>
+                              <span class="flex items-center gap-2">
+                                <Cloud class="h-4 w-4" />
+                                HTTP API
+                              </span>
+                            </Match>
+                            <Match when={itemProps.item.rawValue === 'indexeddb'}>
+                              <span class="flex items-center gap-2">
+                                <Database class="h-4 w-4" />
+                                IndexedDB
+                              </span>
+                            </Match>
+                          </Switch>
+                        </SelectItem>
+                      )}
+                    >
+                      <SelectTrigger class="w-[200px]">
+                        <SelectValue placeholder="Selecciona modo" />
+                      </SelectTrigger>
+                      <SelectContent />
+                    </Select>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-muted/20 rounded-lg border border-border/20">
+                    <div class="flex items-start gap-2">
+                      <HardDrive class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div class="space-y-0.5">
+                        <p class="text-xs font-medium">SQLite</p>
+                        <p class="text-[10px] text-muted-foreground">
+                          Nativa, mejor rendimiento, sin conexión
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                      <Cloud class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div class="space-y-0.5">
+                        <p class="text-xs font-medium">HTTP API</p>
+                        <p class="text-[10px] text-muted-foreground">
+                          Centralizados, requiere servidor
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                      <Database class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div class="space-y-0.5">
+                        <p class="text-xs font-medium">IndexedDB</p>
+                        <p class="text-[10px] text-muted-foreground">
+                          Navegador, fallback desarrollo
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pt-4 border-t border-border/50 space-y-3">
+                  <Button
+                    variant="outline"
+                    class="w-full justify-start h-11 gap-2"
+                    onClick={restartOnboarding}
                   >
-                    <SelectTrigger class="w-[180px]">
-                      <SelectValue placeholder="Selecciona modo" />
-                    </SelectTrigger>
-                    <SelectContent />
-                  </Select>
+                    <Wand2 class="h-4 w-4 text-primary" />
+                    <span>Ejecutar Asistente de Configuración</span>
+                  </Button>
+                  <p class="text-xs text-muted-foreground px-1">
+                    Reinicia el asistente para volver a configurar el almacenamiento, importar datos o
+                    crear usuarios iniciales.
+                  </p>
                 </div>
-                <div class="text-xs text-muted-foreground bg-secondary/50 p-2 rounded space-y-1">
-                  <div>
-                    <strong>
-                      <HardDrive class="h-3 w-3 inline mr-1" />
-                      SQLite:
-                    </strong>{' '}
-                    Base de datos nativa, mejor rendimiento, funciona sin conexion
+
+                <Show when={state.debugMode}>
+                  <div class="pt-4 border-t border-border/50">
+                    <DemoDataLoader />
                   </div>
-                  <div>
-                    <strong>
-                      <Cloud class="h-3 w-3 inline mr-1" />
-                      HTTP API:
-                    </strong>{' '}
-                    Datos centralizados, requiere servidor externo
-                  </div>
-                  <div>
-                    <strong>
-                      <Database class="h-3 w-3 inline mr-1" />
-                      IndexedDB:
-                    </strong>{' '}
-                    Almacenamiento del navegador, fallback para desarrollo
-                  </div>
-                </div>
-              </div>
+                </Show>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <div class="flex items-center justify-between">
-                <Label for="language">Idioma</Label>
-                <Select<string>
-                  defaultValue="es"
-                  options={['es', 'en']}
-                  itemComponent={(itemProps) => (
-                    <SelectItem value={itemProps.item.rawValue}>
-                      <Show when={itemProps.item.rawValue === 'es'} fallback="English">
-                        Espanol
-                      </Show>
-                    </SelectItem>
-                  )}
-                >
-                  <SelectTrigger class="w-[180px]">
-                    <SelectValue placeholder="Selecciona un idioma" />
-                  </SelectTrigger>
-                  <SelectContent />
-                </Select>
-              </div>
-              <div class="flex items-center justify-between">
-                <Label for="currency">Moneda</Label>
-                <Select<string>
-                  defaultValue="eur"
-                  options={['eur', 'usd']}
-                  itemComponent={(itemProps) => (
-                    <SelectItem value={itemProps.item.rawValue}>
-                      <Show when={itemProps.item.rawValue === 'eur'} fallback="Dolar ($)">
-                        Euro (EUR)
-                      </Show>
-                    </SelectItem>
-                  )}
-                >
-                  <SelectTrigger class="w-[180px]">
-                    <SelectValue placeholder="Selecciona una moneda" />
-                  </SelectTrigger>
-                  <SelectContent />
-                </Select>
-              </div>
-
-              <div class="pt-4 border-t">
-                <Button
-                  variant="outline"
-                  class="w-full justify-start h-12"
-                  onClick={restartOnboarding}
-                >
-                  <Wand2 class="mr-2 h-4 w-4 text-primary" />
-                  Ejecutar Asistente de Configuracion
-                </Button>
-                <p class="text-[10px] text-muted-foreground mt-2 px-1">
-                  Reinicia el asistente para volver a configurar el almacenamiento, importar datos o
-                  crear usuarios iniciales.
-                </p>
-              </div>
-
-              <Show when={state.debugMode}>
-                <div class="pt-4 border-t">
-                  <DemoDataLoader />
-                </div>
-              </Show>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="appearance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuracion de Apariencia</CardTitle>
-            </CardHeader>
-            <CardContent class="space-y-6">
-              <div class="space-y-3">
-                <Label class="text-base font-medium">Control de Tema</Label>
-                <p class="text-sm text-muted-foreground">
-                  Personaliza la apariencia con diferentes temas de color y modo claro/oscuro.
-                </p>
-                <div class="border rounded-lg p-4 bg-muted/10">
-                  <ThemeSwitcher />
-                </div>
-              </div>
-
-              <div class="space-y-3 border-t pt-6">
-                <Label class="text-base font-medium">Imagenes de Productos</Label>
-                <p class="text-sm text-muted-foreground">
-                  Configura como se muestran las imagenes de productos sin imagen personalizada.
-                </p>
-                <div class="flex items-center justify-between p-4 bg-muted/10 rounded-lg">
-                  <div class="space-y-1">
-                    <Label for="stock-images" class="text-sm font-medium">
-                      Usar imagenes stock
-                    </Label>
+          <TabsContent value="appearance" class="space-y-4">
+            <Card class="border-border/50 shadow-sm">
+              <CardHeader class="border-b border-border/50">
+                <CardTitle class="flex items-center gap-2 text-lg">
+                  <Palette class="h-5 w-5 text-primary" />
+                  Configuración de Apariencia
+                </CardTitle>
+              </CardHeader>
+              <CardContent class="p-6 space-y-6">
+                <div class="space-y-4">
+                  <div class="space-y-2">
+                    <Label class="text-sm font-medium">Control de Tema</Label>
                     <p class="text-xs text-muted-foreground">
-                      Mostrar imagenes predefinidas para productos sin imagen personalizada
+                      Personaliza la apariencia con diferentes temas de color y modo claro/oscuro.
                     </p>
                   </div>
-                  <SwitchUI
-                    id="stock-images"
-                    checked={state.useStockImages}
-                    onChange={setUseStockImages}
-                  />
+                  <div class="p-5 bg-muted/30 rounded-lg border border-border/30">
+                    <ThemeSwitcher />
+                  </div>
                 </div>
-              </div>
 
-              <div class="space-y-3 border-t pt-6">
-                <Label class="text-base font-medium">Diagnostico de Temas</Label>
-                <p class="text-sm text-muted-foreground">
-                  Herramienta de depuracion para visualizar variables CSS y estado del tema.
-                </p>
-                <ThemeDebugger />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="license">
-          <LicenseStatusCard
-            licenseStatus={state.licenseStatus}
-            onRefresh={refreshLicenseStatus}
-            onClearLicense={() => {
-              invoke('clear_license')
-                .then(() => {
-                  toast({
-                    title: 'Licencia eliminada',
-                    description: 'La licencia ha sido eliminada correctamente',
-                  });
-                  refreshLicenseStatus();
-                })
-                .catch((error) => {
-                  toast({
-                    title: 'Error',
-                    description: 'No se pudo eliminar la licencia',
-                    variant: 'destructive',
-                  });
-                  console.error('Error clearing license:', error);
-                });
-            }}
-          />
-        </TabsContent>
-
-        <TabsContent value="users">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Usuario Actual</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div class="flex items-center space-x-4 mb-4">
-                  <Avatar>
-                    <AvatarImage
-                      src={props.selectedUser.profilePicture}
-                      alt={props.selectedUser.name}
+                <div class="space-y-4 pt-4 border-t border-border/50">
+                  <div class="space-y-2">
+                    <Label class="text-sm font-medium">Imágenes de Productos</Label>
+                    <p class="text-xs text-muted-foreground">
+                      Configura como se muestran las imágenes de productos sin imagen personalizada.
+                    </p>
+                  </div>
+                  <div class="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/30">
+                    <div class="space-y-0.5">
+                      <Label for="stock-images" class="text-sm font-medium">
+                        Usar imágenes stock
+                      </Label>
+                      <p class="text-xs text-muted-foreground">
+                        Mostrar imágenes predefinidas para productos sin imagen personalizada
+                      </p>
+                    </div>
+                    <SwitchUI
+                      id="stock-images"
+                      checked={state.useStockImages}
+                      onChange={setUseStockImages}
                     />
-                    <AvatarFallback>{props.selectedUser.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span class="text-lg font-semibold">{props.selectedUser.name}</span>
+                  </div>
                 </div>
-                <Button onClick={() => handleEditUser(props.selectedUser)}>
-                  <Pencil class="mr-2 h-4 w-4" /> Editar Usuario
-                </Button>
+
+                <div class="space-y-4 pt-4 border-t border-border/50">
+                  <div class="space-y-2">
+                    <Label class="text-sm font-medium">Diagnóstico de Temas</Label>
+                    <p class="text-xs text-muted-foreground">
+                      Herramienta de depuración para visualizar variables CSS y estado del tema.
+                    </p>
+                  </div>
+                  <div class="p-4 bg-muted/20 rounded-lg border border-border/20">
+                    <ThemeDebugger />
+                  </div>
+                </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Lista de Usuarios</CardTitle>
+          </TabsContent>
+
+          <TabsContent value="license" class="space-y-4">
+            <LicenseStatusCard
+              licenseStatus={state.licenseStatus}
+              onRefresh={refreshLicenseStatus}
+              onClearLicense={() => {
+                invoke('clear_license')
+                  .then(() => {
+                    toast({
+                      title: 'Licencia eliminada',
+                      description: 'La licencia ha sido eliminada correctamente',
+                    });
+                    refreshLicenseStatus();
+                  })
+                  .catch((error) => {
+                    toast({
+                      title: 'Error',
+                      description: 'No se pudo eliminar la licencia',
+                      variant: 'destructive',
+                    });
+                    console.error('Error clearing license:', error);
+                  });
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="users" class="space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card class="border-border/50 shadow-sm">
+                <CardHeader class="border-b border-border/50">
+                  <CardTitle class="flex items-center gap-2 text-lg">
+                    <Users class="h-5 w-5 text-primary" />
+                    Usuario Actual
+                  </CardTitle>
+                </CardHeader>
+                <CardContent class="p-6 space-y-4">
+                  <div class="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
+                    <Avatar class="h-16 w-16">
+                      <AvatarImage
+                        src={props.selectedUser.profilePicture}
+                        alt={props.selectedUser.name}
+                      />
+                      <AvatarFallback class="text-lg">
+                        {props.selectedUser.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div class="space-y-1">
+                      <p class="text-base font-semibold">{props.selectedUser.name}</p>
+                      <p class="text-xs text-muted-foreground">Usuario actual</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => handleEditUser(props.selectedUser)}
+                    class="w-full gap-2"
+                  >
+                    <Pencil class="h-4 w-4" />
+                    Editar Usuario
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card class="border-border/50 shadow-sm">
+                <CardHeader class="border-b border-border/50">
+                  <CardTitle class="flex items-center gap-2 text-lg">
+                    <Users class="h-5 w-5 text-primary" />
+                    Lista de Usuarios
+                  </CardTitle>
+                </CardHeader>
+                <CardContent class="p-6 space-y-4">
+                  <div class="space-y-2 max-h-[300px] overflow-y-auto">
+                    <For each={props.users}>
+                      {(user) => (
+                        <div class="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border/20 hover:bg-muted/30 transition-colors">
+                          <div class="flex items-center gap-3">
+                            <Avatar class="h-10 w-10">
+                              <AvatarImage src={user.profilePicture} alt={user.name} />
+                              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span class="text-sm font-medium">{user.name}</span>
+                          </div>
+                          <div class="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              class="h-8 w-8"
+                              onClick={() => handleEditUser(user)}
+                            >
+                              <Pencil class="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              class="h-8 w-8 hover:text-destructive"
+                              onClick={() => handleDeleteUser(user.id)}
+                            >
+                              <Trash2 class="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                  <Button onClick={handleCreateUser} class="w-full gap-2">
+                    <PlusCircle class="h-4 w-4" />
+                    Crear Nuevo Usuario
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="printing" class="space-y-4">
+            <Card class="border-border/50 shadow-sm">
+              <CardHeader class="border-b border-border/50">
+                <CardTitle class="flex items-center gap-2 text-lg">
+                  <Printer class="h-5 w-5 text-primary" />
+                  Configuración de Impresión
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div class="space-y-4">
-                  <For each={props.users}>
-                    {(user) => (
-                      <div class="flex items-center justify-between p-2 bg-muted rounded">
-                        <div class="flex items-center space-x-4">
-                          <Avatar>
-                            <AvatarImage src={user.profilePicture} alt={user.name} />
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <span class="text-sm font-semibold">{user.name}</span>
-                        </div>
-                        <div>
-                          <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)}>
-                            <Pencil class="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
-                          >
-                            <Trash2 class="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </For>
-                </div>
-                <Button class="mt-4 w-full" onClick={handleCreateUser}>
-                  <PlusCircle class="mr-2 h-4 w-4" /> Crear Nuevo Usuario
-                </Button>
+              <CardContent class="p-6 space-y-4">
+                <ThermalPrinterSettings
+                  options={props.thermalPrinterOptions}
+                  onOptionsChange={props.handleThermalPrinterOptionsChange}
+                  onPrintTestTicket={handlePrintTestTicket}
+                  onTestConnection={handleTestConnection}
+                />
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="printing">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuracion de Impresion</CardTitle>
-            </CardHeader>
-            <CardContent class="space-y-4">
-              <ThermalPrinterSettings
-                options={props.thermalPrinterOptions}
-                onOptionsChange={props.handleThermalPrinterOptionsChange}
-                onPrintTestTicket={handlePrintTestTicket}
-                onTestConnection={handleTestConnection}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="pos" class="space-y-4">
+            <Card class="border-border/50 shadow-sm">
+              <CardHeader class="border-b border-border/50">
+                <CardTitle class="flex items-center gap-2 text-lg">
+                  <DollarSign class="h-5 w-5 text-primary" />
+                  Configuración del Punto de Venta
+                </CardTitle>
+              </CardHeader>
+              <CardContent class="p-6 space-y-6">
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/30">
+                    <div class="space-y-0.5">
+                      <Label for="autoOpenDrawer" class="text-sm font-medium">
+                        Abrir Caja Automáticamente
+                      </Label>
+                      <p class="text-xs text-muted-foreground">
+                        Abre el cajón al completar cada venta en efectivo
+                      </p>
+                    </div>
+                    <SwitchUI
+                      id="autoOpenDrawer"
+                      checked={state.autoOpenCashDrawer}
+                      onChange={setAutoOpenCashDrawer}
+                    />
+                  </div>
 
-        <TabsContent value="pos">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuracion del Punto de Venta</CardTitle>
-            </CardHeader>
-            <CardContent class="space-y-4">
-              <div class="flex items-center justify-between">
-                <div class="flex flex-col space-y-1">
-                  <Label for="openCashDrawer">Abrir Caja Registradora</Label>
-                  <p class="text-xs text-muted-foreground">
-                    Envia el comando de apertura al cajon de efectivo
-                  </p>
+                  <div class="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/30">
+                    <div class="space-y-0.5">
+                      <Label for="taxRate" class="text-sm font-medium">
+                        Tasa de Impuestos (%)
+                      </Label>
+                      <p class="text-xs text-muted-foreground">
+                        IVA aplicado en los tickets (España: 21%)
+                      </p>
+                    </div>
+                    <Input
+                      id="taxRate"
+                      type="number"
+                      value={state.taxRate}
+                      onInput={(e) => setTaxRate(parseFloat(e.currentTarget.value) || 0)}
+                      placeholder="21"
+                      class="w-[100px]"
+                    />
+                  </div>
                 </div>
-                <Button
-                  id="openCashDrawer"
-                  onClick={() => {
-                    const openCashDrawer = async () => {
-                      try {
-                        await openCashDrawerOnly();
-                        toast({
-                          title: 'Caja abierta',
-                          description: 'El cajon de efectivo se ha abierto correctamente.',
-                          duration: 3000,
-                        });
-                      } catch (_error) {
-                        toast({
-                          title: 'Error al abrir caja',
-                          description:
-                            'No se pudo abrir el cajon. Verifica la conexion de la impresora.',
-                          duration: 3000,
-                        });
-                      }
-                    };
-                    void openCashDrawer();
-                  }}
-                >
-                  <DollarSign class="mr-2 h-4 w-4" /> Abrir Caja
-                </Button>
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex flex-col space-y-1">
-                  <Label for="autoOpenDrawer">Abrir Caja Automaticamente</Label>
-                  <p class="text-xs text-muted-foreground">
-                    Abre el cajon al completar cada venta en efectivo
-                  </p>
+
+                <div class="pt-4 border-t border-border/50">
+                  <Button
+                    variant="outline"
+                    class="w-full gap-2"
+                    onClick={() => {
+                      const openCashDrawer = async () => {
+                        try {
+                          await openCashDrawerOnly();
+                          toast({
+                            title: 'Caja abierta',
+                            description: 'El cajón de efectivo se ha abierto correctamente.',
+                            duration: 3000,
+                          });
+                        } catch (_error) {
+                          toast({
+                            title: 'Error al abrir caja',
+                            description:
+                              'No se pudo abrir el cajón. Verifica la conexión de la impresora.',
+                            duration: 3000,
+                          });
+                        }
+                      };
+                      void openCashDrawer();
+                    }}
+                  >
+                    <DollarSign class="h-4 w-4" />
+                    Abrir Caja Manualmente
+                  </Button>
                 </div>
-                <SwitchUI
-                  id="autoOpenDrawer"
-                  checked={state.autoOpenCashDrawer}
-                  onChange={setAutoOpenCashDrawer}
-                />
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex flex-col space-y-1">
-                  <Label for="taxRate">Tasa de Impuestos (%)</Label>
-                  <p class="text-xs text-muted-foreground">
-                    IVA aplicado en los tickets (Espana: 21%)
-                  </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="verifactu" class="space-y-4">
+            <AEATSettings />
+          </TabsContent>
+
+          <TabsContent value="security" class="space-y-4">
+            <Card class="border-border/50 shadow-sm">
+              <CardHeader class="border-b border-border/50">
+                <CardTitle class="flex items-center gap-2 text-lg">
+                  <ShieldCheck class="h-5 w-5 text-primary" />
+                  Configuración de Seguridad
+                </CardTitle>
+              </CardHeader>
+              <CardContent class="p-6 space-y-6">
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/30">
+                    <div class="space-y-0.5">
+                      <Label for="twoFactor" class="text-sm font-medium">
+                        Autenticación de dos factores
+                      </Label>
+                      <p class="text-xs text-muted-foreground">
+                        Añade una capa adicional de seguridad
+                      </p>
+                    </div>
+                    <SwitchUI id="twoFactor" />
+                  </div>
+
+                  <div class="space-y-2">
+                    <Label for="autoLogout" class="text-sm font-medium">
+                      Cierre de Sesión Automático (minutos)
+                    </Label>
+                    <Input
+                      id="autoLogout"
+                      type="number"
+                      placeholder="30"
+                      class="w-full"
+                    />
+                    <p class="text-xs text-muted-foreground">
+                      Tiempo de inactividad antes de cerrar sesión automáticamente
+                    </p>
+                  </div>
                 </div>
-                <Input
-                  id="taxRate"
-                  type="number"
-                  value={state.taxRate}
-                  onInput={(e) => setTaxRate(parseFloat(e.currentTarget.value) || 0)}
-                  placeholder="21"
-                  class="w-[100px]"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="verifactu">
-          <AEATSettings />
-        </TabsContent>
+                <div class="pt-4 border-t border-border/50">
+                  <Button variant="outline" class="w-full gap-2">
+                    <Lock class="h-4 w-4" />
+                    Cambiar Contraseña
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuracion de Seguridad</CardTitle>
-            </CardHeader>
-            <CardContent class="space-y-4">
-              <div class="flex items-center justify-between">
-                <Label for="twoFactor">Autenticacion de dos factores</Label>
-                <SwitchUI id="twoFactor" />
-              </div>
-              <div class="flex items-center justify-between">
-                <Label for="autoLogout">Cierre de Sesion Automatico (minutos)</Label>
-                <Input id="autoLogout" type="number" placeholder="30" class="w-[100px]" />
-              </div>
-              <Button>
-                <ShieldCheck class="mr-2 h-4 w-4" /> Cambiar Contrasena
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="notifications" class="space-y-4">
+            <Card class="border-border/50 shadow-sm">
+              <CardHeader class="border-b border-border/50">
+                <CardTitle class="flex items-center gap-2 text-lg">
+                  <Bell class="h-5 w-5 text-primary" />
+                  Configuración de Notificaciones
+                </CardTitle>
+              </CardHeader>
+              <CardContent class="p-6 space-y-4">
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/30">
+                    <div class="space-y-0.5">
+                      <Label for="emailNotifications" class="text-sm font-medium">
+                        Notificaciones por correo
+                      </Label>
+                      <p class="text-xs text-muted-foreground">
+                        Recibe alertas y resúmenes en tu email
+                      </p>
+                    </div>
+                    <SwitchUI id="emailNotifications" />
+                  </div>
 
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuracion de Notificaciones</CardTitle>
-            </CardHeader>
-            <CardContent class="space-y-4">
-              <div class="flex items-center justify-between">
-                <Label for="emailNotifications">Notificaciones por correo</Label>
-                <SwitchUI id="emailNotifications" />
-              </div>
-              <div class="flex items-center justify-between">
-                <Label for="pushNotifications">Notificaciones push</Label>
-                <SwitchUI id="pushNotifications" />
-              </div>
-              <div class="flex items-center justify-between">
-                <Label for="lowStockAlert">Alerta de Stock Bajo</Label>
-                <SwitchUI id="lowStockAlert" />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  <div class="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/30">
+                    <div class="space-y-0.5">
+                      <Label for="pushNotifications" class="text-sm font-medium">
+                        Notificaciones push
+                      </Label>
+                      <p class="text-xs text-muted-foreground">
+                        Alertas en tiempo real en tu dispositivo
+                      </p>
+                    </div>
+                    <SwitchUI id="pushNotifications" />
+                  </div>
 
-        <TabsContent value="about">
-          <Card>
-            <CardHeader>
-              <CardTitle>Acerca de TPV El Haido</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <VersionInfo />
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  <div class="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/30">
+                    <div class="space-y-0.5">
+                      <Label for="lowStockAlert" class="text-sm font-medium">
+                        Alerta de Stock Bajo
+                      </Label>
+                      <p class="text-xs text-muted-foreground">
+                        Notificación cuando un producto tenga poco stock
+                      </p>
+                    </div>
+                    <SwitchUI id="lowStockAlert" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="about" class="space-y-4">
+            <Card class="border-border/50 shadow-sm">
+              <CardHeader class="border-b border-border/50">
+                <CardTitle class="flex items-center gap-2 text-lg">
+                  <Info class="h-5 w-5 text-primary" />
+                  Acerca de TPV El Haido
+                </CardTitle>
+              </CardHeader>
+              <CardContent class="p-6">
+                <VersionInfo />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </div>
       </Tabs>
 
-      {/* User Edit/Create Dialog */}
       <Dialog open={isUserDialogOpen()} onOpenChange={setIsUserDialogOpen}>
-        <DialogContent>
+        <DialogContent class="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle class="flex items-center gap-2">
+              <Users class="h-5 w-5 text-primary" />
               <Show when={editingUser()} fallback="Crear Nuevo Usuario">
                 Editar Usuario
               </Show>
             </DialogTitle>
           </DialogHeader>
-          <div class="space-y-4">
-            <div>
-              <Label for="name">Nombre</Label>
+          <div class="space-y-4 py-4">
+            <div class="space-y-2">
+              <Label for="name" class="text-sm font-medium">Nombre</Label>
               <Input
                 id="name"
                 value={newUser().name}
                 onInput={(e) => setNewUser({ ...newUser(), name: e.currentTarget.value })}
+                placeholder="Nombre del usuario"
               />
             </div>
-            <div>
-              <Label for="profilePicture">URL de la Imagen de Perfil</Label>
+            <div class="space-y-2">
+              <Label for="profilePicture" class="text-sm font-medium">
+                URL de la Imagen de Perfil
+              </Label>
               <Input
                 id="profilePicture"
                 value={newUser().profilePicture}
                 onInput={(e) => setNewUser({ ...newUser(), profilePicture: e.currentTarget.value })}
+                placeholder="https://ejemplo.com/imagen.jpg"
               />
             </div>
-            <div>
-              <Label for="pin">PIN</Label>
+            <div class="space-y-2">
+              <Label for="pin" class="text-sm font-medium">PIN</Label>
               <Input
                 id="pin"
                 type="password"
                 value={newUser().pin}
                 onInput={(e) => setNewUser({ ...newUser(), pin: e.currentTarget.value })}
+                placeholder="****"
+                maxlength={4}
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsUserDialogOpen(false)}>
+          <DialogFooter class="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsUserDialogOpen(false)}
+              class="flex-1"
+            >
+              <X class="h-4 w-4 mr-2" />
               Cancelar
             </Button>
-            <Button onClick={handleSaveUser}>Guardar</Button>
+            <Button onClick={handleSaveUser} class="flex-1">
+              Guardar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Storage Mode Confirmation Dialog */}
       <Dialog open={isStorageModeDialogOpen()} onOpenChange={setIsStorageModeDialogOpen}>
-        <DialogContent class="bg-background dark:bg-background rounded-lg shadow-xl">
+        <DialogContent class="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle class="text-xl font-semibold text-foreground dark:text-foreground">
+            <DialogTitle class="flex items-center gap-2 text-lg">
+              <Database class="h-5 w-5 text-primary" />
               Cambiar modo de almacenamiento?
             </DialogTitle>
-            <DialogDescription class="text-muted-foreground dark:text-muted-foreground">
+          </DialogHeader>
+          <div class="py-4">
+            <p class="text-sm text-muted-foreground leading-relaxed">
               <Switch>
                 <Match when={pendingStorageMode() === 'sqlite'}>
-                  Cambiar a <strong>SQLite nativo</strong> usara una base de datos integrada en la
-                  aplicacion. Es la opcion mas rapida y funciona completamente sin conexion.
-                  Recomendado para uso en produccion.
+                  Cambiar a <strong>SQLite nativo</strong> usará una base de datos integrada en la
+                  aplicación. Es la opción más rápida y funciona completamente sin conexión.
+                  Recomendado para uso en producción.
                 </Match>
                 <Match when={pendingStorageMode() === 'indexeddb'}>
-                  Cambiar a <strong>IndexedDB</strong> almacenara los datos en el navegador. Util
+                  Cambiar a <strong>IndexedDB</strong> almacenará los datos en el navegador. Util
                   para desarrollo web pero los datos se pierden si se limpia el cache del navegador.
                 </Match>
                 <Match when={pendingStorageMode() === 'http'}>
-                  Cambiar a <strong>modo HTTP API</strong> usara la base de datos externa. Requiere
-                  conexion al servidor pero permite sincronizacion entre dispositivos.
+                  Cambiar a <strong>modo HTTP API</strong> usará la base de datos externa. Requiere
+                  conexión al servidor pero permite sincronización entre dispositivos.
                 </Match>
               </Switch>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
+            </p>
+          </div>
+          <DialogFooter class="gap-2">
             <Button
               variant="outline"
               onClick={cancelStorageModeChange}
-              class="text-foreground dark:text-foreground hover:bg-secondary dark:hover:bg-secondary"
+              class="flex-1"
             >
+              <X class="h-4 w-4 mr-2" />
               Cancelar
             </Button>
             <Button
               onClick={confirmStorageModeChange}
-              class="bg-primary hover:bg-primary/90 text-primary-foreground"
+              class="flex-1"
             >
               Confirmar Cambio
             </Button>

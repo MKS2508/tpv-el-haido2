@@ -11,7 +11,7 @@ import {
   SettingsIcon,
   UsersIcon,
 } from 'lucide-solid';
-import { createEffect, createSignal, Match, onMount, Show, Switch } from 'solid-js';
+import { Match, onMount, Show, Switch, createEffect, createSignal } from 'solid-js';
 import fallbackProducts from '@/assets/products.json';
 import iconOptions from '@/assets/utils/icons/iconOptions';
 import BottomNavigation from '@/components/BottomNavigation';
@@ -38,6 +38,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { config } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import type Product from '@/models/Product';
+import { useAboutDialog } from '@/hooks/useAboutDialog';
 import {
   BreakLine,
   CharacterSet,
@@ -53,6 +54,9 @@ function App() {
 
   // License state
   const [showLicenseSplash, setShowLicenseSplash] = createSignal(true);
+
+  // About dialog state
+  const [forceAboutTab, setForceAboutTab] = createSignal(false);
 
   // Responsive state
   const [isMobile, setIsMobile] = createSignal(window.innerWidth < 768);
@@ -358,6 +362,14 @@ function App() {
     prevSection = current;
   });
 
+  // Handle about dialog from native menu
+  useAboutDialog(() => {
+    setActiveSection('settings');
+    setForceAboutTab(true);
+    // Reset the force after a short delay
+    setTimeout(() => setForceAboutTab(false), 100);
+  });
+
 
   return (
     <div
@@ -564,6 +576,7 @@ function App() {
                             isSidebarOpen={isSidebarOpen()}
                             setSelectedUser={store.setSelectedUser}
                             setUsers={store.setUsers}
+                            forceAboutTab={forceAboutTab()}
                           />
                         </OnboardingProvider>
                       </ErrorBoundary>

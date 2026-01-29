@@ -1,7 +1,7 @@
 use sha2::{Sha256, Digest};
 use hex;
 use std::process::Command;
-use crate::models::license::{LicenseValidationRequest, LicenseValidationResponse};
+use crate::models::license::LicenseValidationResponse;
 
 pub fn generate_machine_fingerprint() -> Result<String, String> {
     if cfg!(target_os = "windows") {

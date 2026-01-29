@@ -27,6 +27,11 @@ dist-ssr
 *.sln
 *.sw?
 
+# Screenshots (keep folder, ignore contents)
+screenshots/*.png
+screenshots/*.jpg
+screenshots/*.jpeg
+
 # Tauri signing keys (NEVER commit private keys)
 .tauri/
 *.key

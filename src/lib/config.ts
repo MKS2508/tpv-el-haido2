@@ -31,6 +31,8 @@ export interface Config {
   };
   debug: {
     enabled: boolean;
+    masterEmail: string;
+    masterKey: string;
   };
   onboarding: {
     forceOnboarding: boolean;
@@ -96,6 +98,10 @@ export const config: Config = {
   debug: {
     /** Enable debug mode */
     enabled: import.meta.env.VITE_DEBUG_MODE === 'true',
+    /** Master license email for development/testing */
+    masterEmail: import.meta.env.VITE_MASTER_LICENSE_EMAIL || 'admin@haido.local',
+    /** Master license key for development/testing */
+    masterKey: import.meta.env.VITE_MASTER_LICENSE_KEY || 'HAI-MASTER-DEV-KEY-2026',
   },
 
   /**
