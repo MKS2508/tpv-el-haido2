@@ -1,5 +1,6 @@
 import { Check, Plus, Star } from 'lucide-solid';
 import { createSignal, onCleanup, onMount } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
 import stockImagesService from '@/services/stock-images.service';
@@ -187,7 +188,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
               isAdding() && 'adding'
             )}
           >
-            {props.product.icon || '🍽️'}
+            {props.product.icon ? <Dynamic component={props.product.icon} /> : '🍽️'}
           </div>
         )}
 

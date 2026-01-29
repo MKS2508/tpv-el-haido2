@@ -6,7 +6,14 @@ import {
   Home,
   RefreshCw,
 } from 'lucide-solid';
-import { createSignal, For, type JSX, Show, ErrorBoundary as SolidErrorBoundary, untrack } from 'solid-js';
+import {
+  createSignal,
+  For,
+  type JSX,
+  Show,
+  ErrorBoundary as SolidErrorBoundary,
+  untrack,
+} from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -340,7 +347,12 @@ function ErrorFallback(props: {
               <div class="flex items-center gap-2">
                 <AlertTriangle class="h-4 w-4 text-destructive flex-shrink-0" />
                 <span class="text-destructive">{props.fallbackTitle || 'Error al cargar'}</span>
-                <Button variant="ghost" size="sm" onClick={props.reset} class="ml-auto h-6 px-2 text-xs">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={props.reset}
+                  class="ml-auto h-6 px-2 text-xs"
+                >
                   <RefreshCw class="h-3 w-3" />
                 </Button>
               </div>
@@ -380,7 +392,9 @@ function ErrorFallback(props: {
               </p>
               <Show when={props.error && !isDev}>
                 <div class="rounded-md bg-muted p-2">
-                  <p class="text-xs font-mono text-muted-foreground break-all">{props.error.message}</p>
+                  <p class="text-xs font-mono text-muted-foreground break-all">
+                    {props.error.message}
+                  </p>
                 </div>
               </Show>
               <Button onClick={props.reset} size="sm">

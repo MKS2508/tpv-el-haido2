@@ -25,13 +25,14 @@ const debounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number):
 };
 
 // Debounced localStorage setters
+// @ts-expect-error - Type assertion for debounce signature mismatch
 const debouncedLocalStorageSet = debounce((key: string, value: string) => {
   try {
     localStorage.setItem(key, value);
   } catch (error) {
     console.warn(`Failed to save ${key} to localStorage:`, error);
   }
-}, 300);
+}, 300) as (key: string, value: string) => void;
 
 // State types
 export interface AppState {

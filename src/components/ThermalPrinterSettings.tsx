@@ -26,7 +26,7 @@ interface ThermalPrinterSettingsProps {
   onTestConnection: () => Promise<string>;
 }
 
-const defaultOptions: ThermalPrinterServiceOptions = {
+const _defaultOptions: ThermalPrinterServiceOptions = {
   type: PrinterTypes.EPSON,
   interface: '192.168.1.100',
   characterSet: CharacterSet.PC852_LATIN2,
@@ -81,8 +81,10 @@ export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProp
           <Label for="interface">Interfaz de Conexión</Label>
           <Input
             id="interface"
-            value={options.interface}
-            onInput={(e) => handleChange('interface', e.currentTarget.value)}
+            value={(props.options as ThermalPrinterServiceOptions).interface}
+            onInput={(e) =>
+              handleChange('interface' as keyof ThermalPrinterServiceOptions, e.currentTarget.value)
+            }
             placeholder="tcp://xxx.xxx.xxx.xxx"
           />
         </div>
@@ -91,7 +93,7 @@ export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProp
         <div class="space-y-2">
           <Label for="characterSet">Conjunto de Caracteres</Label>
           <Select
-            value={options.characterSet}
+            value={props.options.characterSet}
             onValueChange={(value) => handleChange('characterSet', value as CharacterSet)}
           >
             <SelectTrigger id="characterSet">
@@ -108,7 +110,7 @@ export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProp
         <div class="space-y-2">
           <Label for="breakLine">Modo de Corte de Línea</Label>
           <Select
-            value={options.breakLine}
+            value={props.options.breakLine}
             onValueChange={(value) => handleChange('breakLine', value as BreakLine)}
           >
             <SelectTrigger id="breakLine">
@@ -126,7 +128,7 @@ export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProp
         <div class="space-y-2">
           <Label for="lineCharacter">Caracter de Línea</Label>
           <Select
-            value={options.lineCharacter}
+            value={props.options.lineCharacter}
             onValueChange={(value) => handleChange('lineCharacter', value)}
           >
             <SelectTrigger id="lineCharacter">
@@ -142,7 +144,7 @@ export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProp
 
         <div class="space-y-2 col-span-2">
           <Label for="timeout">
-            Tiempo de Espera: {(options.options as { timeout: number }).timeout}ms
+            Tiempo de Espera: {(props.options.options as { timeout: number }).timeout}ms
           </Label>
           <input
             type="range"
@@ -150,10 +152,10 @@ export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProp
             min={1000}
             max={10000}
             step={100}
-            value={(options.options as { timeout: number }).timeout}
+            value={(props.options.options as { timeout: number }).timeout}
             onInput={(e: InputEvent) =>
               handleChange('options', {
-                ...options.options,
+                ...props.options.options,
                 timeout: Number((e.currentTarget as HTMLInputElement).value),
               })
             }
@@ -164,7 +166,7 @@ export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProp
       <div class="flex items-center space-x-2">
         <Switch
           id="removeSpecialCharacters"
-          checked={options.removeSpecialCharacters}
+          checked={props.options.removeSpecialCharacters}
           onChange={(checked: boolean) => handleChange('removeSpecialCharacters', checked)}
         />
         <Label for="removeSpecialCharacters">Eliminar Caracteres Especiales</Label>

@@ -2,6 +2,7 @@ import { Motion, Presence } from '@motionone/solid';
 import { Check, Plus, Star } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { createSignal, splitProps } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
 import stockImagesService from '@/services/stock-images.service';
@@ -69,14 +70,14 @@ const ProductCard = (props: ProductCardProps) => {
 
   const handleClick = async () => {
     if (local.mode === 'manage') {
-      onAction?.(local.product);
+      local.onAction?.(local.product);
       return;
     }
 
     if (isAdding()) return;
 
     setIsAdding(true);
-    onAction?.(local.product);
+    local.onAction?.(local.product);
 
     setTimeout(() => {
       setShowSuccess(true);
@@ -89,7 +90,7 @@ const ProductCard = (props: ProductCardProps) => {
 
   const handleFavoriteClick = (e: Event) => {
     e.stopPropagation();
-    onFavoriteToggle?.(local.product.id);
+    local.onFavoriteToggle?.(local.product.id);
   };
 
   const getCategoryColors = (category: string | undefined) => {
@@ -162,11 +163,13 @@ const ProductCard = (props: ProductCardProps) => {
         class={cn(
           'relative overflow-hidden',
           local.mode === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
-          !isRealImage ? `bg-gradient-to-br ${getCategoryColors(local.product.category)}` : 'bg-muted/10'
+          !isRealImage
+            ? `bg-gradient-to-br ${getCategoryColors(local.product.category)}`
+            : 'bg-muted/10'
         )}
         style={isRealImage() ? imageStyle() : {}}
       >
-        {isRealImage && (
+        {isRealImage() && (
           <div class="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
         )}
 
@@ -181,7 +184,7 @@ const ProductCard = (props: ProductCardProps) => {
             }}
             transition={{ duration: 0.15, easing: 'ease-out' }}
           >
-            {local.product.icon || '🍽️'}
+            {local.product.icon ? <Dynamic component={local.product.icon} /> : '🍽️'}
           </Motion.div>
         )}
 
@@ -225,7 +228,7 @@ const ProductCard = (props: ProductCardProps) => {
               )}
             </Presence>
           ) : (
-            onFavoriteToggle && (
+            local.onFavoriteToggle && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -235,7 +238,7 @@ const ProductCard = (props: ProductCardProps) => {
                 <Star
                   class={cn(
                     'h-4 w-4',
-                    isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
+                    local.isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
                   )}
                 />
               </Button>
@@ -299,11 +302,13 @@ const ProductCard = (props: ProductCardProps) => {
           </Motion.div>
 
           {/* Stock indicator para mode order */}
-          {local.mode === 'order' && local.product.stock !== undefined && local.product.stock < 10 && (
-            <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
-              <span class="text-xs font-bold text-warning">Quedan {local.product.stock}</span>
-            </div>
-          )}
+          {local.mode === 'order' &&
+            local.product.stock !== undefined &&
+            local.product.stock < 10 && (
+              <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
+                <span class="text-xs font-bold text-warning">Quedan {local.product.stock}</span>
+              </div>
+            )}
 
           {/* Category info para mode manage */}
           {local.mode === 'manage' && local.product.category && (

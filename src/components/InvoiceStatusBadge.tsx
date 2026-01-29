@@ -6,6 +6,7 @@
 
 import { AlertCircle, Check, Clock, FileX, type LucideIcon, Receipt } from 'lucide-solid';
 import { Show } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -142,9 +143,9 @@ export function InvoiceStatusBadge(props: InvoiceStatusBadgeProps) {
         props.class
       )}
     >
-      <Icon class={cn(props.compact ? 'h-3 w-3' : 'h-3.5 w-3.5')} />
+      <Dynamic component={Icon()} class={cn(props.compact ? 'h-3 w-3' : 'h-3.5 w-3.5')} />
       <Show when={!props.compact}>
-        <span class="text-xs">{config.label}</span>
+        <span class="text-xs">{config().label}</span>
       </Show>
     </Badge>
   );
@@ -157,9 +158,9 @@ export function InvoiceStatusBadge(props: InvoiceStatusBadgeProps) {
             {badge}
           </TooltipTrigger>
           <TooltipContent class="max-w-xs">
-            <p class="font-medium">{config.label}</p>
+            <p class="font-medium">{config().label}</p>
             <p class="text-xs text-muted-foreground">{getTooltipContent(props.aeat)}</p>
-            <Show when={props.aeat?.numSerieFactura && status !== 'not_invoiced'}>
+            <Show when={props.aeat?.numSerieFactura && status() !== 'not_invoiced'}>
               <p class="text-xs mt-1">
                 <span class="text-muted-foreground">Nº Factura:</span> {props.aeat?.numSerieFactura}
               </p>

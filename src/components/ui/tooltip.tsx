@@ -4,7 +4,6 @@ import { splitProps } from 'solid-js';
 
 import { cn } from '@/lib/utils';
 
- 
 const TooltipProvider = (props: { children: JSX.Element }) => {
   return <>{props.children}</>;
 };

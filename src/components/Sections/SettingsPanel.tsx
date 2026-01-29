@@ -53,6 +53,7 @@ import {
   runThermalPrinterCommand,
 } from '@/services/thermal-printer.service.ts';
 import useStore from '@/store/store';
+import type { LicenseStatus } from '@/types/license';
 
 type SettingsPanelProps = {
   isSidebarOpen: boolean;

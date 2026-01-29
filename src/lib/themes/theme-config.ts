@@ -163,7 +163,9 @@ export function createThemeFromTweakCN(tweakCNData: {
     description: tweakCNData.description || 'Imported from TweakCN',
     category: 'custom',
     colors: {
-      light: (tweakCNData.cssVars?.light || tweakCNData.colors?.light || {}) as unknown as ThemeColors,
+      light: (tweakCNData.cssVars?.light ||
+        tweakCNData.colors?.light ||
+        {}) as unknown as ThemeColors,
       dark: (tweakCNData.cssVars?.dark || tweakCNData.colors?.dark || {}) as unknown as ThemeColors,
     },
     preview: {

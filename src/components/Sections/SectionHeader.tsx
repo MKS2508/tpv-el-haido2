@@ -1,9 +1,10 @@
 import type { JSX } from 'solid-js';
-import { type Component, Show, splitProps } from 'solid-js';
+import { Show, splitProps } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 
 interface MenuItem {
   id: string;
-  icon: Component<JSX.IntrinsicElements>;
+  icon: any;
   label: string;
 }
 
@@ -20,10 +21,9 @@ function SectionHeader(props: SectionHeaderProps) {
   return (
     <Show when={activeItem()}>
       {(item) => {
-        const IconComponent = item().icon;
         return (
           <h1 class="text-3xl font-bold mb-6 flex items-center">
-            <IconComponent />
+            <Dynamic component={item().icon} />
             <span class="ml-2">{item().label}</span>
           </h1>
         );

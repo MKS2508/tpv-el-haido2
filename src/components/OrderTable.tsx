@@ -1,4 +1,3 @@
-'use client';
 import { Motion, Presence } from '@motionone/solid';
 import { MinusIcon, PlusIcon } from 'lucide-solid';
 import { createMemo, For, onCleanup, onMount, Show } from 'solid-js';

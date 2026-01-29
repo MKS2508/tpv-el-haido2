@@ -238,7 +238,7 @@ function NewOrder() {
                         ? 'bg-sidebar-primary-foreground animate-pulse'
                         : 'bg-muted-foreground'
                     }`}
-                   />
+                  />
                   <span class="whitespace-nowrap">
                     {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
                   </span>

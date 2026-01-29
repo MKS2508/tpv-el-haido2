@@ -133,11 +133,11 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
       const command = Command.sidecar('sidecars/aeat-bridge', ['--port', port.toString()]);
 
       // Configurar listeners
-      const handleClose = (data: any) => {
+      const handleClose = (data: { code: number | null }) => {
         console.log(`[AEAT Sidecar] Process closed with code ${data.code}`);
         childProcessRef = null;
 
-        if (data.code !== 0 && state().status === 'running') {
+        if (data.code !== null && data.code !== 0 && state().status === 'running') {
           setState((prev) => ({
             ...prev,
             status: 'error',

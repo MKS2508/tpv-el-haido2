@@ -63,7 +63,7 @@ function App() {
 
   // Responsive state
   const [isMobile, setIsMobile] = createSignal(window.innerWidth < 768);
-  const [isTablet, setIsTablet] = createSignal(
+  const [_isTablet, setIsTablet] = createSignal(
     window.innerWidth >= 768 && window.innerWidth < 1024
   );
 

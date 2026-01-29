@@ -6,7 +6,7 @@
  */
 
 import { isErr } from '@mks2508/no-throw';
-import { createMemo, createEffect, createSignal } from 'solid-js';
+import { createEffect, createMemo, createSignal } from 'solid-js';
 import type {
   AEATConfig,
   AEATConnectionStatus,
@@ -97,12 +97,14 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
   let previousConnectionStatus = false;
 
   // Sidecar hook - wrap in createEffect to track reactive config
-  const sidecar = createMemo(() => useAEATSidecar({
-    port: config().sidecarPort,
-    autoStart: config().mode === 'sidecar' && config().autoStartSidecar,
-    healthCheckInterval: 10000,
-    maxRestartAttempts: 3,
-  }));
+  const sidecar = createMemo(() =>
+    useAEATSidecar({
+      port: config().sidecarPort,
+      autoStart: config().mode === 'sidecar' && config().autoStartSidecar,
+      healthCheckInterval: 10000,
+      maxRestartAttempts: 3,
+    })
+  );
 
   // Derived state
   const isEnabled = () => config().mode !== 'disabled';
@@ -188,9 +190,9 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
       return;
     }
 
-    const result = await sidecar.start();
+    const result = await sidecar().start();
     if (isErr(result)) {
-      onError?.(result.error.message);
+      onError?.((result.error as unknown as Error).message);
     } else {
       // Esperar un poco y luego verificar conexión
       setTimeout(refreshConnectionStatus, 2000);
@@ -201,9 +203,9 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
    * Detiene el sidecar
    */
   const stopSidecar = async () => {
-    const result = await sidecar.stop();
+    const result = await sidecar().stop();
     if (isErr(result)) {
-      onError?.(result.error.message);
+      onError?.((result.error as unknown as Error).message);
     }
     setConnectionStatus((prev) => ({ ...prev, isConnected: false }));
   };
@@ -212,9 +214,9 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
    * Reinicia el sidecar
    */
   const restartSidecar = async () => {
-    const result = await sidecar.restart();
+    const result = await sidecar().restart();
     if (isErr(result)) {
-      onError?.(result.error.message);
+      onError?.((result.error as unknown as Error).message);
     } else {
       setTimeout(refreshConnectionStatus, 2000);
     }
@@ -301,8 +303,8 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
     if (
       config().mode === 'sidecar' &&
       config().autoStartSidecar &&
-      sidecar.isAvailable &&
-      sidecar.state().status === 'stopped'
+      sidecar().isAvailable &&
+      sidecar().state().status === 'stopped'
     ) {
       startSidecar();
     }
@@ -312,7 +314,7 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
     // Estado
     config,
     connectionStatus,
-    sidecarState: sidecar.state,
+    sidecarState: sidecar().state,
     isLoading,
 
     // Configuración
@@ -326,7 +328,7 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
     startSidecar,
     stopSidecar,
     restartSidecar,
-    isSidecarAvailable: sidecar.isAvailable,
+    isSidecarAvailable: sidecar().isAvailable,
 
     // Facturación
     registrarFactura,

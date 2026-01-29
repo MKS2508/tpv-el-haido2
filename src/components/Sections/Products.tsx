@@ -47,7 +47,7 @@ function Products() {
       const productsWithIcons = result.value.map((product) => ({
         ...product,
         icon: iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
-      }));
+      })) as Product[];
       store.setProducts(productsWithIcons);
     } else {
       console.error('[Products] Error fetching products:', result.error.code);

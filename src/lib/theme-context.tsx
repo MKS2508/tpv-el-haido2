@@ -10,8 +10,15 @@ import {
   type ThemeCoreConfig,
   type ThemeCoreInstance,
 } from '@mks2508/shadcn-basecoat-theme-manager';
-import { type Accessor, createContext, createEffect, createSignal, onCleanup, useContext } from 'solid-js';
 import type { JSX } from 'solid-js';
+import {
+  type Accessor,
+  createContext,
+  createEffect,
+  createSignal,
+  onCleanup,
+  useContext,
+} from 'solid-js';
 
 // ==================== Types ====================
 

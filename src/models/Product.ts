@@ -6,7 +6,7 @@ export default interface Product {
   price: number;
   category: string;
   brand: string;
-  icon?: Component<JSX.IntrinsicElements>;
+  icon?: Component<JSX.IntrinsicElements> | ((props: any) => JSX.Element);
   iconType: string;
   selectedIcon: string;
   uploadedImage: string | null;

@@ -49,7 +49,7 @@ const OrderRow = (props: RowProps & { order: Order }) => {
                   </div>
                 </td>
                 <td class="border border-border p-3">
-                  <span class="text-sm">{new Date(order.date).toLocaleString()}</span>
+                  <span class="text-sm">{new Date(props.order.date).toLocaleString()}</span>
                 </td>
                 <td class="border border-border p-3 text-right">
                   <span class="font-bold text-success">{props.order.total.toFixed(2)}€</span>
@@ -84,7 +84,7 @@ const OrderRow = (props: RowProps & { order: Order }) => {
               <div class="flex items-center gap-2">{getStatusIcon()}</div>
             </div>
             <div class="flex items-center justify-between text-sm text-muted-foreground">
-              <span>{new Date(order.date).toLocaleDateString()}</span>
+              <span>{new Date(props.order.date).toLocaleDateString()}</span>
               <span class="font-medium text-primary">
                 {props.order.tableNumber === 0 ? 'Barra' : `Mesa ${props.order.tableNumber}`}
               </span>
@@ -132,7 +132,9 @@ const VirtualizedOrderHistory = (props: VirtualizedOrderHistoryProps): JSX.Eleme
       {/* Show empty state if no orders */}
       <Show
         when={props.orders.length > 0}
-        fallback={<div class="text-center text-muted-foreground py-8">No hay pedidos que mostrar</div>}
+        fallback={
+          <div class="text-center text-muted-foreground py-8">No hay pedidos que mostrar</div>
+        }
       >
         {/* Header solo para desktop */}
         <Show when={!isMobile()}>
@@ -152,42 +154,42 @@ const VirtualizedOrderHistory = (props: VirtualizedOrderHistoryProps): JSX.Eleme
           </div>
         </Show>
 
-      {/* Virtualized list with @tanstack/solid-virtual */}
-      <div
-        ref={parentRef!}
-        style={{ height: `${containerHeight() - (isMobile() ? 0 : 50)}px`, overflow: 'auto' }}
-        class="virtualized-order-list"
-      >
+        {/* Virtualized list with @tanstack/solid-virtual */}
         <div
-          style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
-            width: '100%',
-            position: 'relative',
-          }}
+          ref={parentRef!}
+          style={{ height: `${containerHeight() - (isMobile() ? 0 : 50)}px`, overflow: 'auto' }}
+          class="virtualized-order-list"
         >
-          <For each={virtualItems}>
-            {(virtualRow) => (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <OrderRow
-                  order={props.orders[virtualRow.index]!}
-                  orders={props.orders}
-                  onOrderSelect={props.onOrderSelect}
-                  isMobile={isMobile()}
-                />
-              </div>
-            )}
-          </For>
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            <For each={virtualItems}>
+              {(virtualRow) => (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <OrderRow
+                    order={props.orders[virtualRow.index]!}
+                    orders={props.orders}
+                    onOrderSelect={props.onOrderSelect}
+                    isMobile={isMobile()}
+                  />
+                </div>
+              )}
+            </For>
+          </div>
         </div>
-      </div>
       </Show>
     </div>
   );

@@ -69,8 +69,8 @@ function ProductGrid(props: ProductGridProps) {
           </div>
         </div>
       </Show>
-      </Show>
-    );
-  }
+    </Show>
+  );
+}
 
 export default ProductGrid;
