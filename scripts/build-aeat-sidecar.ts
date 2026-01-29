@@ -27,7 +27,7 @@ const AEAT_PROJECT_PATHS = [
   resolve(__dirname, '../../tpv-soap-aeat'),
   '/Users/mks/tpv-soap-aeat',
 ];
-const OUTPUT_DIR = resolve(__dirname, '../sidecars');
+const OUTPUT_DIR = resolve(__dirname, '../src-tauri/sidecars');
 const SIDECAR_NAME = 'aeat-bridge';
 
 let AEAT_PROJECT_PATH = AEAT_PROJECT_PATHS[0];

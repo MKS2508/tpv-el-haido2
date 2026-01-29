@@ -13,7 +13,7 @@ import { existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { $ } from 'bun';
 
-const SIDECARS_DIR = resolve(__dirname, '../sidecars');
+const SIDECARS_DIR = resolve(__dirname, '../src-tauri/sidecars');
 
 type Target = 'linux-x64' | 'linux-arm64' | 'darwin-x64' | 'darwin-arm64' | 'windows-x64';
 

@@ -1,9 +1,0 @@
-# This directory contains compiled sidecar binaries for Tauri
-# The AEAT Bridge sidecar is built using: bun run build:aeat-sidecar
-#
-# Binary naming convention follows Tauri's triple format:
-# - aeat-bridge-x86_64-pc-windows-msvc.exe (Windows)
-# - aeat-bridge-x86_64-unknown-linux-gnu (Linux x64)
-# - aeat-bridge-aarch64-unknown-linux-gnu (Linux ARM64)
-# - aeat-bridge-x86_64-apple-darwin (macOS x64)
-# - aeat-bridge-aarch64-apple-darwin (macOS ARM64)
