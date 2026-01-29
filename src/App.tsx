@@ -11,7 +11,7 @@ import {
   SettingsIcon,
   UsersIcon,
 } from 'lucide-solid';
-import { createEffect, createSignal, ErrorBoundary, onMount, Show } from 'solid-js';
+import { createEffect, createSignal, ErrorBoundary, Match, onMount, Show, Switch } from 'solid-js';
 import fallbackProducts from '@/assets/products.json';
 import iconOptions from '@/assets/utils/icons/iconOptions';
 import BottomNavigation from '@/components/BottomNavigation';
@@ -314,40 +314,6 @@ function App() {
     prevSection = current;
   });
 
-  const getDirection = (current: string) => {
-    const menuOrder = [
-      'home',
-      'products',
-      'newOrder',
-      'orderHistory',
-      'customers',
-      'aeatInvoices',
-      'settings',
-    ];
-    const currentIndex = menuOrder.indexOf(current);
-    const previousIndex = menuOrder.indexOf(prevSection);
-    const direction = currentIndex === previousIndex ? 0 : currentIndex > previousIndex ? 1 : -1;
-    return {
-      axis: isMobile() ? 'x' : 'y',
-      value: direction,
-    };
-  };
-
-  // Animation variants for Motion
-  const getAnimationProps = (section: string) => {
-    const dir = getDirection(section);
-    const enterValue =
-      dir.value > 0 ? (dir.axis === 'x' ? '100%' : '30vh') : dir.axis === 'x' ? '-100%' : '-30vh';
-    const exitValue =
-      dir.value > 0 ? (dir.axis === 'x' ? '-100%' : '-30vh') : dir.axis === 'x' ? '100%' : '30vh';
-
-    return {
-      initial: { [dir.axis]: enterValue, opacity: 0 },
-      animate: { [dir.axis]: 0, opacity: 1 },
-      exit: { [dir.axis]: exitValue, opacity: 0 },
-      transition: { duration: isMobile() ? 0.25 : 0.3, easing: 'ease-out' },
-    };
-  };
 
   return (
     <div
@@ -410,169 +376,164 @@ function App() {
         </Show>
 
         <main class={cn('flex-1 h-full relative overscroll-y-none', isMobile() && 'w-full')}>
-          <Presence>
-            <Motion.div
-              {...getAnimationProps(activeSection())}
-              class="absolute inset-0 rounded-3xl overflow-hidden"
-            >
-              <Card
+          <Card
+            class={cn(
+              'h-full w-full bg-card border-card-border shadow-xl overflow-hidden',
+              isMobile() ? 'rounded-none border-0' : 'rounded-3xl'
+            )}
+          >
+            <CardContent class="p-0 h-full flex flex-col overflow-hidden bg-card text-card-foreground">
+              <div
                 class={cn(
-                  'h-full w-full bg-card border-card-border shadow-xl overflow-hidden',
-                  isMobile() ? 'rounded-none border-0' : 'rounded-3xl'
+                  'flex-shrink-0',
+                  isMobile() ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6'
                 )}
               >
-                <CardContent class="p-0 h-full flex flex-col overflow-hidden bg-card text-card-foreground">
-                  <div
-                    class={cn(
-                      'flex-shrink-0',
-                      isMobile() ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6'
-                    )}
-                  >
-                    <SectionHeader menuItems={menuItems} activeSection={activeSection()} />
-                  </div>
+                <SectionHeader menuItems={menuItems} activeSection={activeSection()} />
+              </div>
 
-                  <div class="flex-1 overflow-hidden">
-                    <Show when={activeSection() === 'home'}>
-                      <div
-                        class={cn(
-                          'h-full overflow-y-auto',
-                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+              <div class="flex-1 overflow-hidden">
+                <Switch>
+                  <Match when={activeSection() === 'home'}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        fallback={(err) => (
+                          <div class="text-destructive">Error en Inicio: {err.message}</div>
                         )}
                       >
-                        <ErrorBoundary
-                          fallback={(err) => (
-                            <div class="text-destructive">Error en Inicio: {err.message}</div>
-                          )}
-                        >
-                          <Home
-                            userName={store.state.selectedUser?.name || 'Usuario desconocido'}
-                          />
-                        </ErrorBoundary>
-                      </div>
-                    </Show>
+                        <Home
+                          userName={store.state.selectedUser?.name || 'Usuario desconocido'}
+                        />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
 
-                    <Show when={activeSection() === 'products'}>
-                      <div
-                        class={cn(
-                          'h-full overflow-y-auto',
-                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                  <Match when={activeSection() === 'products'}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        fallback={(err) => (
+                          <div class="text-destructive">Error en Productos: {err.message}</div>
                         )}
                       >
-                        <ErrorBoundary
-                          fallback={(err) => (
-                            <div class="text-destructive">Error en Productos: {err.message}</div>
-                          )}
-                        >
-                          <Products />
-                        </ErrorBoundary>
-                      </div>
-                    </Show>
+                        <Products />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
 
-                    <Show when={activeSection() === 'newOrder'}>
-                      <div class="h-full overflow-hidden">
-                        <ErrorBoundary
-                          fallback={(err) => (
-                            <div class="text-destructive">
-                              Error en Nueva Comanda: {err.message}
-                            </div>
-                          )}
-                        >
-                          <NewOrder />
-                        </ErrorBoundary>
-                      </div>
-                    </Show>
-
-                    <Show when={activeSection() === 'orderHistory'}>
-                      <div
-                        class={cn(
-                          'h-full overflow-y-auto',
-                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                  <Match when={activeSection() === 'newOrder'}>
+                    <div class="h-full overflow-hidden">
+                      <ErrorBoundary
+                        fallback={(err) => (
+                          <div class="text-destructive">
+                            Error en Nueva Comanda: {err.message}
+                          </div>
                         )}
                       >
-                        <ErrorBoundary
-                          fallback={(err) => (
-                            <div class="text-destructive">Error en Historial: {err.message}</div>
-                          )}
-                        >
-                          <OrderHistory
-                            setSelectedOrderId={store.setSelectedOrderId}
-                            setActiveSection={setActiveSection}
-                            selectedOrder={store.state.selectedOrder}
-                            setSelectedOrder={store.setSelectedOrder}
-                          />
-                        </ErrorBoundary>
-                      </div>
-                    </Show>
+                        <NewOrder />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
 
-                    <Show when={activeSection() === 'customers'}>
-                      <div
-                        class={cn(
-                          'h-full overflow-y-auto',
-                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                  <Match when={activeSection() === 'orderHistory'}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        fallback={(err) => (
+                          <div class="text-destructive">Error en Historial: {err.message}</div>
                         )}
                       >
-                        <ErrorBoundary
-                          fallback={(err) => (
-                            <div class="text-destructive">Error en Clientes: {err.message}</div>
-                          )}
-                        >
-                          <Customers />
-                        </ErrorBoundary>
-                      </div>
-                    </Show>
+                        <OrderHistory
+                          setSelectedOrderId={store.setSelectedOrderId}
+                          setActiveSection={setActiveSection}
+                          selectedOrder={store.state.selectedOrder}
+                          setSelectedOrder={store.setSelectedOrder}
+                        />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
 
-                    <Show when={activeSection() === 'aeatInvoices'}>
-                      <div
-                        class={cn(
-                          'h-full overflow-y-auto',
-                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                  <Match when={activeSection() === 'customers'}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        fallback={(err) => (
+                          <div class="text-destructive">Error en Clientes: {err.message}</div>
                         )}
                       >
-                        <ErrorBoundary
-                          fallback={(err) => (
-                            <div class="text-destructive">
-                              Error en Facturas AEAT: {err.message}
-                            </div>
-                          )}
-                        >
-                          <AEATInvoices />
-                        </ErrorBoundary>
-                      </div>
-                    </Show>
+                        <Customers />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
 
-                    <Show when={activeSection() === 'settings' && store.state.selectedUser}>
-                      <div
-                        class={cn(
-                          'h-full overflow-y-auto',
-                          isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                  <Match when={activeSection() === 'aeatInvoices'}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        fallback={(err) => (
+                          <div class="text-destructive">
+                            Error en Facturas AEAT: {err.message}
+                          </div>
                         )}
                       >
-                        <ErrorBoundary
-                          fallback={(err) => (
-                            <div class="text-destructive">Error en Ajustes: {err.message}</div>
-                          )}
-                        >
-                          <SettingsPanel
-                            users={store.state.users}
-                            selectedUser={store.state.selectedUser!}
-                            handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
-                            thermalPrinterOptions={
-                              store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
-                            }
-                            isDarkMode={currentMode() === 'dark'}
-                            toggleDarkMode={toggleDarkMode}
-                            isSidebarOpen={isSidebarOpen()}
-                            setSelectedUser={store.setSelectedUser}
-                            setUsers={store.setUsers}
-                          />
-                        </ErrorBoundary>
-                      </div>
-                    </Show>
-                  </div>
-                </CardContent>
-              </Card>
-            </Motion.div>
-          </Presence>
+                        <AEATInvoices />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
+
+                  <Match when={activeSection() === 'settings' && store.state.selectedUser}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        fallback={(err) => (
+                          <div class="text-destructive">Error en Ajustes: {err.message}</div>
+                        )}
+                      >
+                        <SettingsPanel
+                          users={store.state.users}
+                          selectedUser={store.state.selectedUser!}
+                          handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
+                          thermalPrinterOptions={
+                            store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
+                          }
+                          isDarkMode={currentMode() === 'dark'}
+                          toggleDarkMode={toggleDarkMode}
+                          isSidebarOpen={isSidebarOpen()}
+                          setSelectedUser={store.setSelectedUser}
+                          setUsers={store.setUsers}
+                        />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
+                </Switch>
+              </div>
+            </CardContent>
+          </Card>
         </main>
 
         {/* Bottom Navigation for Mobile */}

@@ -44,7 +44,11 @@
       "Bash(bunx next build)",
       "Bash(taskkill:*)",
       "Bash(bun add:*)",
-      "Bash(bunx playwright install:*)"
+      "Bash(bunx playwright install:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs"
     ]
   }
 }
