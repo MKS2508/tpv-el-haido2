@@ -1,5 +1,4 @@
 import defaultMdxComponents from 'fumadocs-ui/mdx';
-import { Mermaid } from 'fumadocs-ui/components/mermaid';
 import { Steps } from 'fumadocs-ui/components/steps';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 import { Callout } from 'fumadocs-ui/components/callout';
@@ -32,6 +31,8 @@ import {
   Folder,
   File,
   ComparisonTable,
+  Pre,
+  Mermaid,
 } from '@/components/mdx';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
@@ -45,9 +46,6 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Tab,
     Callout,
 
-    // Mermaid diagrams
-    Mermaid,
-
     // Custom MDX components
     FeatureGrid,
     Feature,
@@ -59,6 +57,8 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Folder,
     File,
     ComparisonTable,
+    Mermaid,
+    pre: Pre,
 
     // Lucide icons
     CheckCircle2,

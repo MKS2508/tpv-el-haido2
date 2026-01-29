@@ -22,7 +22,7 @@ export function LanguageSelector() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--border-hover)] transition-all"
       >
-        <Globe className="w-4 h-4 text-[var(--accent-cyan)]" />
+        <Globe className="w-4 h-4 text-[var(--accent-green)]" />
         <span className="text-sm font-medium text-[var(--text-primary)]">
           {languages.find((l) => l.code === currentLang)?.name}
         </span>
@@ -49,13 +49,13 @@ export function LanguageSelector() {
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--bg-hover)] transition-colors ${
                   currentLang === lang.code
-                    ? 'text-[var(--accent-cyan)] font-medium'
+                    ? 'text-[var(--accent-green)] font-medium'
                     : 'text-[var(--text-muted)]'
                 }`}
               >
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    currentLang === lang.code ? 'bg-[var(--accent-cyan)]' : 'bg-transparent'
+                    currentLang === lang.code ? 'bg-[var(--accent-green)]' : 'bg-transparent'
                   }`}
                 />
                 {lang.name}
