@@ -5,6 +5,7 @@ import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import type Table from '@/models/Table';
+import type User from '@/models/User';
 import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
 
 /**
@@ -155,6 +156,42 @@ export class SqliteStorageAdapter implements IStorageAdapter {
   async deleteTable(table: Table): Promise<StorageResult<void>> {
     const result = await tryCatchAsync(
       async () => invoke('delete_table', { id: table.id }),
+      StorageErrorCode.DeleteFailed
+    );
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+  }
+
+  // ==================== Users ====================
+
+  async getUsers(): Promise<StorageResult<User[]>> {
+    return tryCatchAsync(async () => invoke<User[]>('get_users'), StorageErrorCode.ReadFailed);
+  }
+
+  async createUser(user: User): Promise<StorageResult<void>> {
+    const result = await tryCatchAsync(
+      async () => invoke('create_user', { user }),
+      StorageErrorCode.WriteFailed
+    );
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+  }
+
+  async updateUser(user: User): Promise<StorageResult<void>> {
+    const result = await tryCatchAsync(
+      async () => invoke('update_user', { user }),
+      StorageErrorCode.WriteFailed
+    );
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+  }
+
+  async deleteUser(user: User): Promise<StorageResult<void>> {
+    const result = await tryCatchAsync(
+      async () => invoke('delete_user', { id: user.id }),
       StorageErrorCode.DeleteFailed
     );
     return result.ok

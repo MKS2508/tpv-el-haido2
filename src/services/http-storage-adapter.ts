@@ -5,6 +5,7 @@ import { StorageErrorCode } from '@/lib/error-codes';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
+import type User from '@/models/User';
 import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
 
 export class HttpStorageAdapter implements IStorageAdapter {
@@ -165,6 +166,35 @@ export class HttpStorageAdapter implements IStorageAdapter {
 
   async deleteOrder(order: Order): Promise<StorageResult<void>> {
     const result = await this.makeRequest<void>(`/orders/${order.id}`, 'DELETE');
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  // Users
+  async getUsers(): Promise<StorageResult<User[]>> {
+    return this.makeRequest<User[]>('/users');
+  }
+
+  async createUser(user: User): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<User>('/users', 'POST', user);
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  async updateUser(user: User): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<User>(`/users/${user.id}`, 'PUT', user);
+    if (!result.ok) {
+      return err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    }
+    return ok(undefined);
+  }
+
+  async deleteUser(user: User): Promise<StorageResult<void>> {
+    const result = await this.makeRequest<void>(`/users/${user.id}`, 'DELETE');
     if (!result.ok) {
       return err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
     }

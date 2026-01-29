@@ -2,6 +2,8 @@ import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { ErrorBoundary } from 'solid-js';
 import { render } from 'solid-js/web';
 import App from './App';
+import { ErrorBoundary as AppErrorBoundary } from '@/components/ErrorBoundary';
+import { ThemeProvider } from '@/lib/theme-context';
 import './styles/optimized-product-card.css';
 import './styles/optimized-order-history.css';
 import './styles/optimized-login.css';
@@ -48,25 +50,28 @@ async function initializeApp() {
 
   render(
     () => (
-      <ErrorBoundary
-        fallback={(err) => (
-          <div class="fixed inset-0 flex items-center justify-center bg-background p-4">
-            <div class="text-center">
-              <h1 class="text-xl font-bold text-destructive">Error critico en la aplicacion</h1>
-              <p class="text-muted-foreground mt-2">{err.message}</p>
-              <button
-                type="button"
-                class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
-                onClick={() => window.location.reload()}
-              >
-                Recargar
-              </button>
-            </div>
-          </div>
-        )}
+      <AppErrorBoundary
+        level="page"
+        fallbackTitle="Error critico en la aplicacion"
+        fallbackMessage="Lo sentimos, algo ha salido mal. Por favor, recarga la aplicacion para continuar."
       >
-        <App />
-      </ErrorBoundary>
+        <ThemeProvider
+          config={{
+            debug: import.meta.env.DEV,
+            fouc: {
+              prevent: true,
+              method: 'auto',
+              revealDelay: 0,
+            },
+            defaults: {
+              theme: 'default',
+              mode: 'auto',
+            },
+          }}
+        >
+          <App />
+        </ThemeProvider>
+      </AppErrorBoundary>
     ),
     root
   );

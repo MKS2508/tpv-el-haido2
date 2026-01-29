@@ -1,15 +1,17 @@
 import { Moon, Sun } from 'lucide-solid';
 import { createSignal, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/hooks/useThemeSolid';
+import { useAppTheme } from '@/lib/theme-context';
 
 export function ModeToggle() {
-  const { settings, toggleDarkMode } = useTheme();
+  const appTheme = useAppTheme();
   const [mounted, setMounted] = createSignal(false);
 
   onMount(() => {
     setMounted(true);
   });
+
+  const isDark = () => appTheme.effectiveMode() === 'dark';
 
   return (
     <Show
@@ -21,9 +23,9 @@ export function ModeToggle() {
         </Button>
       }
     >
-      <Button variant="ghost" size="icon" onClick={toggleDarkMode} class="h-9 w-9">
+      <Button variant="ghost" size="icon" onClick={() => appTheme.toggleMode()} class="h-9 w-9">
         <Show
-          when={settings().darkMode}
+          when={isDark()}
           fallback={
             <Sun class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           }

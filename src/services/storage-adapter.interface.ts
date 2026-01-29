@@ -5,6 +5,7 @@ import type Customer from '@/models/Customer';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import type Table from '@/models/Table';
+import type User from '@/models/User';
 
 export type StorageMode = 'sqlite' | 'http' | 'indexeddb';
 
@@ -40,6 +41,12 @@ export interface IStorageAdapter {
   createTable?(table: Table): Promise<StorageResult<void>>;
   updateTable?(table: Table): Promise<StorageResult<void>>;
   deleteTable?(table: Table): Promise<StorageResult<void>>;
+
+  // Users
+  getUsers(): Promise<StorageResult<User[]>>;
+  createUser(user: User): Promise<StorageResult<void>>;
+  updateUser(user: User): Promise<StorageResult<void>>;
+  deleteUser(user: User): Promise<StorageResult<void>>;
 
   // Utility methods
   clearAllData?(): Promise<StorageResult<void>>;

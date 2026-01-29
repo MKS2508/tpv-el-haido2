@@ -68,6 +68,7 @@ type SettingsPanelProps = {
 };
 
 const SettingsPanel: Component<SettingsPanelProps> = (props) => {
+  const store = useStore();
   const {
     state,
     setStorageMode,
@@ -75,7 +76,8 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     setTouchOptimizationsEnabled,
     setAutoOpenCashDrawer,
     setTaxRate,
-  } = useStore();
+    setLicenseStatus,
+  } = store;
   const { restartOnboarding } = useOnboardingContext();
 
   const [isUserDialogOpen, setIsUserDialogOpen] = createSignal(false);
@@ -92,7 +94,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   const refreshLicenseStatus = async () => {
     try {
       const status = await invoke('check_license_status');
-      useStore().setLicenseStatus(status as LicenseStatus);
+      setLicenseStatus(status as LicenseStatus);
     } catch (error) {
       console.error('Error refreshing license status:', error);
     }
@@ -110,24 +112,73 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     setIsUserDialogOpen(true);
   };
 
-  const handleSaveUser = () => {
+  const handleSaveUser = async () => {
     const editing = editingUser();
+    const updatedUser = { ...newUser() } as User;
+
     if (editing) {
-      props.setUsers(props.users.map((u) => (u.id === editing.id ? { ...u, ...newUser() } : u)));
-      if (props.selectedUser.id === editing.id) {
-        props.setSelectedUser({ ...props.selectedUser, ...newUser() } as User);
+      // Update existing user
+      const userToSave = { ...updatedUser, id: editing.id };
+      const result = await store.storageAdapter().updateUser(userToSave);
+      if (result.ok) {
+        props.setUsers(props.users.map((u) => (u.id === editing.id ? userToSave : u)));
+        if (props.selectedUser.id === editing.id) {
+          props.setSelectedUser(userToSave);
+        }
+        toast({
+          title: 'Usuario actualizado',
+          description: `Usuario "${userToSave.name}" actualizado correctamente.`,
+        });
+      } else {
+        toast({
+          title: 'Error al actualizar usuario',
+          description: result.error.message,
+          variant: 'destructive',
+        });
       }
     } else {
-      const newId = Math.max(...props.users.map((u) => u.id)) + 1;
-      props.setUsers([...props.users, { ...(newUser() as User), id: newId }]);
+      // Create new user
+      const newId = Math.max(...props.users.map((u) => u.id), 0) + 1;
+      const userToCreate = { ...updatedUser, id: newId };
+      const result = await store.storageAdapter().createUser(userToCreate);
+      if (result.ok) {
+        props.setUsers([...props.users, userToCreate]);
+        toast({
+          title: 'Usuario creado',
+          description: `Usuario "${userToCreate.name}" creado correctamente.`,
+        });
+      } else {
+        toast({
+          title: 'Error al crear usuario',
+          description: result.error.message,
+          variant: 'destructive',
+        });
+      }
     }
     setIsUserDialogOpen(false);
   };
 
-  const handleDeleteUser = (userId: number) => {
-    props.setUsers(props.users.filter((u) => u.id !== userId));
-    if (props.selectedUser.id === userId) {
-      props.setSelectedUser(props.users.find((u) => u.id !== userId) || props.users[0]);
+  const handleDeleteUser = async (userId: number) => {
+    const userToDelete = props.users.find((u) => u.id === userId);
+    if (!userToDelete) return;
+
+    const result = await store.storageAdapter().deleteUser(userToDelete);
+    if (result.ok) {
+      props.setUsers(props.users.filter((u) => u.id !== userId));
+      if (props.selectedUser.id === userId) {
+        const remainingUsers = props.users.filter((u) => u.id !== userId);
+        props.setSelectedUser(remainingUsers[0] || null);
+      }
+      toast({
+        title: 'Usuario eliminado',
+        description: `Usuario "${userToDelete.name}" eliminado correctamente.`,
+      });
+    } else {
+      toast({
+        title: 'Error al eliminar usuario',
+        description: result.error.message,
+        variant: 'destructive',
+      });
     }
   };
 

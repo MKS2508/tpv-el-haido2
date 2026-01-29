@@ -37,8 +37,9 @@ function NewOrder() {
 
   // Update tables availability based on active orders
   createEffect(() => {
+    const validOrders = validActiveOrders();
     const updatedTables = store.state.tables.map((table) => {
-      const activeOrder = store.state.activeOrders.find(
+      const activeOrder = validOrders.find(
         (order) => order.tableNumber === table.id && order.status === 'inProgress'
       );
       return {
@@ -58,10 +59,19 @@ function NewOrder() {
     return store.state.orderHistory.filter((order) => order.status === 'inProgress');
   });
 
+  // Memoize valid active orders (filter out null/undefined)
+  const validActiveOrders = createMemo(() => {
+    return store.state.activeOrders.filter((order): order is Order => order != null && order.id != null);
+  });
+
   // Auto-select first order when active orders exist
   createEffect(() => {
-    if (store.state.activeOrders.length > 0 && !store.state.selectedOrderId) {
-      store.setSelectedOrderId(store.state.activeOrders[0].id);
+    const validOrders = validActiveOrders();
+    if (validOrders.length > 0 && !store.state.selectedOrderId) {
+      const firstOrder = validOrders[0];
+      if (firstOrder && firstOrder.id != null) {
+        store.setSelectedOrderId(firstOrder.id);
+      }
     } else if (store.state.activeOrders.length === 0) {
       if (inProgressOrders().length > 0) {
         store.setActiveOrders(inProgressOrders());
@@ -72,7 +82,7 @@ function NewOrder() {
   // Sync selected order with active orders
   createEffect(() => {
     if (store.state.selectedOrderId) {
-      const order = store.state.activeOrders.find((o) => o.id === store.state.selectedOrderId);
+      const order = validActiveOrders().find((o) => o.id === store.state.selectedOrderId);
       store.setSelectedOrder(order || null);
     } else {
       store.setSelectedOrder(null);
@@ -135,6 +145,10 @@ function NewOrder() {
   };
 
   const handleCloseTab = (orderId: number) => {
+    if (orderId == null || orderId === undefined) {
+      console.error('[NewOrder] Invalid order ID:', orderId);
+      return;
+    }
     const orderToCloseItem = store.state.activeOrders.find((order) => order.id === orderId);
     if (orderToCloseItem && orderToCloseItem.items.length > 0) {
       setOrderToClose(orderToCloseItem);
@@ -167,12 +181,12 @@ function NewOrder() {
 
   // Memoize if bar is available
   const isBarAvailable = createMemo(() => {
-    return !store.state.activeOrders.find((order) => order.tableNumber === 0);
+    return !validActiveOrders().find((order) => order.tableNumber === 0);
   });
 
   // Memoize total available tables for fade indicator
   const totalAvailableTables = createMemo(() => {
-    return availableTables().length + store.state.activeOrders.length;
+    return availableTables().length + validActiveOrders().length;
   });
 
   return (
@@ -219,7 +233,7 @@ function NewOrder() {
             </For>
 
             {/* Active Orders (mixed in same row) */}
-            <For each={store.state.activeOrders}>
+            <For each={validActiveOrders()}>
               {(order) => (
                 <button
                   type="button"

@@ -11,7 +11,7 @@ import {
   SettingsIcon,
   UsersIcon,
 } from 'lucide-solid';
-import { createEffect, createSignal, ErrorBoundary, Match, onMount, Show, Switch } from 'solid-js';
+import { createEffect, createSignal, Match, onMount, Show, Switch } from 'solid-js';
 import fallbackProducts from '@/assets/products.json';
 import iconOptions from '@/assets/utils/icons/iconOptions';
 import BottomNavigation from '@/components/BottomNavigation';
@@ -30,6 +30,9 @@ import SettingsPanel from '@/components/Sections/SettingsPanel';
 import Sidebar from '@/components/SideBar';
 import SidebarToggleButton from '@/components/SideBarToggleButton';
 import UpdateChecker from '@/components/UpdateChecker';
+import { OnboardingProvider } from '@/components/Onboarding/OnboardingProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useAppTheme } from '@/lib/theme-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
 import { config } from '@/lib/config';
@@ -46,21 +49,10 @@ import type { LicenseStatus } from '@/types/license';
 
 function App() {
   const store = useStore();
+  const appTheme = useAppTheme();
 
   // License state
   const [showLicenseSplash, setShowLicenseSplash] = createSignal(true);
-
-  // Theme state - get initial from localStorage or default
-  const getInitialMode = (): 'light' | 'dark' => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme-mode');
-      if (saved === 'dark' || saved === 'light') return saved;
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
-    }
-    return 'light';
-  };
-
-  const [currentMode, setCurrentMode] = createSignal<'light' | 'dark'>(getInitialMode());
 
   // Responsive state
   const [isMobile, setIsMobile] = createSignal(window.innerWidth < 768);
@@ -99,16 +91,8 @@ function App() {
   });
 
   const toggleDarkMode = () => {
-    const newMode = currentMode() === 'dark' ? 'light' : 'dark';
-    setCurrentMode(newMode);
-    localStorage.setItem('theme-mode', newMode);
-    document.documentElement.classList.toggle('dark', newMode === 'dark');
+    appTheme.toggleMode();
   };
-
-  // Apply initial theme
-  onMount(() => {
-    document.documentElement.classList.toggle('dark', currentMode() === 'dark');
-  });
 
   const handleThermalPrinterOptionsChange = (options: ThermalPrinterServiceOptions | null) => {
     store.setThermalPrinterOptions(options);
@@ -137,6 +121,43 @@ function App() {
       description: `Categoria ${categoryName}`,
       icon: undefined,
     }));
+  };
+
+  // Seed products to database if empty
+  const seedProductsIfNeeded = async () => {
+    const result = await store.storageAdapter().getProducts();
+    if (result.ok && result.value.length === 0) {
+      console.log('[App] Seeding products from fallback...');
+      const fallbackProds = getFallbackProducts();
+      for (const product of fallbackProds) {
+        await store.storageAdapter().createProduct(product);
+      }
+      // Recargar productos después de seed
+      const reloaded = await store.storageAdapter().getProducts();
+      if (reloaded.ok) {
+        store.setProducts(reloaded.value);
+        store.setBackendConnected(true);
+        console.log(`[App] Seeded ${reloaded.value.length} products to database`);
+      }
+    }
+  };
+
+  // Seed categories to database if empty
+  const seedCategoriesIfNeeded = async () => {
+    const result = await store.storageAdapter().getCategories();
+    if (result.ok && result.value.length === 0) {
+      console.log('[App] Seeding categories from fallback...');
+      const fallbackCats = getFallbackCategories();
+      for (const category of fallbackCats) {
+        await store.storageAdapter().createCategory(category);
+      }
+      // Recargar categorías después de seed
+      const reloaded = await store.storageAdapter().getCategories();
+      if (reloaded.ok) {
+        store.setCategories(reloaded.value);
+        console.log(`[App] Seeded ${reloaded.value.length} categories to database`);
+      }
+    }
   };
 
   // License check function
@@ -208,9 +229,12 @@ function App() {
         store.setBackendConnected(true);
         console.log('[App] Categories loaded:', result.value.length);
       } else {
-        const fallbackCats = getFallbackCategories();
-        store.setCategories(fallbackCats);
-        console.log('[App] Using fallback categories:', fallbackCats.length);
+        await seedCategoriesIfNeeded();
+        if (store.state.categories.length === 0) {
+          const fallbackCats = getFallbackCategories();
+          store.setCategories(fallbackCats);
+          console.log('[App] Using fallback categories:', fallbackCats.length);
+        }
       }
     }
 
@@ -227,8 +251,16 @@ function App() {
         store.setBackendConnected(true);
         console.log('[App] Products loaded:', result.value.length);
       } else {
-        store.setProducts(getFallbackProducts());
-        console.log('[App] Using fallback products');
+        await seedProductsIfNeeded();
+        if (store.state.products.length === 0) {
+          const productsWithIcons = getFallbackProducts().map((product) => ({
+            ...product,
+            icon:
+              iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
+          })) as Product[];
+          store.setProducts(productsWithIcons);
+          console.log('[App] Using fallback products');
+        }
       }
     }
 
@@ -240,24 +272,36 @@ function App() {
       console.log('[App] Order history loaded:', paidOrders.length);
     }
 
-    // Initialize users if empty
+    // Initialize users from database
     if (store.state.users.length === 0) {
-      store.setUsers([
-        {
-          id: 1,
-          name: 'Germán',
-          profilePicture: '/panxo.svg',
-          pin: '1111',
-          pinnedProductIds: [1, 2, 3, 4, 5, 6],
-        },
-        {
-          id: 2,
-          name: 'Marta',
-          profilePicture: '/nuka.svg',
-          pin: '1234',
-          pinnedProductIds: [1, 2, 3],
-        },
-      ]);
+      const usersResult = await store.storageAdapter().getUsers();
+      if (usersResult.ok && usersResult.value.length > 0) {
+        store.setUsers(usersResult.value);
+        console.log('[App] Users loaded from database:', usersResult.value.length);
+      } else {
+        // Create default users if database is empty
+        const defaultUsers = [
+          {
+            id: 1,
+            name: 'Germán',
+            profilePicture: '/panxo.svg',
+            pin: '1111',
+            pinnedProductIds: [1, 2, 3, 4, 5, 6],
+          },
+          {
+            id: 2,
+            name: 'Marta',
+            profilePicture: '/nuka.svg',
+            pin: '1234',
+            pinnedProductIds: [1, 2, 3],
+          },
+        ];
+        for (const user of defaultUsers) {
+          await store.storageAdapter().createUser(user);
+        }
+        store.setUsers(defaultUsers);
+        console.log('[App] Default users created and loaded:', defaultUsers.length);
+      }
     }
 
     // Initialize tables if empty
@@ -345,12 +389,9 @@ function App() {
                 class="absolute inset-0 bg-transparent"
               >
                 <ErrorBoundary
-                  fallback={(err) => (
-                    <div class="p-4 text-destructive">
-                      <h2>Error en Login</h2>
-                      <p>{err.message}</p>
-                    </div>
-                  )}
+                  level="page"
+                  fallbackTitle="Error en Login"
+                  fallbackMessage="No se ha podido cargar la pantalla de inicio de sesión."
                 >
                   <Login users={store.state.users} onLogin={store.setSelectedUser} />
                 </ErrorBoundary>
@@ -363,7 +404,7 @@ function App() {
           isSidebarOpen={isSidebarOpen()}
           activeSection={activeSection()}
           setActiveSection={setActiveSection}
-          isDarkMode={currentMode() === 'dark'}
+          isDarkMode={appTheme.effectiveMode() === 'dark'}
           toggleDarkMode={toggleDarkMode}
           menuItems={menuItems}
           loggedUser={store.state.selectedUser!}
@@ -402,9 +443,9 @@ function App() {
                       )}
                     >
                       <ErrorBoundary
-                        fallback={(err) => (
-                          <div class="text-destructive">Error en Inicio: {err.message}</div>
-                        )}
+                        level="section"
+                        fallbackTitle="Error en Inicio"
+                        fallbackMessage="No se ha podido cargar la pantalla de inicio."
                       >
                         <Home
                           userName={store.state.selectedUser?.name || 'Usuario desconocido'}
@@ -421,9 +462,9 @@ function App() {
                       )}
                     >
                       <ErrorBoundary
-                        fallback={(err) => (
-                          <div class="text-destructive">Error en Productos: {err.message}</div>
-                        )}
+                        level="section"
+                        fallbackTitle="Error en Productos"
+                        fallbackMessage="No se ha podido cargar la pantalla de productos."
                       >
                         <Products />
                       </ErrorBoundary>
@@ -433,11 +474,9 @@ function App() {
                   <Match when={activeSection() === 'newOrder'}>
                     <div class="h-full overflow-hidden">
                       <ErrorBoundary
-                        fallback={(err) => (
-                          <div class="text-destructive">
-                            Error en Nueva Comanda: {err.message}
-                          </div>
-                        )}
+                        level="section"
+                        fallbackTitle="Error en Nueva Comanda"
+                        fallbackMessage="No se ha podido cargar la pantalla de nuevas comandas."
                       >
                         <NewOrder />
                       </ErrorBoundary>
@@ -452,9 +491,9 @@ function App() {
                       )}
                     >
                       <ErrorBoundary
-                        fallback={(err) => (
-                          <div class="text-destructive">Error en Historial: {err.message}</div>
-                        )}
+                        level="section"
+                        fallbackTitle="Error en Historial"
+                        fallbackMessage="No se ha podido cargar el historial de pedidos."
                       >
                         <OrderHistory
                           setSelectedOrderId={store.setSelectedOrderId}
@@ -474,9 +513,9 @@ function App() {
                       )}
                     >
                       <ErrorBoundary
-                        fallback={(err) => (
-                          <div class="text-destructive">Error en Clientes: {err.message}</div>
-                        )}
+                        level="section"
+                        fallbackTitle="Error en Clientes"
+                        fallbackMessage="No se ha podido cargar la pantalla de clientes."
                       >
                         <Customers />
                       </ErrorBoundary>
@@ -491,11 +530,9 @@ function App() {
                       )}
                     >
                       <ErrorBoundary
-                        fallback={(err) => (
-                          <div class="text-destructive">
-                            Error en Facturas AEAT: {err.message}
-                          </div>
-                        )}
+                        level="section"
+                        fallbackTitle="Error en Facturas AEAT"
+                        fallbackMessage="No se ha podido cargar la pantalla de facturación."
                       >
                         <AEATInvoices />
                       </ErrorBoundary>
@@ -510,23 +547,25 @@ function App() {
                       )}
                     >
                       <ErrorBoundary
-                        fallback={(err) => (
-                          <div class="text-destructive">Error en Ajustes: {err.message}</div>
-                        )}
+                        level="section"
+                        fallbackTitle="Error en Ajustes"
+                        fallbackMessage="No se ha podido cargar la pantalla de ajustes."
                       >
-                        <SettingsPanel
-                          users={store.state.users}
-                          selectedUser={store.state.selectedUser!}
-                          handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
-                          thermalPrinterOptions={
-                            store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
-                          }
-                          isDarkMode={currentMode() === 'dark'}
-                          toggleDarkMode={toggleDarkMode}
-                          isSidebarOpen={isSidebarOpen()}
-                          setSelectedUser={store.setSelectedUser}
-                          setUsers={store.setUsers}
-                        />
+                        <OnboardingProvider>
+                          <SettingsPanel
+                            users={store.state.users}
+                            selectedUser={store.state.selectedUser!}
+                            handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
+                            thermalPrinterOptions={
+                              store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
+                            }
+                            isDarkMode={appTheme.effectiveMode() === 'dark'}
+                            toggleDarkMode={toggleDarkMode}
+                            isSidebarOpen={isSidebarOpen()}
+                            setSelectedUser={store.setSelectedUser}
+                            setUsers={store.setUsers}
+                          />
+                        </OnboardingProvider>
                       </ErrorBoundary>
                     </div>
                   </Match>
