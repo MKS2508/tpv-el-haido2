@@ -1,8 +1,37 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { TypewriterCode } from '@/components/ui/TypewriterCode';
+
+const terminalLines = [
+  { prompt: '$', text: 'npx @mks2508/telegram-bot-manager bootstrap' },
+  { arrow: true, text: 'Creating bot via BotFather...' },
+  { arrow: true, text: 'Bot created: @my_bot' },
+  { arrow: true, text: 'Forum created: -1001234567890' },
+  { arrow: true, text: 'Topics configured: General, Control, Logs' },
+  { arrow: true, text: 'Token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11' },
+];
+
+const features = [
+  {
+    title: 'BotFather Automation',
+    description: 'Create bots, configure commands, set descriptions, retrieve tokens programmatically',
+  },
+  {
+    title: 'CLI & Library',
+    description: 'Use via npx for quick automation or import as TypeScript library',
+  },
+  {
+    title: 'Multi-Bot Support',
+    description: 'Manage multiple bots with environment-based configuration (local, staging, production)',
+  },
+  {
+    title: 'Forum & Topics',
+    description: 'Create forum groups with custom topics, colors, and admin permissions',
+  },
+];
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
@@ -12,121 +41,161 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
-      <main className="max-w-4xl mx-auto px-6 py-24">
-        {/* Header */}
-        <div className={`mb-20 transition-opacity duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <h1 className="text-5xl md:text-7xl font-semibold tracking-tight text-gray-900 dark:text-white mb-6">
-            Telegram Bot Manager
+    <main className="min-h-screen bg-[var(--bg-void)] relative">
+      {/* Grain overlay */}
+      <div className="grain-overlay" />
+
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          {/* Badge */}
+          <span
+            className={`inline-flex mb-8 opacity-0 ${mounted ? 'animate-fade-in' : ''}`}
+            style={{ animationDelay: '0ms', animationFillMode: 'forwards' }}
+          >
+            <span className="px-3 py-1 text-xs tracking-[0.2em] uppercase text-[var(--text-muted)] border border-[var(--border-subtle)] rounded-full">
+              Documentation
+            </span>
+          </span>
+
+          {/* Title */}
+          <h1
+            className={`font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight text-[var(--text-primary)] mb-8 leading-[1.1] opacity-0 ${mounted ? 'animate-slide-up' : ''}`}
+            style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}
+          >
+            Telegram Bot
+            <br />
+            <span className="text-gradient">Manager</span>
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
-            TypeScript library and CLI for automating Telegram bot management via @BotFather using GramJS MTProto.
+
+          {/* Subtitle */}
+          <p
+            className={`text-lg sm:text-xl text-[var(--text-muted)] max-w-2xl leading-relaxed opacity-0 ${mounted ? 'animate-slide-up' : ''}`}
+            style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}
+          >
+            TypeScript library and CLI for automating Telegram bot management via @BotFather using
+            GramJS MTProto.
           </p>
         </div>
+      </section>
 
-        {/* Code Example */}
-        <div className={`mb-20 transition-opacity duration-700 delay-200 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-700" />
-            <div className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-700" />
-            <div className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-700" />
-            <span className="ml-2 text-xs text-gray-500 dark:text-gray-500 font-mono uppercase tracking-wide">Terminal</span>
+      {/* Terminal Preview */}
+      <section className="pb-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div
+            className={`terminal-container glow-border animate-glow-pulse opacity-0 ${mounted ? 'animate-fade-in' : ''}`}
+            style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}
+          >
+            {/* Terminal Header */}
+            <div className="terminal-header">
+              <div className="terminal-dot" />
+              <div className="terminal-dot" />
+              <div className="terminal-dot" />
+              <span className="ml-3 text-xs text-[var(--text-subtle)] font-mono uppercase tracking-wider">
+                Terminal
+              </span>
+            </div>
+
+            {/* Terminal Body */}
+            <div className="terminal-body">
+              {mounted ? (
+                <TypewriterCode lines={terminalLines} typingSpeed={25} lineDelay={300} />
+              ) : (
+                <code className="block text-[var(--text-muted)]">Loading...</code>
+              )}
+            </div>
           </div>
-          <pre className="bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-6 overflow-x-auto">
-            <code className="text-sm font-mono text-gray-800 dark:text-gray-200">
-              <span className="text-gray-500 dark:text-gray-500">$</span> npx @mks2508/telegram-bot-manager bootstrap
-              <br />
-              <span className="text-green-600">→</span> Creating bot via BotFather...
-              <br />
-              <span className="text-green-600">→</span> Bot created: @my_bot
-              <br />
-              <span className="text-green-600">→</span> Forum created: -1001234567890
-              <br />
-              <span className="text-green-600">→</span> Topics configured: General, Control, Logs
-              <br />
-              <span className="text-green-600">→</span> Token: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-            </code>
-          </pre>
         </div>
+      </section>
 
-        {/* Features - Simple List */}
-        <div className={`mb-20 transition-opacity duration-700 delay-400 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-8">
+      {/* Features */}
+      <section className="pb-32 px-6">
+        <div className="max-w-5xl mx-auto">
+          <h2
+            className={`text-xs font-mono uppercase tracking-[0.2em] text-[var(--text-muted)] mb-8 opacity-0 ${mounted ? 'animate-fade-in' : ''}`}
+            style={{ animationDelay: '600ms', animationFillMode: 'forwards' }}
+          >
             Features
           </h2>
-          <div className="space-y-6">
-            <div className="flex items-start gap-4">
-              <span className="text-blue-600 dark:text-blue-500 font-mono text-sm mt-0.5">01</span>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">BotFather Automation</h3>
-                <p className="text-gray-600 dark:text-gray-400">Create bots, configure commands, set descriptions, retrieve tokens programmatically</p>
+
+          <div
+            className={`opacity-0 ${mounted ? 'animate-slide-up' : ''}`}
+            style={{ animationDelay: '700ms', animationFillMode: 'forwards' }}
+          >
+            {features.map((feature, index) => (
+              <div key={index} className="feature-row group">
+                <span className="feature-number">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <div className="feature-content">
+                  <h3>{feature.title}</h3>
+                  <p>{feature.description}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <span className="text-blue-600 dark:text-blue-500 font-mono text-sm mt-0.5">02</span>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">CLI & Library</h3>
-                <p className="text-gray-600 dark:text-gray-400">Use via npx for quick automation or import as TypeScript library</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <span className="text-blue-600 dark:text-blue-500 font-mono text-sm mt-0.5">03</span>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Multi-Bot Support</h3>
-                <p className="text-gray-600 dark:text-gray-400">Manage multiple bots with environment-based configuration (local, staging, production)</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <span className="text-blue-600 dark:text-blue-500 font-mono text-sm mt-0.5">04</span>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Forum & Topics</h3>
-                <p className="text-gray-600 dark:text-gray-400">Create forum groups with custom topics, colors, and admin permissions</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        {/* CTA */}
-        <div className={`transition-opacity duration-700 delay-600 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <Link
-              href="/docs/introduccion/quick-start/"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-black rounded font-medium hover:opacity-90 transition-opacity"
-            >
+      {/* CTA */}
+      <section className="pb-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div
+            className={`flex flex-col sm:flex-row gap-4 items-start sm:items-center opacity-0 ${mounted ? 'animate-slide-up' : ''}`}
+            style={{ animationDelay: '800ms', animationFillMode: 'forwards' }}
+          >
+            <Link href="/docs/introduccion/quick-start/" className="btn-primary">
               Get Started
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <span className="text-gray-500 dark:text-gray-500">or</span>
-            <Link
-              href="/docs/introduccion/"
-              className="text-blue-600 dark:text-blue-500 hover:underline font-medium"
-            >
-              Read the docs
+            <Link href="/docs/introduccion/" className="btn-ghost">
+              <BookOpen className="w-4 h-4" />
+              Read Docs
             </Link>
           </div>
         </div>
+      </section>
 
-        {/* Footer Links */}
-        <div className={`mt-32 pt-16 border-t border-gray-200 dark:border-gray-800 transition-opacity duration-700 delay-800 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <nav className="flex flex-wrap gap-x-8 gap-y-4 text-sm">
-            <Link href="/docs/introduccion/installation/" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+      {/* Footer */}
+      <footer className="border-t border-[var(--border-subtle)] mt-12">
+        <div className="max-w-5xl mx-auto px-6 py-12">
+          <nav
+            className={`flex flex-wrap gap-x-8 gap-y-4 text-sm opacity-0 ${mounted ? 'animate-fade-in' : ''}`}
+            style={{ animationDelay: '900ms', animationFillMode: 'forwards' }}
+          >
+            <Link
+              href="/docs/introduccion/installation/"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
               Installation
             </Link>
-            <Link href="/docs/referencia-de-biblioteca/" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <Link
+              href="/docs/referencia-de-biblioteca/"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
               API Reference
             </Link>
-            <Link href="/docs/referencia-de-cli/" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <Link
+              href="/docs/referencia-de-cli/"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
               CLI Reference
             </Link>
-            <Link href="/docs/configuracion/" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <Link
+              href="/docs/configuracion/"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
               Configuration
             </Link>
-            <Link href="/en/docs/" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <Link
+              href="/en/docs/"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
               English
             </Link>
           </nav>
         </div>
-      </main>
-    </div>
+      </footer>
+    </main>
   );
 }

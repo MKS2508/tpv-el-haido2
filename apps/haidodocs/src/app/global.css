@@ -1,3 +1,466 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+
+/* ===================================
+   DESIGN SYSTEM - Terminal Editorial
+   =================================== */
+
+:root {
+  /* Dark Theme Colors */
+  --bg-void: #050506;
+  --bg-primary: #0a0a0b;
+  --bg-elevated: #111113;
+  --bg-hover: #1a1a1d;
+
+  --text-primary: #fafafa;
+  --text-muted: #71717a;
+  --text-subtle: #52525b;
+
+  --accent-cyan: #22d3ee;
+  --accent-cyan-dim: #0891b2;
+  --accent-glow: rgba(34, 211, 238, 0.12);
+
+  --border-subtle: #27272a;
+  --border-hover: #3f3f46;
+
+  /* Fonts */
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'Geist Sans', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+/* ===================================
+   ANIMATIONS
+   =================================== */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--accent-glow);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes typewriter {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s ease-out forwards;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Animation delays */
+.delay-100 {
+  animation-delay: 100ms;
+}
+.delay-200 {
+  animation-delay: 200ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-400 {
+  animation-delay: 400ms;
+}
+.delay-500 {
+  animation-delay: 500ms;
+}
+.delay-600 {
+  animation-delay: 600ms;
+}
+.delay-700 {
+  animation-delay: 700ms;
+}
+.delay-800 {
+  animation-delay: 800ms;
+}
+
+/* ===================================
+   CUSTOM SCROLLBAR
+   =================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) var(--bg-primary);
+}
+
+/* ===================================
+   UTILITY CLASSES
+   =================================== */
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-cyan-dim) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-border {
+  border: 1px solid var(--accent-cyan-dim);
+  box-shadow: 0 0 20px var(--accent-glow);
+  transition: box-shadow 0.3s ease;
+}
+
+.glow-border:hover {
+  box-shadow: 0 0 40px var(--accent-glow);
+}
+
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  z-index: 9999;
+}
+
+/* ===================================
+   TERMINAL STYLES
+   =================================== */
+
+.terminal-container {
+  background: #0d0d0e;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.terminal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+}
+
+.terminal-dot.red {
+  background: #ef4444;
+  border-color: #dc2626;
+}
+
+.terminal-dot.yellow {
+  background: #eab308;
+  border-color: #ca8a04;
+}
+
+.terminal-dot.green {
+  background: #22c55e;
+  border-color: #16a34a;
+}
+
+.terminal-body {
+  padding: 20px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  overflow-x: auto;
+}
+
+.terminal-prompt {
+  color: var(--text-subtle);
+}
+
+.terminal-arrow {
+  color: var(--accent-cyan);
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 18px;
+  background: var(--accent-cyan);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+}
+
+/* ===================================
+   BUTTON STYLES
+   =================================== */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  font-weight: 500;
+  border-radius: 6px;
+  transition: opacity 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: transparent;
+  color: var(--accent-cyan);
+  font-weight: 500;
+  border: 1px solid var(--accent-cyan-dim);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent-cyan);
+}
+
+/* ===================================
+   FUMADOCS OVERRIDES
+   =================================== */
+
+/* Override Fumadocs variables for consistency */
+:root,
+.dark {
+  --fd-background: var(--bg-primary);
+  --fd-background-depth: var(--bg-void);
+  --fd-foreground: var(--text-primary);
+  --fd-muted-foreground: var(--text-muted);
+  --fd-border: var(--border-subtle);
+  --fd-primary: var(--accent-cyan);
+  --fd-primary-foreground: var(--bg-primary);
+}
+
+/* Fumadocs navigation */
+.fd-nav {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Fumadocs sidebar */
+.fd-sidebar {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* ===================================
+   PROSE / MDX STYLES
+   =================================== */
+
+.prose {
+  --tw-prose-body: var(--text-primary);
+  --tw-prose-headings: var(--text-primary);
+  --tw-prose-links: var(--accent-cyan);
+  --tw-prose-code: var(--accent-cyan);
+  --tw-prose-pre-bg: var(--bg-elevated);
+  --tw-prose-pre-code: var(--text-primary);
+}
+
+/* Code blocks with terminal theme */
+.prose pre {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.prose pre:hover {
+  border-color: var(--accent-cyan-dim);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Headings with serif */
+.prose h1,
+.prose h2 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+}
+
+/* Links with animated underline */
+.prose a {
+  text-decoration: none;
+  background-image: linear-gradient(var(--accent-cyan), var(--accent-cyan));
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease;
+}
+
+.prose a:hover {
+  background-size: 100% 1px;
+}
+
+/* Tables with cyan borders */
+.prose table {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.prose th {
+  background: var(--bg-elevated);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.prose td {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.prose tr:last-child td {
+  border-bottom: none;
+}
+
+/* Inline code */
+.prose :not(pre) > code {
+  background: var(--bg-elevated);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.875em;
+  color: var(--accent-cyan);
+}
+
+/* Blockquotes */
+.prose blockquote {
+  border-left: 3px solid var(--accent-cyan-dim);
+  background: var(--bg-elevated);
+  padding: 1rem;
+  border-radius: 0 8px 8px 0;
+  font-style: normal;
+}
+
+/* ===================================
+   FEATURE ROW STYLES
+   =================================== */
+
+.feature-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: border-color 0.2s ease;
+}
+
+.feature-row:hover {
+  border-color: var(--border-hover);
+}
+
+.feature-row:last-child {
+  border-bottom: none;
+}
+
+.feature-number {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  color: var(--text-subtle);
+  transition: color 0.2s ease;
+  min-width: 3rem;
+}
+
+.feature-row:hover .feature-number {
+  color: var(--accent-cyan);
+}
+
+.feature-content h3 {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.feature-content p {
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ===================================
+   KBD STYLES
+   =================================== */
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  padding: 0.125rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  box-shadow: 0 2px 0 var(--border-subtle);
+  color: var(--text-primary);
+}

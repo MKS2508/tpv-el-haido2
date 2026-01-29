@@ -1,11 +1,26 @@
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import './global.css';
-import { Inter } from 'next/font/google';
+import { Instrument_Serif, Geist, Geist_Mono } from 'next/font/google';
 import { LanguageSelector } from '@/components/language-selector';
 import { siteConfig } from '@/config/site.config';
 
-const inter = Inter({
+const instrumentSerif = Instrument_Serif({
   subsets: ['latin'],
+  weight: '400',
+  variable: '--font-serif',
+  display: 'swap',
+});
+
+const geistSans = Geist({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
 });
 
 export const metadata = {
@@ -33,8 +48,12 @@ export const metadata = {
 
 export default function Layout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="es" className={inter.className} suppressHydrationWarning>
-      <body className="flex flex-col min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+    <html
+      lang="es"
+      className={`${instrumentSerif.variable} ${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="flex flex-col min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans">
         <RootProvider>
           <nav className="fixed top-4 right-4 z-50">
             <LanguageSelector />

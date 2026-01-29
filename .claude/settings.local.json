@@ -41,7 +41,7 @@
       "Bash(git checkout:*)",
       "Bash(bun run lint:solid:*)",
       "Bash(bunx:*)",
-      "Bash(bun run build:*)"
+      "Bash(bunx next build)"
     ]
   }
 }
