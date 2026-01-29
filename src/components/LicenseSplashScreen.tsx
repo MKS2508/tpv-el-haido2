@@ -1,11 +1,12 @@
 import { Motion } from '@motionone/solid';
 import { invoke } from '@tauri-apps/api/core';
-import { Key, Loader2 } from 'lucide-solid';
+import { Bug, Key, Loader2 } from 'lucide-solid';
 import { createSignal, onMount, Show } from 'solid-js';
 import { toast } from 'solid-sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { config } from '@/lib/config';
 import type { LicenseActivationRequest, LicenseStatus } from '@/types/license';
 
 interface LicenseSplashScreenProps {
@@ -77,7 +78,29 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
     }
   };
 
+  // Debug mode bypass
+  const handleDebugBypass = () => {
+    console.log('[License] DEBUG MODE - Bypassing license activation');
+    const debugStatus: LicenseStatus = {
+      is_activated: true,
+      is_valid: true,
+      email: 'debug@test.local',
+      license_type: 'enterprise',
+      days_remaining: 9999,
+      expires_at: null,
+    };
+    toast.success('DEBUG: Licencia activada en modo desarrollo');
+    props.onComplete(debugStatus);
+  };
+
   onMount(async () => {
+    // DEBUG MODE: Auto-bypass license check
+    if (config.debug.enabled) {
+      console.log('[License] DEBUG MODE - Auto-bypassing license check');
+      setIsChecking(false);
+      return;
+    }
+
     try {
       const status = await invoke<LicenseStatus>('check_license_status');
 
@@ -155,6 +178,23 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
                 Contacta con soporte
               </a>
             </div>
+
+            {/* Debug Mode Bypass Button */}
+            <Show when={config.debug.enabled}>
+              <div class="pt-4 border-t border-border">
+                <Button
+                  onClick={handleDebugBypass}
+                  variant="outline"
+                  class="w-full border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                >
+                  <Bug class="mr-2 h-4 w-4" />
+                  DEBUG: Saltar validación
+                </Button>
+                <p class="text-xs text-orange-500 text-center mt-2">
+                  Modo desarrollo activo (VITE_DEBUG_MODE=true)
+                </p>
+              </div>
+            </Show>
           </Show>
 
           <Show when={isChecking()}>

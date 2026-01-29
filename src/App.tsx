@@ -32,6 +32,7 @@ import SidebarToggleButton from '@/components/SideBarToggleButton';
 import UpdateChecker from '@/components/UpdateChecker';
 import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
+import { config } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import type Product from '@/models/Product';
 import {
@@ -140,6 +141,22 @@ function App() {
 
   // License check function
   const checkLicense = async () => {
+    // DEBUG MODE: Skip license validation entirely
+    if (config.debug.enabled) {
+      console.log('[License] DEBUG MODE - Skipping license validation');
+      const debugStatus: LicenseStatus = {
+        is_activated: true,
+        is_valid: true,
+        email: 'debug@test.local',
+        license_type: 'enterprise',
+        days_remaining: 9999,
+        expires_at: null,
+      };
+      store.setLicenseStatus(debugStatus);
+      setShowLicenseSplash(false);
+      return;
+    }
+
     try {
       const status = await invoke<LicenseStatus>('check_license_status');
       console.log('[License] Status:', status);
