@@ -72,11 +72,8 @@ function NewOrder() {
       if (firstOrder && firstOrder.id != null) {
         store.setSelectedOrderId(firstOrder.id);
       }
-    } else if (store.state.activeOrders.length === 0) {
-      if (inProgressOrders().length > 0) {
-        store.setActiveOrders(inProgressOrders());
-      }
     }
+    // Removed auto-restore of in-progress orders to avoid reactivity issues
   });
 
   // Sync selected order with active orders
@@ -235,48 +232,51 @@ function NewOrder() {
             {/* Active Orders (mixed in same row) */}
             <For each={validActiveOrders()}>
               {(order) => (
-                <button
-                  type="button"
-                  class={cn(
-                    'table-button border rounded-lg flex items-center font-medium transition-all duration-150 active:scale-[0.98] flex-shrink-0 snap-start cursor-pointer',
-                    store.state.selectedOrderId === order.id
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md'
-                      : 'bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted/80 shadow-sm',
-                    isMobile() ? 'px-2 py-1 gap-1.5 text-[0.7rem]' : 'px-3 py-1.5 gap-1.5 text-xs'
-                  )}
-                  onClick={() => store.setSelectedOrderId(order.id)}
-                >
-                  <span
-                    class={`w-2 h-2 rounded-full ${
-                      store.state.selectedOrderId === order.id
-                        ? 'bg-sidebar-primary-foreground animate-pulse'
-                        : 'bg-muted-foreground'
-                    }`}
-                  />
-                  <span class="whitespace-nowrap">
-                    {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
-                  </span>
+                <Show when={order && order.id != null}>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCloseTab(order.id);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.stopPropagation();
-                        handleCloseTab(order.id);
-                      }
-                    }}
                     class={cn(
-                      'text-current opacity-70 hover:opacity-100 flex items-center justify-center rounded-full hover:bg-destructive/20 transition-all duration-150',
-                      isMobile() ? 'ml-0.5 text-sm w-4 h-4' : 'ml-1 text-sm w-4 h-4'
+                      'table-button border rounded-lg flex items-center font-medium transition-all duration-150 active:scale-[0.98] flex-shrink-0 snap-start cursor-pointer',
+                      store.state.selectedOrderId === order.id
+                        ? 'bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary shadow-md'
+                        : 'bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted/80 shadow-sm',
+                      isMobile() ? 'px-2 py-1 gap-1.5 text-[0.7rem]' : 'px-3 py-1.5 gap-1.5 text-xs'
                     )}
-                    title="Cerrar comanda"
+                    onClick={() => order.id && store.setSelectedOrderId(order.id)}
                   >
-                    x
+                    <span
+                      class={`w-2 h-2 rounded-full ${
+                        store.state.selectedOrderId === order.id
+                          ? 'bg-sidebar-primary-foreground animate-pulse'
+                          : 'bg-muted-foreground'
+                      }`}
+                    />
+                    <span class="whitespace-nowrap">
+                      {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (order.id) handleCloseTab(order.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.stopPropagation();
+                          if (order.id) handleCloseTab(order.id);
+                        }
+                      }}
+                      class={cn(
+                        'text-current opacity-70 hover:opacity-100 flex items-center justify-center rounded-full hover:bg-destructive/20 transition-all duration-150',
+                        isMobile() ? 'ml-0.5 text-sm w-4 h-4' : 'ml-1 text-sm w-4 h-4'
+                      )}
+                      title="Cerrar comanda"
+                    >
+                      x
+                    </button>
                   </button>
-                </button>
+                </Show>
+              )}
               )}
             </For>
           </div>

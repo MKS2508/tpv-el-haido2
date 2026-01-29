@@ -39,11 +39,11 @@ ChartJS.register(
 );
 
 const CHART_COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
 ];
 
 interface HomeHeaderProps {
@@ -296,8 +296,7 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
 
   const chartData = createMemo(() => {
     const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#8b5cf6';
-    const primaryRgb = primaryColor.match(/\d+/g);
-    const primaryRgba = primaryRgb ? `rgba(${primaryRgb[0]}, ${primaryRgb[1]}, ${primaryRgb[2]},` : 'rgba(139, 92, 246,';
+    const backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--background').trim() || '#ffffff';
 
     return {
       labels: props.data.map((d) => d.date),
@@ -305,18 +304,18 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
         {
           label: 'Ventas',
           data: props.data.map((d) => d.sales),
-          borderColor: 'hsl(var(--primary))',
+          borderColor: primaryColor,
           backgroundColor: (context: any) => {
             const ctx = context.chart.ctx;
             const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-            gradient.addColorStop(0, `${primaryRgba} 0.4)`);
-            gradient.addColorStop(1, `${primaryRgba} 0)`);
+            gradient.addColorStop(0, primaryColor.replace(')', '/ 0.4)').replace('oklch', 'oklch'));
+            gradient.addColorStop(1, primaryColor.replace(')', '/ 0)').replace('oklch', 'oklch'));
             return gradient;
           },
           tension: 0.4,
           fill: true,
-          pointBackgroundColor: 'hsl(var(--primary))',
-          pointBorderColor: 'hsl(var(--background))',
+          pointBackgroundColor: primaryColor,
+          pointBorderColor: backgroundColor,
           pointBorderWidth: 2,
           pointRadius: responsive.isMobile() ? 3 : 4,
           pointHoverRadius: 6,
@@ -325,54 +324,61 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
     };
   });
 
-  const chartOptions = createMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      intersect: false,
-      mode: 'index' as const,
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'hsl(var(--card))',
-        titleColor: 'hsl(var(--card-foreground))',
-        bodyColor: 'hsl(var(--card-foreground))',
-        borderColor: 'hsl(var(--border))',
-        borderWidth: 1,
-        padding: 12,
-        displayColors: false,
-        callbacks: {
-          label: (context: { raw: number }) => `${context.raw.toFixed(2)}€`,
+  const chartOptions = createMemo(() => {
+    const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a';
+    const cardForeground = getComputedStyle(document.documentElement).getPropertyValue('--card-foreground').trim() || '#ffffff';
+    const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#333333';
+    const mutedForeground = getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim() || '#999999';
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index' as const,
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: cardColor,
+          titleColor: cardForeground,
+          bodyColor: cardForeground,
+          borderColor: borderColor,
+          borderWidth: 1,
+          padding: 12,
+          displayColors: false,
+          callbacks: {
+            label: (context: { raw: number }) => `${context.raw.toFixed(2)}€`,
+          },
         },
       },
-    },
-    scales: {
-      x: {
-        grid: {
-          color: 'hsl(var(--border) / 0.5)',
-          drawBorder: false,
+      scales: {
+        x: {
+          grid: {
+            color: borderColor,
+            drawBorder: false,
+          },
+          ticks: {
+            color: mutedForeground,
+            maxTicksLimit: responsive.isMobile() ? 4 : 8,
+            font: { size: 11 },
+          },
         },
-        ticks: {
-          color: 'hsl(var(--muted-foreground))',
-          maxTicksLimit: responsive.isMobile() ? 4 : 8,
-          font: { size: 11 },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: borderColor,
+            drawBorder: false,
+          },
+          ticks: {
+            color: mutedForeground,
+            callback: (value: number) => `${value}€`,
+            font: { size: 11 },
+          },
         },
       },
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'hsl(var(--border) / 0.5)',
-          drawBorder: false,
-        },
-        ticks: {
-          color: 'hsl(var(--muted-foreground))',
-          callback: (value: number) => `${value}€`,
-          font: { size: 11 },
-        },
-      },
-    },
-  }));
+    };
+  });
 
   return (
     <Motion.div
@@ -441,48 +447,63 @@ const PieChartCard: Component<PieChartCardProps> = (props) => {
   const responsive = useResponsive();
   const index = () => props.index ?? 0;
 
+  const chartColors = createMemo(() => {
+    return CHART_COLORS.slice(0, props.data.length).map((cssVar) => {
+      const varName = cssVar.match(/var\((--[^)]+)\)/)?.[1];
+      if (!varName) return cssVar;
+      const color = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+      return color || cssVar;
+    });
+  });
+
   const chartData = createMemo(() => ({
     labels: props.data.map((d) => d.name),
     datasets: [
       {
         data: props.data.map((d) => d.value),
-        backgroundColor: CHART_COLORS.slice(0, props.data.length),
-        borderColor: 'hsl(var(--card))',
+        backgroundColor: chartColors(),
+        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a',
         borderWidth: 2,
         hoverOffset: 8,
       },
     ],
   }));
 
-  const chartOptions = createMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: !responsive.isMobile(),
-        position: 'right' as const,
-        labels: {
-          color: 'hsl(var(--card-foreground))',
-          boxWidth: 12,
+  const chartOptions = createMemo(() => {
+    const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a';
+    const cardForeground = getComputedStyle(document.documentElement).getPropertyValue('--card-foreground').trim() || '#ffffff';
+    const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#333333';
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: !responsive.isMobile(),
+          position: 'right' as const,
+          labels: {
+            color: cardForeground,
+            boxWidth: 12,
+            padding: 12,
+            font: { size: 11 },
+            usePointStyle: true,
+            pointStyle: 'circle',
+          },
+        },
+        tooltip: {
+          backgroundColor: cardColor,
+          titleColor: cardForeground,
+          bodyColor: cardForeground,
+          borderColor: borderColor,
+          borderWidth: 1,
           padding: 12,
-          font: { size: 11 },
-          usePointStyle: true,
-          pointStyle: 'circle',
+          callbacks: {
+            label: (context: { label: string; raw: number }) => `${context.label}: ${context.raw}`,
+          },
         },
       },
-      tooltip: {
-        backgroundColor: 'hsl(var(--card))',
-        titleColor: 'hsl(var(--card-foreground))',
-        bodyColor: 'hsl(var(--card-foreground))',
-        borderColor: 'hsl(var(--border))',
-        borderWidth: 1,
-        padding: 12,
-        callbacks: {
-          label: (context: { label: string; raw: number }) => `${context.label}: ${context.raw}`,
-        },
-      },
-    },
-  }));
+    };
+  });
 
   return (
     <Motion.div

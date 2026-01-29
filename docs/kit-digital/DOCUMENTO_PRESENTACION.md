@@ -3,10 +3,15 @@
 
 ---
 
+**Estado del documento:** ✅ 12/12 capturas disponibles (100% completo)
 **Empresa:** [Nombre de la empresa beneficiaria]
 **NIF:** [NIF de la empresa]
 **Fecha:** [Fecha de presentación]
 **Versión del software:** [X.X.X]
+
+> **NOTAS:**
+> - ✅ Todas las capturas están disponibles y correctamente referenciadas
+> - ✅ Documento completo para presentación Kit Digital
 
 ---
 
@@ -40,7 +45,7 @@ Sistema de autenticación mediante PIN personal de 4 dígitos con selección de 
 
 ![Login](./capturas/01_login.png)
 
-*Pantalla de inicio de sesión con selección de operario*
+*Pantalla de inicio de sesión con selección de operario y PIN*
 
 ---
 
@@ -475,20 +480,26 @@ Soporte completo para impresoras térmicas de punto de venta:
 
 ### 5.1 Listado de capturas de pantalla
 
-| # | Archivo | Descripción |
-|---|---------|-------------|
-| 1 | `01_login.png` | Pantalla de login |
-| 2 | `02_settings_usuarios.png` | Gestión de usuarios |
-| 3 | `03_products.png` | Catálogo de productos |
-| 4 | `04_customers.png` | Gestión de clientes |
-| 5 | `05_newOrder.png` | Nueva comanda |
-| 6 | `06_orderHistory.png` | Historial de pedidos |
-| 7 | `07_aeatInvoices.png` | Facturas AEAT |
-| 8 | `08_settings_verifactu.png` | Configuración VERI*FACTU |
-| 9 | `09_aeatInvoices_detail.png` | Detalle de factura |
-| 10 | `10_settings_about.png` | Versión y actualizaciones |
-| 11 | `11_settings.png` | Panel de ajustes |
-| 12 | `12_themes.png` | Sistema de temas |
+| # | Archivo | Estado | Descripción |
+|---|---------|--------|-------------|
+| 1 | `01_login.png` | ✅ Disponible | Pantalla de login con selección de operario |
+| 2 | `02_settings_usuarios.png` | ✅ Disponible | Gestión de usuarios en Ajustes |
+| 3 | `03_products.png` | ✅ Disponible | Catálogo de productos con filtros |
+| 4 | `04_customers.png` | ✅ Disponible | Gestión de clientes con datos fiscales |
+| 5 | `05_newOrder.png` | ✅ Disponible | Nueva comanda con productos |
+| 6 | `06_orderHistory.png` | ✅ Disponible | Historial de pedidos |
+| 7 | `07_aeatInvoices.png` | ✅ Disponible | Panel de facturas AEAT |
+| 8 | `08_settings_verifactu.png` | ✅ Disponible | Configuración VERI*FACTU |
+| 9 | `09_aeatInvoices_detail.png` | ✅ Disponible | Detalle de factura con CSV |
+| 10 | `10_settings_about.png` | ✅ Disponible | Versión y actualizaciones |
+| 11 | `11_settings.png` | ✅ Disponible | Panel de ajustes |
+| 12 | `12_themes.png` | ✅ Disponible | Sistema de temas |
+
+**Capturas adicionales disponibles:**
+- `01_home.png` - Dashboard/Home con estadísticas
+- `02_login.png` - Segunda variante de pantalla de login
+- `Licenciavalida.png` - Validación de licencia
+- `Verifactu2.png` - Segunda captura de configuración VERI*FACTU
 
 ### 5.2 Especificaciones técnicas adicionales
 

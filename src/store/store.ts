@@ -175,7 +175,7 @@ function createAppStore() {
 
   // === SETTERS ===
 
-  const setUsers = (users: User[]) => setState('users', users);
+  const setUsers = (users: User[]) => setState('users', () => [...users]);
 
   const setSelectedUser = (user: User | null) => setState('selectedUser', user);
 
@@ -184,29 +184,29 @@ function createAppStore() {
   const setSelectedOrderId = (orderId: number | null) => {
     batch(() => {
       setState('selectedOrderId', orderId);
-      setState('selectedOrder', state.activeOrders.find((o) => o.id === orderId) || null);
+      setState('selectedOrder', () => state.activeOrders.find((o) => o.id === orderId) || null);
     });
   };
 
   const setThermalPrinterOptions = (options: ThermalPrinterServiceOptions | null) =>
     setState('thermalPrinterOptions', options);
 
-  const setTables = (tables: ITable[]) => setState('tables', tables);
+  const setTables = (tables: ITable[]) => setState('tables', () => [...tables]);
 
-  const setCategories = (categories: Category[]) => setState('categories', categories);
+  const setCategories = (categories: Category[]) => setState('categories', () => [...categories]);
 
   const setProducts = (products: Product[]) => {
     const uniqueProducts = products.filter(
       (product, index, self) => index === self.findIndex((p) => p.id === product.id)
     );
-    setState('products', uniqueProducts);
+    setState('products', () => [...uniqueProducts]);
   };
 
   const setCustomers = (customers: Customer[]) => {
     const uniqueCustomers = customers.filter(
       (customer, index, self) => index === self.findIndex((c) => c.id === customer.id)
     );
-    setState('customers', uniqueCustomers);
+    setState('customers', () => [...uniqueCustomers]);
   };
 
   const addCustomer = async (customer: Customer) => {
@@ -279,12 +279,15 @@ function createAppStore() {
     );
   };
 
-  const setOrderHistory = (orderHistory: Order[]) => setState('orderHistory', orderHistory);
+  const setOrderHistory = (orderHistory: Order[]) => setState('orderHistory', () => [...orderHistory]);
 
-  const setActiveOrders = (activeOrders: Order[]) => setState('activeOrders', activeOrders);
+  const setActiveOrders = (activeOrders: Order[]) => {
+    // Use a function updater to avoid SolidJS interpreting the array as a function
+    setState('activeOrders', () => [...activeOrders]);
+  };
 
   const setRecentProducts = (recentProducts: Product[]) =>
-    setState('recentProducts', recentProducts);
+    setState('recentProducts', () => [...recentProducts]);
 
   const setPaymentMethod = (method: string) => setState('paymentMethod', method);
 
@@ -387,7 +390,7 @@ function createAppStore() {
           status: 'inProgress',
           ticketPath: '',
           paymentMethod: 'efectivo',
-          items: [],
+          items: [] as OrderItem[],
           total: 0,
           date: new Date().toISOString().split('T')[0],
           itemCount: 0,
@@ -397,13 +400,9 @@ function createAppStore() {
 
         try {
           await dataService.createOrder(newOrder);
-          setState(
-            produce((s) => {
-              s.activeOrders.push(newOrder);
-              s.selectedOrderId = newOrder.id;
-              s.selectedOrder = newOrder;
-            })
-          );
+          setState('activeOrders', () => [...state.activeOrders, newOrder]);
+          setState('selectedOrderId', newOrder.id);
+          setState('selectedOrder', newOrder);
         } catch (error) {
           console.error('[handleTableChange] Error creating new order:', error);
         }
