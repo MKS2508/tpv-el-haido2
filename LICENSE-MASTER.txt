@@ -1,0 +1,22 @@
+TPV El Haido - Master License (Development/Testing)
+====================================================
+
+Esta licencia master permite activar una licencia perpetua sin conexión online.
+Es para uso en desarrollo y testing.
+
+Credenciales:
+-------------
+Email: admin@haido.local
+Key:   HAI-MASTER-DEV-KEY-2026
+
+Instrucciones:
+--------------
+1. En la pantalla de login/activación, ingresa el email y key arriba mencionados
+2. El sistema validará la licencia localmente (sin conexión a servidor)
+3. La licencia se activará como perpetua (sin fecha de expiración)
+
+Nota:
+-----
+- Esta licencia es solo para desarrollo/testing
+- En producción, se debe configurar MASTER_LICENSE_EMAIL y MASTER_LICENSE_KEY en el entorno
+- Ver .env para más configuraciones
