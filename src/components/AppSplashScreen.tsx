@@ -1,6 +1,6 @@
 import { Motion } from '@motionone/solid';
-import { createSignal, onMount, Show } from 'solid-js';
 import { Loader2 } from 'lucide-solid';
+import { createSignal, onMount, Show } from 'solid-js';
 
 interface AppSplashScreenProps {
   onComplete: () => void;
@@ -39,11 +39,7 @@ export default function AppSplashScreen(props: AppSplashScreenProps) {
             }}
             transition={{ duration: 0.8, delay: 0.1 }}
           >
-            <img
-              src="/logo.svg"
-              alt="TPV El Haido"
-              class="w-40 h-40 drop-shadow-2xl"
-            />
+            <img src="/logo.svg" alt="TPV El Haido" class="w-40 h-40 drop-shadow-2xl" />
           </Motion.div>
 
           <Motion.div
@@ -58,9 +54,7 @@ export default function AppSplashScreen(props: AppSplashScreenProps) {
             <h1 class="text-4xl font-bold bg-gradient-to-r from-amber-200 via-amber-100 to-amber-200 bg-clip-text text-transparent">
               TPV El Haido
             </h1>
-            <p class="text-slate-400 text-sm tracking-widest uppercase">
-              Point of Sale System
-            </p>
+            <p class="text-slate-400 text-sm tracking-widest uppercase">Point of Sale System</p>
           </Motion.div>
 
           <Show when={isLoading()}>

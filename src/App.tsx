@@ -13,10 +13,10 @@ import {
 import { createEffect, createSignal, Match, onMount, Show, Switch } from 'solid-js';
 import fallbackProducts from '@/assets/products.json';
 import iconOptions from '@/assets/utils/icons/iconOptions';
+import AppSplashScreen from '@/components/AppSplashScreen';
 import BottomNavigation from '@/components/BottomNavigation';
 import DebugIndicator from '@/components/DebugIndicator';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import AppSplashScreen from '@/components/AppSplashScreen';
 import LicenseSplashScreen from '@/components/LicenseSplashScreen';
 import { OnboardingProvider } from '@/components/Onboarding/OnboardingProvider';
 import PWAStatus from '@/components/PWAStatus';
@@ -166,84 +166,6 @@ function App() {
     }
   };
 
-  // License check function
-  const checkLicense = async () => {
-    const platform = getPlatformService();
-
-    // PWA MODE: Skip license validation entirely (no native fingerprinting)
-    if (!platform.canUseLicenseSystem()) {
-      console.log('[License] PWA MODE - License system not available, skipping validation');
-      const pwaStatus: LicenseStatus = {
-        is_activated: true,
-        is_valid: true,
-        email: 'pwa@web.local',
-        license_type: 'pwa',
-        days_remaining: null,
-        expires_at: null,
-      };
-      store.setLicenseStatus(pwaStatus);
-      setShowAppSplash(false);
-      setShowLicenseSplash(false);
-      return;
-    }
-
-    // DEBUG MODE: Skip license validation entirely
-    if (config.debug.enabled) {
-      console.log('[License] DEBUG MODE - Skipping license validation');
-      const debugStatus: LicenseStatus = {
-        is_activated: true,
-        is_valid: true,
-        email: 'debug@test.local',
-        license_type: 'enterprise',
-        days_remaining: 9999,
-        expires_at: null,
-      };
-      store.setLicenseStatus(debugStatus);
-      setShowAppSplash(false);
-      setShowLicenseSplash(false);
-      return;
-    }
-
-    try {
-      const status = await platform.checkLicense();
-      console.log('[License] Status:', status);
-
-      store.setLicenseStatus(status);
-
-      if (!status.is_activated || !status.is_valid) {
-        setShowLicenseSplash(true);
-        return;
-      }
-
-      setShowLicenseSplash(false);
-    } catch (error) {
-      console.error('[License] Error checking license:', error);
-      setShowLicenseSplash(true);
-    }
-  };
-
-  // Handle app splash complete
-  const handleAppSplashComplete = async () => {
-    setShowAppSplash(false);
-    // Check license after splash completes
-    await checkLicense();
-  };
-
-  // Handle license activation complete
-  const handleLicenseComplete = (status: LicenseStatus) => {
-    store.setLicenseStatus(status);
-    setShowLicenseSplash(false);
-
-    if (!status.is_valid) {
-      console.error('[License] Invalid license activated:', status);
-    }
-  };
-
-  // Refresh license status
-  const _refreshLicenseStatus = async () => {
-    await checkLicense();
-  };
-
   // Initialize data
   const initializeData = async () => {
     // Setup native menu
@@ -365,7 +287,85 @@ function App() {
         options: { timeout: 3000 },
       });
     }
-  });
+  };
+
+  // License check function
+  const checkLicense = async () => {
+    const platform = getPlatformService();
+
+    // PWA MODE: Skip license validation entirely (no native fingerprinting)
+    if (!platform.canUseLicenseSystem()) {
+      console.log('[License] PWA MODE - License system not available, skipping validation');
+      const pwaStatus: LicenseStatus = {
+        is_activated: true,
+        is_valid: true,
+        email: 'pwa@web.local',
+        license_type: 'pwa',
+        days_remaining: null,
+        expires_at: null,
+      };
+      store.setLicenseStatus(pwaStatus);
+      setShowAppSplash(false);
+      setShowLicenseSplash(false);
+      return;
+    }
+
+    // DEBUG MODE: Skip license validation entirely
+    if (config.debug.enabled) {
+      console.log('[License] DEBUG MODE - Skipping license validation');
+      const debugStatus: LicenseStatus = {
+        is_activated: true,
+        is_valid: true,
+        email: 'debug@test.local',
+        license_type: 'enterprise',
+        days_remaining: 9999,
+        expires_at: null,
+      };
+      store.setLicenseStatus(debugStatus);
+      setShowAppSplash(false);
+      setShowLicenseSplash(false);
+      return;
+    }
+
+    try {
+      const status = await platform.checkLicense();
+      console.log('[License] Status:', status);
+
+      store.setLicenseStatus(status);
+
+      if (!status.is_activated || !status.is_valid) {
+        setShowLicenseSplash(true);
+        return;
+      }
+
+      setShowLicenseSplash(false);
+    } catch (error) {
+      console.error('[License] Error checking license:', error);
+      setShowLicenseSplash(true);
+    }
+  };
+
+  // Handle app splash complete
+  const handleAppSplashComplete = async () => {
+    setShowAppSplash(false);
+    // Check license after splash completes
+    await checkLicense();
+  };
+
+  // Handle license activation complete
+  const handleLicenseComplete = (status: LicenseStatus) => {
+    store.setLicenseStatus(status);
+    setShowLicenseSplash(false);
+
+    if (!status.is_valid) {
+      console.error('[License] Invalid license activated:', status);
+    }
+  };
+
+  // Refresh license status
+  const _refreshLicenseStatus = async () => {
+    await checkLicense();
+  };
 
   // Watch for splash completion to initialize data
   createEffect(() => {
