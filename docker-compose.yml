@@ -1,9 +1,9 @@
 services:
-  # Documentation site - Next.js static export served by Nginx
+  # Documentation site - Next.js static export served by Nginx (includes PWA)
   docs:
     build:
-      context: ./apps/haidodocs
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/haidodocs/Dockerfile
     container_name: haido-docs
     ports:
       - "3000:3000"

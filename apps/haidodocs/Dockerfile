@@ -1,21 +1,24 @@
-# Build stage
+# Build stage - needs full monorepo context for PWA build
 FROM oven/bun:1 AS builder
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lock* ./
-
-# Install dependencies without running postinstall scripts
-# (fumadocs-mdx postinstall requires source files which aren't copied yet)
-RUN bun install --frozen-lockfile --ignore-scripts
-
-# Copy source files
+# Copy entire monorepo (context must be repo root)
 COPY . .
 
-# Run postinstall manually now that source files are available
+# Install root dependencies for PWA build
+RUN bun install --frozen-lockfile --ignore-scripts
+
+# Build PWA (builds TPV and copies to apps/haidodocs/public/tpv/)
+RUN bun run build:pwa
+
+# Install haidodocs dependencies
+WORKDIR /app/apps/haidodocs
+RUN bun install --frozen-lockfile --ignore-scripts
+
+# Run postinstall (fumadocs-mdx)
 RUN bun run postinstall
 
-# Build the static site
+# Build the static site (now includes /tpv/ from PWA build)
 RUN bun run build
 
 # Production stage - Nginx for static serving
@@ -25,10 +28,10 @@ FROM nginx:alpine AS production
 RUN apk add --no-cache curl
 
 # Copy built static files
-COPY --from=builder /app/out /usr/share/nginx/html
+COPY --from=builder /app/apps/haidodocs/out /usr/share/nginx/html
 
 # Copy nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY apps/haidodocs/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port
 EXPOSE 3000

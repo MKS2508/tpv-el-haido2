@@ -1,11 +1,11 @@
 # Coolify-optimized Docker Compose
 
 services:
-  # Documentation site
+  # Documentation site (includes PWA build)
   docs:
     build:
-      context: ./apps/haidodocs
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/haidodocs/Dockerfile
     container_name: haido-docs
     restart: always
     ports:
