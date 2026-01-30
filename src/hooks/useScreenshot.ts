@@ -76,9 +76,7 @@ export function useScreenshot() {
           const response = await fetch(dataUrl);
           const blob = await response.blob();
 
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob }),
-          ]);
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
           console.log('[Screenshot] Copiada al clipboard');
         } catch (clipErr) {
           // El clipboard puede fallar en Tauri/desktop contexts, no es crítico

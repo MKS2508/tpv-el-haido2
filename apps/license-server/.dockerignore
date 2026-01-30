@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+.bun
+
+# Development
+.env.local
+.env.development
+.env.test
+*.env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+logs
+
+# Test
+coverage
+.nyc_output
+__tests__
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Data (will be mounted as volume)
+data/
+*.db
+
+# Scripts
+scripts/
+
+# Documentation
+CLAUDE.md
+README.md

@@ -1,17 +1,17 @@
 import { CameraIcon, CheckIcon, Loader2Icon, XIcon } from 'lucide-solid';
-import { createMemo, createSignal, Show, onMount } from 'solid-js';
+import { createMemo, createSignal, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useScreenshot } from '@/hooks/useScreenshot';
+import { cn } from '@/lib/utils';
 import {
-  SECTION_NUMBERS,
+  type ScreenshotContext,
   SECTION_LABELS,
+  SECTION_NUMBERS,
   SETTINGS_TAB_LABELS,
   VIEW_STATE_LABELS,
-  type ScreenshotContext,
   type ViewState,
 } from '@/types/screenshot';
-import { cn } from '@/lib/utils';
 
 interface ScreenshotOverlayProps {
   activeSection: string;
@@ -93,10 +93,7 @@ function ScreenshotOverlay(props: ScreenshotOverlayProps) {
     return 'list';
   };
 
-  const countVisibleEntities = (
-    section: string,
-    viewState: ViewState
-  ): number | undefined => {
+  const countVisibleEntities = (section: string, viewState: ViewState): number | undefined => {
     // No contar en vista de detalle o formulario
     if (viewState === 'detail' || viewState === 'form' || viewState === 'panel') {
       return undefined;
@@ -151,7 +148,7 @@ function ScreenshotOverlay(props: ScreenshotOverlayProps) {
     }
 
     // Base del nombre
-    let parts = [sectionNumber, section];
+    const parts = [sectionNumber, section];
 
     // Agregar sub-sección si existe
     if (subSection) {

@@ -77,8 +77,9 @@ function getTextContent(node: ReactNode): string {
     return node.map(getTextContent).join('');
   }
 
-  if (typeof node === 'object' && 'props' in node) {
-    return getTextContent(node.props.children);
+  if (typeof node === 'object' && node !== null && 'props' in node) {
+    const nodeWithProps = node as { props: { children?: ReactNode } };
+    return getTextContent(nodeWithProps.props.children);
   }
 
   return '';

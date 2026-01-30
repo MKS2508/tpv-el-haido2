@@ -1,31 +1,32 @@
 /**
  * Utilidades para detectar el entorno de ejecución de la aplicación
+ *
+ * NOTA: Este módulo re-exporta desde @/services/platform para mantener
+ * compatibilidad. Preferir importar directamente desde @/services/platform.
  */
 
-/**
- * Detecta si la aplicación se está ejecutando en Tauri
- */
-export function isTauriEnvironment(): boolean {
-  return typeof window !== 'undefined' && !!window.__TAURI__;
-}
+import { isTauri } from '@/services/platform';
+
+// Re-export for backwards compatibility
+export { isTauri, isTauri as isTauriEnvironment };
 
 /**
  * Detecta si la aplicación se está ejecutando en un navegador web
  */
 export function isWebEnvironment(): boolean {
-  return !isTauriEnvironment();
+  return !isTauri();
 }
 
 /**
  * Obtiene información sobre el entorno actual
  */
 export function getEnvironmentInfo() {
-  const isTauri = isTauriEnvironment();
+  const isTauriEnv = isTauri();
 
   return {
-    platform: isTauri ? 'tauri' : 'web',
-    isTauri,
-    isWeb: !isTauri,
+    platform: isTauriEnv ? 'tauri' : 'web',
+    isTauri: isTauriEnv,
+    isWeb: !isTauriEnv,
     userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : '',
     isOnline: typeof window !== 'undefined' ? window.navigator.onLine : true,
   };
@@ -46,10 +47,10 @@ export function runByEnvironment<T>(options: {
   web?: () => T;
   fallback?: () => T;
 }): T | undefined {
-  const { tauri, web, fallback } = options;
+  const { tauri: tauriFn, web, fallback } = options;
 
-  if (isTauriEnvironment() && tauri) {
-    return tauri();
+  if (isTauri() && tauriFn) {
+    return tauriFn();
   }
 
   if (isWebEnvironment() && web) {

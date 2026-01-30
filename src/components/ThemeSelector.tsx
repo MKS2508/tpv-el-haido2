@@ -1,5 +1,5 @@
 import { Check, Download, Moon, Palette, Sun, Upload } from 'lucide-solid';
-import { createEffect, createSignal, For } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,66 +15,38 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
-import { getThemeById, PRESET_THEMES } from '@/lib/themes/preset-themes';
-import {
-  applyTheme,
-  createThemeFromTweakCN,
-  loadThemeSettings,
-  saveThemeSettings,
-  type ThemeConfig,
-  type ThemeSettings,
-} from '@/lib/themes/theme-config';
+import { useAppTheme } from '@/lib/theme-context';
+import { PRESET_THEMES } from '@/lib/themes/preset-themes';
+import type { ThemeConfig } from '@/lib/themes/theme-config';
 
 interface ThemeSelectorProps {
   class?: string;
 }
 
 const ThemeSelector = (props: ThemeSelectorProps) => {
-  const [settings, setSettings] = createSignal<ThemeSettings>(loadThemeSettings());
+  const appTheme = useAppTheme();
   const [isImportDialogOpen, setIsImportDialogOpen] = createSignal(false);
   const [importUrl, setImportUrl] = createSignal('');
   const [isImporting, setIsImporting] = createSignal(false);
   const [previewTheme, setPreviewTheme] = createSignal<string | null>(null);
+  const [touchModeEnabled, setTouchModeEnabled] = createSignal(
+    document.documentElement.classList.contains('touch-mode')
+  );
 
-  // Apply theme on settings change
-  createEffect(() => {
-    const theme = getThemeById(settings().currentTheme);
-    if (theme) {
-      applyTheme(theme, settings().darkMode);
+  const isDarkMode = () => appTheme.effectiveMode() === 'dark';
+  const currentTheme = () => appTheme.currentTheme();
 
-      // Update documentElement class for dark mode
-      if (settings().darkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-
-    // Save settings
-    saveThemeSettings(settings());
-  });
-
-  const handleThemeSelect = (themeId: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      currentTheme: themeId,
-    }));
+  const handleThemeSelect = async (themeId: string) => {
+    await appTheme.setTheme(themeId);
+    setPreviewTheme(null);
   };
 
-  const handleDarkModeToggle = (enabled: boolean) => {
-    setSettings((prev) => ({
-      ...prev,
-      darkMode: enabled,
-    }));
+  const handleDarkModeToggle = () => {
+    appTheme.toggleMode();
   };
 
   const handleTouchModeToggle = (enabled: boolean) => {
-    setSettings((prev) => ({
-      ...prev,
-      touchMode: enabled,
-    }));
-
-    // Toggle touch class on root element
+    setTouchModeEnabled(enabled);
     const root = document.documentElement;
     if (enabled) {
       root.classList.add('touch-mode');
@@ -83,27 +55,20 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
     }
   };
 
-  const handlePreviewTheme = (themeId: string) => {
+  const handlePreviewTheme = async (themeId: string) => {
     setPreviewTheme(themeId);
-    const theme = getThemeById(themeId);
-    if (theme) {
-      applyTheme(theme, settings().darkMode);
-    }
+    await appTheme.setTheme(themeId);
   };
 
-  const handleCancelPreview = () => {
+  const handleCancelPreview = async () => {
+    const previousTheme = currentTheme();
     setPreviewTheme(null);
-    // Restore current theme
-    const currentTheme = getThemeById(settings().currentTheme);
-    if (currentTheme) {
-      applyTheme(currentTheme, settings().darkMode);
+    if (previousTheme) {
+      await appTheme.setTheme(previousTheme);
     }
   };
 
   const handleConfirmPreview = () => {
-    if (previewTheme()) {
-      handleThemeSelect(previewTheme()!);
-    }
     setPreviewTheme(null);
   };
 
@@ -119,7 +84,6 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
 
     setIsImporting(true);
     try {
-      // Convert TweakCN URL to JSON URL if needed
       let jsonUrl = importUrl();
       if (importUrl().includes('tweakcn.com/') && !importUrl().endsWith('.json')) {
         jsonUrl = `${importUrl().replace('/themes/', '/r/themes/')}.json`;
@@ -131,15 +95,22 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
       }
 
       const themeData = await response.json();
-      const customTheme = createThemeFromTweakCN(themeData);
 
-      // For now, we'll just apply the theme directly
-      // In a full implementation, you'd save it to local storage or state
-      applyTheme(customTheme, settings().darkMode);
+      const themeManager = appTheme.themeManager();
+      if (themeManager) {
+        await themeManager.installTheme(
+          {
+            name: themeData.name || `custom-${Date.now()}`,
+            cssVars: themeData.cssVars || themeData.colors || {},
+          },
+          importUrl()
+        );
+        await appTheme.setTheme(themeData.name || `custom-${Date.now()}`);
+      }
 
       toast({
         title: 'Tema importado',
-        description: `Tema "${customTheme.name}" importado exitosamente`,
+        description: `Tema "${themeData.name || 'Personalizado'}" importado exitosamente`,
       });
 
       setIsImportDialogOpen(false);
@@ -200,14 +171,14 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
           <div class="flex items-center justify-between">
             <div class="space-y-2">
               <Label for="darkMode" class="flex items-center gap-2">
-                {settings().darkMode ? <Moon class="h-4 w-4" /> : <Sun class="h-4 w-4" />}
+                {isDarkMode() ? <Moon class="h-4 w-4" /> : <Sun class="h-4 w-4" />}
                 Modo Oscuro
               </Label>
               <p class="text-xs text-muted-foreground">
                 Activa el tema oscuro para ambientes con poca luz
               </p>
             </div>
-            <Switch id="darkMode" checked={settings().darkMode} onChange={handleDarkModeToggle} />
+            <Switch id="darkMode" checked={isDarkMode()} onChange={handleDarkModeToggle} />
           </div>
 
           <div class="flex items-center justify-between">
@@ -217,11 +188,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                 Aumenta el tamaño de botones y mejora la respuesta táctil
               </p>
             </div>
-            <Switch
-              id="touchMode"
-              checked={settings().touchMode}
-              onChange={handleTouchModeToggle}
-            />
+            <Switch id="touchMode" checked={touchModeEnabled()} onChange={handleTouchModeToggle} />
           </div>
 
           {/* Import Theme */}
@@ -237,7 +204,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
           </div>
 
           {/* Theme Preview Controls */}
-          {previewTheme() && (
+          <Show when={previewTheme()}>
             <div class="p-3 bg-primary/10 border border-primary/20 rounded-lg">
               <p class="text-sm font-medium mb-2">Vista previa activa</p>
               <div class="flex gap-2">
@@ -255,7 +222,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                 </Button>
               </div>
             </div>
-          )}
+          </Show>
 
           {/* Theme Grid */}
           <div class="space-y-4">
@@ -265,7 +232,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                 {(theme) => (
                   <Card
                     class={`cursor-pointer transition-all touch-enhanced ${
-                      settings().currentTheme === theme.id
+                      currentTheme() === theme.id
                         ? 'ring-2 ring-primary shadow-md'
                         : 'hover:shadow-md'
                     } ${previewTheme() === theme.id ? 'ring-2 ring-accent' : ''}`}
@@ -279,9 +246,9 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                           <span class="text-base">{getCategoryIcon(theme.category)}</span>
                           {theme.name}
                         </CardTitle>
-                        {settings().currentTheme === theme.id && (
+                        <Show when={currentTheme() === theme.id}>
                           <Check class="h-4 w-4 text-primary" />
-                        )}
+                        </Show>
                       </div>
                     </CardHeader>
                     <CardContent class="space-y-3">
@@ -292,25 +259,25 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                       </Badge>
 
                       {/* Color Preview */}
-                      {theme.preview && (
+                      <Show when={theme.preview}>
                         <div class="flex gap-1">
                           <div
                             class="w-4 h-4 rounded-full border border-border"
-                            style={{ 'background-color': theme.preview.primaryColor }}
+                            style={{ 'background-color': theme.preview!.primaryColor }}
                             title="Color primario"
                           />
                           <div
                             class="w-4 h-4 rounded-full border border-border"
-                            style={{ 'background-color': theme.preview.secondaryColor }}
+                            style={{ 'background-color': theme.preview!.secondaryColor }}
                             title="Color secundario"
                           />
                           <div
                             class="w-4 h-4 rounded-full border border-border"
-                            style={{ 'background-color': theme.preview.backgroundColor }}
+                            style={{ 'background-color': theme.preview!.backgroundColor }}
                             title="Color de fondo"
                           />
                         </div>
-                      )}
+                      </Show>
                     </CardContent>
                   </Card>
                 )}
@@ -350,17 +317,18 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
               disabled={isImporting() || !importUrl()}
               class="touch-target"
             >
-              {isImporting() ? (
-                <>
-                  <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                  Importando...
-                </>
-              ) : (
-                <>
-                  <Download class="mr-2 h-4 w-4" />
-                  Importar Tema
-                </>
-              )}
+              <Show
+                when={isImporting()}
+                fallback={
+                  <>
+                    <Download class="mr-2 h-4 w-4" />
+                    Importar Tema
+                  </>
+                }
+              >
+                <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                Importando...
+              </Show>
             </Button>
           </DialogFooter>
         </DialogContent>

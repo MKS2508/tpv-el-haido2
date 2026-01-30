@@ -1,0 +1,57 @@
+# Coolify-optimized Docker Compose
+# This file is designed for deployment on Coolify with proper labels and health checks
+
+services:
+  # Documentation site
+  docs:
+    build:
+      context: ./apps/haidodocs
+      dockerfile: Dockerfile
+    container_name: haido-docs
+    restart: always
+    labels:
+      - "coolify.managed=true"
+      - "coolify.type=web"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - coolify
+
+  # License validation server
+  license-server:
+    build:
+      context: ./apps/license-server
+      dockerfile: Dockerfile
+    container_name: haido-license
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - DB_PATH=/app/data/licenses.db
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - license-data:/app/data
+    labels:
+      - "coolify.managed=true"
+      - "coolify.type=web"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3002/api/license/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true
+
+volumes:
+  license-data:
+    driver: local

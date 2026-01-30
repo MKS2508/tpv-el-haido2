@@ -82,8 +82,6 @@ type SidebarProps = {
   isSidebarOpen: boolean;
   activeSection: string;
   setActiveSection: (section: string) => void;
-  isDarkMode: boolean;
-  toggleDarkMode: () => void;
   menuItems: MenuItem[];
   loggedUser: User | null;
   onLogout?: () => void;
@@ -95,8 +93,6 @@ function Sidebar(props: SidebarProps) {
     'isSidebarOpen',
     'activeSection',
     'setActiveSection',
-    'isDarkMode',
-    'toggleDarkMode',
     'menuItems',
     'onLogout',
   ]);
@@ -254,11 +250,11 @@ function Sidebar(props: SidebarProps) {
                         )}
                         onClick={() => local.setActiveSection(item.id)}
                       >
-                        <div class="flex items-center">
+                        <div class={cn('flex items-center', local.isSidebarOpen && 'gap-3')}>
                           <IconComponent
                             class={cn(
                               'transition-all duration-200',
-                              local.isSidebarOpen ? 'h-5 w-5 mr-3' : 'h-4 w-4'
+                              local.isSidebarOpen ? 'h-5 w-5' : 'h-4 w-4'
                             )}
                           />
                           <Presence>
@@ -287,11 +283,7 @@ function Sidebar(props: SidebarProps) {
                 class="flex items-center justify-center"
                 style={{ padding: 'calc(var(--spacing) * 2)' }}
               >
-                <MoonSunSwitch
-                  isDarkMode={local.isDarkMode}
-                  toggleDarkMode={local.toggleDarkMode}
-                  size="sm"
-                />
+                <MoonSunSwitch size="sm" />
               </div>
 
               <Presence>

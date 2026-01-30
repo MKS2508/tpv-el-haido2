@@ -1,35 +1,46 @@
-# TPV El Haido - Docker Compose for local builds
-# Usage: docker-compose up --build
-
-version: '3.8'
-
 services:
-  build:
+  # Documentation site - Next.js static export served by Nginx
+  docs:
     build:
-      context: .
+      context: ./apps/haidodocs
       dockerfile: Dockerfile
-      args:
-        - TAURI_SIGNING_PRIVATE_KEY=${TAURI_SIGNING_PRIVATE_KEY:-}
-        - TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}
-    volumes:
-      - ./build-output:/output-host
-    command: |
-      sh -c "cp -r /output/* /output-host/ 2>/dev/null || echo 'No artifacts to copy'"
-
-  # Development container with all tools
-  dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: builder
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/src-tauri/target
-    working_dir: /app
-    command: npm run dev
+    container_name: haido-docs
     ports:
-      - "1420:1420"
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - haido-network
+
+  # License validation server - Elysia.js + Bun
+  license-server:
+    build:
+      context: ./apps/license-server
+      dockerfile: Dockerfile
+    container_name: haido-license
+    ports:
+      - "3002:3002"
     environment:
-      - TAURI_SIGNING_PRIVATE_KEY=${TAURI_SIGNING_PRIVATE_KEY:-}
-      - TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}
+      - NODE_ENV=production
+      - PORT=3002
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-change-me-in-production}
+      - DB_PATH=/app/data/licenses.db
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - license-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3002/api/license/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - haido-network
+
+networks:
+  haido-network:
+    driver: bridge
+
+volumes:
+  license-data:
+    driver: local

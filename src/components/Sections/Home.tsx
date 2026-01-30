@@ -1,15 +1,28 @@
+import { Line, Pie } from '@amad3v/solid-chart';
 import { Motion } from '@motionone/solid';
 import {
+  ArcElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LinearScale,
+  LineController,
+  LineElement,
+  PieController,
+  PointElement,
+  Title,
+  Tooltip,
+} from 'chart.js';
+import {
+  Activity,
   AwardIcon,
   CalendarIcon,
   DollarSignIcon,
   ShoppingCartIcon,
   TrendingUpIcon,
-  Activity,
 } from 'lucide-solid';
 import { type Component, createMemo, createSignal, For, Show } from 'solid-js';
-import { Chart as ChartJS, ArcElement, CategoryScale, Filler, Legend, LinearScale, LineController, LineElement, PointElement, PieController, Title, Tooltip } from 'chart.js';
-import { Line, Pie } from '@amad3v/solid-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -177,7 +190,12 @@ const StatCard: Component<StatCardProps> = (props) => {
         <div class={cn('p-5', responsive.isMobile() && 'p-4')}>
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1 min-w-0">
-              <p class={cn('text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1', responsive.isMobile() && 'text-[10px]')}>
+              <p
+                class={cn(
+                  'text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1',
+                  responsive.isMobile() && 'text-[10px]'
+                )}
+              >
                 {props.title}
               </p>
               <Motion.div
@@ -212,7 +230,12 @@ const StatCard: Component<StatCardProps> = (props) => {
           </div>
 
           <div class="mt-3 flex items-center gap-1.5">
-            <div class={cn('h-1 flex-1 rounded-full bg-muted overflow-hidden', variantStyles().iconBg.replace('/10', '/5'))}>
+            <div
+              class={cn(
+                'h-1 flex-1 rounded-full bg-muted overflow-hidden',
+                variantStyles().iconBg.replace('/10', '/5')
+              )}
+            >
               <Motion.div
                 class={cn('h-full rounded-full', variantStyles().iconBg.replace('/10', ''))}
                 initial={{ width: '0%' }}
@@ -295,8 +318,11 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
   const index = () => props.index ?? 0;
 
   const chartData = createMemo(() => {
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#8b5cf6';
-    const backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--background').trim() || '#ffffff';
+    const primaryColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#8b5cf6';
+    const backgroundColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--background').trim() ||
+      '#ffffff';
 
     return {
       labels: props.data.map((d) => d.date),
@@ -325,10 +351,16 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
   });
 
   const chartOptions = createMemo(() => {
-    const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a';
-    const cardForeground = getComputedStyle(document.documentElement).getPropertyValue('--card-foreground').trim() || '#ffffff';
-    const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#333333';
-    const mutedForeground = getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim() || '#999999';
+    const cardColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a';
+    const cardForeground =
+      getComputedStyle(document.documentElement).getPropertyValue('--card-foreground').trim() ||
+      '#ffffff';
+    const borderColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#333333';
+    const mutedForeground =
+      getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim() ||
+      '#999999';
 
     return {
       responsive: true,
@@ -399,7 +431,9 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
       >
         <CardHeader class={cn(responsive.isMobile() ? 'pb-3 px-4 pt-4' : 'pb-4 px-6 pt-5')}>
           <div class="flex items-center gap-3">
-            <div class={cn('p-2 rounded-xl bg-primary/10', responsive.isMobile() ? 'p-1.5' : 'p-2')}>
+            <div
+              class={cn('p-2 rounded-xl bg-primary/10', responsive.isMobile() ? 'p-1.5' : 'p-2')}
+            >
               <TrendingUpIcon
                 class={cn('text-primary', responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')}
               />
@@ -421,13 +455,16 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
               responsive.isMobile() ? 'h-[220px]' : 'h-[300px]'
             )}
           >
-            <Show when={props.data.length > 0} fallback={
-              <div class="flex items-center justify-center h-full text-center text-muted-foreground p-4">
-                <Activity class="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p class="font-medium">Sin datos de ventas</p>
-                <p class="text-sm mt-1">Añade pedidos para ver el gráfico</p>
-              </div>
-            }>
+            <Show
+              when={props.data.length > 0}
+              fallback={
+                <div class="flex items-center justify-center h-full text-center text-muted-foreground p-4">
+                  <Activity class="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p class="font-medium">Sin datos de ventas</p>
+                  <p class="text-sm mt-1">Añade pedidos para ver el gráfico</p>
+                </div>
+              }
+            >
               <Line data={chartData()} options={chartOptions()} />
             </Show>
           </div>
@@ -462,7 +499,8 @@ const PieChartCard: Component<PieChartCardProps> = (props) => {
       {
         data: props.data.map((d) => d.value),
         backgroundColor: chartColors(),
-        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a',
+        borderColor:
+          getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a',
         borderWidth: 2,
         hoverOffset: 8,
       },
@@ -470,9 +508,13 @@ const PieChartCard: Component<PieChartCardProps> = (props) => {
   }));
 
   const chartOptions = createMemo(() => {
-    const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a';
-    const cardForeground = getComputedStyle(document.documentElement).getPropertyValue('--card-foreground').trim() || '#ffffff';
-    const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#333333';
+    const cardColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a';
+    const cardForeground =
+      getComputedStyle(document.documentElement).getPropertyValue('--card-foreground').trim() ||
+      '#ffffff';
+    const borderColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#333333';
 
     return {
       responsive: true,
@@ -544,13 +586,16 @@ const PieChartCard: Component<PieChartCardProps> = (props) => {
               responsive.isMobile() ? 'h-[220px]' : 'h-[300px]'
             )}
           >
-            <Show when={props.data.length > 0} fallback={
-              <div class="flex items-center justify-center h-full text-center text-muted-foreground p-4">
-                <Activity class="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p class="font-medium">Sin datos</p>
-                <p class="text-sm mt-1">No hay información disponible</p>
-              </div>
-            }>
+            <Show
+              when={props.data.length > 0}
+              fallback={
+                <div class="flex items-center justify-center h-full text-center text-muted-foreground p-4">
+                  <Activity class="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p class="font-medium">Sin datos</p>
+                  <p class="text-sm mt-1">No hay información disponible</p>
+                </div>
+              }
+            >
               <Pie data={chartData()} options={chartOptions()} />
             </Show>
           </div>
@@ -600,10 +645,18 @@ const RecentOrdersTable: Component<RecentOrdersTableProps> = (props) => {
           <Table>
             <TableHeader>
               <TableRow class="border-b border-border">
-                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">ID</TableHead>
-                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">Fecha</TableHead>
-                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">Total</TableHead>
-                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">Ubicacion</TableHead>
+                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">
+                  ID
+                </TableHead>
+                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">
+                  Fecha
+                </TableHead>
+                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">
+                  Total
+                </TableHead>
+                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">
+                  Ubicacion
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -619,10 +672,10 @@ const RecentOrdersTable: Component<RecentOrdersTableProps> = (props) => {
                     class="border-b border-border/50 hover:bg-muted/30 transition-colors"
                   >
                     <TableCell class="font-medium text-card-foreground">#{order.id}</TableCell>
-                    <TableCell class="text-muted-foreground">{new Date(order.date).toLocaleDateString('es-ES')}</TableCell>
-                    <TableCell class="font-bold text-success">
-                      {order.total.toFixed(2)}€
+                    <TableCell class="text-muted-foreground">
+                      {new Date(order.date).toLocaleDateString('es-ES')}
                     </TableCell>
+                    <TableCell class="font-bold text-success">{order.total.toFixed(2)}€</TableCell>
                     <TableCell>
                       <span class="inline-flex items-center px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium border border-primary/20">
                         {order.tableNumber ? `Mesa ${order.tableNumber}` : 'Barra'}
@@ -720,9 +773,7 @@ const TopProductsCard: Component<TopProductsCardProps> = (props) => {
               )}
             </For>
             <Show when={props.products.length === 0}>
-              <li class="text-center text-muted-foreground py-8">
-                No hay datos de productos
-              </li>
+              <li class="text-center text-muted-foreground py-8">No hay datos de productos</li>
             </Show>
           </ul>
         </CardContent>
@@ -898,11 +949,15 @@ const Home: Component<HomeProps> = (props) => {
               : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
           )}
         >
-          <div class={cn(responsive.isMobile() ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}>
+          <div
+            class={cn(responsive.isMobile() ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}
+          >
             <LineChartCard title="Tendencia de Ventas" data={chartData().salesTrend} index={0} />
           </div>
 
-          <div class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
+          <div
+            class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}
+          >
             <PieChartCard
               title="Ventas por Categoría"
               data={chartData().salesByCategory}
@@ -910,7 +965,9 @@ const Home: Component<HomeProps> = (props) => {
             />
           </div>
 
-          <div class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
+          <div
+            class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}
+          >
             <PieChartCard
               title="Pedidos por Ubicación"
               data={chartData().ordersByLocation}

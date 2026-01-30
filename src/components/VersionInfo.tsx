@@ -4,6 +4,7 @@ import { createEffect, createSignal, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { useUpdater } from '@/hooks/useUpdater';
 import { cn } from '@/lib/utils';
+import { isTauri } from '@/services/platform';
 
 interface VersionInfoProps {
   class?: string;
@@ -65,11 +66,7 @@ export function VersionInfo(props: VersionInfoProps) {
     <div class={cn('space-y-6', props.class)}>
       {/* Header con logo y versión */}
       <div class="flex items-center gap-4">
-        <img
-          src="/logo.svg"
-          alt="TPV El Haido"
-          class="h-20 w-24"
-        />
+        <img src="/logo.svg" alt="TPV El Haido" class="h-20 w-24" />
         <div class="space-y-1">
           <h2 class="text-xl font-semibold text-foreground">TPV El Haido</h2>
           <div class="flex items-center gap-2">
@@ -240,9 +237,7 @@ export function VersionInfo(props: VersionInfoProps) {
         <div class="grid grid-cols-2 gap-2 text-sm">
           <div class="rounded-md bg-muted/50 px-3 py-2">
             <span class="text-muted-foreground">Plataforma</span>
-            <p class="font-medium text-foreground">
-              {typeof window !== 'undefined' && '__TAURI__' in window ? 'Desktop (Tauri)' : 'Web'}
-            </p>
+            <p class="font-medium text-foreground">{isTauri() ? 'Desktop (Tauri)' : 'Web'}</p>
           </div>
           <div class="rounded-md bg-muted/50 px-3 py-2">
             <span class="text-muted-foreground">Framework</span>

@@ -96,10 +96,6 @@ function App() {
     document.title = titles[section] || 'TPV El Haido';
   });
 
-  const toggleDarkMode = () => {
-    appTheme.toggleMode();
-  };
-
   const handleThermalPrinterOptionsChange = (options: ThermalPrinterServiceOptions | null) => {
     store.setThermalPrinterOptions(options);
   };
@@ -439,8 +435,6 @@ function App() {
           isSidebarOpen={isSidebarOpen()}
           activeSection={activeSection()}
           setActiveSection={setActiveSection}
-          isDarkMode={appTheme.effectiveMode() === 'dark'}
-          toggleDarkMode={toggleDarkMode}
           menuItems={menuItems}
           loggedUser={store.state.selectedUser!}
           onLogout={() => store.setSelectedUser(null)}
@@ -589,8 +583,6 @@ function App() {
                             thermalPrinterOptions={
                               store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
                             }
-                            isDarkMode={appTheme.effectiveMode() === 'dark'}
-                            toggleDarkMode={toggleDarkMode}
                             isSidebarOpen={isSidebarOpen()}
                             setSelectedUser={store.setSelectedUser}
                             setUsers={store.setUsers}

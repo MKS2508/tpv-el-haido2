@@ -3,187 +3,247 @@ title: Descargar
 description: 'Descarga TPV El Haido para Windows, macOS, Linux o Raspberry Pi'
 ---
 
+import { Monitor, Apple, Laptop, Server, Globe, Download, ExternalLink, Cpu } from 'lucide-react';
+
 # Descargar TPV El Haido
 
-Descarga la versión más reciente para tu sistema operativo.
+Elige la versión para tu sistema operativo o prueba directamente en el navegador.
 
 <Callout type="info">
   Todas las descargas están disponibles en [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases).
 </Callout>
 
-## Versiones Disponibles
+## Prueba sin Instalar
 
-| Plataforma | Arquitectura | Formato | Enlace |
-|------------|--------------|---------|--------|
-| **Windows** | x64 | `.msi` / `.exe` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
-| **macOS Intel** | x64 | `.dmg` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
-| **macOS Apple Silicon** | ARM64 | `.dmg` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
-| **Linux** | x64 | `.deb` / `.AppImage` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
-| **Raspberry Pi** | ARM64 | `.deb` | [Descargar](https://github.com/MKS2508/tpv-el-haido2/releases/latest) |
+<div className="not-prose my-8">
+  <a
+    href="/tpv/index.html"
+    className="group flex items-center justify-between p-6 rounded-xl border-2 border-[var(--accent-green)] bg-[var(--accent-glow)] hover:bg-[var(--accent-green)]/20 transition-all duration-300"
+  >
+    <div className="flex items-center gap-4">
+      <div className="w-14 h-14 rounded-xl bg-[var(--accent-green)] flex items-center justify-center">
+        <Globe className="w-7 h-7 text-[var(--bg-void)]" />
+      </div>
+      <div>
+        <div className="text-xl font-bold text-[var(--text-primary)]">App Web (PWA)</div>
+        <div className="text-sm text-[var(--text-muted)]">Sin instalacion - Funciona offline - Instalable como app</div>
+      </div>
+    </div>
+    <ExternalLink className="w-5 h-5 text-[var(--accent-green)] group-hover:translate-x-1 transition-transform" />
+  </a>
+</div>
 
-## Instalación por Sistema Operativo
+---
+
+## Descargas por Plataforma
+
+<div className="not-prose grid gap-4 my-8">
+
+{/* Windows */}
+<a
+  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
+  target="_blank"
+  className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
+>
+  <div className="flex items-center gap-4">
+    <div className="w-12 h-12 rounded-lg bg-[#0078D4]/10 border border-[#0078D4]/20 flex items-center justify-center">
+      <Monitor className="w-6 h-6 text-[#0078D4]" />
+    </div>
+    <div>
+      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        Windows
+        <span className="text-xs px-2 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)]">x64</span>
+      </div>
+      <div className="text-sm text-[var(--text-muted)]">Windows 10/11 • .msi o .exe</div>
+    </div>
+  </div>
+  <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
+</a>
+
+{/* macOS Intel */}
+<a
+  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
+  target="_blank"
+  className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
+>
+  <div className="flex items-center gap-4">
+    <div className="w-12 h-12 rounded-lg bg-[#A2AAAD]/10 border border-[#A2AAAD]/20 flex items-center justify-center">
+      <Apple className="w-6 h-6 text-[#A2AAAD]" />
+    </div>
+    <div>
+      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        macOS Intel
+        <span className="text-xs px-2 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)]">x64</span>
+      </div>
+      <div className="text-sm text-[var(--text-muted)]">macOS 11+ • .dmg</div>
+    </div>
+  </div>
+  <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
+</a>
+
+{/* macOS Apple Silicon */}
+<a
+  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
+  target="_blank"
+  className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
+>
+  <div className="flex items-center gap-4">
+    <div className="w-12 h-12 rounded-lg bg-[#A2AAAD]/10 border border-[#A2AAAD]/20 flex items-center justify-center">
+      <Cpu className="w-6 h-6 text-[#A2AAAD]" />
+    </div>
+    <div>
+      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        macOS Apple Silicon
+        <span className="text-xs px-2 py-0.5 rounded bg-[var(--accent-green)]/10 text-[var(--accent-green)]">ARM64</span>
+      </div>
+      <div className="text-sm text-[var(--text-muted)]">M1/M2/M3/M4 • .dmg</div>
+    </div>
+  </div>
+  <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
+</a>
+
+{/* Linux */}
+<a
+  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
+  target="_blank"
+  className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
+>
+  <div className="flex items-center gap-4">
+    <div className="w-12 h-12 rounded-lg bg-[#FCC624]/10 border border-[#FCC624]/20 flex items-center justify-center">
+      <Laptop className="w-6 h-6 text-[#FCC624]" />
+    </div>
+    <div>
+      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        Linux
+        <span className="text-xs px-2 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)]">x64</span>
+      </div>
+      <div className="text-sm text-[var(--text-muted)]">Ubuntu, Debian, Fedora • .deb o .AppImage</div>
+    </div>
+  </div>
+  <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
+</a>
+
+{/* Raspberry Pi */}
+<a
+  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
+  target="_blank"
+  className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
+>
+  <div className="flex items-center gap-4">
+    <div className="w-12 h-12 rounded-lg bg-[#C51A4A]/10 border border-[#C51A4A]/20 flex items-center justify-center">
+      <Server className="w-6 h-6 text-[#C51A4A]" />
+    </div>
+    <div>
+      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        Raspberry Pi
+        <span className="text-xs px-2 py-0.5 rounded bg-[var(--accent-green)]/10 text-[var(--accent-green)]">ARM64</span>
+      </div>
+      <div className="text-sm text-[var(--text-muted)]">Pi 4/5 (64-bit) • .deb</div>
+    </div>
+  </div>
+  <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
+</a>
+
+</div>
+
+---
+
+## Instalacion Rapida
 
 <Tabs items={['Windows', 'macOS', 'Linux', 'Raspberry Pi']}>
 <Tab value="Windows">
 
-### Windows 10/11 (x64)
+```bash title="Opcion 1: Instalador MSI"
+# Descarga y ejecuta TPV.El.Haido_x.x.x_x64-setup.msi
+```
 
-<Steps>
-### Descargar el instalador
-
-Descarga el archivo `.msi` o `.exe` desde [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases/latest).
-
-### Ejecutar el instalador
-
-Haz doble clic en el archivo descargado y sigue el asistente de instalación.
+```bash title="Opcion 2: Ejecutable portable"
+# Descarga y ejecuta TPV.El.Haido_x.x.x_x64.exe
+```
 
 <Callout type="warning">
-  Windows puede mostrar una advertencia de SmartScreen. Haz clic en "Más información" y luego "Ejecutar de todas formas".
+  **Windows SmartScreen**: Haz clic en "Mas informacion" → "Ejecutar de todas formas"
 </Callout>
-
-### Iniciar la aplicación
-
-Busca "TPV El Haido" en el menú de inicio o haz doble clic en el acceso directo del escritorio.
-
-</Steps>
 
 </Tab>
 <Tab value="macOS">
 
-### macOS 11+ (Intel y Apple Silicon)
+```bash title="Intel Mac"
+# Descarga TPV.El.Haido_x64.dmg
+# Arrastra a Aplicaciones
+```
 
-<Steps>
-### Descargar el DMG
+```bash title="Apple Silicon (M1/M2/M3/M4)"
+# Descarga TPV.El.Haido_aarch64.dmg
+# Arrastra a Aplicaciones
+```
 
-Descarga el archivo `.dmg` correspondiente a tu arquitectura:
-- **Intel**: `TPV.El.Haido_x64.dmg`
-- **Apple Silicon (M1/M2/M3)**: `TPV.El.Haido_aarch64.dmg`
-
-### Instalar la aplicación
-
-1. Abre el archivo DMG descargado
-2. Arrastra "TPV El Haido" a la carpeta Aplicaciones
-
-### Primera ejecución
-
-<Callout type="warning">
-  Al abrir por primera vez, macOS puede bloquear la app. Ve a **Preferencias del Sistema → Seguridad y Privacidad** y haz clic en "Abrir de todas formas".
+<Callout type="info">
+  Primera vez: Clic derecho → Abrir para evitar Gatekeeper
 </Callout>
-
-</Steps>
 
 </Tab>
 <Tab value="Linux">
 
-### Linux (Ubuntu, Debian, Fedora)
-
-<Steps>
-### Instalar paquete DEB (Ubuntu/Debian)
-
-```bash
-# Descargar el paquete
+```bash title="Ubuntu/Debian (.deb)"
 wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_amd64.deb
-
-# Instalar
 sudo dpkg -i tpv-el-haido_amd64.deb
-
-# Resolver dependencias si es necesario
 sudo apt-get install -f
 ```
 
-### O usar AppImage (cualquier distro)
-
-```bash
-# Descargar
+```bash title="Cualquier distro (AppImage)"
 wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido.AppImage
-
-# Dar permisos de ejecución
 chmod +x tpv-el-haido.AppImage
-
-# Ejecutar
 ./tpv-el-haido.AppImage
 ```
-
-</Steps>
 
 </Tab>
 <Tab value="Raspberry Pi">
 
-### Raspberry Pi 4/5 (ARM64)
-
-<Steps>
-### Requisitos previos
-
-- Raspberry Pi 4 o 5
-- Raspberry Pi OS (64-bit)
-- Mínimo 1GB RAM disponible
-
-### Instalar el paquete DEB
-
-```bash
-# Descargar el paquete ARM64
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_arm64.deb
+```bash title="Raspberry Pi OS 64-bit"
+# Verificar arquitectura (debe ser aarch64)
+uname -m
 
 # Instalar
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_arm64.deb
 sudo dpkg -i tpv-el-haido_arm64.deb
-
-# Resolver dependencias
 sudo apt-get install -f
 ```
 
-### Ejecutar
-
-```bash
-tpv-el-haido
-```
-
 <Callout type="tip">
-  Para un rendimiento óptimo en Raspberry Pi, considera desactivar las animaciones en **Ajustes → Rendimiento**.
+  Usa el tema High Contrast para mejor rendimiento en Pi
 </Callout>
-
-</Steps>
 
 </Tab>
 </Tabs>
 
+---
+
 ## Requisitos del Sistema
 
-### Mínimos
+| Requisito | Minimo | Recomendado |
+|-----------|--------|-------------|
+| **RAM** | 512 MB | 1 GB+ |
+| **Almacenamiento** | 100 MB | 500 MB |
+| **Pantalla** | 800×600 | 1024×768+ |
+| **Internet** | Opcional | Para VERI*FACTU |
 
-| Requisito | Especificación |
-|-----------|----------------|
-| **Sistema Operativo** | Windows 10, macOS 11, Ubuntu 20.04, Raspberry Pi OS |
-| **RAM** | 512 MB |
-| **Almacenamiento** | 100 MB |
-| **Pantalla** | 800x600 |
+---
 
-### Recomendados
-
-| Requisito | Especificación |
-|-----------|----------------|
-| **RAM** | 1 GB o más |
-| **Almacenamiento** | 500 MB (para base de datos) |
-| **Pantalla** | 1024x768 o superior |
-| **Pantalla táctil** | Recomendada para uso TPV |
-
-## Verificar Instalación
-
-Después de instalar, puedes verificar que todo funciona correctamente:
+## Verificar Instalacion
 
 1. Abre TPV El Haido
-2. Deberías ver la pantalla de login o el asistente de configuración inicial
-3. Si es la primera vez, sigue el [asistente de primeros pasos](/docs/guia-usuario/primeros-pasos)
+2. Deberas ver la pantalla de login o el asistente de configuracion
+3. Sigue los [Primeros Pasos](/docs/guia-usuario/primeros-pasos)
 
-<Callout type="info">
-  Si encuentras problemas durante la instalación, consulta la sección de [solución de problemas](/docs/guia-usuario/instalacion#solucion-de-problemas).
-</Callout>
+---
 
-## Actualizaciones
+## Actualizaciones Automaticas
 
-TPV El Haido incluye un sistema de actualizaciones automáticas:
+TPV El Haido incluye actualizaciones automaticas:
 
-1. La aplicación comprueba automáticamente si hay nuevas versiones
-2. Recibirás una notificación cuando haya una actualización disponible
-3. Puedes actualizar con un solo clic desde **Ajustes → Acerca de**
+1. La app comprueba nuevas versiones al iniciar
+2. Recibiras una notificacion cuando haya actualizacion
+3. Un clic para actualizar desde **Ajustes → Acerca de**
 
-Para más información sobre el historial de cambios, consulta el [Changelog](/docs/changelog).
+Historial de cambios: [Changelog](/docs/changelog)

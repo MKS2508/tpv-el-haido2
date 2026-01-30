@@ -32,6 +32,7 @@ import {
   File,
   ComparisonTable,
   Pre,
+  Mermaid,
 } from '@/components/mdx';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
@@ -56,6 +57,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Folder,
     File,
     ComparisonTable,
+    Mermaid,
 
     // Lucide icons
     CheckCircle2,

@@ -1,3 +1,15 @@
+/**
+ * Estados posibles de una mesa/orden en el sistema TPV
+ */
+export enum TableStatus {
+  /** Mesa libre, sin orden asignada */
+  AVAILABLE = 'available',
+  /** Mesa seleccionada pero orden vacía (items.length === 0) */
+  SELECTED = 'selected',
+  /** Mesa con productos en orden (items.length > 0) */
+  ACTIVE = 'active',
+}
+
 export interface OrderItem {
   quantity: number;
   id: number;

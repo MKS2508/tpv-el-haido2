@@ -1,4 +1,4 @@
-import { Motion, Presence } from '@motionone/solid';
+import { Motion } from '@motionone/solid';
 import { MinusIcon, PlusIcon } from 'lucide-solid';
 import { createMemo, For, onCleanup, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
@@ -62,69 +62,48 @@ function OrderTable(props: OrderTableProps) {
       when={!isMobile()}
       fallback={
         // Mobile card view for better touch experience
-        <div class="w-full space-y-2 p-2">
-          <Presence exitBeforeEnter>
-            <For each={props.order.items}>
-              {(item, index) => (
-                <Motion.div
-                  initial={{
-                    opacity: 0,
-                    x: 50,
-                    scale: 0.95,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0,
-                    scale: 1,
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: -50,
-                    scale: 0.95,
-                  }}
-                  transition={{
-                    duration: 0.3,
-                    delay: index() * 0.05,
-                    easing: [0.4, 0, 0.2, 1],
-                  }}
-                  class="bg-card border rounded-lg p-3 shadow-sm"
-                >
-                  <div class="flex items-center justify-between">
-                    <div class="flex-1 min-w-0">
-                      <p class="font-medium text-sm text-card-foreground truncate">{item.name}</p>
-                      <p class="text-xs text-muted-foreground mt-1">
-                        {formatCurrency(item.price * item.quantity)}
-                      </p>
+        <div class="w-full space-y-2 p-2 relative min-h-0">
+          <For each={props.order.items}>
+            {(item, index) => (
+              <div
+                class="bg-card border rounded-lg p-3 shadow-sm animate-in fade-in slide-in-from-right-2 duration-300"
+                style={{ 'animation-delay': `${index() * 50}ms` }}
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex-1 min-w-0">
+                    <p class="font-medium text-sm text-card-foreground truncate">{item.name}</p>
+                    <p class="text-xs text-muted-foreground mt-1">
+                      {formatCurrency(item.price * item.quantity)}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-3 ml-3">
+                    <div class="text-center">
+                      <span class="text-base font-semibold">{item.quantity}</span>
+                      <p class="text-xs text-muted-foreground">cant.</p>
                     </div>
-                    <div class="flex items-center gap-3 ml-3">
-                      <div class="text-center">
-                        <span class="text-base font-semibold">{item.quantity}</span>
-                        <p class="text-xs text-muted-foreground">cant.</p>
-                      </div>
-                      <div class="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          class="h-11 w-11 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
-                          onClick={() => props.handleRemoveFromOrder(props.order.id, item.id)}
-                        >
-                          <MinusIcon class="h-5 w-5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          class="h-11 w-11 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
-                          onClick={() => props.handleAddToOrder(props.order.id, item)}
-                        >
-                          <PlusIcon class="h-5 w-5" />
-                        </Button>
-                      </div>
+                    <div class="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="h-11 w-11 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                        onClick={() => props.handleRemoveFromOrder(props.order.id, item.id)}
+                      >
+                        <MinusIcon class="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="h-11 w-11 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
+                        onClick={() => props.handleAddToOrder(props.order.id, item)}
+                      >
+                        <PlusIcon class="h-5 w-5" />
+                      </Button>
                     </div>
                   </div>
-                </Motion.div>
-              )}
-            </For>
-          </Presence>
+                </div>
+              </div>
+            )}
+          </For>
         </div>
       }
     >
@@ -196,112 +175,110 @@ function OrderTable(props: OrderTableProps) {
               }
             >
               {/* Animated version */}
-              <Presence exitBeforeEnter>
-                <For each={props.order.items}>
-                  {(item, index) => (
-                    <Motion.tr
-                      class="border-b"
-                      initial={{
-                        opacity: 0,
-                        x: 50,
-                        scale: 0.95,
-                        backgroundColor: 'hsl(var(--primary) / 0.1)',
-                      }}
-                      animate={{
-                        opacity: 1,
-                        x: 0,
-                        scale: 1,
-                        backgroundColor: 'transparent',
-                      }}
-                      exit={{
-                        opacity: 0,
-                        x: -50,
-                        scale: 0.95,
-                        backgroundColor: 'hsl(var(--destructive) / 0.1)',
-                      }}
-                      transition={{
-                        duration: 0.4,
-                        delay: index() * 0.05,
-                        easing: [0.4, 0, 0.2, 1],
-                      }}
-                      hover={{ backgroundColor: 'hsl(var(--accent) / 0.05)' }}
-                    >
-                      <TableCell class="text-card-foreground text-left w-[45%] px-2">
-                        <Motion.span
-                          class="font-medium text-sm leading-tight block truncate"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3, delay: 0.1 + index() * 0.05 }}
+              <For each={props.order.items}>
+                {(item, index) => (
+                  <Motion.tr
+                    class="border-b"
+                    initial={{
+                      opacity: 0,
+                      x: 50,
+                      scale: 0.95,
+                      backgroundColor: 'hsl(var(--primary) / 0.1)',
+                    }}
+                    animate={{
+                      opacity: 1,
+                      x: 0,
+                      scale: 1,
+                      backgroundColor: 'transparent',
+                    }}
+                    exit={{
+                      opacity: 0,
+                      x: -50,
+                      scale: 0.95,
+                      backgroundColor: 'hsl(var(--destructive) / 0.1)',
+                    }}
+                    transition={{
+                      duration: 0.4,
+                      delay: index() * 0.05,
+                      easing: [0.4, 0, 0.2, 1],
+                    }}
+                    hover={{ backgroundColor: 'hsl(var(--accent) / 0.05)' }}
+                  >
+                    <TableCell class="text-card-foreground text-left w-[45%] px-2">
+                      <Motion.span
+                        class="font-medium text-sm leading-tight block truncate"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: 0.1 + index() * 0.05 }}
+                      >
+                        {item.name}
+                      </Motion.span>
+                    </TableCell>
+                    <TableCell class="text-foreground text-center text-base w-[15%] px-1">
+                      <Motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: 0.2 + index() * 0.05,
+                          easing: 'ease-out',
+                        }}
+                        style={{
+                          display: 'inline-block',
+                          'font-variant-numeric': 'tabular-nums',
+                        }}
+                      >
+                        <span class="font-medium">{item.quantity}</span>
+                      </Motion.div>
+                    </TableCell>
+                    <TableCell class="text-foreground text-right text-sm w-[20%] px-1">
+                      <Motion.div
+                        initial={{ x: 20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: 0.25 + index() * 0.05,
+                        }}
+                        style={{
+                          display: 'inline-block',
+                          'font-variant-numeric': 'tabular-nums',
+                        }}
+                      >
+                        <span>{formatCurrency(item.price * item.quantity)}</span>
+                      </Motion.div>
+                    </TableCell>
+                    <TableCell class="w-[20%] px-1">
+                      <Motion.div
+                        class="flex justify-center gap-1"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: 0.3 + index() * 0.05,
+                          easing: 'ease-out',
+                        }}
+                      >
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class={`${buttonSize()} p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10 border-destructive/20`}
+                          onClick={() => props.handleRemoveFromOrder(props.order.id, item.id)}
                         >
-                          {item.name}
-                        </Motion.span>
-                      </TableCell>
-                      <TableCell class="text-foreground text-center text-base w-[15%] px-1">
-                        <Motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{
-                            duration: 0.3,
-                            delay: 0.2 + index() * 0.05,
-                            easing: 'ease-out',
-                          }}
-                          style={{
-                            display: 'inline-block',
-                            'font-variant-numeric': 'tabular-nums',
-                          }}
+                          <MinusIcon class={iconSize()} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class={`${buttonSize()} p-0 text-primary hover:text-primary/80 hover:bg-primary/10 border-primary/20`}
+                          onClick={() => props.handleAddToOrder(props.order.id, item)}
                         >
-                          <span class="font-medium">{item.quantity}</span>
-                        </Motion.div>
-                      </TableCell>
-                      <TableCell class="text-foreground text-right text-sm w-[20%] px-1">
-                        <Motion.div
-                          initial={{ x: 20, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{
-                            duration: 0.3,
-                            delay: 0.25 + index() * 0.05,
-                          }}
-                          style={{
-                            display: 'inline-block',
-                            'font-variant-numeric': 'tabular-nums',
-                          }}
-                        >
-                          <span>{formatCurrency(item.price * item.quantity)}</span>
-                        </Motion.div>
-                      </TableCell>
-                      <TableCell class="w-[20%] px-1">
-                        <Motion.div
-                          class="flex justify-center gap-1"
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{
-                            duration: 0.3,
-                            delay: 0.3 + index() * 0.05,
-                            easing: 'ease-out',
-                          }}
-                        >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            class={`${buttonSize()} p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10 border-destructive/20`}
-                            onClick={() => props.handleRemoveFromOrder(props.order.id, item.id)}
-                          >
-                            <MinusIcon class={iconSize()} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            class={`${buttonSize()} p-0 text-primary hover:text-primary/80 hover:bg-primary/10 border-primary/20`}
-                            onClick={() => props.handleAddToOrder(props.order.id, item)}
-                          >
-                            <PlusIcon class={iconSize()} />
-                          </Button>
-                        </Motion.div>
-                      </TableCell>
-                    </Motion.tr>
-                  )}
-                </For>
-              </Presence>
+                          <PlusIcon class={iconSize()} />
+                        </Button>
+                      </Motion.div>
+                    </TableCell>
+                  </Motion.tr>
+                )}
+              </For>
             </Show>
           </TableBody>
         </Table>

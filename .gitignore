@@ -48,3 +48,9 @@ src-tauri/sidecars/aeat-bridge-x86_64-pc-windows-msvc.exe
 /apps/haidodocs/out
 .claude/settings.local.json
 sidecars/aeat-bridge-x86_64-pc-windows-msvc.exe
+# Build artifacts
+apps/haidodocs/public/tpv/
+
+# Docker
+.env.docker
+docker-compose.override.yml

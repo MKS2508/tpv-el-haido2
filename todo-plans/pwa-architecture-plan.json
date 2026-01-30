@@ -1,238 +1,285 @@
 {
   "metadata": {
-    "title": "PWA Separation + Platform Abstraction",
+    "title": "PWA + Tauri Mobile Architecture",
     "created": "2026-01-27T23:00:00Z",
+    "updated": "2026-01-29T12:00:00Z",
     "project": "TPV El Haido",
     "status": "ready",
-    "estimatedTime": "3h 30m",
     "author": "WAXIN MK1 (AI Agent)",
     "user": "waxo (Marcos)"
   },
   "objectives": [
+    "Consolidar detección de plataforma (isTauri) en un único lugar",
+    "Conectar getPlatformService() con el resto del código",
+    "Completar implementaciones stub de TauriPlatformService",
     "Separar frontend como PWA web standalone",
-    "Abstraer APIs de Tauri detrás de PlatformService",
-    "Refactorizar servicios para usar UnifiedDataService",
-    "Mantener funcionalidad completa en ambas plataformas"
+    "Preparar arquitectura para Tauri Mobile (iOS/Android)"
   ],
   "currentState": {
     "storageAdapters": {
       "status": "complete",
-      "implementations": ["IndexedDbStorageAdapter", "HttpStorageAdapter", "SqliteStorageAdapter"],
-      "interface": "IStorageAdapter"
+      "implementations": {
+        "SqliteStorageAdapter": { "methods": "25/25", "tauriOnly": true },
+        "HttpStorageAdapter": { "methods": "19/25", "hasFallback": true },
+        "IndexedDbStorageAdapter": { "methods": "25/25", "pwaReady": true }
+      },
+      "interface": "IStorageAdapter",
+      "notes": "Todos los adapters funcionan. HTTP missing: customers, tables, clearAllData, importData"
     },
-    "platformDetection": {
-      "status": "exists",
-      "location": "src/store/store.ts",
-      "function": "isTauri()"
+    "platformAbstraction": {
+      "status": "exists_but_unused",
+      "location": "src/services/platform/",
+      "files": [
+        "PlatformService.ts (interface - 8 métodos)",
+        "TauriPlatformService.ts (6/8 stubs con TODO)",
+        "WebPlatformService.ts (8/8 implementados con fallbacks)",
+        "PlatformDetector.ts (isTauri function)",
+        "index.ts (getPlatformService factory)"
+      ],
+      "criticalIssue": "getPlatformService() NUNCA se usa en el código. Los componentes llaman a Tauri directamente."
     },
-    "modeSwitching": {
-      "status": "exists",
-      "location": "src/store/store.ts",
-      "modes": ["sqlite", "http", "indexeddb"]
+    "isTauriDetection": {
+      "status": "scattered",
+      "implementations": 5,
+      "locations": [
+        "src/services/platform/PlatformDetector.ts (canonical)",
+        "src/utils/environment.ts (isTauriEnvironment)",
+        "src/store/store.ts (local function)",
+        "src/hooks/useAEATSidecar.ts (local function)",
+        "src/services/http-storage-adapter.ts (__TAURI_IPC__ check)"
+      ],
+      "inlineChecks": [
+        "src/components/VersionInfo.tsx",
+        "src/components/Sections/Login.tsx"
+      ]
     },
-    "issues": [
-      "Componentes llaman directamente a Tauri APIs en múltiples lugares",
-      "Servicios no usan los storage adapters",
-      "No hay capa de abstracción para platform-specific features",
-      "No hay PWA setup (service worker, manifest)"
-      "Lógica de negocio mezclada con infraestructura"
+    "directTauriUsage": {
+      "totalFiles": 16,
+      "highCoupling": [
+        "src/services/sqlite-storage-adapter.ts (all CRUD)",
+        "src/services/thermal-printer.service.ts (shell + sidecar)",
+        "src/components/LicenseDialog.tsx",
+        "src/components/LicenseStatus.tsx",
+        "src/components/LicenseSplashScreen.tsx"
+      ],
+      "mediumCoupling": [
+        "src/hooks/useUpdater.ts",
+        "src/lib/setupNativeMenu.ts",
+        "src/components/Sections/SettingsPanel.tsx"
+      ],
+      "lowCoupling": [
+        "src/services/http-storage-adapter.ts (has fallback)",
+        "src/components/VersionInfo.tsx",
+        "src/hooks/useScreenshot.ts"
+      ]
+    },
+    "pwaReadiness": {
+      "status": "zero",
+      "missing": [
+        "public/manifest.json",
+        "public/sw.js",
+        "PWA icons (192x192, 512x512)",
+        "vite-plugin-pwa dependency",
+        "Service worker registration"
+      ],
+      "existing": [
+        "index.html meta tags (viewport, theme-color, description)",
+        "logo.svg (but oversized at 789KB)"
+      ]
+    },
+    "tauriMobileBlockers": [
+      "AEAT sidecar (binaries can't run on mobile)",
+      "Scattered isTauri() checks",
+      "Direct invoke() calls in components",
+      "No tauri-plugin-sql for mobile SQLite"
     ]
   },
   "architecture": {
-    "diagram": "Components UI → Store (Zustand) → UnifiedDataService → IStorageAdapter → [IndexedDB (PWA) | SQLite (Tauri)]",
-    "platformAbstraction": "Components UI → PlatformService (Tauri APIs wrapper) → Platform implementations",
+    "diagram": "Components UI → getPlatformService() → [TauriPlatformService | WebPlatformService]\n                  ↓\n            Store (Zustand) → getStorageAdapter() → [SQLite | HTTP | IndexedDB]",
     "phases": [
       {
+        "id": "phase0",
+        "name": "Consolidación isTauri",
+        "duration": "30m",
+        "status": "pending",
+        "priority": "critical"
+      },
+      {
         "id": "phase1",
-        "name": "Platform Abstraction",
-        "duration": "2h",
-        "status": "pending"
+        "name": "Conectar Platform Abstraction",
+        "duration": "1h 30m",
+        "status": "pending",
+        "priority": "high"
       },
       {
         "id": "phase2",
-        "name": "Unified Data Layer",
+        "name": "PWA Setup",
         "duration": "1h",
-        "status": "pending"
+        "status": "pending",
+        "priority": "high"
       },
       {
         "id": "phase3",
-        "name": "PWA Setup",
-        "duration": "30m",
-        "status": "pending"
+        "name": "Tauri Mobile Prep",
+        "duration": "1h",
+        "status": "pending",
+        "priority": "medium"
       }
     ]
   },
   "tasks": [
     {
-      "id": "platform-interface",
-      "title": "Crear interfaz PlatformService",
-      "description": "Definir métodos para printer, updater, file dialogs",
-      "file": "src/services/platform/PlatformService.ts",
-      "phase": "phase1",
-      "dependencies": [],
+      "id": "consolidate-istauri",
+      "title": "Consolidar todas las funciones isTauri()",
+      "description": "Eliminar duplicados. Usar solo src/services/platform/PlatformDetector.ts como fuente única.",
+      "phase": "phase0",
+      "files": [
+        "src/store/store.ts (eliminar local isTauri, importar de platform)",
+        "src/hooks/useAEATSidecar.ts (eliminar local isTauri, importar de platform)",
+        "src/components/VersionInfo.tsx (usar isPlatformTauri)",
+        "src/components/Sections/Login.tsx (usar isPlatformTauri)",
+        "src/utils/environment.ts (deprecar o re-exportar desde platform)"
+      ],
       "complexity": "easy",
-      "code": {
-        "language": "typescript",
-        "snippet": "export interface PlatformService { printTicket(order: Order): Promise<void>; printReceipt(order: Order): Promise<void>; openFileDialog(): Promise<string | null>; saveFileDialog(): Promise<string | null>; checkForUpdates(): Promise<void>; downloadAndInstall(): Promise<void>; isTauri(): boolean; getVersion(): string; }"
-      }
+      "dependencies": []
     },
     {
-      "id": "web-platform-service",
-      "title": "Implementar WebPlatformService",
-      "description": "Implementaciones de stub para PWA (alerts, window.open para impresión)",
-      "file": "src/services/platform/WebPlatformService.ts",
+      "id": "complete-tauri-platform-service",
+      "title": "Completar TauriPlatformService stubs",
+      "description": "Implementar los 6 métodos que son TODO/stubs",
       "phase": "phase1",
-      "dependencies": ["platform-interface"],
-      "complexity": "easy",
-      "code": {
-        "language": "typescript",
-        "snippet": "export class WebPlatformService implements PlatformService { async printTicket(order: Order): Promise<void> { window.open(`/ticket/${order.id}`, '_blank'); } async printReceipt(order: Order): Promise<void> { alert('Receipt printing not available in PWA version. Use the ticket instead.'); } async openFileDialog(): Promise<string | null> { return prompt('Enter file path for import:'); } async saveFileDialog(): Promise<string | null> { return prompt('Enter filename to save:'); } async checkForUpdates(): Promise<void> { return; // PWA updates via service worker } async downloadAndInstall(): Promise<void> { window.location.reload(); } isTauri(): boolean { return false; } getVersion(): string { return process.env.VITE_APP_VERSION || '1.0.0'; } }"
-      }
-    },
-    {
-      "id": "tauri-platform-service",
-      "title": "Implementar TauriPlatformService",
-      "description": "Wrapper real para @tauri-apps/plugin-thermal-printer, updater, dialogs",
       "file": "src/services/platform/TauriPlatformService.ts",
-      "phase": "phase1",
-      "dependencies": ["platform-interface"],
+      "methods": [
+        "printTicket() → delegar a thermal-printer.service.ts",
+        "printReceipt() → delegar a thermal-printer.service.ts",
+        "openFileDialog() → usar @tauri-apps/plugin-dialog",
+        "saveFileDialog() → usar @tauri-apps/plugin-dialog",
+        "checkForUpdates() → usar código de useUpdater.ts",
+        "downloadAndInstall() → usar código de useUpdater.ts"
+      ],
       "complexity": "medium",
-      "code": {
-        "language": "typescript",
-        "snippet": "import { invoke } from '@tauri-apps/core/tauri'; import { check } from '@tauri-apps/plugin-updater'; import type { PlatformService } from './index'; export class TauriPlatformService implements PlatformService { async printTicket(order: Order): Promise<void> { await invoke('print_ticket', { order }); } async printReceipt(order: Order): Promise<void> { await invoke('print_receipt', { order }); } async openFileDialog(): Promise<string | null> { return invoke('open_file_dialog'); } async saveFileDialog(): Promise<string | null> { return invoke('save_file_dialog'); } async checkForUpdates(): Promise<void> { const { check } = await import('@tauri-apps/plugin-updater'); const update = await check(); if (update) { await update.downloadAndInstall(); } } async downloadAndInstall(): Promise<void> { const { check } = await import('@tauri-apps/plugin-updater'); const update = await check(); if (update) { await update.downloadAndInstall(); } } isTauri(): boolean { return true; } getVersion(): string { return __APP_VERSION__; } }"
-      }
+      "dependencies": ["consolidate-istauri"]
     },
     {
-      "id": "platform-index",
-      "title": "Crear índice de PlatformService",
-      "description": "Exportar PlatformService y PlatformDetector, función getPlatformService()",
-      "file": "src/services/platform/index.ts",
+      "id": "integrate-platform-service-updater",
+      "title": "Migrar useUpdater a PlatformService",
+      "description": "useUpdater.ts debe usar getPlatformService() en lugar de importar Tauri directamente",
       "phase": "phase1",
-      "dependencies": ["platform-interface", "web-platform-service", "tauri-platform-service"],
+      "file": "src/hooks/useUpdater.ts",
       "complexity": "easy",
-      "code": {
-        "language": "typescript",
-        "snippet": "export * from './PlatformService'; export * from './PlatformDetector'; export function getPlatformService(): PlatformService { if (typeof window !== 'undefined' && '__TAURI__' in window) { return new TauriPlatformService(); } else { return new WebPlatformService(); } }"
-      }
+      "dependencies": ["complete-tauri-platform-service"]
     },
     {
-      "id": "platform-detector",
-      "title": "Crear PlatformDetector",
-      "description": "Función isTauri() reutilizada",
-      "file": "src/services/platform/PlatformDetector.ts",
+      "id": "integrate-platform-service-license",
+      "title": "Abstraer llamadas de licencia",
+      "description": "Crear LicenseService que use PlatformService para las operaciones de licencia",
       "phase": "phase1",
-      "dependencies": [],
-      "complexity": "easy",
-      "code": {
-        "language": "typescript",
-        "snippet": "export function isTauri(): boolean { return typeof window !== 'undefined' && '__TAURI__' in window; }"
-      }
-    },
-    {
-      "id": "unified-data-service",
-      "title": "Crear UnifiedDataService",
-      "description": "Constructor que recibe IStorageAdapter, métodos getProducts(), syncWithRemote()",
-      "file": "src/services/data/UnifiedDataService.ts",
-      "phase": "phase2",
-      "dependencies": [],
-      "complexity": "easy",
-      "code": {
-        "language": "typescript",
-        "snippet": "import type { IStorageAdapter } from '../storage/storage-adapter.interface'; export class UnifiedDataService { constructor(private adapter: IStorageAdapter) {} async getAllProducts(): Promise<Product[]> { return this.adapter.getProducts(); } async syncWithRemote(): Promise<void> { if (this.adapter instanceof HttpStorageAdapter) { return; } const data = await this.adapter.exportData(); await this.httpAdapter.importData(data); } }"
-      }
-    },
-    {
-      "id": "refactor-product-service",
-      "title": "Refactorizar ProductService",
-      "description": "Eliminar llamadas HTTP directas, usar UnifiedDataService",
-      "file": "src/services/ProductService.ts",
-      "phase": "phase2",
-      "dependencies": ["unified-data-service"],
-      "complexity": "easy",
-      "code": {
-        "language": "typescript",
-        "snippet": "export class ProductService { constructor(private dataService: UnifiedDataService) {} async getAll(): Promise<Product[]> { return this.dataService.getAllProducts(); } }"
-      }
-    },
-    {
-      "id": "refactor-category-service",
-      "title": "Refactorizar CategoriesService",
-      "description": "Eliminar llamadas HTTP directas, usar UnifiedDataService",
-      "file": "src/services/CategoriesService.ts",
-      "phase": "phase2",
-      "dependencies": ["unified-data-service"],
-      "complexity": "easy",
-      "code": {
-        "language": "typescript",
-        "snippet": "export class CategoriesService { constructor(private dataService: UnifiedDataService) {} async getAll(): Promise<Category[]> { return this.dataService.getCategories(); } }"
-      }
-    },
-    {
-      "id": "refactor-order-service",
-      "title": "Refactorizar OrderService",
-      "description": "Eliminar llamadas HTTP directas, usar UnifiedDataService",
-      "file": "src/services/OrderService.ts",
-      "phase": "phase2",
-      "dependencies": ["unified-data-service"],
-      "complexity": "easy",
-      "code": {
-        "language": "typescript",
-        "snippet": "export class OrderService { constructor(private dataService: UnifiedDataService) {} async getAll(): Promise<Order[]> { return this.dataService.getOrders(); } }"
-      }
+      "files": [
+        "src/services/LicenseService.ts (nuevo)",
+        "src/components/LicenseDialog.tsx",
+        "src/components/LicenseStatus.tsx",
+        "src/components/LicenseSplashScreen.tsx"
+      ],
+      "complexity": "medium",
+      "dependencies": ["consolidate-istauri"]
     },
     {
       "id": "pwa-manifest",
       "title": "Crear PWA manifest.json",
-      "description": "Manifest completo para PWA standalone con iconos, start_url",
+      "description": "Manifest completo para PWA standalone con iconos y configuración",
+      "phase": "phase2",
       "file": "public/manifest.json",
-      "phase": "phase3",
-      "dependencies": [],
       "complexity": "easy",
+      "dependencies": [],
       "code": {
         "language": "json",
-        "snippet": "{ \"name\": \"TPV El Haido\", \"short_name\": \"TPV\", \"start_url\": \"/\", \"display\": \"standalone\", \"background_color\": \"#ffffff\", \"theme_color\": \"#8b5cf6\", \"icons\": [{ \"src\": \"/icon-192.png\", \"sizes\": \"192x192\", \"type\": \"image/png\" }, { \"src\": \"/icon-512.png\", \"sizes\": \"512x512\", \"type\": \"image/png\" }], \"orientation\": \"portrait-primary\", \"scope\": \"/\" }"
+        "content": "{\n  \"name\": \"TPV El Haido\",\n  \"short_name\": \"TPV Haido\",\n  \"start_url\": \"/\",\n  \"display\": \"standalone\",\n  \"background_color\": \"#000000\",\n  \"theme_color\": \"#000000\",\n  \"orientation\": \"portrait-primary\",\n  \"scope\": \"/\",\n  \"icons\": [\n    { \"src\": \"/icons/icon-192.png\", \"sizes\": \"192x192\", \"type\": \"image/png\" },\n    { \"src\": \"/icons/icon-512.png\", \"sizes\": \"512x512\", \"type\": \"image/png\" },\n    { \"src\": \"/icons/icon-512-maskable.png\", \"sizes\": \"512x512\", \"type\": \"image/png\", \"purpose\": \"maskable\" }\n  ]\n}"
       }
     },
     {
-      "id": "service-worker-stub",
-      "title": "Crear service worker stub",
-      "description": "Skeleton básico con listeners (fetch, install, activate)",
-      "file": "public/sw.js",
-      "phase": "phase3",
-      "dependencies": ["pwa-manifest"],
-      "complexity": "medium",
-      "code": {
-        "language": "javascript",
-        "snippet": "self.addEventListener('fetch', (event) => { event.respondWith(new Response('Hello from service worker!', { headers: { 'Content-Type': 'text/plain' } })); }); self.addEventListener('install', (event) => { self.skipWaiting(); }); self.addEventListener('activate', (event) => { self.clients.claim(); });"
-      }
-    },
-    {
-      "id": "register-sw-vite",
-      "title": "Registrar service worker en vite.config.ts",
-      "description": "Configurar VitePWA plugin para sw.js",
-      "file": "vite.config.ts",
-      "phase": "phase3",
-      "dependencies": ["service-worker-stub"],
+      "id": "pwa-icons",
+      "title": "Generar iconos PWA",
+      "description": "Crear set de iconos desde logo.svg (192, 512, maskable)",
+      "phase": "phase2",
+      "folder": "public/icons/",
       "complexity": "easy",
+      "dependencies": []
+    },
+    {
+      "id": "pwa-vite-plugin",
+      "title": "Instalar y configurar vite-plugin-pwa",
+      "description": "Añadir plugin PWA a Vite con estrategia de caching",
+      "phase": "phase2",
+      "files": ["package.json", "vite.config.ts"],
+      "complexity": "easy",
+      "dependencies": ["pwa-manifest", "pwa-icons"],
       "code": {
         "language": "typescript",
-        "snippet": "import { defineConfig } from 'vite'; import react from '@vitejs/plugin-react'; import { VitePWA } from 'vite-plugin-pwa'; export default defineConfig({ plugins: [react(), VitePWA({ registerType: 'autoUpdate', workbox: { globPatterns: ['**/*.{js,css,html,png,svg,ico}'], runtimeCaching: [/(.js|.css)$/, 'https://fonts.googleapis.com/(.*)'], navigateFallback: '/index.html', }, }), ], });"
+        "content": "import { VitePWA } from 'vite-plugin-pwa'\n\nexport default defineConfig({\n  plugins: [\n    solid(),\n    tailwindcss(),\n    VitePWA({\n      registerType: 'autoUpdate',\n      includeAssets: ['logo.svg', 'icons/*.png'],\n      manifest: false, // usamos el nuestro\n      workbox: {\n        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],\n        runtimeCaching: [\n          {\n            urlPattern: /^https:\\/\\/fonts\\.googleapis\\.com/,\n            handler: 'CacheFirst',\n            options: { cacheName: 'google-fonts' }\n          }\n        ]\n      }\n    })\n  ]\n})"
       }
+    },
+    {
+      "id": "pwa-index-html",
+      "title": "Actualizar index.html para PWA",
+      "description": "Añadir link a manifest y meta tags faltantes",
+      "phase": "phase2",
+      "file": "index.html",
+      "complexity": "easy",
+      "dependencies": ["pwa-manifest"],
+      "additions": [
+        "<link rel=\"manifest\" href=\"/manifest.json\" />",
+        "<meta name=\"apple-mobile-web-app-capable\" content=\"yes\" />",
+        "<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\" />",
+        "<meta name=\"apple-mobile-web-app-title\" content=\"TPV El Haido\" />"
+      ]
+    },
+    {
+      "id": "tauri-mobile-init",
+      "title": "Inicializar targets Tauri Mobile",
+      "description": "Ejecutar tauri ios init y tauri android init",
+      "phase": "phase3",
+      "complexity": "easy",
+      "dependencies": ["consolidate-istauri"],
+      "commands": [
+        "bun tauri ios init",
+        "bun tauri android init"
+      ]
+    },
+    {
+      "id": "tauri-mobile-sql-plugin",
+      "title": "Añadir tauri-plugin-sql para mobile",
+      "description": "Configurar SQLite plugin que funciona en iOS/Android",
+      "phase": "phase3",
+      "files": ["src-tauri/Cargo.toml", "src-tauri/tauri.conf.json"],
+      "complexity": "medium",
+      "dependencies": ["tauri-mobile-init"]
+    },
+    {
+      "id": "aeat-api-fallback",
+      "title": "Crear fallback API para AEAT en mobile",
+      "description": "El sidecar AEAT no funciona en mobile. Crear servicio que delegue a API remota.",
+      "phase": "phase3",
+      "file": "src/services/AEATService.ts",
+      "complexity": "medium",
+      "dependencies": ["consolidate-istauri"]
     }
   ],
   "parallelization": {
     "canParallel": [
-      ["web-platform-service", "tauri-platform-service"],
-      ["pwa-manifest", "service-worker-stub"],
-      ["refactor-product-service", "refactor-category-service", "refactor-order-service"]
+      ["pwa-manifest", "pwa-icons"],
+      ["integrate-platform-service-updater", "integrate-platform-service-license"],
+      ["tauri-mobile-init", "pwa-vite-plugin"]
     ],
-    "mustParallel": [
-      ["platform-interface", "platform-index", "platform-detector"]
-    ],
-    "dependencies": [
-      "refactor-product-service": ["unified-data-service"],
-      "refactor-category-service": ["unified-data-service"],
-      "refactor-order-service": ["unified-data-service"]
+    "sequential": [
+      ["consolidate-istauri", "complete-tauri-platform-service", "integrate-platform-service-updater"],
+      ["pwa-manifest", "pwa-index-html"],
+      ["tauri-mobile-init", "tauri-mobile-sql-plugin"]
     ]
-  }
+  },
+  "estimatedTotal": "4h",
+  "quickWins": [
+    "consolidate-istauri (30min) - elimina deuda técnica inmediatamente",
+    "pwa-manifest + pwa-icons (30min) - hace la app instalable en browsers",
+    "pwa-vite-plugin (15min) - activa service worker automático"
+  ]
 }

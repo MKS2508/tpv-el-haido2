@@ -1,0 +1,171 @@
+---
+title: Clientes
+description: 'Gestionar base de datos de clientes en TPV El Haido'
+---
+
+# Gestion de Clientes
+
+TPV El Haido incluye un modulo de gestion de clientes para fidelizar a tus usuarios habituales y generar facturas completas.
+
+![Pantalla de gestion de clientes](/screenshots/04_customers.png)
+
+## Acceder a Clientes
+
+1. En el menu lateral, haz clic en **Clientes**
+2. Veras la lista de clientes registrados
+
+## Crear Cliente
+
+<Steps>
+
+### Abrir formulario
+
+Haz clic en **Nuevo Cliente**.
+
+### Datos basicos
+
+| Campo | Descripcion | Requerido |
+|-------|-------------|-----------|
+| **Nombre** | Nombre completo o razon social | Si |
+| **NIF/CIF** | Identificacion fiscal | Para facturas |
+| **Email** | Correo electronico | No |
+| **Telefono** | Numero de contacto | No |
+
+### Direccion fiscal
+
+Para facturas completas (tipo F1):
+
+| Campo | Descripcion |
+|-------|-------------|
+| **Direccion** | Calle y numero |
+| **Codigo Postal** | CP |
+| **Poblacion** | Ciudad |
+| **Provincia** | Provincia |
+
+### Guardar
+
+Haz clic en **Crear Cliente**.
+
+</Steps>
+
+## Buscar Clientes
+
+### Barra de busqueda
+
+Busca por:
+- Nombre
+- NIF/CIF
+- Telefono
+- Email
+
+### Filtros
+
+- **Todos**: Muestra todos los clientes
+- **Frecuentes**: Clientes con mas de X pedidos
+- **Recientes**: Ultimos clientes añadidos
+
+## Asignar Cliente a Pedido
+
+<Steps>
+
+### Durante la comanda
+
+1. En la pantalla de Nueva Comanda
+2. Haz clic en **Asignar Cliente** (o icono de persona)
+3. Busca y selecciona el cliente
+4. El nombre aparece en la cabecera del pedido
+
+### En el cobro
+
+1. Al procesar el pago
+2. Puedes asignar o cambiar el cliente
+3. Util para facturas con datos completos
+
+</Steps>
+
+## Facturas para Clientes
+
+Cuando asignas un cliente con NIF a un pedido:
+
+- La factura incluye los datos fiscales completos
+- Puede ser tipo F1 (factura completa) si el cliente tiene todos los datos
+- El cliente recibe copia por email (si esta configurado)
+
+<Callout type="info">
+  Para generar facturas tipo F1 (completas), el cliente debe tener NIF y direccion fiscal.
+</Callout>
+
+## Editar Cliente
+
+1. Haz clic en el cliente en la lista
+2. Modifica los campos necesarios
+3. Haz clic en **Guardar**
+
+## Eliminar Cliente
+
+1. Abre el cliente
+2. Haz clic en **Eliminar**
+3. Confirma la accion
+
+<Callout type="warning">
+  Al eliminar un cliente, los pedidos anteriores mantienen los datos fiscales pero el cliente ya no estara disponible para nuevos pedidos.
+</Callout>
+
+## Historial de Cliente
+
+Al abrir un cliente puedes ver:
+
+- Total de pedidos realizados
+- Importe total gastado
+- Ultimo pedido
+- Productos mas comprados
+
+## Exportar Clientes
+
+Para hacer backup o migrar:
+
+1. Ve a **Ajustes → Importar/Exportar**
+2. Selecciona **Exportar Clientes**
+3. Elige formato (CSV o JSON)
+
+## Importar Clientes
+
+Para cargar clientes desde un archivo:
+
+<Steps>
+
+### Preparar CSV
+
+```csv
+nombre,nif,email,telefono,direccion,cp,poblacion
+Juan Garcia,12345678A,juan@email.com,600123456,Calle Mayor 1,28001,Madrid
+Empresa SL,B12345678,info@empresa.com,910000000,Av. Principal 10,08001,Barcelona
+```
+
+### Importar
+
+1. Ve a **Ajustes → Importar/Exportar**
+2. Selecciona **Importar Clientes**
+3. Carga el archivo CSV
+4. Revisa y confirma
+
+</Steps>
+
+## Consejos
+
+### Datos fiscales
+
+- Siempre pide el NIF si el cliente quiere factura
+- Verifica que el NIF es correcto (letra de control)
+- Guarda la direccion completa para facturas tipo F1
+
+### Organizacion
+
+- Usa nombres consistentes (Juan Garcia vs Garcia, Juan)
+- Añade el telefono para contactar si hay problemas
+- El email permite enviar facturas automaticamente
+
+## Siguiente Paso
+
+- [Gestionar Pedidos](/docs/guia-usuario/pedidos)
+- [Facturacion VERI*FACTU](/docs/guia-usuario/facturacion)

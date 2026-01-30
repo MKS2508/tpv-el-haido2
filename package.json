@@ -36,7 +36,9 @@
     "docs:start": "bun run --cwd apps/haidodocs start",
     "docs:typecheck": "bun run --cwd apps/haidodocs types:check",
     "apps:license": "bun run license-server",
-    "apps:docs": "bun run docs"
+    "apps:docs": "bun run docs",
+    "build:pwa": "bun run scripts/build-pwa.ts",
+    "deploy:pwa": "bun run build:pwa && bun run --cwd apps/haidodocs build"
   },
   "dependencies": {
     "@amad3v/solid-chart": "^1.0.4",

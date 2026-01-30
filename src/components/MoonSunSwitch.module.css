@@ -1,20 +1,3 @@
-:root {
-  --dark: #111111;
-  --sun: #ffd700;
-  --sun-shadow: #987416;
-  --moon: #dddddd;
-  --moon-shadow: #808080;
-  --star: #ffffff;
-  --cloud: #ffffff;
-  --crater: #535370;
-  --shadow-01: #80808077;
-  --shadow-02: #ffffff22;
-  --shadow-03: #555555;
-  --white: #ffffff;
-  --background-day: linear-gradient(skyblue, cadetblue);
-  --background-night: linear-gradient(-45deg, #222, #000030);
-}
-
 .slider::before {
   content: "";
   position: absolute;
@@ -134,9 +117,9 @@ input:checked + .slider .star::after {
 
 .background {
   box-shadow:
-    0 -3px 0 2px #fff,
-    -3px 0px 0 2px #fff,
-    -13px 1px 0 1.5px #fff,
-    -18px 0px 0 1px #fff,
-    -9px 1px 0 2px #fff;
+    0 -3px 0 2px var(--cloud),
+    -3px 0px 0 2px var(--cloud),
+    -13px 1px 0 1.5px var(--cloud),
+    -18px 0px 0 1px var(--cloud),
+    -9px 1px 0 2px var(--cloud);
 }

@@ -1,11 +1,12 @@
+import { Motion } from '@motionone/solid';
 import { Check, Plus, Star } from 'lucide-solid';
-import { createSignal, onCleanup, onMount } from 'solid-js';
+import { createSignal, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
-import { cn } from '@/lib/utils.ts';
-import type Product from '@/models/Product.ts';
+import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
+import { useResponsive } from '@/hooks/useResponsive';
+import { cn } from '@/lib/utils';
+import type Product from '@/models/Product';
 import stockImagesService from '@/services/stock-images.service';
-import useStore from '@/store/store';
-import { Button } from './button';
 
 interface OptimizedProductCardProps {
   product: Product;
@@ -23,7 +24,10 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
   const showCategory = () => props.showCategory ?? true;
   const [isAdding, setIsAdding] = createSignal(false);
   const [showSuccess, setShowSuccess] = createSignal(false);
-  const state = useStore();
+
+  const perf = usePerformanceConfig();
+  const responsive = useResponsive();
+  const isTouch = () => responsive.isTouch();
 
   // Obtener imagen: personalizada > stock > fallback
   const getProductImage = () => {
@@ -31,7 +35,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
       return props.product.uploadedImage;
     }
 
-    if (state.state.useStockImages) {
+    if (perf.enableImageOptimization) {
       const stockImage = stockImagesService.getConsistentStockImage(
         props.product.id,
         props.product.name,
@@ -82,10 +86,10 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
       const resetTimer = setTimeout(() => {
         setShowSuccess(false);
         setIsAdding(false);
-      }, 300); // Reducido de 400 a 300
+      }, 300);
 
       return () => clearTimeout(resetTimer);
-    }, 150); // Reducido de 200 a 150
+    }, 150);
 
     return () => clearTimeout(successTimer);
   };
@@ -128,12 +132,14 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
 
   const getCardStyles = () => {
     const baseStyles =
-      'product-card relative flex flex-col overflow-hidden rounded-xl cursor-pointer';
+      'product-card relative flex flex-col overflow-hidden rounded-xl cursor-pointer touch-manipulation h-full';
 
     if (mode() === 'order') {
       return cn(
         baseStyles,
-        'border-2 touch-enhanced bg-gradient-to-b from-background to-card',
+        'border-2',
+        isTouch() && 'touch-optimized',
+        'bg-gradient-to-b from-background to-card',
         isAdding() && 'adding',
         showSuccess() && 'success',
         props.class
@@ -144,15 +150,18 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
     return cn(baseStyles, 'border bg-card', 'border-border shadow-sm manage-mode', props.class);
   };
 
-  // Cleanup effect para timers
-  onMount(() => {
-    onCleanup(() => {
-      // Cleanup any pending timers
-    });
-  });
+  // Animation props based on performance
+  const cardAnimation = () => {
+    if (!perf.enableAnimations || isTouch()) return {};
+    return {
+      whileHover: { scale: 1.02 },
+      whileTap: { scale: 0.98 },
+      transition: { duration: perf.transitionDuration },
+    };
+  };
 
   return (
-    <button
+    <Motion.button
       type="button"
       class={getCardStyles()}
       onClick={handleClick}
@@ -162,6 +171,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
           handleClick();
         }
       }}
+      {...cardAnimation()}
     >
       {/* Image Section */}
       <div
@@ -180,7 +190,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
         )}
 
         {/* Emoji/Icon si es imagen SVG fallback */}
-        {!isRealImage() && (
+        <Show when={!isRealImage()}>
           <div
             class={cn(
               'product-icon flex items-center justify-center h-full',
@@ -188,21 +198,25 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
               isAdding() && 'adding'
             )}
           >
-            {props.product.icon ? <Dynamic component={props.product.icon} /> : '🍽️'}
+            {props.product.icon && typeof props.product.icon === 'function' ? (
+              <Dynamic component={props.product.icon} />
+            ) : (
+              <span>{props.product.icon || '🍽️'}</span>
+            )}
           </div>
-        )}
+        </Show>
 
         {/* Category badge */}
-        {showCategory() && props.product.category && (
+        <Show when={showCategory() && props.product.category}>
           <div class="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
             {props.product.category}
           </div>
-        )}
+        </Show>
 
         {/* Action button - top right */}
         <div class="absolute top-2 right-2">
           {mode() === 'order' ? (
-            <div
+            <Motion.div
               class={cn(
                 'action-btn rounded-full p-2 shadow-2xl',
                 showSuccess()
@@ -211,20 +225,27 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
                     ? 'bg-primary text-primary-foreground adding'
                     : 'bg-accent text-accent-foreground'
               )}
+              animate={
+                perf.enableAnimations
+                  ? showSuccess()
+                    ? { rotate: 180, scale: 1.1 }
+                    : isAdding()
+                      ? { scale: 1.15 }
+                      : {}
+                  : {}
+              }
+              transition={{ duration: perf.transitionDuration }}
             >
-              {showSuccess() ? (
+              <Show when={showSuccess()} fallback={<Plus class="w-4 h-4" strokeWidth={2.5} />}>
                 <Check class="w-4 h-4" strokeWidth={3} />
-              ) : (
-                <Plus class="w-4 h-4" strokeWidth={2.5} />
-              )}
-            </div>
+              </Show>
+            </Motion.div>
           ) : (
             // Mode 'manage' - show favorite star
-            props.onFavoriteToggle && (
-              <Button
-                variant="ghost"
-                size="sm"
-                class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+            <Show when={props.onFavoriteToggle}>
+              <button
+                type="button"
+                class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm rounded-md transition-all duration-150"
                 onClick={handleFavoriteClick}
               >
                 <Star
@@ -233,11 +254,12 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
                     isPinned() ? 'text-warning fill-warning' : 'text-muted-foreground'
                   )}
                 />
-              </Button>
-            )
+              </button>
+            </Show>
           )}
         </div>
       </div>
+
       {/* Product Info Section */}
       <div
         class={cn(
@@ -247,16 +269,18 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
       >
         {/* Product Name */}
         <div class={cn(mode() === 'order' ? 'mb-2' : 'mb-1')}>
-          <h3
+          <Motion.h3
             class={cn(
               'font-extrabold line-clamp-2 leading-tight',
               mode() === 'order' ? 'text-sm mb-0.5' : 'text-xs',
               isAdding() ? 'text-primary' : 'text-foreground'
             )}
+            animate={perf.enableAnimations && isAdding() ? { color: 'hsl(var(--success))' } : {}}
+            transition={{ duration: perf.transitionDuration }}
           >
             {props.product.name}
-          </h3>
-          {props.product.brand && (
+          </Motion.h3>
+          <Show when={props.product.brand}>
             <p
               class={cn(
                 'text-muted-foreground font-medium opacity-90',
@@ -265,12 +289,16 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
             >
               {props.product.brand}
             </p>
-          )}
+          </Show>
         </div>
 
         {/* Price Section */}
         <div class="flex items-end justify-between">
-          <div class={cn('product-price flex flex-col', isAdding() && 'adding')}>
+          <Motion.div
+            class={cn('product-price flex flex-col', isAdding() && 'adding')}
+            animate={perf.enableAnimations && isAdding() ? { scale: 1.08 } : {}}
+            transition={{ duration: perf.transitionDuration }}
+          >
             <span
               class={cn(
                 'font-black tracking-tight',
@@ -280,29 +308,33 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
             >
               {props.product.price.toFixed(2)}€
             </span>
-            {mode() === 'order' && (
+            <Show when={mode() === 'order'}>
               <span class="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
                 unidad
               </span>
-            )}
-          </div>
+            </Show>
+          </Motion.div>
 
           {/* Stock indicator para mode order */}
-          {mode() === 'order' && props.product.stock !== undefined && props.product.stock < 10 && (
+          <Show
+            when={
+              mode() === 'order' && props.product.stock !== undefined && props.product.stock < 10
+            }
+          >
             <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
               <span class="text-xs font-bold text-warning">Quedan {props.product.stock}</span>
             </div>
-          )}
+          </Show>
 
           {/* Category info para mode manage */}
-          {mode() === 'manage' && props.product.category && (
+          <Show when={mode() === 'manage' && props.product.category}>
             <div class="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
               {props.product.category}
             </div>
-          )}
+          </Show>
         </div>
       </div>
-    </button>
+    </Motion.button>
   );
 }
 

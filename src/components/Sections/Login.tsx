@@ -1,11 +1,21 @@
 import { Motion, Presence } from '@motionone/solid';
 import { Loader2 } from 'lucide-solid';
-import { createEffect, createMemo, createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js';
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  type JSX,
+  onCleanup,
+  onMount,
+  Show,
+} from 'solid-js';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useResponsive } from '@/hooks/useResponsive';
 import { config } from '@/lib/config';
 import type User from '@/models/User';
+import { isTauri } from '@/services/platform';
 
 /**
  * Debug test user for development
@@ -16,7 +26,7 @@ const DEBUG_TEST_USER: User = {
   id: 0,
   name: 'Test',
   pin: '1111',
-  profilePicture: ''
+  profilePicture: '',
 };
 
 interface LoginProps {
@@ -30,7 +40,6 @@ const Login = (props: LoginProps) => {
   const [error, setError] = createSignal('');
   const [currentTime, setCurrentTime] = createSignal(new Date());
   const [isLoading, setIsLoading] = createSignal(false);
-  const [isTauri, setIsTauri] = createSignal(false);
   const responsive = useResponsive();
 
   // Include debug test user when DEBUG_MODE is enabled
@@ -92,31 +101,6 @@ const Login = (props: LoginProps) => {
       handlePinSubmit();
     }
   };
-
-  // Check if we're in Tauri environment after component mounts
-  onMount(() => {
-    const checkTauriEnvironment = () => {
-      const isInTauri =
-        typeof window !== 'undefined' &&
-        ((window as unknown as { __TAURI__?: unknown }).__TAURI__ !== undefined ||
-          (window as unknown as { __TAURI_IPC__?: unknown }).__TAURI_IPC__ !== undefined ||
-          window.location.protocol === 'tauri:' ||
-          // Additional check for Tauri v2
-          (window as unknown as { __TAURI_INVOKE__?: unknown }).__TAURI_INVOKE__ !== undefined ||
-          // Check if running in Tauri webview (common user agent patterns)
-          window.navigator.userAgent.includes('Tauri') ||
-          window.navigator.userAgent.includes('tauri'));
-
-      setIsTauri(isInTauri);
-    };
-
-    checkTauriEnvironment();
-
-    // Check again after a short delay to ensure Tauri APIs are loaded
-    const timeoutId = setTimeout(checkTauriEnvironment, 500);
-
-    onCleanup(() => clearTimeout(timeoutId));
-  });
 
   onMount(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);

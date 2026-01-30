@@ -60,6 +60,7 @@ import { Switch as SwitchUI } from '@/components/ui/switch.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { toast } from '@/components/ui/use-toast.ts';
 import VersionInfo from '@/components/VersionInfo';
+import { useAppTheme } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
 import type User from '@/models/User.ts';
@@ -78,8 +79,6 @@ type SettingsPanelProps = {
   setSelectedUser: (user: User) => void;
   users: User[];
   setUsers: (users: User[]) => void;
-  isDarkMode: boolean;
-  toggleDarkMode: () => void;
   thermalPrinterOptions: ThermalPrinterServiceOptions;
   handleThermalPrinterOptionsChange: (options: ThermalPrinterServiceOptions) => void;
   forceAboutTab?: boolean;
@@ -110,6 +109,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     setLicenseStatus,
   } = store;
   const { restartOnboarding } = useOnboardingContext();
+  const appTheme = useAppTheme();
 
   const [isUserDialogOpen, setIsUserDialogOpen] = createSignal(false);
   const [editingUser, setEditingUser] = createSignal<User | null>(null);
@@ -371,8 +371,8 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                       </div>
                       <SwitchUI
                         id="darkMode"
-                        checked={props.isDarkMode}
-                        onChange={props.toggleDarkMode}
+                        checked={appTheme.effectiveMode() === 'dark'}
+                        onChange={() => appTheme.toggleMode()}
                       />
                     </div>
 

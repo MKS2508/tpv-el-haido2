@@ -14,6 +14,7 @@ import { createEffect, createSignal, onCleanup, onMount } from 'solid-js';
 import { config } from '@/lib/config';
 import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
 import type { AEATSidecarState } from '@/models/AEAT';
+import { isTauri } from '@/services/platform';
 
 // ==================== Types ====================
 
@@ -42,13 +43,6 @@ const DEFAULT_MAX_RESTART_ATTEMPTS = config.aeat.maxRestartAttempts;
 const STARTUP_TIMEOUT = config.aeat.startupTimeout;
 
 // ==================== Utilities ====================
-
-/**
- * Verifica si estamos en entorno Tauri
- */
-const isTauri = (): boolean => {
-  return typeof window !== 'undefined' && '__TAURI__' in window;
-};
 
 /**
  * Espera a que el servicio esté listo

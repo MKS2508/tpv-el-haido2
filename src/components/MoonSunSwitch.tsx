@@ -1,13 +1,12 @@
 import type { Component } from 'solid-js';
+import { useAppTheme } from '@/lib/theme-context';
 import styles from './MoonSunSwitch.module.css';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-type DarkModeToggleProps = {
-  isDarkMode: boolean;
-  toggleDarkMode: () => void;
+interface MoonSunSwitchProps {
   size?: Size;
-};
+}
 
 const sizeClasses: Record<Size, string> = {
   xs: 'w-8 h-4',
@@ -27,7 +26,9 @@ const containerSizeClasses: Record<Size, string> = {
   '2xl': 'w-32 h-32',
 };
 
-const MoonSunSwitch: Component<DarkModeToggleProps> = (props) => {
+const MoonSunSwitch: Component<MoonSunSwitchProps> = (props) => {
+  const appTheme = useAppTheme();
+  const isDarkMode = () => appTheme.effectiveMode() === 'dark';
   const switchSize = () => sizeClasses[props.size ?? 'md'];
   const containerSize = () => containerSizeClasses[props.size ?? 'md'];
 
@@ -39,8 +40,8 @@ const MoonSunSwitch: Component<DarkModeToggleProps> = (props) => {
         <input
           type="checkbox"
           class="opacity-0 w-0 h-0"
-          checked={props.isDarkMode}
-          onInput={() => props.toggleDarkMode()}
+          checked={isDarkMode()}
+          onInput={() => appTheme.toggleMode()}
         />
         <span
           class={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-600 ease-out overflow-hidden z-[1] rounded-full`}

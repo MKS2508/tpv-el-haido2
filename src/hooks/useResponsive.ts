@@ -62,13 +62,9 @@ export function useResponsive(): ResponsiveGetters {
   const isMobile = createMemo(() => width() < BREAKPOINTS.mobile);
   const isTablet = createMemo(() => width() >= BREAKPOINTS.mobile && width() < BREAKPOINTS.tablet);
   const isLaptop = createMemo(() => width() >= BREAKPOINTS.tablet && width() < BREAKPOINTS.laptop);
-  const isDesktop = createMemo(
-    () => width() >= BREAKPOINTS.laptop && width() < BREAKPOINTS.desktop
-  );
-  const isLargeDesktop = createMemo(
-    () => width() >= BREAKPOINTS.desktop && width() < BREAKPOINTS.largeDesktop
-  );
-  const isUltraWide = createMemo(() => width() >= BREAKPOINTS.ultraWide);
+  const isDesktop = createMemo(() => width() >= BREAKPOINTS.laptop);
+  const isLargeDesktop = createMemo(() => width() >= BREAKPOINTS.desktop);
+  const isUltraWide = createMemo(() => width() >= BREAKPOINTS.largeDesktop);
   const breakpoint = createMemo(() => getBreakpoint(width()));
 
   createEffect(() => {

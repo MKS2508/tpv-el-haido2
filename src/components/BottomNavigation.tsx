@@ -36,7 +36,7 @@ function BottomNavigation(props: BottomNavigationProps) {
       )}
       {...others}
     >
-      <div class="flex w-full items-center justify-evenly px-2 py-2 safe-area-bottom">
+      <div class="flex w-full items-center justify-evenly gap-1 px-2 py-2 safe-area-bottom">
         <For each={local.menuItems}>
           {(item) => {
             const isActive = () => local.activeSection === item.id;
@@ -46,7 +46,7 @@ function BottomNavigation(props: BottomNavigationProps) {
               <Motion.button
                 onClick={() => local.setActiveSection(item.id)}
                 class={cn(
-                  'relative flex flex-col items-center justify-center min-h-[60px] px-3 py-2 rounded-xl transition-all duration-200',
+                  'relative flex flex-col items-center justify-center gap-1 min-h-[60px] px-3 py-2 rounded-xl transition-all duration-200',
                   'touch-manipulation select-none',
                   'active:scale-95 hover:bg-accent/10',
                   isActive()
@@ -111,7 +111,7 @@ function BottomNavigation(props: BottomNavigationProps) {
                 {/* Label */}
                 <Motion.span
                   class={cn(
-                    'text-xs font-medium mt-1 transition-opacity z-10',
+                    'text-xs font-medium transition-opacity z-10',
                     isActive() ? 'opacity-100' : 'opacity-70'
                   )}
                   animate={{

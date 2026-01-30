@@ -56,7 +56,24 @@
       "Bash(export:*)",
       "Bash(RWRTIU4ES50TIuj15TqtqdXx/+ZPOrsIutgA1Nx4LKXCqe997jlvyOkf\"\n\nTambién se corrigió el archivo .pub que tenía contenido incorrecto.\n</technical>\n\n<changelog>\n- **Corregido**: Formato de clave pública para Tauri Updater\n- **Solucionado**: Error de firma \"Missing encoded key in public key\"\n- **Generado**: Archivo .sig para updater \\(TPV El Haido.app.tar.gz.sig\\)\n- **Verificado**: Build con firma funciona correctamente\n</changelog>\nEOF\n\\)\")",
       "Bash(ls:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(bun biome check:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(bun run check)",
+      "Bash(sips:*)",
+      "Bash(bun run lint:fix:*)",
+      "Bash(bun run build:pwa:*)",
+      "Bash(echo:*)",
+      "Bash(bun install:*)",
+      "Bash(bun run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(comm:*)",
+      "WebFetch(domain:fumadocs.dev)",
+      "WebFetch(domain:www.fumadocs.dev)",
+      "WebFetch(domain:into.md)",
+      "Bash(docker --version:*)",
+      "Bash(docker compose config:*)"
     ]
   }
 }

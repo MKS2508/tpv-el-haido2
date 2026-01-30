@@ -11,6 +11,7 @@ import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter';
 import type User from '@/models/User';
 import { HttpStorageAdapter } from '@/services/http-storage-adapter';
 import { IndexedDbStorageAdapter } from '@/services/indexeddb-storage-adapter';
+import { isTauri } from '@/services/platform';
 import { SqliteStorageAdapter } from '@/services/sqlite-storage-adapter';
 import type { IStorageAdapter, StorageMode } from '@/services/storage-adapter.interface';
 import type { LicenseStatus } from '@/types/license';
@@ -66,11 +67,6 @@ export interface AppState {
 const sqliteAdapter = new SqliteStorageAdapter();
 const httpAdapter = new HttpStorageAdapter();
 const indexedDbAdapter = new IndexedDbStorageAdapter();
-
-// Check if running in Tauri environment
-const isTauri = (): boolean => {
-  return typeof window !== 'undefined' && '__TAURI__' in window;
-};
 
 // Get storage adapter based on mode
 const getStorageAdapterForMode = (mode: StorageMode): IStorageAdapter => {
@@ -175,7 +171,10 @@ function createAppStore() {
 
   // === SETTERS ===
 
-  const setUsers = (users: User[]) => setState('users', () => [...users]);
+  const setUsers = (users: User[]) => {
+    // Ensure we create a new array reference to trigger reactivity
+    setState('users', users.slice());
+  };
 
   const setSelectedUser = (user: User | null) => setState('selectedUser', user);
 
@@ -184,29 +183,34 @@ function createAppStore() {
   const setSelectedOrderId = (orderId: number | null) => {
     batch(() => {
       setState('selectedOrderId', orderId);
-      setState('selectedOrder', () => state.activeOrders.find((o) => o.id === orderId) || null);
+      const foundOrder = state.activeOrders.find((o) => o.id === orderId) || null;
+      setState('selectedOrder', foundOrder);
     });
   };
 
   const setThermalPrinterOptions = (options: ThermalPrinterServiceOptions | null) =>
     setState('thermalPrinterOptions', options);
 
-  const setTables = (tables: ITable[]) => setState('tables', () => [...tables]);
+  const setTables = (tables: ITable[]) => {
+    setState('tables', tables.slice());
+  };
 
-  const setCategories = (categories: Category[]) => setState('categories', () => [...categories]);
+  const setCategories = (categories: Category[]) => {
+    setState('categories', categories.slice());
+  };
 
   const setProducts = (products: Product[]) => {
     const uniqueProducts = products.filter(
       (product, index, self) => index === self.findIndex((p) => p.id === product.id)
     );
-    setState('products', () => [...uniqueProducts]);
+    setState('products', uniqueProducts.slice());
   };
 
   const setCustomers = (customers: Customer[]) => {
     const uniqueCustomers = customers.filter(
       (customer, index, self) => index === self.findIndex((c) => c.id === customer.id)
     );
-    setState('customers', () => [...uniqueCustomers]);
+    setState('customers', uniqueCustomers.slice());
   };
 
   const addCustomer = async (customer: Customer) => {
@@ -279,16 +283,16 @@ function createAppStore() {
     );
   };
 
-  const setOrderHistory = (orderHistory: Order[]) => setState('orderHistory', () => [...orderHistory]);
+  const setOrderHistory = (orderHistory: Order[]) => {
+    setState('orderHistory', orderHistory.slice());
+  };
 
   const setActiveOrders = (activeOrders: Order[]) => {
-    // Ensure we always have a valid array and create a new reference
-    const orders = Array.isArray(activeOrders) ? activeOrders : [];
-    setState('activeOrders', orders);
+    setState('activeOrders', activeOrders.slice());
   };
 
   const setRecentProducts = (recentProducts: Product[]) =>
-    setState('recentProducts', () => [...recentProducts]);
+    setState('recentProducts', recentProducts.slice());
 
   const setPaymentMethod = (method: string) => setState('paymentMethod', method);
 
@@ -341,19 +345,22 @@ function createAppStore() {
     const dataService = storageAdapter();
     console.log(`[handleTableChange] Changing to table ${tableId}`);
 
+    // Only find existing orders with items (active orders)
     const existingOrder = state.activeOrders.find(
-      (order) => order.tableNumber === tableId && order.status === 'inProgress'
+      (order) =>
+        order.tableNumber === tableId && order.status === 'inProgress' && order.items.length > 0
     );
 
     if (existingOrder) {
       console.log(
-        `[handleTableChange] Found existing order ${existingOrder.id} for table ${tableId}`
+        `[handleTableChange] Found existing active order ${existingOrder.id} for table ${tableId}`
       );
       batch(() => {
         setState('selectedOrderId', existingOrder.id);
         setState('selectedOrder', existingOrder);
       });
     } else {
+      // Look for empty orders to reuse
       const emptyOrdersWithoutTable = state.activeOrders.filter(
         (order) =>
           order.items.length === 0 && (order.tableNumber === 0 || order.tableNumber === null)
@@ -401,9 +408,15 @@ function createAppStore() {
 
         try {
           await dataService.createOrder(newOrder);
-          setState('activeOrders', () => [...state.activeOrders, newOrder]);
-          setState('selectedOrderId', newOrder.id);
-          setState('selectedOrder', newOrder);
+          batch(() => {
+            setState(
+              produce((s) => {
+                s.activeOrders.push(newOrder);
+              })
+            );
+            setState('selectedOrderId', newOrder.id);
+            setState('selectedOrder', newOrder);
+          });
         } catch (error) {
           console.error('[handleTableChange] Error creating new order:', error);
         }
@@ -443,8 +456,10 @@ function createAppStore() {
       produce((s) => {
         s.activeOrders = s.activeOrders.filter((o) => o.id !== orderId);
         s.orderHistory = s.orderHistory.filter((o) => o.id !== orderId);
+        // Clear selection if the closed order was selected, don't auto-select another
         if (s.selectedOrderId === orderId) {
-          s.selectedOrderId = s.activeOrders.length > 0 ? s.activeOrders[0].id : null;
+          s.selectedOrderId = null;
+          s.selectedOrder = null;
         }
       })
     );

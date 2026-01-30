@@ -1,5 +1,5 @@
-import { Menu, Submenu, MenuItem } from '@tauri-apps/api/menu';
 import { emit } from '@tauri-apps/api/event';
+import { Menu, MenuItem, Submenu } from '@tauri-apps/api/menu';
 
 export async function setupNativeMenu() {
   try {

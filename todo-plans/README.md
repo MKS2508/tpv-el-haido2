@@ -1,196 +1,347 @@
-# 📋 TPV El Haido - Plan de Arquitectura PWA
+# TPV El Haido - Plan PWA + Tauri Mobile
 
-> **Fecha:** 2026-01-27
+> **Actualizado:** 2026-01-29
 > **Estado:** Listo para implementar
-> **Tiempo estimado:** 3h 30m
+> **Tiempo estimado:** 4h total
 
 ---
 
-## 🎯 Objetivo
+## Objetivo
 
-Separar el frontend para que pueda funcionar como **PWA web standalone** (usando IndexedDB) **y** como **app nativa Tauri** (usando SQLite), sin duplicar código.
-
----
-
-## 🏗️ Estado Actual
-
-### ✅ Lo que funciona bien:
-
-1. **Interfaz de almacenamiento unificada**
-   - `IStorageAdapter` con métodos comunes para productos, categorías, órdenes
-   - Abstracción limpia que permite múltiples implementaciones
-
-2. **3 adaptadores implementados**
-   - `IndexedDbStorageAdapter` → PWA web
-   - `SqliteStorageAdapter` → Tauri nativa
-   - `HttpStorageAdapter` → Backend remoto
-
-3. **Detección de entorno**
-   - `isTauri()` en `utils/environment.ts`
-   - Funciona correctamente
-
-4. **Cambio dinámico de storage mode**
-   - `setStorageMode(mode)` en store.ts
-   - Switch dinámico entre `sqlite`, `http`, `indexeddb`
-   - `getStorageAdapterForMode(mode)` que retorna el adapter correcto
-
-5. **Persistencia de configuración**
-   - localStorage guarda el modo de almacenamiento
-   - Funciones de debouncing para evitar escrituras redundantes
-
-### ⚠️ Problemas Identificados:
-
-1. **Uso disperso de Tauri APIs**
-   - Componentes llaman directamente a `@tauri-apps/plugin-*` en múltiples lugares
-   - No hay abstracción para platform-specific features (printer, updater, file dialogs)
-   - Difícil de probar en modo web
-
-2. **Los servicios NO usan el storage adapter**
-   - `ProductService`, `CategoriesService`, `OrderService` hacen llamadas HTTP directas
-   - No pasan por `UnifiedDataService` (que existe pero no se usa)
-   - Lógica duplicada en servicios
-
-3. **Lógica de negocio mezclada con infraestructura**
-   - Lógica de órdenes está en el store (Zustand)
-   - Servicios tienen algo de lógica pero no son la fuente de verdad
-   - Responsabilidades poco claras
-
-4. **No hay PWA-ready setup**
-   - Sin service worker
-   - Sin `manifest.json` para PWA
-   - Sin configuración para offline-first en web
-
-5. **La detección de entorno existe pero no se usa consistentemente**
-   - Hay `isTauri()` en environment.ts
-   - Pero muchos componentes ignoran la detección
+Hacer que el frontend funcione en **3 plataformas**:
+1. **Desktop** (Tauri + SQLite) - Ya funciona ✅
+2. **PWA Web** (IndexedDB) - Arquitectura lista, falta setup
+3. **Tauri Mobile** (iOS/Android) - Preparar base
 
 ---
 
-## 🏗️ Arquitectura Propuesta
+## Estado Actual (Análisis Real del Código)
 
-### Diagrama de Capas
+### ✅ Lo que funciona bien
+
+| Componente | Estado | Notas |
+|------------|--------|-------|
+| **SQLite embebido** | ✅ Completo | rusqlite en Rust, 25/25 métodos |
+| **IndexedDB Adapter** | ✅ Completo | 25/25 métodos, PWA-ready |
+| **HTTP Adapter** | ✅ Parcial | 19/25 métodos, fallback automático |
+| **Storage switching** | ✅ Funciona | Runtime switch vía store |
+| **PlatformService interface** | ✅ Definida | 8 métodos en interface |
+| **WebPlatformService** | ✅ Implementada | Fallbacks para web |
+| **AEAT Sidecar** | ✅ Funciona | Para facturas (solo desktop) |
+
+### ⚠️ Problemas Identificados
+
+#### 1. `isTauri()` duplicado en 5 lugares
 
 ```
-┌───────────────────────────────────────────────────────┐
-│                   Componentes UI                     │
-│                      (React)                         │
-│                  (Cards, Dialogs, etc.)             │
-└────────────────────┬──────────────────────────────────┘
-                     │
-        ┌────────────▼─────────────┐
-        │    Store (Zustand)       │
-        │  (Estado de aplicación)  │
-        └────────────┬──────────────┘
-                     │
-        ┌────────────▼─────────────┐
-        │  UnifiedDataService     │
-        │  (Capa principal datos)   │
-        └────────────┬──────────────┘
-                     │
-        ┌────────────▼─────────────┐
-        │   IStorageAdapter         │
-        └────────────┬──────────────┘
-                │           │
-         ┌──────▼──────┐ ┌──────▼──────┐
-         │  IndexedDB  │ │   SQLite     │
-         │   (PWA)     │ │  (Tauri)    │
-         └─────────────┘ └──────────────┘
-                │           │
-               ┌───────▼─────────┐
-               │    HTTP         │
-               │  (Backend)      │
-               └────────────────┘
+src/services/platform/PlatformDetector.ts  ← Debería ser el único
+src/utils/environment.ts                   ← Duplicado
+src/store/store.ts                         ← Función local
+src/hooks/useAEATSidecar.ts                ← Función local
+src/services/http-storage-adapter.ts       ← Check diferente (__TAURI_IPC__)
 ```
 
-### Nueva Estructura de Carpetas
+**Impacto:** Inconsistencia y código duplicado.
+
+#### 2. `getPlatformService()` existe pero NUNCA se usa
+
+```typescript
+// src/services/platform/index.ts
+export function getPlatformService(): PlatformService {
+  // Esta función existe pero 0 componentes la llaman
+}
+```
+
+**Impacto:** La abstracción existe pero nadie la usa. Los componentes siguen llamando a Tauri directamente.
+
+#### 3. TauriPlatformService tiene 6 stubs
+
+```typescript
+// src/services/platform/TauriPlatformService.ts
+async printTicket(order: Order): Promise<void> {
+  console.log('TODO: Implement printing'); // ← STUB
+}
+```
+
+**Métodos stub:** printTicket, printReceipt, openFileDialog, saveFileDialog, checkForUpdates, downloadAndInstall
+
+#### 4. 16 archivos con imports directos de Tauri
+
+| Acoplamiento | Archivos |
+|--------------|----------|
+| **Alto** | sqlite-storage-adapter.ts, thermal-printer.service.ts, LicenseDialog.tsx, LicenseStatus.tsx, LicenseSplashScreen.tsx |
+| **Medio** | useUpdater.ts, setupNativeMenu.ts, SettingsPanel.tsx |
+| **Bajo** | http-storage-adapter.ts (tiene fallback), VersionInfo.tsx, useScreenshot.ts |
+
+#### 5. PWA: 0% implementado
+
+- ❌ No existe `manifest.json`
+- ❌ No existe service worker
+- ❌ No hay iconos PWA (192, 512)
+- ❌ No hay `vite-plugin-pwa`
+- ✅ Meta tags básicos en index.html (viewport, theme-color)
+
+---
+
+## Arquitectura Propuesta
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Componentes UI                           │
+│                      (Solid.js)                             │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         │               │               │
+         ▼               ▼               ▼
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│ getPlatform │  │   Store     │  │  Services   │
+│  Service()  │  │  (Zustand)  │  │             │
+└──────┬──────┘  └──────┬──────┘  └─────────────┘
+       │                │
+       ▼                ▼
+┌─────────────┐  ┌─────────────┐
+│   Tauri     │  │  Storage    │
+│  Platform   │  │  Adapter    │
+│  Service    │  │             │
+└──────┬──────┘  └──────┬──────┘
+       │                │
+       ▼                ▼
+┌─────────────┐  ┌─────────────────────────────┐
+│   Web       │  │  SQLite │ HTTP │ IndexedDB  │
+│  Platform   │  │(Desktop)│(API) │   (PWA)    │
+│  Service    │  └─────────────────────────────┘
+└─────────────┘
+```
+
+---
+
+## Plan de Implementación
+
+### Fase 0: Consolidar isTauri (30 min) 🔴 CRÍTICO
+
+**Objetivo:** Una única fuente de verdad para detección de plataforma.
+
+| Archivo | Acción |
+|---------|--------|
+| `src/services/platform/PlatformDetector.ts` | Mantener como fuente única |
+| `src/store/store.ts` | Eliminar función local, importar de platform |
+| `src/hooks/useAEATSidecar.ts` | Eliminar función local, importar de platform |
+| `src/components/VersionInfo.tsx` | Usar `isPlatformTauri` export |
+| `src/components/Sections/Login.tsx` | Usar `isPlatformTauri` export |
+| `src/utils/environment.ts` | Re-exportar desde platform o deprecar |
+
+---
+
+### Fase 1: Conectar Platform Abstraction (1h 30min)
+
+**Objetivo:** Que `getPlatformService()` se use realmente.
+
+#### 1.1 Completar TauriPlatformService
+
+```typescript
+// src/services/platform/TauriPlatformService.ts
+
+// Delegar a servicios existentes:
+async printTicket(order: Order): Promise<void> {
+  await thermalPrinterService.printTicket(order);
+}
+
+async checkForUpdates(): Promise<void> {
+  const { check } = await import('@tauri-apps/plugin-updater');
+  const update = await check();
+  // ... lógica de useUpdater.ts
+}
+```
+
+#### 1.2 Migrar useUpdater
+
+```typescript
+// src/hooks/useUpdater.ts
+// ANTES: import { check } from '@tauri-apps/plugin-updater'
+// DESPUÉS:
+import { getPlatformService } from '@/services/platform';
+
+const platform = getPlatformService();
+await platform.checkForUpdates();
+```
+
+#### 1.3 Crear LicenseService
+
+```typescript
+// src/services/LicenseService.ts (nuevo)
+export class LicenseService {
+  async checkStatus(): Promise<LicenseStatus> {
+    if (isPlatformTauri()) {
+      return invoke('check_license_status');
+    }
+    // PWA: siempre válida o check remoto
+    return { valid: true, type: 'pwa' };
+  }
+}
+```
+
+---
+
+### Fase 2: PWA Setup (1h)
+
+#### 2.1 Crear manifest.json
+
+```json
+// public/manifest.json
+{
+  "name": "TPV El Haido",
+  "short_name": "TPV Haido",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
+```
+
+#### 2.2 Generar iconos
+
+```bash
+# Desde logo.svg generar:
+public/icons/icon-192.png
+public/icons/icon-512.png
+public/icons/icon-512-maskable.png
+public/icons/apple-touch-icon.png
+```
+
+#### 2.3 Instalar vite-plugin-pwa
+
+```bash
+bun add -D vite-plugin-pwa
+```
+
+```typescript
+// vite.config.ts
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig({
+  plugins: [
+    solid(),
+    tailwindcss(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}']
+      }
+    })
+  ]
+})
+```
+
+#### 2.4 Actualizar index.html
+
+```html
+<link rel="manifest" href="/manifest.json" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="TPV El Haido" />
+```
+
+---
+
+### Fase 3: Tauri Mobile Prep (1h)
+
+#### 3.1 Inicializar targets
+
+```bash
+bun tauri ios init
+bun tauri android init
+```
+
+#### 3.2 Añadir plugin SQL para mobile
+
+```toml
+# src-tauri/Cargo.toml
+[target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]
+tauri-plugin-sql = "2"
+```
+
+#### 3.3 AEAT Fallback
+
+El sidecar AEAT no funciona en mobile. Opciones:
+1. **API Remota:** Crear endpoint en servidor que haga la validación
+2. **Desactivar:** Skip en mobile (no crítico para uso básico)
+3. **Plugin nativo:** Reescribir en Rust puro (más trabajo)
+
+---
+
+## Checklist de Verificación
+
+### Fase 0 ✓
+- [ ] Solo existe UN `isTauri()` en todo el código
+- [ ] Todos los archivos importan de `@/services/platform`
+
+### Fase 1 ✓
+- [ ] TauriPlatformService no tiene TODOs
+- [ ] useUpdater usa getPlatformService()
+- [ ] LicenseService creado y usado en componentes
+
+### Fase 2 ✓
+- [ ] `bun run build` genera manifest.json
+- [ ] Service worker se registra
+- [ ] App instalable en Chrome/Safari
+- [ ] Lighthouse PWA score > 90
+
+### Fase 3 ✓
+- [ ] `bun tauri ios dev` funciona
+- [ ] `bun tauri android dev` funciona
+- [ ] SQLite funciona en mobile
+
+---
+
+## Quick Wins (Primeras victorias rápidas)
+
+| Tarea | Tiempo | Impacto |
+|-------|--------|---------|
+| Consolidar isTauri | 30 min | Elimina deuda técnica |
+| Crear manifest + iconos | 30 min | App instalable en browser |
+| vite-plugin-pwa | 15 min | Service worker automático |
+
+---
+
+## Archivos Clave
 
 ```
 src/
 ├── services/
-│   ├── platform/                    # NUEVO - Abstracción de plataforma
-│   │   ├── PlatformService.ts      # Interfaz para printer, dialogs, updater
-│   │   ├── PlatformDetector.ts      # Función isTauri()
-│   │   ├── WebPlatformService.ts    # Implementación PWA (stubs)
-│   │   └── TauriPlatformService.ts  # Implementación Tauri (wrapper real)
-│   ├── data/                        # NUEVO - Capa unificada de datos
-│   │   ├── UnifiedDataService.ts   # Constructor recibe IStorageAdapter
-│   │   └── DataMigrationService.ts # Migraciones entre adapters
-│   └── storage/                     # YA EXISTE
-│       ├── storage-adapter.interface.ts
-│       ├── indexeddb-storage-adapter.ts
-│       ├── http-storage-adapter.ts
-│       └── sqlite-storage-adapter.ts
-├── components/
-│   ├── Sections/
-│   │   └── thermal-printer.tsx   # MIGRAR a PlatformService
-│   ├── Settings/
-│   │   ├── Updater.tsx            # MIGRAR a PlatformService
-│   │   └── DataImport.tsx          # MIGRAR a PlatformService
-└── store/
-    └── store.ts                     # MIGRAR para usar PlatformService
+│   ├── platform/
+│   │   ├── PlatformService.ts      # Interface
+│   │   ├── TauriPlatformService.ts # Implementación Tauri
+│   │   ├── WebPlatformService.ts   # Implementación Web
+│   │   ├── PlatformDetector.ts     # isTauri() ÚNICO
+│   │   └── index.ts                # Factory getPlatformService()
+│   ├── storage/
+│   │   ├── storage-adapter.interface.ts
+│   │   ├── sqlite-storage-adapter.ts
+│   │   ├── http-storage-adapter.ts
+│   │   └── indexeddb-storage-adapter.ts
+│   └── LicenseService.ts           # NUEVO
+├── store/
+│   └── store.ts                    # Storage mode switching
+public/
+├── manifest.json                   # NUEVO
+├── icons/                          # NUEVO
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   └── icon-512-maskable.png
 ```
 
-### Principios de Diseño
-
-1. **Separación de Responsabilidades**
-   - **Store (Zustand)** → Estado de la aplicación
-   - **UnifiedDataService** → Capa principal de datos
-   - **PlatformService** → APIs específicas de plataforma
-   - **Componentes** → UI y lógica de presentación
-
-2. **Dependency Inversion**
-   - Los componentes no deberían depender de `@tauri-apps/plugin-*` directamente
-   - Deben depender de `PlatformService`
-   - `PlatformService` es un stub en modo PWA
-
-3. **Single Source of Truth**
-   - `UnifiedDataService` es la única interfaz para datos
-   - Store solo interactúa con `UnifiedDataService`
-   - Servicios viejos (`ProductService`, etc.) se deprecian
-
 ---
 
-## 🚀 Estrategia de Build
+## Referencias
 
-### Modo PWA Web
-- Build con Vite
-- Genera `manifest.json`
-- Genera `sw.js`
-- Despliegue en `/` o Vercel/Netlify
-- Usa `IndexedDbStorageAdapter` por defecto
-
-### Modo Tauri Nativo
-- Build con `npm run tauri build`
-- Genera `.deb`, `.rpm`, `.AppImage`
-- Usa `SqliteStorageAdapter` por defecto
-- Acceso a APIs nativas vía `TauriPlatformService`
-
-### Compartición de Código
-- Componentes UI son 100% compartidos
-- Lógica de negocio compartida
-- Solo cambia la implementación de `PlatformService` y el `StorageAdapter`
-- `UnifiedDataService` es idéntico en ambos modos
-
----
-
-## 📝 Lista de Tareas
-
-Ver archivo `todo-plans/pwa-architecture-plan.json` para el plan detallado con:
-- Tareas específicas
-- Estimados de tiempo
-- Dependencias
-- Estrategia de paralelización
-
----
-
-## ✅ Checklist de Verificación
-
-- [ ] PWA puede desplegarse standalone
-- [ ] PWA usa IndexedDB en modo offline
-- [ ] Switch entre storage modes transparente para el usuario
-- [ ] Tauri usa `TauriPlatformService` para todas las APIs específicas
-- [ ] No hay llamadas directas a `@tauri-apps/plugin-*` en componentes
-- [ ] `UnifiedDataService` es la única fuente de verdad de datos
-- [ ] `PlatformService` es un stub limpio en modo PWA
-- [ ] Service worker cachea recursos estáticos
-- [ ] No hay duplicación de lógica de negocio
+- **Plan JSON:** `todo-plans/pwa-architecture-plan.json`
+- **CLAUDE.md:** Documentación actualizada del proyecto
+- **Tauri Mobile:** https://v2.tauri.app/guides/mobile/
+- **Vite PWA:** https://vite-pwa-org.netlify.app/
