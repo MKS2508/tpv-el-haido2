@@ -73,7 +73,12 @@
       "WebFetch(domain:www.fumadocs.dev)",
       "WebFetch(domain:into.md)",
       "Bash(docker --version:*)",
-      "Bash(docker compose config:*)"
+      "Bash(docker compose config:*)",
+      "Bash(docker build:*)",
+      "Bash(docker run:*)",
+      "Bash(docker compose:*)",
+      "WebFetch(domain:tweakcn.com)",
+      "Bash(docker ps:*)"
     ]
   }
 }

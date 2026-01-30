@@ -1,5 +1,15 @@
-import { Check, Download, Moon, Palette, Sun, Upload } from 'lucide-solid';
-import { createSignal, For, Show } from 'solid-js';
+import {
+  Check,
+  Download,
+  ExternalLink,
+  Loader2,
+  Moon,
+  Palette,
+  RefreshCw,
+  Sun,
+  Upload,
+} from 'lucide-solid';
+import { createSignal, For, onMount, Show } from 'solid-js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +29,16 @@ import { useAppTheme } from '@/lib/theme-context';
 import { PRESET_THEMES } from '@/lib/themes/preset-themes';
 import type { ThemeConfig } from '@/lib/themes/theme-config';
 
+interface TweakCNTheme {
+  name: string;
+  label: string;
+  category?: string;
+  cssVars?: {
+    light?: Record<string, string>;
+    dark?: Record<string, string>;
+  };
+}
+
 interface ThemeSelectorProps {
   class?: string;
 }
@@ -32,6 +52,77 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
   const [touchModeEnabled, setTouchModeEnabled] = createSignal(
     document.documentElement.classList.contains('touch-mode')
   );
+  const [tweakCNThemes, setTweakCNThemes] = createSignal<TweakCNTheme[]>([]);
+  const [isLoadingTweakCN, setIsLoadingTweakCN] = createSignal(false);
+  const [showTweakCNThemes, setShowTweakCNThemes] = createSignal(false);
+
+  // Load TweakCN themes on demand
+  const loadTweakCNThemes = async () => {
+    if (tweakCNThemes().length > 0) {
+      setShowTweakCNThemes(!showTweakCNThemes());
+      return;
+    }
+
+    setIsLoadingTweakCN(true);
+    try {
+      const response = await fetch('https://tweakcn.com/r/registry.json');
+      if (!response.ok) throw new Error('Failed to fetch registry');
+
+      const data = await response.json();
+      const themes = data.themes || data.items || [];
+      setTweakCNThemes(themes);
+      setShowTweakCNThemes(true);
+
+      toast({
+        title: 'Temas cargados',
+        description: `Se encontraron ${themes.length} temas disponibles`,
+      });
+    } catch (error) {
+      console.error('Error loading TweakCN themes:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los temas de TweakCN',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingTweakCN(false);
+    }
+  };
+
+  const handleInstallTweakCNTheme = async (theme: TweakCNTheme) => {
+    setIsImporting(true);
+    try {
+      // Fetch individual theme data
+      const themeUrl = `https://tweakcn.com/r/themes/${theme.name}.json`;
+      const response = await fetch(themeUrl);
+      if (!response.ok) throw new Error('Failed to fetch theme');
+
+      const themeData = await response.json();
+
+      const themeManager = appTheme.themeManager();
+      if (themeManager) {
+        await themeManager.installTheme(
+          { name: themeData.name || theme.name, cssVars: themeData.cssVars || {} },
+          themeUrl
+        );
+        await appTheme.setTheme(themeData.name || theme.name);
+
+        toast({
+          title: 'Tema instalado',
+          description: `"${theme.label || theme.name}" instalado correctamente`,
+        });
+      }
+    } catch (error) {
+      console.error('Error installing theme:', error);
+      toast({
+        title: 'Error',
+        description: `No se pudo instalar "${theme.label || theme.name}"`,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const isDarkMode = () => appTheme.effectiveMode() === 'dark';
   const currentTheme = () => appTheme.currentTheme();
@@ -193,15 +284,69 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
 
           {/* Import Theme */}
           <div class="space-y-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsImportDialogOpen(true)}
-              class="w-full touch-target touch-feedback"
-            >
-              <Upload class="mr-2 h-4 w-4" />
-              Importar desde TweakCN
-            </Button>
+            <div class="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsImportDialogOpen(true)}
+                class="flex-1 touch-target touch-feedback"
+              >
+                <Upload class="mr-2 h-4 w-4" />
+                Importar URL
+              </Button>
+              <Button
+                variant="outline"
+                onClick={loadTweakCNThemes}
+                disabled={isLoadingTweakCN()}
+                class="flex-1 touch-target touch-feedback"
+              >
+                <Show when={isLoadingTweakCN()} fallback={<ExternalLink class="mr-2 h-4 w-4" />}>
+                  <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+                </Show>
+                {showTweakCNThemes() ? 'Ocultar' : 'Ver'} TweakCN
+              </Button>
+            </div>
           </div>
+
+          {/* TweakCN Themes Gallery */}
+          <Show when={showTweakCNThemes() && tweakCNThemes().length > 0}>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h4 class="font-medium">Galería TweakCN ({tweakCNThemes().length} temas)</h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setTweakCNThemes([]);
+                    loadTweakCNThemes();
+                  }}
+                  class="h-8 px-2"
+                >
+                  <RefreshCw class="h-3 w-3" />
+                </Button>
+              </div>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-1">
+                <For each={tweakCNThemes()}>
+                  {(theme) => (
+                    <Button
+                      variant="outline"
+                      class="h-auto py-3 px-3 flex flex-col items-start text-left touch-feedback"
+                      onClick={() => handleInstallTweakCNTheme(theme)}
+                      disabled={isImporting()}
+                    >
+                      <span class="font-medium text-sm truncate w-full">
+                        {theme.label || theme.name}
+                      </span>
+                      <Show when={theme.category}>
+                        <Badge variant="secondary" class="mt-1 text-xs">
+                          {theme.category}
+                        </Badge>
+                      </Show>
+                    </Button>
+                  )}
+                </For>
+              </div>
+            </div>
+          </Show>
 
           {/* Theme Preview Controls */}
           <Show when={previewTheme()}>

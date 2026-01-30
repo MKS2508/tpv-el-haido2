@@ -4,10 +4,18 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
 
-# Copy source and build
+# Install dependencies without running postinstall scripts
+# (fumadocs-mdx postinstall requires source files which aren't copied yet)
+RUN bun install --frozen-lockfile --ignore-scripts
+
+# Copy source files
 COPY . .
+
+# Run postinstall manually now that source files are available
+RUN bun run postinstall
+
+# Build the static site
 RUN bun run build
 
 # Production stage - Nginx for static serving

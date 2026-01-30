@@ -2,11 +2,51 @@ import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { render } from 'solid-js/web';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ErrorBoundary';
 import { ThemeProvider } from '@/lib/theme-context';
+import { PRESET_THEMES } from '@/lib/themes/preset-themes';
+import type { ThemeConfig } from '@/lib/themes/theme-config';
 import { isTauri } from '@/services/platform/PlatformDetector';
 import App from './App';
 import './styles/optimized-product-card.css';
 import './styles/optimized-order-history.css';
 import './styles/optimized-login.css';
+
+/**
+ * Convert PRESET_THEMES format to ThemeCore cssVars format
+ */
+function convertThemeToVars(theme: ThemeConfig): {
+  light: Record<string, string>;
+  dark: Record<string, string>;
+} {
+  const convertColors = (colors: ThemeConfig['colors']['light']) => {
+    const vars: Record<string, string> = {};
+    for (const [key, value] of Object.entries(colors) as [string, string][]) {
+      // ThemeCore expects CSS variable format
+      vars[`--${key}`] = value;
+    }
+    return vars;
+  };
+
+  return {
+    light: convertColors(theme.colors.light),
+    dark: convertColors(theme.colors.dark),
+  };
+}
+
+/**
+ * Install all preset themes into ThemeCore
+ */
+async function installPresetThemes(themeCore: Awaited<ReturnType<typeof ThemeCore.init>>) {
+  const registry = themeCore.getThemeRegistry();
+  for (const theme of PRESET_THEMES) {
+    try {
+      const cssVars = convertThemeToVars(theme);
+      await registry.installTheme({ name: theme.id, cssVars }, 'local://preset-themes');
+      console.log(`[Theme] Installed preset theme: ${theme.id}`);
+    } catch (error) {
+      console.warn(`[Theme] Failed to install theme ${theme.id}:`, error);
+    }
+  }
+}
 
 async function registerServiceWorker() {
   if (isTauri()) {
@@ -46,7 +86,7 @@ async function initializeApp() {
   try {
     console.log('Initializing ThemeCore...');
 
-    await ThemeCore.init({
+    const themeCore = await ThemeCore.init({
       debug: import.meta.env.DEV,
       fouc: {
         prevent: true,
@@ -54,10 +94,14 @@ async function initializeApp() {
         revealDelay: 0,
       },
       defaults: {
-        theme: 'default',
+        theme: 'amethyst-haze',
         mode: 'auto',
       },
     });
+
+    // Install preset themes
+    await installPresetThemes(themeCore);
+    console.log(`[Theme] Installed ${PRESET_THEMES.length} preset themes`);
 
     document.body.style.visibility = 'visible';
     document.body.style.opacity = '1';
@@ -98,7 +142,7 @@ async function initializeApp() {
               revealDelay: 0,
             },
             defaults: {
-              theme: 'default',
+              theme: 'amethyst-haze',
               mode: 'auto',
             },
           }}

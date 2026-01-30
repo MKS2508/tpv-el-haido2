@@ -199,7 +199,7 @@ const Login = (props: LoginProps) => {
           <Motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            class="z-10 bg-white/70 dark:bg-gray-900/70 rounded-full p-8 shadow-2xl border border-white/20"
+            class="z-10 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-full p-8 shadow-2xl border border-white/20"
           >
             <Loader2 class="animate-spin text-primary w-12 h-12" />
           </Motion.div>
@@ -220,7 +220,7 @@ const Login = (props: LoginProps) => {
               duration: 0.5,
               easing: [0.4, 0, 0.2, 1],
             }}
-            class={`bg-white/70 dark:bg-gray-900/70 border border-white/20 dark:border-gray-700/30 rounded-3xl shadow-2xl w-[90vw] max-w-3xl overflow-hidden flex flex-col ${
+            class={`bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-3xl shadow-2xl w-[90vw] max-w-3xl overflow-hidden flex flex-col ${
               responsive.isMobile()
                 ? 'p-4 min-h-[70vh] max-h-[95vh] h-auto' // More padding and height for mobile
                 : 'p-6 sm:p-8 h-[85vh] max-h-[700px]'
@@ -515,7 +515,7 @@ const Login = (props: LoginProps) => {
                   };
                   void toggleFullscreen();
                 }}
-                class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 shadow-lg border border-white/20"
+                class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 shadow-lg border border-white/20"
               >
                 Pantalla completa
               </Button>
