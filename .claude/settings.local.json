@@ -78,7 +78,8 @@
       "Bash(docker run:*)",
       "Bash(docker compose:*)",
       "WebFetch(domain:tweakcn.com)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

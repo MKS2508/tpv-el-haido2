@@ -4,6 +4,7 @@ import {
   Database,
   DollarSign,
   FileText,
+  Gauge,
   HardDrive,
   Info,
   Key,
@@ -14,6 +15,7 @@ import {
   Printer,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Trash2,
   Users,
   Wand2,
@@ -60,6 +62,13 @@ import { Switch as SwitchUI } from '@/components/ui/switch.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { toast } from '@/components/ui/use-toast.ts';
 import VersionInfo from '@/components/VersionInfo';
+import {
+  getStoredPerformanceMode,
+  isGlassEffectEnabled,
+  type PerformanceMode,
+  setGlassEffectEnabled,
+  setPerformanceMode,
+} from '@/hooks/usePerformanceConfig';
 import { useAppTheme } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
@@ -121,6 +130,30 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   const [activeTab, setActiveTab] = createSignal('general');
   const [isStorageModeDialogOpen, setIsStorageModeDialogOpen] = createSignal(false);
   const [pendingStorageMode, setPendingStorageMode] = createSignal<StorageMode | null>(null);
+  const [performanceMode, setPerformanceModeLocal] = createSignal<PerformanceMode>(
+    getStoredPerformanceMode()
+  );
+  const [glassEffectEnabled, setGlassEffectEnabledLocal] = createSignal(isGlassEffectEnabled());
+
+  const handlePerformanceModeChange = (mode: PerformanceMode) => {
+    setPerformanceModeLocal(mode);
+    setPerformanceMode(mode);
+    toast({
+      title: 'Modo de rendimiento actualizado',
+      description: `Modo cambiado a: ${mode === 'auto' ? 'Automático' : mode === 'high' ? 'Alto' : mode === 'balanced' ? 'Equilibrado' : 'Bajo'}`,
+    });
+  };
+
+  const handleGlassEffectChange = (enabled: boolean) => {
+    setGlassEffectEnabledLocal(enabled);
+    setGlassEffectEnabled(enabled);
+    toast({
+      title: enabled ? 'Efecto glass activado' : 'Efecto glass desactivado',
+      description: enabled
+        ? 'Los efectos de cristal están activados'
+        : 'Los efectos de cristal están desactivados para mejor rendimiento',
+    });
+  };
 
   createEffect(() => {
     if (props.forceAboutTab) {
@@ -584,6 +617,71 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                   </div>
                   <div class="p-4 bg-muted/20 rounded-lg border border-border/20">
                     <ThemeDebugger />
+                  </div>
+                </div>
+
+                {/* Performance Settings */}
+                <div class="space-y-4 pt-4 border-t border-border/50">
+                  <div class="space-y-2">
+                    <Label class="text-sm font-medium flex items-center gap-2">
+                      <Gauge class="h-4 w-4" />
+                      Rendimiento Visual
+                    </Label>
+                    <p class="text-xs text-muted-foreground">
+                      Ajusta el nivel de efectos visuales según el rendimiento de tu dispositivo.
+                    </p>
+                  </div>
+
+                  <div class="space-y-4 p-4 bg-muted/30 rounded-lg border border-border/30">
+                    <div class="space-y-3">
+                      <Label class="text-sm">Modo de Rendimiento</Label>
+                      <Select
+                        value={performanceMode()}
+                        onValueChange={(value) =>
+                          value && handlePerformanceModeChange(value as PerformanceMode)
+                        }
+                      >
+                        <SelectTrigger class="w-full">
+                          <SelectValue placeholder="Seleccionar modo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">Automático (detectar dispositivo)</SelectItem>
+                          <SelectItem value="high">Alto (todos los efectos)</SelectItem>
+                          <SelectItem value="balanced">Equilibrado (efectos reducidos)</SelectItem>
+                          <SelectItem value="low">Bajo (sin animaciones)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p class="text-xs text-muted-foreground">
+                        {performanceMode() === 'auto' &&
+                          'Detecta automáticamente las capacidades del dispositivo'}
+                        {performanceMode() === 'high' &&
+                          'Activa todos los efectos visuales y animaciones'}
+                        {performanceMode() === 'balanced' &&
+                          'Reduce animaciones manteniendo efectos básicos'}
+                        {performanceMode() === 'low' &&
+                          'Desactiva animaciones para máximo rendimiento'}
+                      </p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-3 border-t border-border/30">
+                      <div class="space-y-0.5">
+                        <Label
+                          for="glass-effect"
+                          class="text-sm font-medium flex items-center gap-2"
+                        >
+                          <Sparkles class="h-4 w-4" />
+                          Efecto Glass/Cristal
+                        </Label>
+                        <p class="text-xs text-muted-foreground">
+                          Efectos de desenfoque y transparencia en ventanas
+                        </p>
+                      </div>
+                      <SwitchUI
+                        id="glass-effect"
+                        checked={glassEffectEnabled()}
+                        onChange={handleGlassEffectChange}
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>

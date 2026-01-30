@@ -12,6 +12,8 @@ import {
 } from 'solid-js';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { GlassContainer } from '@/components/ui/GlassContainer';
+import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
 import { useResponsive } from '@/hooks/useResponsive';
 import { config } from '@/lib/config';
 import type User from '@/models/User';
@@ -41,6 +43,7 @@ const Login = (props: LoginProps) => {
   const [currentTime, setCurrentTime] = createSignal(new Date());
   const [isLoading, setIsLoading] = createSignal(false);
   const responsive = useResponsive();
+  const perfConfig = usePerformanceConfig();
 
   // Include debug test user when DEBUG_MODE is enabled
   const availableUsers = createMemo(() => {
@@ -196,13 +199,9 @@ const Login = (props: LoginProps) => {
           style={{ 'background-image': "url('/wallpaper.jpeg')" }}
         >
           <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 z-0" />
-          <Motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            class="z-10 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-full p-8 shadow-2xl border border-white/20"
-          >
+          <GlassContainer class="z-10 rounded-full p-8" radius={9999} animate={true}>
             <Loader2 class="animate-spin text-primary w-12 h-12" />
-          </Motion.div>
+          </GlassContainer>
         </div>
       }
     >
@@ -212,19 +211,15 @@ const Login = (props: LoginProps) => {
       >
         <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 z-0" />
         <div class="z-10 flex flex-col items-center justify-center w-full">
-          {/* Main Container - Fixed size, truly transparent */}
-          <Motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
-              duration: 0.5,
-              easing: [0.4, 0, 0.2, 1],
-            }}
-            class={`bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-3xl shadow-2xl w-[90vw] max-w-3xl overflow-hidden flex flex-col ${
+          {/* Main Container - Glass effect with performance adaptation */}
+          <GlassContainer
+            class={`w-[90vw] max-w-3xl overflow-hidden flex flex-col ${
               responsive.isMobile()
-                ? 'p-4 min-h-[70vh] max-h-[95vh] h-auto' // More padding and height for mobile
+                ? 'p-4 min-h-[70vh] max-h-[95vh] h-auto'
                 : 'p-6 sm:p-8 h-[85vh] max-h-[700px]'
             }`}
+            radius={24}
+            animate={true}
           >
             {/* Logo inside container */}
             <Motion.div
@@ -486,7 +481,7 @@ const Login = (props: LoginProps) => {
                 </Show>
               </Presence>
             </div>
-          </Motion.div>
+          </GlassContainer>
 
           {/* Fullscreen button - outside container - Only on desktop and web */}
           <Show

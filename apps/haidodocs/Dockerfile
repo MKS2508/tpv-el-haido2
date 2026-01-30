@@ -21,6 +21,9 @@ RUN bun run build
 # Production stage - Nginx for static serving
 FROM nginx:alpine AS production
 
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
 # Copy built static files
 COPY --from=builder /app/out /usr/share/nginx/html
 
@@ -32,6 +35,6 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+  CMD curl -f http://localhost:3000/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

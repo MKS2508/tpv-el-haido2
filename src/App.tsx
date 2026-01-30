@@ -16,6 +16,7 @@ import iconOptions from '@/assets/utils/icons/iconOptions';
 import BottomNavigation from '@/components/BottomNavigation';
 import DebugIndicator from '@/components/DebugIndicator';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import AppSplashScreen from '@/components/AppSplashScreen';
 import LicenseSplashScreen from '@/components/LicenseSplashScreen';
 import { OnboardingProvider } from '@/components/Onboarding/OnboardingProvider';
 import PWAStatus from '@/components/PWAStatus';
@@ -53,6 +54,9 @@ import type { LicenseStatus } from '@/types/license';
 function App() {
   const store = useStore();
   const appTheme = useAppTheme();
+
+  // App splash state
+  const [showAppSplash, setShowAppSplash] = createSignal(true);
 
   // License state
   const [showLicenseSplash, setShowLicenseSplash] = createSignal(true);
@@ -178,6 +182,7 @@ function App() {
         expires_at: null,
       };
       store.setLicenseStatus(pwaStatus);
+      setShowAppSplash(false);
       setShowLicenseSplash(false);
       return;
     }
@@ -194,6 +199,7 @@ function App() {
         expires_at: null,
       };
       store.setLicenseStatus(debugStatus);
+      setShowAppSplash(false);
       setShowLicenseSplash(false);
       return;
     }
@@ -216,6 +222,13 @@ function App() {
     }
   };
 
+  // Handle app splash complete
+  const handleAppSplashComplete = async () => {
+    setShowAppSplash(false);
+    // Check license after splash completes
+    await checkLicense();
+  };
+
   // Handle license activation complete
   const handleLicenseComplete = (status: LicenseStatus) => {
     store.setLicenseStatus(status);
@@ -232,15 +245,12 @@ function App() {
   };
 
   // Initialize data
-  onMount(async () => {
+  const initializeData = async () => {
     // Setup native menu
     setupNativeMenu();
 
-    // Check license first before initializing anything else
-    await checkLicense();
-
-    // If license is not valid, don't initialize other data
-    if (showLicenseSplash()) {
+    // If app splash or license splash is active, don't initialize data yet
+    if (showAppSplash() || showLicenseSplash()) {
       return;
     }
 
@@ -357,6 +367,16 @@ function App() {
     }
   });
 
+  // Watch for splash completion to initialize data
+  createEffect(() => {
+    const appSplashDone = !showAppSplash();
+    const licenseSplashDone = !showLicenseSplash();
+    if (appSplashDone && licenseSplashDone) {
+      // Initialize data when both splashes are done
+      initializeData();
+    }
+  });
+
   const menuItems = [
     { id: 'home', icon: HomeIcon, label: 'Inicio' },
     { id: 'products', icon: ClipboardListIcon, label: 'Productos' },
@@ -401,16 +421,21 @@ function App() {
       <PWAStatus />
       <UpdateChecker autoCheck={true} checkInterval={3600000} />
 
-      {/* License Splash Screen */}
-      <Show when={showLicenseSplash()}>
+      {/* App Splash Screen - Brand intro */}
+      <Show when={showAppSplash()}>
+        <AppSplashScreen onComplete={handleAppSplashComplete} />
+      </Show>
+
+      {/* License Splash Screen - Only show if app splash is done */}
+      <Show when={!showAppSplash() && showLicenseSplash()}>
         <LicenseSplashScreen onComplete={handleLicenseComplete} />
       </Show>
 
-      {/* Main Content */}
+      {/* Main Content - Only show if both splashes are done */}
       <Show
-        when={!showLicenseSplash() && store.state.selectedUser}
+        when={!showAppSplash() && !showLicenseSplash() && store.state.selectedUser}
         fallback={
-          <Show when={!showLicenseSplash()}>
+          <Show when={!showAppSplash() && !showLicenseSplash()}>
             <Presence>
               <Motion.div
                 initial={{ opacity: 0, y: 20 }}

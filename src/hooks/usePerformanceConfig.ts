@@ -1,6 +1,43 @@
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 
-// Environment variable to force high performance mode
+// Performance mode types
+export type PerformanceMode = 'auto' | 'high' | 'balanced' | 'low';
+
+// Storage key for performance settings
+const PERFORMANCE_MODE_KEY = 'tpv-performance-mode';
+const GLASS_EFFECT_KEY = 'tpv-glass-effect-enabled';
+
+// Get stored performance mode
+export function getStoredPerformanceMode(): PerformanceMode {
+  if (typeof window === 'undefined') return 'auto';
+  const stored = localStorage.getItem(PERFORMANCE_MODE_KEY);
+  if (stored && ['auto', 'high', 'balanced', 'low'].includes(stored)) {
+    return stored as PerformanceMode;
+  }
+  return 'auto';
+}
+
+// Set performance mode
+export function setPerformanceMode(mode: PerformanceMode): void {
+  localStorage.setItem(PERFORMANCE_MODE_KEY, mode);
+  // Dispatch event for reactive updates
+  window.dispatchEvent(new CustomEvent('performance-mode-changed', { detail: mode }));
+}
+
+// Get glass effect setting
+export function isGlassEffectEnabled(): boolean {
+  if (typeof window === 'undefined') return true;
+  const stored = localStorage.getItem(GLASS_EFFECT_KEY);
+  return stored !== 'false'; // Default to true
+}
+
+// Set glass effect setting
+export function setGlassEffectEnabled(enabled: boolean): void {
+  localStorage.setItem(GLASS_EFFECT_KEY, String(enabled));
+  window.dispatchEvent(new CustomEvent('glass-effect-changed', { detail: enabled }));
+}
+
+// Environment variable to force high performance mode (legacy support)
 const FORCE_HIGH_PERFORMANCE = import.meta.env.VITE_FORCE_HIGH_PERFORMANCE === 'true';
 
 // Browser API type extensions
@@ -72,10 +109,64 @@ const HIGH_PERFORMANCE_CONFIG: PerformanceConfig = {
   throttleDelay: 16,
 };
 
+// Low performance config
+const LOW_PERFORMANCE_CONFIG: PerformanceConfig = {
+  isLowPerformance: true,
+  isVeryLowPerformance: false,
+  isRaspberryPi: false,
+  isMobile: false,
+  enableAnimations: false,
+  enableHoverEffects: false,
+  enableTransitions: true,
+  reduceMotion: true,
+  animationDuration: 0.1,
+  transitionDuration: 0.05,
+  virtualizeThreshold: 10,
+  overscanCount: 2,
+  enableLazyLoading: true,
+  enableImageOptimization: true,
+  debounceDelay: 200,
+  throttleDelay: 50,
+};
+
+// Balanced performance config
+const BALANCED_PERFORMANCE_CONFIG: PerformanceConfig = {
+  isLowPerformance: false,
+  isVeryLowPerformance: false,
+  isRaspberryPi: false,
+  isMobile: false,
+  enableAnimations: true,
+  enableHoverEffects: true,
+  enableTransitions: true,
+  reduceMotion: false,
+  animationDuration: 0.2,
+  transitionDuration: 0.1,
+  virtualizeThreshold: 15,
+  overscanCount: 3,
+  enableLazyLoading: false,
+  enableImageOptimization: false,
+  debounceDelay: 150,
+  throttleDelay: 32,
+};
+
 export const usePerformanceConfig = (): PerformanceConfig => {
   const [memoryPressure, setMemoryPressure] = createSignal<'normal' | 'critical'>('normal');
+  const [performanceMode, setPerformanceModeSignal] = createSignal<PerformanceMode>(
+    getStoredPerformanceMode()
+  );
 
-  // If forced high performance, return early with optimal config
+  // Listen for performance mode changes
+  onMount(() => {
+    const handler = (e: CustomEvent<PerformanceMode>) => {
+      setPerformanceModeSignal(e.detail);
+    };
+    window.addEventListener('performance-mode-changed', handler as EventListener);
+    onCleanup(() =>
+      window.removeEventListener('performance-mode-changed', handler as EventListener)
+    );
+  });
+
+  // If forced high performance via env var, return early with optimal config
   if (FORCE_HIGH_PERFORMANCE) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
@@ -84,6 +175,29 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     }
     return HIGH_PERFORMANCE_CONFIG;
   }
+
+  // Check manual mode first (non-auto modes skip detection)
+  const mode = performanceMode();
+  if (mode === 'high') {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Performance Configuration: HIGH MODE (user setting)');
+    }
+    return HIGH_PERFORMANCE_CONFIG;
+  }
+  if (mode === 'low') {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Performance Configuration: LOW MODE (user setting)');
+    }
+    return LOW_PERFORMANCE_CONFIG;
+  }
+  if (mode === 'balanced') {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Performance Configuration: BALANCED MODE (user setting)');
+    }
+    return BALANCED_PERFORMANCE_CONFIG;
+  }
+
+  // Auto mode: detect device capabilities
 
   // Device detection con cleanup adecuado
   const deviceInfo = createMemo(() => {

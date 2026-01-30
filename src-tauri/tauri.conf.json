@@ -14,9 +14,17 @@
       {
         "title": "TPV: El Haido",
         "width": 1200,
-        "height": 800
+        "height": 800,
+        "visible": false
       }
     ],
+    "splashScreen": {
+      "visible": true,
+      "imagePath": "splash.png",
+      "color": "#0f172a",
+      "imageWidth": 300,
+      "imageHeight": 300
+    },
     "security": {
       "csp": null,
       "capabilities": [
