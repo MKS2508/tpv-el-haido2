@@ -1,35 +1,24 @@
----
-title: "TPV El Haido - Manual de Usuario"
-version: "1.0.0"
-date: "Febrero 2026"
-author: "TPV El Haido"
----
+# TPV El Haido
 
-<div align="center">
-
-<br><br><br>
-
-# **TPV El Haido**
 
 ## Manual de Usuario Oficial
 
 **Sistema de Punto de Venta para Hostelería**
 
-<br>
 
 ---
 
 ### Gestión de pedidos · Facturación electrónica · Impresión térmica
 
-<br><br>
-
 **Versión 1.0.0** | **Febrero 2026**
 
-<br><br><br>
+![Portada de TPV El Haido con logo del sistema](screenshots/PORTADA.png)
 
-</div>
+*Imagen de portada: TPV El Haido - Sistema de Punto de Venta*
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## Tabla de Contenidos
 
@@ -46,7 +35,9 @@ author: "TPV El Haido"
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 1. Introducción
 
@@ -71,11 +62,18 @@ Bienvenido a **TPV El Haido**, tu sistema de punto de venta diseñado específic
 
 El uso diario de TPV El Haido sigue este flujo sencillo:
 
-```
-┌─────────┐    ┌──────────────┐    ┌─────────────┐    ┌────────┐    ┌──────────────┐
-│  Login  │ → │ Seleccionar  │ → │   Añadir    │ → │ Cobrar │ → │   Imprimir   │
-│         │    │    Mesa      │    │  Productos  │    │        │    │    Ticket    │
-└─────────┘    └──────────────┘    └─────────────┘    └────────┘    └──────────────┘
+```mermaid
+graph LR
+    A[Login] --> B[Seleccionar Mesa]
+    B --> C[Añadir Productos]
+    C --> D[Cobrar]
+    D --> E[Imprimir Ticket]
+
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#e8f5e9
+    style D fill:#fce4ec
+    style E fill:#f3e5f5
 ```
 
 ### 1.3 Pantalla principal
@@ -96,13 +94,13 @@ La interfaz está organizada en secciones accesibles desde el menú lateral:
 
 Si tienes preguntas o encuentras problemas:
 
-1. Consulta esta documentación
-2. Revisa los [issues en GitHub](https://github.com/MKS2508/tpv-el-haido2/issues)
-3. Abre un nuevo issue describiendo tu problema con detalle
+1. Abre el pannel de settings, escanea el codifo QR en la parte de problemas y sigue las instrucciones
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 2. Instalación
 
@@ -224,8 +222,6 @@ chmod +x tpv-el-haido.AppImage
 
 
 
-
-
 **Paso 1: Instalar dependencias**
 
 ```bash
@@ -337,7 +333,9 @@ Si ves un error relacionado con SQLite:
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 3. Primeros Pasos
 
@@ -430,6 +428,10 @@ Antes de añadir productos, necesitas al menos una categoría:
 
 **Paso 3:** Haz clic en **Nueva Categoría**
 
+![Formulario para crear una nueva categoría con campos de nombre, descripción e icono](screenshots/3.4.png)
+
+*Imagen 5: Diálogo de creación de categoría*
+
 **Paso 4:** Rellena los datos:
 
 | Campo | Ejemplo | Obligatorio |
@@ -507,7 +509,9 @@ Has completado la configuración básica:
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 4. Gestión de Pedidos
 
@@ -540,6 +544,12 @@ Aprende a crear, modificar y gestionar comandas de forma eficiente.
 
 ### 4.2 Modificar un pedido
 
+Desde el panel de resumen del pedido, puedes ajustar cada línea:
+
+![Panel derecho del pedido mostrando productos añadidos con controles para aumentar/disminuir cantidades](screenshots/4.2.png)
+
+*Imagen 6: Panel de modificación de pedido con controles de cantidad*
+
 | Acción | Cómo hacerlo |
 |--------|--------------|
 | **Aumentar cantidad** | Botón **+** junto al producto |
@@ -552,16 +562,18 @@ Aprende a crear, modificar y gestionar comandas de forma eficiente.
 
 Los pedidos pasan por diferentes estados:
 
-```
-┌───────────┐     ┌──────────────┐     ┌─────────┐     ┌─────────┐
-│ En Curso  │ → │ Pendiente de │ → │ Pagado  │ → │ Cerrado │
-│  (Azul)   │     │ Pago (Amarillo)│     │ (Verde) │     │ (Gris)  │
-└───────────┘     └──────────────┘     └─────────┘     └─────────┘
-      ↓
-┌───────────┐
-│ Cancelado │
-│   (Rojo)  │
-└───────────┘
+```mermaid
+graph LR
+    A[En Curso<br/>🔵 Azul] --> B[Pendiente de Pago<br/>🟡 Amarillo]
+    B --> C[Pagado<br/>🟢 Verde]
+    C --> D[Cerrado<br/>⚪ Gris]
+    A --> E[Cancelado<br/>🔴 Rojo]
+
+    style A fill:#e3f2fd
+    style B fill:#fff9c4
+    style C fill:#c8e6c9
+    style D fill:#f5f5f5
+    style E fill:#ffcdd2
 ```
 
 | Estado | Descripción |
@@ -643,7 +655,9 @@ Si usas impresora de cocina:
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 5. Gestión de Productos
 
@@ -763,7 +777,9 @@ Tostada,2.50,Desayunos,,10
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 6. Gestión de Clientes
 
@@ -853,7 +869,9 @@ Empresa SL,B12345678,info@empresa.com,910000000,Av. Principal 10,08001,Barcelona
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 7. Procesamiento de Pagos
 
@@ -864,6 +882,10 @@ Aprende a cobrar pedidos, gestionar métodos de pago e imprimir tickets.
 **Paso 1:** Abre el pedido desde Nueva Comanda o selecciona uno activo
 
 **Paso 2:** Haz clic en **Cobrar** (o en el total del pedido)
+
+![Diálogo de cobro mostrando el total del pedido y los métodos de pago disponibles](screenshots/7.1.png)
+
+*Imagen 13: Pantalla de cobro con métodos de pago*
 
 **Paso 3:** Selecciona el método de pago:
 
@@ -888,13 +910,22 @@ Aprende a cobrar pedidos, gestionar métodos de pago e imprimir tickets.
 
 ### 7.2 Pago en efectivo
 
-El flujo incluye cálculo automático de cambio:
+El sistema calcula automáticamente el cambio a devolver:
 
-```
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│ Total: 15.50€│ → │ Cliente paga:│ → │ Cambio: 4.50€│ → │ Ticket impreso│
-│              │    │    20.00€    │    │              │    │              │
-└──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
+![Pantalla de pago en efectivo mostrando el total, importe recibido y cambio calculado](screenshots/7.2.png)
+
+*Imagen 14: Cálculo automático de cambio en pago efectivo*
+
+```mermaid
+graph LR
+    A["💰 Total: 15.50€"] --> B["💵 Cliente paga: 20.00€"]
+    B --> C["💶 Cambio: 4.50€"]
+    C --> D["🧾 Ticket impreso"]
+
+    style A fill:#ffcdd2
+    style B fill:#fff9c4
+    style C fill:#c8e6c9
+    style D fill:#e1f5fe
 ```
 
 **Atajos de importe:**
@@ -968,7 +999,9 @@ El informe de cierre incluye ventas por categoría, por producto, por usuario e 
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 8. Facturación VERI*FACTU
 
@@ -1130,7 +1163,9 @@ Verifica que tus facturas han sido correctamente enviadas a la AEAT:
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 9. Configuración de Impresora
 
@@ -1189,6 +1224,10 @@ Anota el dispositivo (ej: `/dev/ttyUSB0`)
 
 **Paso 1:** En el menú lateral, ve a **Ajustes → Impresora**
 
+![Panel de configuración de impresora con opciones de conexión, puerto y ancho de papel](screenshots/9.4.png)
+
+*Imagen 18: Configuración de impresora en Ajustes*
+
 **Paso 2:** Configura la conexión:
 
 | Campo | Descripción | Ejemplo |
@@ -1209,6 +1248,10 @@ Anota el dispositivo (ej: `/dev/ttyUSB0`)
 ### 9.5 Personalizar tickets
 
 En **Ajustes → Impresora → Ticket**:
+
+![Ejemplo de ticket impreso con logo, nombre del negocio, dirección, productos, IVA y total](screenshots/9.5.png)
+
+*Imagen 19: Ejemplo de ticket impreso de 80mm*
 
 | Campo | Descripción |
 |-------|-------------|
@@ -1262,7 +1305,9 @@ Si tienes una segunda impresora para cocina:
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 10. Temas y Personalización
 
@@ -1367,7 +1412,9 @@ Todos los temas incluyen optimizaciones para pantallas táctiles:
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## 11. Información del Sistema
 
@@ -1403,7 +1450,9 @@ El fingerprint es útil para:
 
 ---
 
-<div style="page-break-after: always;"></div>
+***
+
+***
 
 ## Anexo: Atajos de teclado
 
@@ -1417,30 +1466,15 @@ El fingerprint es útil para:
 
 ---
 
-<div align="center">
 
-<br><br>
 
-# **¡Gracias por usar TPV El Haido!**
+# ¡Gracias por usar TPV El Haido!
 
-<br>
 
----
 
-**¿Necesitas más ayuda?**
 
-- 📖 **Documentación online**: [docs.elhaido.es](https://docs.elhaido.es)
-- 🐛 **Reportar errores**: [GitHub Issues](https://github.com/MKS2508/tpv-el-haido2/issues)
-- 💬 **Comunidad**: Discord / Telegram (próximamente)
-
-<br><br>
-
----
 
 **TPV El Haido v1.0.0**
 
-© 2026 TPV El Haido. Todos los derechos reservados.
+© 2026 TPV El Haido.  Marcos Asensio. Todos los derechos reservados.
 
-<br><br>
-
-</div>

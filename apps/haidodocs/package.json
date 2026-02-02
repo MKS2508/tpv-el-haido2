@@ -12,7 +12,8 @@
     "format": "biome format --write",
     "manual:md": "bun run scripts/generate-manual.ts",
     "manual:pdf": "bun run scripts/generate-pdf.ts",
-    "manual:all": "bun run manual:md && bun run manual:pdf"
+    "manual:all": "bun run manual:md && bun run manual:pdf",
+    "manual:fix-html": "bun run scripts/fix-manual-html.ts"
   },
   "dependencies": {
     "fumadocs-core": "16.4.9",
