@@ -1,4 +1,3 @@
-import { getVersion } from '@tauri-apps/api/app';
 import { AlertCircle, CheckCircle2, Download, Info, RefreshCw } from 'lucide-solid';
 import { createEffect, createSignal, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
@@ -27,11 +26,17 @@ export function VersionInfo(props: VersionInfoProps) {
   } = useUpdater();
 
   onMount(async () => {
+    if (!isTauri()) {
+      setCurrentVersion('PWA 1.0.0');
+      return;
+    }
+
     try {
+      // Lazy load getVersion to prevent transformCallback errors in PWA
+      const { getVersion } = await import('@tauri-apps/api/app');
       const version = await getVersion();
       setCurrentVersion(version);
     } catch (_e) {
-      // En desarrollo web, no hay versión de Tauri
       setCurrentVersion('dev');
     }
   });

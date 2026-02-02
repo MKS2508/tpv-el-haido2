@@ -36,6 +36,7 @@ import UpdateChecker from '@/components/UpdateChecker';
 import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
 import { useAboutDialog } from '@/hooks/useAboutDialog';
+import { ASSET_PATHS } from '@/lib/paths';
 import { config } from '@/lib/config';
 import { setupNativeMenu } from '@/lib/setupNativeMenu';
 import { useAppTheme } from '@/lib/theme-context';
@@ -53,7 +54,7 @@ import type { LicenseStatus } from '@/types/license';
 
 function App() {
   const store = useStore();
-  const appTheme = useAppTheme();
+  const _appTheme = useAppTheme();
 
   // App splash state
   const [showAppSplash, setShowAppSplash] = createSignal(true);
@@ -168,8 +169,11 @@ function App() {
 
   // Initialize data
   const initializeData = async () => {
-    // Setup native menu
-    setupNativeMenu();
+    // Setup native menu (Tauri only)
+    const platform = getPlatformService();
+    if (platform.isTauri()) {
+      setupNativeMenu();
+    }
 
     // If app splash or license splash is active, don't initialize data yet
     if (showAppSplash() || showLicenseSplash()) {
@@ -239,14 +243,14 @@ function App() {
           {
             id: 1,
             name: 'Germán',
-            profilePicture: '/panxo.svg',
+            profilePicture: ASSET_PATHS.panxo,
             pin: '1111',
             pinnedProductIds: [1, 2, 3, 4, 5, 6],
           },
           {
             id: 2,
             name: 'Marta',
-            profilePicture: '/nuka.svg',
+            profilePicture: ASSET_PATHS.nuka,
             pin: '1234',
             pinnedProductIds: [1, 2, 3],
           },

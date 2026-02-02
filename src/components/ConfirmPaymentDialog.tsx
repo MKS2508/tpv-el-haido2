@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
 import type Order from '@/models/Order';
 
 interface ConfirmPaymentDialogProps {
@@ -57,7 +56,7 @@ function ConfirmPaymentDialog(props: ConfirmPaymentDialogProps) {
         </DialogHeader>
 
         <Show when={props.order}>
-          {(order) => (
+          {(_order) => (
             <div class="space-y-4 py-4">
               <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <span class="text-sm text-muted-foreground">Mesa:</span>

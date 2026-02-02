@@ -1,6 +1,6 @@
-import { invoke } from '@tauri-apps/api/core';
 import { domToPng } from 'modern-screenshot';
 import { createSignal } from 'solid-js';
+import { isTauri } from '@/services/platform';
 import type { ScreenshotContext } from '@/types/screenshot';
 
 export interface ScreenshotOptions {
@@ -19,6 +19,12 @@ export function useScreenshot() {
     targetElement: HTMLElement,
     options: ScreenshotOptions
   ): Promise<boolean> => {
+    // Check platform guard for file saving
+    if (!isTauri() && options.saveToFile) {
+      setError('Screenshot save only available in desktop app');
+      return false;
+    }
+
     setIsCapturing(true);
     setError(null);
 
@@ -51,9 +57,11 @@ export function useScreenshot() {
         backgroundColor: '#ffffff',
       });
 
-      // Guardar archivo usando Rust
-      if (options.saveToFile) {
+      // Guardar archivo usando Rust (Tauri only)
+      if (options.saveToFile && isTauri()) {
         try {
+          // Lazy load invoke to prevent transformCallback errors in PWA
+          const { invoke } = await import('@tauri-apps/api/core');
           const savedPath = await invoke<string>('save_screenshot_from_base64', {
             request: {
               filename: options.filename,

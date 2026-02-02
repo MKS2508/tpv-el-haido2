@@ -44,7 +44,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.t
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -80,7 +79,6 @@ import {
   runThermalPrinterCommand,
 } from '@/services/thermal-printer.service.ts';
 import useStore from '@/store/store';
-import type { LicenseStatus } from '@/types/license';
 
 type SettingsPanelProps = {
   isSidebarOpen: boolean;

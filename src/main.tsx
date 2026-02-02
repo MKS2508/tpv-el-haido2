@@ -1,6 +1,7 @@
 import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { render } from 'solid-js/web';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ErrorBoundary';
+import { ASSET_PATHS, getAssetPath, getSwPath, getSwScope } from '@/lib/paths';
 import { ThemeProvider } from '@/lib/theme-context';
 import { PRESET_THEMES } from '@/lib/themes/preset-themes';
 import type { ThemeConfig } from '@/lib/themes/theme-config';
@@ -60,8 +61,8 @@ async function registerServiceWorker() {
   }
 
   try {
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/',
+    const registration = await navigator.serviceWorker.register(getSwPath(), {
+      scope: getSwScope(),
     });
 
     console.log('[SW] Service worker registered:', registration.scope);
@@ -88,6 +89,7 @@ async function initializeApp() {
 
     const themeCore = await ThemeCore.init({
       debug: import.meta.env.DEV,
+      registryPath: ASSET_PATHS.themes,
       fouc: {
         prevent: true,
         method: 'auto',

@@ -1,5 +1,5 @@
-import { Motion, Presence } from '@motionone/solid';
-import { For, createEffect, createSignal, onMount, Show } from 'solid-js';
+import { Motion } from '@motionone/solid';
+import { createSignal, For, onMount, Show } from 'solid-js';
 
 interface AppSplashScreenProps {
   onComplete: () => void;
@@ -74,7 +74,14 @@ export default function AppSplashScreen(props: AppSplashScreenProps) {
       />
 
       {/* Art Deco corner accents */}
-      <For each={[[0, 0], [0, 1], [1, 0], [1, 1]]}>
+      <For
+        each={[
+          [0, 0],
+          [0, 1],
+          [1, 0],
+          [1, 1],
+        ]}
+      >
         {([row, col]) => (
           <Motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -82,7 +89,11 @@ export default function AppSplashScreen(props: AppSplashScreenProps) {
               scale: phase() !== 'intro' ? 1 : 0,
               opacity: phase() !== 'intro' ? 0.6 : 0,
             }}
-            transition={{ duration: 0.6, delay: 0.2 + (row + col) * 0.1, easing: [0.34, 1.56, 0.64, 1] }}
+            transition={{
+              duration: 0.6,
+              delay: 0.2 + (row + col) * 0.1,
+              easing: [0.34, 1.56, 0.64, 1],
+            }}
             class={`absolute w-16 h-16 border-l-2 border-t-2 border-amber-400/40 ${
               row === 0 ? 'top-8' : 'bottom-8'
             } ${col === 0 ? 'left-8' : 'right-8'} ${col === 1 ? 'rotate-180' : ''} ${
@@ -137,11 +148,7 @@ export default function AppSplashScreen(props: AppSplashScreenProps) {
           <div class="absolute inset-0 bg-amber-400/20 blur-3xl rounded-full scale-150 animate-pulse" />
           <div class="relative">
             <div class="absolute inset-0 bg-gradient-to-br from-amber-200/10 to-rose-200/10 rounded-full blur-xl" />
-            <img
-              src="/logo.svg"
-              alt="TPV El Haido"
-              class="relative w-32 h-32 drop-shadow-2xl"
-            />
+            <img src="/logo.svg" alt="TPV El Haido" class="relative w-32 h-32 drop-shadow-2xl" />
           </div>
         </Motion.div>
 

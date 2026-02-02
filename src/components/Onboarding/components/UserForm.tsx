@@ -3,6 +3,7 @@ import { createSignal, For, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ASSET_PATHS } from '@/lib/paths';
 import { validatePin } from '@/lib/onboarding-utils';
 import type User from '@/models/User';
 
@@ -13,13 +14,19 @@ interface UserFormProps {
   submitLabel?: string;
 }
 
-const AVATAR_OPTIONS = ['/panxo.svg', '/nuka.svg', '/avatar-1.svg', '/avatar-2.svg'];
+const AVATAR_OPTIONS = [
+  ASSET_PATHS.panxo,
+  ASSET_PATHS.nuka,
+  ASSET_PATHS.avatar1,
+  ASSET_PATHS.avatar2,
+] as const;
 
 export function UserForm(props: UserFormProps) {
+  const avatarOptions = AVATAR_OPTIONS;
   const [name, setName] = createSignal(props.initialData?.name || '');
   const [pin, setPin] = createSignal(props.initialData?.pin || '');
   const [profilePicture, setProfilePicture] = createSignal(
-    props.initialData?.profilePicture || AVATAR_OPTIONS[0]
+    props.initialData?.profilePicture || avatarOptions[0]
   );
   const [showPin, setShowPin] = createSignal(false);
   const [errors, setErrors] = createSignal<{ name?: string; pin?: string }>({});
@@ -53,7 +60,7 @@ export function UserForm(props: UserFormProps) {
     if (!props.initialData) {
       setName('');
       setPin('');
-      setProfilePicture(AVATAR_OPTIONS[0]);
+      setProfilePicture(avatarOptions[0]);
     }
   };
 
@@ -113,7 +120,7 @@ export function UserForm(props: UserFormProps) {
       <div class="space-y-2">
         <Label>Avatar</Label>
         <div class="flex gap-2 flex-wrap">
-          <For each={AVATAR_OPTIONS}>
+          <For each={avatarOptions}>
             {(avatar) => (
               <button
                 type="button"
@@ -129,7 +136,7 @@ export function UserForm(props: UserFormProps) {
                   alt="Avatar option"
                   class="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder-avatar.svg';
+                    (e.target as HTMLImageElement).src = ASSET_PATHS.placeholder;
                   }}
                 />
               </button>

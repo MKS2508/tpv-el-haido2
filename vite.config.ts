@@ -9,7 +9,10 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [solid(), tailwindcss()],
-  
+
+  // Base path for PWA deployment to /tpv subdirectory
+  base: process.env.PWA_BUILD === 'true' ? '/tpv/' : '/',
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -30,6 +33,8 @@ export default defineConfig(async () => ({
   define: {
     global: 'globalThis',
     'process.env': {},
+    'import.meta.env.PWA_BUILD': JSON.stringify(process.env.PWA_BUILD || 'false'),
+    '__PWA_BASE__': JSON.stringify(process.env.PWA_BUILD === 'true' ? '/tpv' : ''),
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

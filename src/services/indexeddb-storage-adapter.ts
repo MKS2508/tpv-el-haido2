@@ -54,17 +54,6 @@ export class IndexedDbStorageAdapter implements IStorageAdapter {
     localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
   }
 
-  private queueOperation(op: Omit<SyncOperation, 'id' | 'timestamp'>): void {
-    const queue = this.getSyncQueue();
-    queue.push({
-      ...op,
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      timestamp: Date.now(),
-    });
-    this.saveSyncQueue(queue);
-    console.log('[IndexedDB] Operation queued for sync:', op.type, op.store);
-  }
-
   async processSyncQueue(): Promise<void> {
     if (!this.isOnline) return;
 

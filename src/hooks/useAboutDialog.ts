@@ -1,12 +1,26 @@
-import { listen } from '@tauri-apps/api/event';
 import { onCleanup } from 'solid-js';
+import { isTauri } from '@/services/platform';
 
 export function useAboutDialog(onOpen: () => void) {
-  const unlistenPromise = listen('open-about-dialog', () => {
-    onOpen();
+  // No-op in PWA mode
+  if (!isTauri()) {
+    return;
+  }
+
+  // Lazy load Tauri APIs to prevent transformCallback errors in PWA
+  let unlisten: (() => void) | null = null;
+
+  import('@tauri-apps/api/event').then(({ listen }) => {
+    const unlistenPromise = listen('open-about-dialog', () => {
+      onOpen();
+    });
+
+    unlistenPromise.then((fn) => {
+      unlisten = fn;
+    });
   });
 
   onCleanup(() => {
-    unlistenPromise.then((unlisten) => unlisten());
+    unlisten?.();
   });
 }

@@ -1,6 +1,32 @@
-import { relaunch } from '@tauri-apps/plugin-process';
-import { check, type Update } from '@tauri-apps/plugin-updater';
 import { createSignal } from 'solid-js';
+import { isTauri } from '@/services/platform';
+
+// Stub Update type for PWA
+interface UpdateStub {
+  version: string;
+  body: string | null;
+  downloaded: boolean;
+  downloadAndInstall: (callback: (event: any) => void) => Promise<void>;
+}
+
+// Lazy load Tauri plugins only when needed
+let checkFn: (() => Promise<any>) | null = null;
+let relaunchFn: (() => Promise<void>) | null = null;
+
+async function loadTauriPlugins() {
+  if (isTauri() && !checkFn) {
+    try {
+      const plugins = await Promise.all([
+        import('@tauri-apps/plugin-updater'),
+        import('@tauri-apps/plugin-process'),
+      ]);
+      checkFn = plugins[0].check;
+      relaunchFn = plugins[1].relaunch;
+    } catch (error) {
+      console.error('[useUpdater] Failed to load Tauri plugins:', error);
+    }
+  }
+}
 
 export interface UpdateProgress {
   contentLength: number | null;
@@ -28,16 +54,27 @@ export function useUpdater() {
     notes: null,
   });
 
-  const [update, setUpdate] = createSignal<Update | null>(null);
+  const [update, setUpdate] = createSignal<UpdateStub | null>(null);
 
   const checkForUpdates = async () => {
+    // Skip if not Tauri
+    if (!isTauri()) {
+      setState((prev) => ({ ...prev, checking: false, available: false }));
+      return false;
+    }
+
     setState((prev) => ({ ...prev, checking: true, error: null }));
 
     try {
-      const result = await check();
+      await loadTauriPlugins();
+      if (!checkFn) {
+        throw new Error('Tauri updater plugin not available');
+      }
+
+      const result = await checkFn();
 
       if (result) {
-        setUpdate(result);
+        setUpdate(result as any);
         setState((prev) => ({
           ...prev,
           checking: false,
@@ -65,6 +102,12 @@ export function useUpdater() {
   };
 
   const downloadAndInstall = async () => {
+    // Skip if not Tauri
+    if (!isTauri()) {
+      setState((prev) => ({ ...prev, error: 'Updates not available in PWA mode' }));
+      return false;
+    }
+
     const currentUpdate = update();
     if (!currentUpdate) {
       setState((prev) => ({ ...prev, error: 'No update available' }));
@@ -82,7 +125,7 @@ export function useUpdater() {
       let contentLength: number | null = null;
       let downloaded = 0;
 
-      await currentUpdate.downloadAndInstall((event) => {
+      await (currentUpdate as any).downloadAndInstall((event: any) => {
         switch (event.event) {
           case 'Started':
             contentLength = event.data.contentLength ?? null;
@@ -109,7 +152,9 @@ export function useUpdater() {
       });
 
       // Relaunch the app after install
-      await relaunch();
+      if (relaunchFn) {
+        await relaunchFn();
+      }
       return true;
     } catch (error) {
       setState((prev) => ({

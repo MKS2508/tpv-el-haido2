@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { GlassContainer } from '@/components/ui/GlassContainer';
 import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
 import { useResponsive } from '@/hooks/useResponsive';
+import { ASSET_PATHS } from '@/lib/paths';
 import { config } from '@/lib/config';
 import type User from '@/models/User';
 import { isTauri } from '@/services/platform';
@@ -43,7 +44,7 @@ const Login = (props: LoginProps) => {
   const [currentTime, setCurrentTime] = createSignal(new Date());
   const [isLoading, setIsLoading] = createSignal(false);
   const responsive = useResponsive();
-  const perfConfig = usePerformanceConfig();
+  const _perfConfig = usePerformanceConfig();
 
   // Include debug test user when DEBUG_MODE is enabled
   const availableUsers = createMemo(() => {
@@ -196,7 +197,7 @@ const Login = (props: LoginProps) => {
       fallback={
         <div
           class="h-screen w-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-fixed"
-          style={{ 'background-image': "url('/wallpaper.jpeg')" }}
+          style={{ 'background-image': `url('${ASSET_PATHS.wallpaper}')` }}
         >
           <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 z-0" />
           <GlassContainer class="z-10 rounded-full p-8" radius={9999} animate={true}>
@@ -207,7 +208,7 @@ const Login = (props: LoginProps) => {
     >
       <div
         class="h-screen w-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-fixed"
-        style={{ 'background-image': "url('/wallpaper.jpeg')" }}
+        style={{ 'background-image': `url('${ASSET_PATHS.wallpaper}')` }}
       >
         <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 z-0" />
         <div class="z-10 flex flex-col items-center justify-center w-full">

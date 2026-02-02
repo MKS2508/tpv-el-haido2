@@ -79,7 +79,8 @@
       "Bash(docker compose:*)",
       "WebFetch(domain:tweakcn.com)",
       "Bash(docker ps:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(\"false\" === '\"\"'\"''true''\"'\"\"' /Users/mks/Documents/GitHub/tpv-tauri2/tpv-el-haido/apps/haidodocs/public/tpv/assets/index-s7Vefs6H.js)"
     ]
   }
 }

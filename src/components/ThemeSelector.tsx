@@ -9,7 +9,7 @@ import {
   Sun,
   Upload,
 } from 'lucide-solid';
-import { createSignal, For, onMount, Show } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -127,7 +127,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
   const isDarkMode = () => appTheme.effectiveMode() === 'dark';
   const currentTheme = () => appTheme.currentTheme();
 
-  const handleThemeSelect = async (themeId: string) => {
+  const _handleThemeSelect = async (themeId: string) => {
     await appTheme.setTheme(themeId);
     setPreviewTheme(null);
   };
