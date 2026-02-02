@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Copy, ExternalLink, Check } from 'lucide-react';
-import { useState } from 'react';
+import { Copy, ExternalLink, Check } from "lucide-react";
+import { useState } from "react";
 
 interface MarkdownActionsProps {
   content: string;
@@ -9,12 +9,25 @@ interface MarkdownActionsProps {
   locale: string;
 }
 
-export function MarkdownActions({ content, title, locale }: MarkdownActionsProps) {
+export function MarkdownActions({
+  content,
+  title,
+  locale,
+}: MarkdownActionsProps) {
   const [copied, setCopied] = useState(false);
 
-  const labels = locale === 'en'
-    ? { copy: 'Copy as Markdown', open: 'Open as Markdown', copied: 'Copied!' }
-    : { copy: 'Copiar como Markdown', open: 'Abrir como Markdown', copied: '¡Copiado!' };
+  const labels =
+    locale === "en"
+      ? {
+          copy: "Copy as Markdown",
+          open: "Open as Markdown",
+          copied: "Copied!",
+        }
+      : {
+          copy: "Copiar como Markdown",
+          open: "Abrir como Markdown",
+          copied: "¡Copiado!",
+        };
 
   const handleCopy = async () => {
     try {
@@ -22,14 +35,14 @@ export function MarkdownActions({ content, title, locale }: MarkdownActionsProps
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error("Failed to copy:", err);
     }
   };
 
   const handleOpen = () => {
-    const blob = new Blob([content], { type: 'text/markdown' });
+    const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    window.open(url, "_blank");
     URL.revokeObjectURL(url);
   };
 

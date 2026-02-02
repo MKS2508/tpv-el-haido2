@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 interface CodeLine {
   prompt?: string;
@@ -59,7 +59,7 @@ export function TypewriterCode({
   return (
     <code className="block">
       {lines.map((line, index) => {
-        const displayedText = displayedLines[index] || '';
+        const displayedText = displayedLines[index] || "";
         const isCurrentLine = index === currentLineIndex;
         const isVisible = index <= currentLineIndex;
 
@@ -67,7 +67,9 @@ export function TypewriterCode({
 
         return (
           <span key={index} className="block">
-            {line.prompt && <span className="terminal-prompt">{line.prompt} </span>}
+            {line.prompt && (
+              <span className="terminal-prompt">{line.prompt} </span>
+            )}
             {line.arrow && <span className="terminal-arrow">→ </span>}
             <span>{displayedText}</span>
             {showCursor && isCurrentLine && isTyping && (
@@ -76,7 +78,9 @@ export function TypewriterCode({
           </span>
         );
       })}
-      {showCursor && !isTyping && <span className="terminal-cursor animate-blink" />}
+      {showCursor && !isTyping && (
+        <span className="terminal-cursor animate-blink" />
+      )}
     </code>
   );
 }
@@ -86,7 +90,9 @@ export function StaticTerminalCode({ lines }: { lines: CodeLine[] }) {
     <code className="block">
       {lines.map((line, index) => (
         <span key={index} className="block">
-          {line.prompt && <span className="terminal-prompt">{line.prompt} </span>}
+          {line.prompt && (
+            <span className="terminal-prompt">{line.prompt} </span>
+          )}
           {line.arrow && <span className="terminal-arrow">→ </span>}
           <span>{line.text}</span>
         </span>

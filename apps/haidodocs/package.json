@@ -9,7 +9,10 @@
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "manual:md": "bun run scripts/generate-manual.ts",
+    "manual:pdf": "bun run scripts/generate-pdf.ts",
+    "manual:all": "bun run manual:md && bun run manual:pdf"
   },
   "dependencies": {
     "fumadocs-core": "16.4.9",

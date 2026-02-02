@@ -1,12 +1,17 @@
-import { getPageImage, sourceEn, getRawMarkdownContent } from '@/lib/source';
-import { DocsBody, DocsDescription, DocsPage, DocsTitle } from 'fumadocs-ui/layouts/docs/page';
-import { notFound } from 'next/navigation';
-import { getMDXComponents } from '@/mdx-components';
-import { MarkdownActions } from '@/components/markdown-actions';
-import type { Metadata } from 'next';
-import { createRelativeLink } from 'fumadocs-ui/mdx';
+import { getPageImage, sourceEn, getRawMarkdownContent } from "@/lib/source";
+import {
+  DocsBody,
+  DocsDescription,
+  DocsPage,
+  DocsTitle,
+} from "fumadocs-ui/layouts/docs/page";
+import { notFound } from "next/navigation";
+import { getMDXComponents } from "@/mdx-components";
+import { MarkdownActions } from "@/components/markdown-actions";
+import type { Metadata } from "next";
+import { createRelativeLink } from "fumadocs-ui/mdx";
 
-export default async function Page(props: PageProps<'/en/docs/[[...slug]]'>) {
+export default async function Page(props: PageProps<"/en/docs/[[...slug]]">) {
   const params = await props.params;
   const page = sourceEn.getPage(params.slug);
   if (!page) notFound();
@@ -24,7 +29,11 @@ export default async function Page(props: PageProps<'/en/docs/[[...slug]]'>) {
             <h3 className="text-xs font-semibold text-fd-muted-foreground uppercase">
               Actions
             </h3>
-            <MarkdownActions content={markdownContent} title={page.data.title} locale="en" />
+            <MarkdownActions
+              content={markdownContent}
+              title={page.data.title}
+              locale="en"
+            />
           </div>
         ),
       }}
@@ -48,7 +57,9 @@ export async function generateStaticParams() {
   return [{ slug: [] }, ...params];
 }
 
-export async function generateMetadata(props: PageProps<'/en/docs/[[...slug]]'>): Promise<Metadata> {
+export async function generateMetadata(
+  props: PageProps<"/en/docs/[[...slug]]">,
+): Promise<Metadata> {
   const params = await props.params;
   const page = sourceEn.getPage(params.slug);
   if (!page) notFound();

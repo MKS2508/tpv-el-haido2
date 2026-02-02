@@ -1,4 +1,4 @@
-import { createMDX } from 'fumadocs-mdx/next';
+import { createMDX } from "fumadocs-mdx/next";
 
 const withMDX = createMDX();
 
@@ -6,7 +6,7 @@ const withMDX = createMDX();
  * Base path for deployment (e.g., '/repo-name' for GitHub Pages).
  * Leave empty for root domain deployment.
  */
-const basePath = process.env.BASE_PATH || '';
+const basePath = process.env.BASE_PATH || "";
 
 /**
  * Next.js configuration for Fumadocs template.
@@ -23,13 +23,13 @@ const config = {
 
   // Deployment configuration
   basePath,
-  output: 'export',
+  output: "export",
   images: {
     unoptimized: true,
   },
 
   // URL configuration
-  trailingSlash: process.env.TRAILING_SLASH === 'true' || basePath !== '',
+  trailingSlash: process.env.TRAILING_SLASH === "true" || basePath !== "",
 };
 
 export default withMDX(config);

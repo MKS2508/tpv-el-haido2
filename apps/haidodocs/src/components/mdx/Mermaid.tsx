@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useTheme } from 'next-themes';
-import { useEffect, useId, useState } from 'react';
+import { useTheme } from "next-themes";
+import { useEffect, useId, useState } from "react";
 
 // Cache the mermaid import promise
-let mermaidPromise: Promise<typeof import('mermaid')> | null = null;
+let mermaidPromise: Promise<typeof import("mermaid")> | null = null;
 
 function loadMermaid() {
   if (!mermaidPromise) {
-    mermaidPromise = import('mermaid');
+    mermaidPromise = import("mermaid");
   }
   return mermaidPromise;
 }
@@ -20,7 +20,7 @@ interface MermaidProps {
 function MermaidContent({ chart }: MermaidProps) {
   const id = useId();
   const { resolvedTheme } = useTheme();
-  const [svg, setSvg] = useState<string>('');
+  const [svg, setSvg] = useState<string>("");
 
   useEffect(() => {
     const render = async () => {
@@ -28,36 +28,36 @@ function MermaidContent({ chart }: MermaidProps) {
 
       mermaid.default.initialize({
         startOnLoad: false,
-        theme: resolvedTheme === 'dark' ? 'dark' : 'default',
+        theme: resolvedTheme === "dark" ? "dark" : "default",
         themeVariables:
-          resolvedTheme === 'dark'
+          resolvedTheme === "dark"
             ? {
-                primaryColor: '#3ecf8e',
-                primaryTextColor: '#ededed',
-                primaryBorderColor: '#2a9d6a',
-                lineColor: '#666666',
-                secondaryColor: '#1a1a1a',
-                tertiaryColor: '#121212',
-                background: '#0a0a0a',
-                mainBkg: '#121212',
-                secondBkg: '#1a1a1a',
-                border1: '#333333',
-                border2: '#222222',
-                arrowheadColor: '#888888',
-                fontFamily: 'ui-monospace, monospace',
-                fontSize: '14px',
-                textColor: '#ededed',
-                nodeTextColor: '#ededed',
+                primaryColor: "#3ecf8e",
+                primaryTextColor: "#ededed",
+                primaryBorderColor: "#2a9d6a",
+                lineColor: "#666666",
+                secondaryColor: "#1a1a1a",
+                tertiaryColor: "#121212",
+                background: "#0a0a0a",
+                mainBkg: "#121212",
+                secondBkg: "#1a1a1a",
+                border1: "#333333",
+                border2: "#222222",
+                arrowheadColor: "#888888",
+                fontFamily: "ui-monospace, monospace",
+                fontSize: "14px",
+                textColor: "#ededed",
+                nodeTextColor: "#ededed",
               }
             : {},
       });
 
       try {
-        const safeId = id.replace(/:/g, '-');
+        const safeId = id.replace(/:/g, "-");
         const result = await mermaid.default.render(`mermaid-${safeId}`, chart);
         setSvg(result.svg);
       } catch (error) {
-        console.error('Mermaid render error:', error);
+        console.error("Mermaid render error:", error);
         setSvg(`<pre style="color: #ef4444;">Error rendering diagram</pre>`);
       }
     };
@@ -83,7 +83,9 @@ export function Mermaid({ chart }: MermaidProps) {
   if (!mounted) {
     return (
       <div className="my-6 flex h-32 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
-        <span className="text-sm text-[var(--text-muted)]">Loading diagram...</span>
+        <span className="text-sm text-[var(--text-muted)]">
+          Loading diagram...
+        </span>
       </div>
     );
   }

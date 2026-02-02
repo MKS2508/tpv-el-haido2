@@ -1,23 +1,30 @@
-'use client';
+"use client";
 
-import { ReactNode, useState } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { ReactNode, useState } from "react";
+import { Check, Copy } from "lucide-react";
 
 interface TerminalProps {
   title?: string;
   children: ReactNode;
 }
 
-export function Terminal({ title = 'Terminal', children }: TerminalProps) {
+export function Terminal({ title = "Terminal", children }: TerminalProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    let text = '';
-    if (typeof children === 'string') {
+    let text = "";
+    if (typeof children === "string") {
       text = children;
-    } else if (children && typeof children === 'object' && 'props' in children) {
+    } else if (
+      children &&
+      typeof children === "object" &&
+      "props" in children
+    ) {
       const element = children as React.ReactElement<{ children?: string }>;
-      text = typeof element.props.children === 'string' ? element.props.children : '';
+      text =
+        typeof element.props.children === "string"
+          ? element.props.children
+          : "";
     }
 
     navigator.clipboard.writeText(text);
@@ -41,7 +48,11 @@ export function Terminal({ title = 'Terminal', children }: TerminalProps) {
           className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           aria-label="Copy code"
         >
-          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+          {copied ? (
+            <Check className="w-4 h-4 text-green-500" />
+          ) : (
+            <Copy className="w-4 h-4" />
+          )}
         </button>
       </div>
       <pre className="terminal-body m-0 whitespace-pre-wrap">

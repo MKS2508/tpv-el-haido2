@@ -1,7 +1,7 @@
-import defaultMdxComponents from 'fumadocs-ui/mdx';
-import { Steps } from 'fumadocs-ui/components/steps';
-import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
-import { Callout } from 'fumadocs-ui/components/callout';
+import defaultMdxComponents from "fumadocs-ui/mdx";
+import { Steps } from "fumadocs-ui/components/steps";
+import { Tabs, Tab } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
 import {
   CheckCircle2,
   Terminal as TerminalIcon,
@@ -17,8 +17,8 @@ import {
   AlertTriangle,
   Info,
   HelpCircle,
-} from 'lucide-react';
-import type { MDXComponents } from 'mdx/types';
+} from "lucide-react";
+import type { MDXComponents } from "mdx/types";
 
 import {
   FeatureGrid,
@@ -33,7 +33,7 @@ import {
   ComparisonTable,
   Pre,
   Mermaid,
-} from '@/components/mdx';
+} from "@/components/mdx";
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {

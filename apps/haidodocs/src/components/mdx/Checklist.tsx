@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { ReactNode, useState } from 'react';
-import { Check, Circle } from 'lucide-react';
+import { ReactNode, useState } from "react";
+import { Check, Circle } from "lucide-react";
 
 interface CheckProps {
   done?: boolean;
@@ -19,15 +19,21 @@ export function CheckItem({ done: initialDone = false, children }: CheckProps) {
       <span
         className={`flex-shrink-0 mt-0.5 p-0.5 rounded-full border transition-all ${
           isDone
-            ? 'bg-[var(--accent-cyan)] border-[var(--accent-cyan)] text-[var(--bg-primary)]'
-            : 'border-[var(--border-subtle)] text-[var(--text-subtle)] group-hover:border-[var(--accent-cyan-dim)]'
+            ? "bg-[var(--accent-cyan)] border-[var(--accent-cyan)] text-[var(--bg-primary)]"
+            : "border-[var(--border-subtle)] text-[var(--text-subtle)] group-hover:border-[var(--accent-cyan-dim)]"
         }`}
       >
-        {isDone ? <Check className="w-3 h-3" /> : <Circle className="w-3 h-3" />}
+        {isDone ? (
+          <Check className="w-3 h-3" />
+        ) : (
+          <Circle className="w-3 h-3" />
+        )}
       </span>
       <span
         className={`transition-colors ${
-          isDone ? 'text-[var(--text-muted)] line-through' : 'text-[var(--text-primary)]'
+          isDone
+            ? "text-[var(--text-muted)] line-through"
+            : "text-[var(--text-primary)]"
         }`}
       >
         {children}

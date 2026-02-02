@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react';
+import { Check, X } from "lucide-react";
 
 type CellValue = string | number | boolean;
 
@@ -9,7 +9,7 @@ interface ComparisonTableProps {
 
 export function ComparisonTable({ headers, rows }: ComparisonTableProps) {
   const renderCell = (value: CellValue) => {
-    if (typeof value === 'boolean') {
+    if (typeof value === "boolean") {
       return value ? (
         <Check className="w-5 h-5 text-green-500 mx-auto" />
       ) : (
@@ -42,8 +42,8 @@ export function ComparisonTable({ headers, rows }: ComparisonTableProps) {
                   key={cellIndex}
                   className={`px-4 py-3 border border-[var(--border-subtle)] ${
                     cellIndex === 0
-                      ? 'text-[var(--text-primary)] font-medium'
-                      : 'text-center text-[var(--text-muted)]'
+                      ? "text-[var(--text-primary)] font-medium"
+                      : "text-center text-[var(--text-muted)]"
                   }`}
                 >
                   {renderCell(cell)}

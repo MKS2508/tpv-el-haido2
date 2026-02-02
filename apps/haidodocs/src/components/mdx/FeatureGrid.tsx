@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import Link from 'next/link';
+import { ReactNode } from "react";
+import Link from "next/link";
 import {
   Box,
   Zap,
@@ -12,7 +12,7 @@ import {
   Database,
   Globe,
   type LucideIcon,
-} from 'lucide-react';
+} from "lucide-react";
 
 const iconMap: Record<string, LucideIcon> = {
   box: Box,
@@ -32,7 +32,7 @@ interface FeatureProps {
   children: ReactNode;
 }
 
-export function Feature({ icon = 'box', title, href, children }: FeatureProps) {
+export function Feature({ icon = "box", title, href, children }: FeatureProps) {
   const IconComponent = iconMap[icon] || Box;
 
   const content = (
@@ -42,8 +42,12 @@ export function Feature({ icon = 'box', title, href, children }: FeatureProps) {
           <IconComponent className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="font-semibold text-[var(--text-primary)] mb-2">{title}</h3>
-          <p className="text-sm text-[var(--text-muted)] leading-relaxed">{children}</p>
+          <h3 className="font-semibold text-[var(--text-primary)] mb-2">
+            {title}
+          </h3>
+          <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+            {children}
+          </p>
         </div>
       </div>
     </div>
@@ -69,7 +73,7 @@ export function FeatureGrid({ children, columns = 2 }: FeatureGridProps) {
   return (
     <div
       className={`grid gap-4 my-6 ${
-        columns === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'
+        columns === 3 ? "md:grid-cols-3" : "md:grid-cols-2"
       }`}
     >
       {children}

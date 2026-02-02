@@ -30,7 +30,7 @@ export interface ISiteConfig {
 
   // i18n
   /** Default locale for the documentation ('es' | 'en') */
-  defaultLocale: 'es' | 'en';
+  defaultLocale: "es" | "en";
   /** Array of supported locale codes */
   supportedLocales: string[];
 
@@ -73,19 +73,19 @@ export interface ISiteConfig {
  * @type {ISiteConfig}
  */
 export const siteConfig: ISiteConfig = {
-  name: process.env.PROJECT_NAME || 'Mi Documentación',
-  description: process.env.DESCRIPTION || 'Documentación con Fumadocs',
-  author: process.env.AUTHOR || 'Autor',
+  name: process.env.PROJECT_NAME || "Mi Documentación",
+  description: process.env.DESCRIPTION || "Documentación con Fumadocs",
+  author: process.env.AUTHOR || "Autor",
 
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
 
   ogImageUrl: process.env.OG_IMAGE_URL,
 
-  defaultLocale: (process.env.DEFAULT_LOCALE as 'es' | 'en') || 'es',
-  supportedLocales: process.env.SUPPORTED_LOCALES?.split(',') || ['es', 'en'],
+  defaultLocale: (process.env.DEFAULT_LOCALE as "es" | "en") || "es",
+  supportedLocales: process.env.SUPPORTED_LOCALES?.split(",") || ["es", "en"],
 
-  basePath: process.env.BASE_PATH || '',
-  trailingSlash: process.env.TRAILING_SLASH === 'true',
+  basePath: process.env.BASE_PATH || "",
+  trailingSlash: process.env.TRAILING_SLASH === "true",
 
   primaryColor: process.env.PRIMARY_COLOR,
   logo: process.env.LOGO_SVG
@@ -104,12 +104,12 @@ export const siteConfig: ISiteConfig = {
  * @type {ISiteConfig}
  */
 export const defaultSiteConfig: ISiteConfig = {
-  name: 'Mi Documentación',
-  description: 'Documentación con Fumadocs',
-  author: 'Autor',
-  url: 'http://localhost:3000',
-  defaultLocale: 'es',
-  supportedLocales: ['es', 'en'],
-  basePath: '',
+  name: "Mi Documentación",
+  description: "Documentación con Fumadocs",
+  author: "Autor",
+  url: "http://localhost:3000",
+  defaultLocale: "es",
+  supportedLocales: ["es", "en"],
+  basePath: "",
   trailingSlash: false,
 };

@@ -1,7 +1,11 @@
-'use client';
+"use client";
 
-import { ReactNode, useState } from 'react';
-import { ChevronRight, File as FileIcon, Folder as FolderIcon } from 'lucide-react';
+import { ReactNode, useState } from "react";
+import {
+  ChevronRight,
+  File as FileIcon,
+  Folder as FolderIcon,
+} from "lucide-react";
 
 interface FileProps {
   name: string;
@@ -34,15 +38,19 @@ export function Folder({ name, defaultOpen = false, children }: FolderProps) {
       >
         <ChevronRight
           className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${
-            isOpen ? 'rotate-90' : ''
+            isOpen ? "rotate-90" : ""
           }`}
         />
         <FolderIcon
-          className={`w-4 h-4 ${isOpen ? 'text-[var(--accent-cyan)]' : 'text-[var(--text-muted)]'}`}
+          className={`w-4 h-4 ${isOpen ? "text-[var(--accent-cyan)]" : "text-[var(--text-muted)]"}`}
         />
         <span className="text-sm font-mono ml-1">{name}</span>
       </button>
-      {isOpen && children && <div className="ml-4 border-l border-[var(--border-subtle)] pl-2">{children}</div>}
+      {isOpen && children && (
+        <div className="ml-4 border-l border-[var(--border-subtle)] pl-2">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
-@import 'tailwindcss';
-@import 'fumadocs-ui/css/neutral.css';
-@import 'fumadocs-ui/css/preset.css';
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
 
 /* ===================================
    DESIGN SYSTEM - Terminal Editorial
@@ -25,9 +25,9 @@
   --border-hover: #333333;
 
   /* Fonts */
-  --font-serif: 'Instrument Serif', Georgia, serif;
-  --font-sans: 'Geist Sans', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Geist Sans", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
 }
 
 /* ===================================
@@ -155,7 +155,11 @@
    =================================== */
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-green-dim) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--accent-green) 0%,
+    var(--accent-green-dim) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -331,7 +335,9 @@
   background: var(--bg-elevated) !important;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .prose pre:hover {
@@ -463,4 +469,117 @@ kbd {
   border-radius: 4px;
   box-shadow: 0 2px 0 var(--border-subtle);
   color: var(--text-primary);
+}
+
+/* ===================================
+   MANUAL PRINT LAYOUT
+   =================================== */
+
+.manual-print-layout {
+  background: white;
+  min-height: 100vh;
+}
+
+.manual-print-layout nav,
+.manual-print-layout .fd-nav,
+.manual-print-layout .fd-sidebar {
+  display: none !important;
+}
+
+/* ===================================
+   PRINT STYLES
+   =================================== */
+
+@media print {
+  /* Hide navigation elements */
+  nav,
+  .fd-nav,
+  .fd-sidebar,
+  .fd-toc,
+  .toc,
+  .sidebar,
+  header,
+  footer:not(.manual-footer) {
+    display: none !important;
+  }
+
+  /* Reset colors for print */
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page breaks */
+  .print-section {
+    page-break-before: always;
+  }
+
+  .print-section:first-of-type {
+    page-break-before: avoid;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid;
+  }
+
+  /* Code blocks should not break across pages */
+  pre,
+  code,
+  table,
+  figure,
+  blockquote {
+    page-break-inside: avoid;
+  }
+
+  /* Show link URLs after links */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  /* Don't show URL for internal/anchor links */
+  a[href^="#"]::after,
+  a[href^="javascript"]::after {
+    content: "";
+  }
+
+  /* Ensure good contrast in print */
+  .prose {
+    --tw-prose-body: #1a1a1a;
+    --tw-prose-headings: #0f172a;
+    --tw-prose-links: #2563eb;
+    --tw-prose-code: #1e40af;
+    --tw-prose-pre-bg: #f1f5f9;
+  }
+
+  /* Table styles for print */
+  .prose table {
+    border-color: #e2e8f0;
+  }
+
+  .prose th {
+    background: #f1f5f9 !important;
+    color: #0f172a;
+  }
+
+  /* Callout/blockquote styles for print */
+  .prose blockquote {
+    background: #f8fafc !important;
+    border-left-color: #3b82f6;
+    color: #1a1a1a;
+  }
+
+  /* Code block styles for print */
+  .prose pre {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0;
+  }
+
+  .prose :not(pre) > code {
+    background: #f1f5f9;
+    color: #1e40af;
+  }
 }
