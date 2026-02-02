@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { $ } from 'bun';
-import { cpSync, existsSync, mkdirSync, rmSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
 const ROOT = join(import.meta.dir, '..');
@@ -133,6 +133,33 @@ async function main() {
       await Bun.write(productsJsonPath, JSON.stringify(updatedProducts, null, 2));
       console.log('  ✓ products.json paths updated for /tpv');
     }
+  }
+
+  // Generate PWA-specific service worker with /tpv paths
+  const swSourcePath = join(ROOT, 'public', 'sw.js');
+  const swDestPath = join(TARGET, 'sw.js');
+  if (existsSync(swSourcePath)) {
+    let swContent = await Bun.file(swSourcePath).text();
+    // Update STATIC_ASSETS paths to include /tpv prefix
+    swContent = swContent.replace(
+      /const STATIC_ASSETS = \[[\s\S]*?\];/,
+      `const STATIC_ASSETS = [
+  '/tpv/',
+  '/tpv/index.html',
+  '/tpv/manifest.json',
+  '/tpv/logo.svg',
+  '/tpv/icon-192x192.png',
+  '/tpv/icon-512x512.png',
+  '/tpv/icon-128x128.png',
+];`
+    );
+    // Update the fallback path from '/' to '/tpv/'
+    swContent = swContent.replace(
+      /const fallback = await caches\.match\('\/'\);/g,
+      "const fallback = await caches.match('/tpv/');"
+    );
+    writeFileSync(swDestPath, swContent);
+    console.log('  ✓ sw.js paths updated for /tpv');
   }
 
   console.log('\n✅ PWA build complete!');
