@@ -1,7 +1,7 @@
 # TPV El Haido - Linux x64 Build Container
 # Multi-stage build for Tauri application
 
-FROM rust:1.80-bookworm AS builder
+FROM rust:1.83-bookworm AS builder
 
 # Install system dependencies for Tauri
 RUN apt-get update && apt-get install -y \
@@ -16,20 +16,17 @@ RUN apt-get update && apt-get install -y \
     file \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js 20 LTS
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
+# Install Bun
+RUN curl -fsSL https://bun.sh/install | bash
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY package*.json ./
-COPY bun.lock* ./
+COPY package.json bun.lockb ./
 
-# Install Node dependencies (force exact Tauri CLI version)
-RUN npm ci && npm install @tauri-apps/cli@2.9.6
+# Install dependencies with Bun
+RUN /root/.bun/bin/bun install --frozen-lockfile
 
 # Copy Rust files for dependency caching
 COPY src-tauri/Cargo.toml src-tauri/Cargo.lock ./src-tauri/
@@ -49,7 +46,7 @@ WORKDIR /app
 COPY . .
 
 # Build frontend
-RUN npm run build
+RUN /root/.bun/bin/bun run build
 
 # Build Tauri application
 ARG TAURI_SIGNING_PRIVATE_KEY=""
@@ -57,7 +54,7 @@ ARG TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
 ENV TAURI_SIGNING_PRIVATE_KEY=${TAURI_SIGNING_PRIVATE_KEY}
 ENV TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${TAURI_SIGNING_PRIVATE_KEY_PASSWORD}
 
-RUN npx @tauri-apps/cli@2.9.6 build
+RUN /root/.bun/bin/bun run tauri build
 
 # Output stage - minimal image with just artifacts
 FROM debian:bookworm-slim AS artifacts
