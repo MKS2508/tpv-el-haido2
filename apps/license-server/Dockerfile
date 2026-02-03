@@ -24,16 +24,16 @@ RUN mkdir -p /app/data
 
 # Environment defaults
 ENV NODE_ENV=production
-ENV PORT=3002
+ENV PORT=3001
 ENV DB_PATH=/app/data/licenses.db
 ENV LOG_LEVEL=info
 
 # Expose port
-EXPOSE 3002
+EXPOSE 3001
 
 # Health check - using wget (available in slim image)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3002/api/license/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/license/health || exit 1
 
 # Run the server
 CMD ["bun", "run", "src/index.ts"]

@@ -80,7 +80,11 @@
       "WebFetch(domain:tweakcn.com)",
       "Bash(docker ps:*)",
       "Bash(npx eslint:*)",
-      "Bash(\"false\" === '\"\"'\"''true''\"'\"\"' /Users/mks/Documents/GitHub/tpv-tauri2/tpv-el-haido/apps/haidodocs/public/tpv/assets/index-s7Vefs6H.js)"
+      "Bash(\"false\" === '\"\"'\"''true''\"'\"\"' /Users/mks/Documents/GitHub/tpv-tauri2/tpv-el-haido/apps/haidodocs/public/tpv/assets/index-s7Vefs6H.js)",
+      "Bash(bun:*)",
+      "Bash(node:*)",
+      "Bash(COOLIFY_URL=\"http://77.42.25.248:8000\" COOLIFY_TOKEN=\"pat_v2_WqJYQQxJwOxiEKi4KQeCGLGxSFq8OJjqH5RwYPdSKM\" curl:*)",
+      "Bash(git push:*)"
     ]
   }
 }
