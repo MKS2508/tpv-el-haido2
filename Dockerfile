@@ -23,7 +23,7 @@ RUN curl -fsSL https://bun.sh/install | bash
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 
 # Install dependencies with Bun
 RUN /root/.bun/bin/bun install --frozen-lockfile
