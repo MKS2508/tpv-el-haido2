@@ -10,6 +10,7 @@ import {
   onCleanup,
   onMount,
   Show,
+  untrack,
 } from 'solid-js';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,10 @@ import { config } from '@/lib/config';
 import { ASSET_PATHS } from '@/lib/paths';
 import { createOperationStateSignal } from '@/lib/state-helpers';
 import type User from '@/models/User';
+import type { IAuditContext } from '@/services/audit.service';
+import { logLogin } from '@/services/audit.service';
 import { isTauri } from '@/services/platform';
+import { getBusinessNif } from '@/store/store';
 
 /**
  * Debug test user for development
@@ -84,6 +88,11 @@ const Login = (props: LoginProps) => {
     } else {
       setError('PIN incorrecto');
       setPin('');
+      // Auditar intento de login fallido — el usuario seleccionado es quien intentó autenticarse
+      if (user) {
+        const ctx: IAuditContext = { userId: user.id, userName: user.name, businessNif: getBusinessNif() };
+        void logLogin(ctx, false, 'PIN incorrecto');
+      }
     }
   };
 
@@ -116,7 +125,7 @@ const Login = (props: LoginProps) => {
 
   createEffect(() => {
     if (pin().length === 4) {
-      handlePinSubmit();
+      untrack(handlePinSubmit);
     }
   });
 
@@ -255,6 +264,16 @@ const Login = (props: LoginProps) => {
               >
                 El Haido TPV
               </h1>
+              <p
+                class={`text-gray-500 dark:text-gray-400 mt-0.5 ${responsive.isMobile() ? 'text-[10px]' : 'text-xs'}`}
+              >
+                Software de digitalización y gestión para Bar El Haido
+              </p>
+              <p
+                class={`text-gray-500 dark:text-gray-400 mt-0.5 ${responsive.isMobile() ? 'text-[10px]' : 'text-xs'}`}
+              >
+                GERMAN ASENSIO BLASCO · NIF 16639695T
+              </p>
               <p
                 class={`text-gray-700 dark:text-gray-300 mt-1 font-medium ${responsive.isMobile() ? 'text-xs' : 'text-sm'}`}
               >

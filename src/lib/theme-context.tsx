@@ -7,16 +7,14 @@
 
 import {
   ThemeCore,
-  type ThemeCoreConfig,
   type ThemeCoreInstance,
 } from '@mks2508/shadcn-basecoat-theme-manager';
 import type { JSX } from 'solid-js';
 import {
   type Accessor,
   createContext,
-  createEffect,
   createSignal,
-  onCleanup,
+  onMount,
   useContext,
 } from 'solid-js';
 
@@ -34,25 +32,19 @@ const ThemeContext = createContext<ThemeContextValue>();
 // ==================== Provider ====================
 
 interface ThemeProviderProps {
-  config?: ThemeCoreConfig;
   children: JSX.Element;
 }
 
 export function ThemeProvider(props: ThemeProviderProps) {
-  const [themeCore, setThemeCore] = createSignal<ThemeCoreInstance | null>(null);
-  const [isReady, setIsReady] = createSignal(false);
+  const [themeCore, setThemeCore] = createSignal<ThemeCoreInstance | null>(ThemeCore.getInstance());
+  const [isReady, setIsReady] = createSignal(ThemeCore.getInstance() !== null);
 
-  // Initialize ThemeCore on mount - wrap in createEffect for reactivity
-  createEffect(() => {
-    ThemeCore.init(props.config).then((instance) => {
-      setThemeCore(() => instance);
-      setIsReady(true);
-    });
-  });
-
-  // Cleanup on unmount
-  onCleanup(() => {
-    // ThemeCore is a singleton, no explicit cleanup needed
+  // Wait for ThemeCore (already eagerly initialized in main.tsx)
+  onMount(async () => {
+    if (isReady()) return;
+    const instance = await ThemeCore.waitForReady();
+    setThemeCore(() => instance);
+    setIsReady(true);
   });
 
   const contextValue: ThemeContextValue = {

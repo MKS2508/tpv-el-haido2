@@ -162,24 +162,24 @@ export class WebPlatformService implements PlatformService {
   async checkLicense(): Promise<LicenseStatus> {
     console.log('[WebPlatformService] License system not available in PWA');
     return {
-      is_activated: true,
-      is_valid: true,
-      license_type: 'pwa',
+      isActivated: true,
+      isValid: true,
+      licenseType: 'pwa',
       email: 'pwa@web.local',
-      days_remaining: null,
-      expires_at: null,
+      daysRemaining: null,
+      expiresAt: null,
     };
   }
 
   async validateLicense(_key: string, _email: string): Promise<LicenseStatus> {
     console.log('[WebPlatformService] License validation skipped in PWA');
     return {
-      is_activated: true,
-      is_valid: true,
-      license_type: 'pwa',
+      isActivated: true,
+      isValid: true,
+      licenseType: 'pwa',
       email: 'pwa@web.local',
-      days_remaining: null,
-      expires_at: null,
+      daysRemaining: null,
+      expiresAt: null,
     };
   }
 

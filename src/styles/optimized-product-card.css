@@ -16,7 +16,7 @@
   box-shadow:
     0 1px 3px 0 rgb(0 0 0 / 0.1),
     0 1px 2px -1px rgb(0 0 0 / 0.1);
-  border-color: hsl(var(--border));
+  border-color: var(--border);
 }
 
 /* Hover states - solo para dispositivos no táctiles */
@@ -26,12 +26,12 @@
     box-shadow:
       0 10px 15px -3px rgb(0 0 0 / 0.1),
       0 4px 6px -4px rgb(0 0 0 / 0.1);
-    border-color: hsl(var(--primary) / 0.4);
+    border-color: color-mix(in oklch, var(--primary) / 0.4);
   }
 
   .product-card.manage-mode:hover {
     transform: scale(1.01) translateZ(0);
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: color-mix(in oklch, var(--primary) / 0.3);
     box-shadow:
       0 4px 6px -1px rgb(0 0 0 / 0.1),
       0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -47,21 +47,21 @@
 /* Adding state - cuando se está agregando al pedido */
 .product-card.adding {
   transform: scale(1.03) translateZ(0);
-  border-color: hsl(var(--success));
+  border-color: var(--success);
   box-shadow:
-    0 0 0 2px hsl(var(--success) / 0.3),
+    0 0 0 2px color-mix(in oklch, var(--success) / 0.3),
     0 20px 25px -5px rgb(0 0 0 / 0.1),
     0 8px 10px -6px rgb(0 0 0 / 0.1),
-    0 0 20px hsl(var(--success) / 0.4);
+    0 0 20px color-mix(in oklch, var(--success) / 0.4);
   animation: pulse-success 0.3s ease-out;
 }
 
 .product-card.success {
-  border-color: hsl(var(--success) / 0.6);
+  border-color: color-mix(in oklch, var(--success) / 0.6);
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1),
-    0 0 15px hsl(var(--success) / 0.3);
+    0 0 15px color-mix(in oklch, var(--success) / 0.3);
 }
 
 /* Product icon animations */
@@ -83,14 +83,14 @@
 
 .action-btn.adding {
   transform: scale(1.15) rotateZ(0);
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .action-btn.success {
   transform: scale(1.1) rotateZ(180deg);
-  background: hsl(var(--success));
-  color: hsl(var(--success-foreground));
+  background: var(--success);
+  color: var(--success-foreground);
   animation: success-spin 0.3s ease-out;
 }
 
@@ -103,7 +103,7 @@
 
 .product-price.adding {
   transform: scale(1.08);
-  color: hsl(var(--success));
+  color: var(--success);
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.1));
 }
 
@@ -111,15 +111,15 @@
 @keyframes pulse-success {
   0% {
     transform: scale(1.03) translateZ(0);
-    box-shadow: 0 0 0 0 hsl(var(--success) / 0.7);
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--success) / 0.7);
   }
   50% {
     transform: scale(1.05) translateZ(0);
-    box-shadow: 0 0 0 8px hsl(var(--success) / 0);
+    box-shadow: 0 0 0 8px color-mix(in oklch, var(--success) / 0);
   }
   100% {
     transform: scale(1.03) translateZ(0);
-    box-shadow: 0 0 0 0 hsl(var(--success) / 0);
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--success) / 0);
   }
 }
 
@@ -194,7 +194,7 @@
 
 .reduced-motion .product-card.adding {
   opacity: 0.8;
-  border-color: hsl(var(--success));
+  border-color: var(--success);
 }
 
 /* Touch optimizations */

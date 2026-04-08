@@ -33,7 +33,7 @@
 }
 
 .order-row:hover {
-  background-color: hsl(var(--muted) / 0.5);
+  background-color: color-mix(in oklch, var(--muted) 50%, transparent);
 }
 
 /* Virtualized List optimizations */
@@ -41,7 +41,7 @@
   /* Smooth scrolling */
   scroll-behavior: smooth;
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) transparent;
+  scrollbar-color: var(--border) transparent;
 }
 
 .virtualized-order-list::-webkit-scrollbar {
@@ -53,12 +53,12 @@
 }
 
 .virtualized-order-list::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--border));
+  background-color: var(--border);
   border-radius: 3px;
 }
 
 .virtualized-order-list::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--border) / 0.8);
+  background-color: color-mix(in oklch, var(--border) 80%, transparent);
 }
 
 /* Loading states for order items */
@@ -107,7 +107,7 @@
 /* Focus states for accessibility */
 .order-card:focus-visible,
 .order-row:focus-visible {
-  outline: 2px solid hsl(var(--primary));
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 

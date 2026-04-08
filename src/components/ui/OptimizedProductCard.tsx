@@ -48,8 +48,8 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
 
     return `data:image/svg+xml;base64,${btoa(`
             <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                <rect width="80" height="80" fill="hsl(var(--muted))"/>
-                <text x="40" y="45" text-anchor="middle" font-size="24" fill="hsl(var(--muted-foreground))">
+                <rect width="80" height="80" fill="var(--muted)"/>
+                <text x="40" y="45" text-anchor="middle" font-size="24" fill="var(--muted-foreground)">
                     ${props.product.icon || '🍽️'}
                 </text>
             </svg>
@@ -131,23 +131,20 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
   };
 
   const getCardStyles = () => {
-    const baseStyles =
-      'product-card relative flex flex-col overflow-hidden rounded-xl cursor-pointer touch-manipulation h-full';
+    const base =
+      'product-card relative flex flex-col overflow-hidden rounded-2xl cursor-pointer touch-manipulation h-full border border-foreground/[0.08] transition-all duration-150';
 
     if (mode() === 'order') {
       return cn(
-        baseStyles,
-        'border-2',
+        base,
         isTouch() && 'touch-optimized',
-        'bg-gradient-to-b from-background to-card',
-        isAdding() && 'adding',
-        showSuccess() && 'success',
+        'shadow-md',
+        isAdding() ? 'border-success shadow-success/30' : showSuccess() ? 'border-success/50' : 'hover:border-foreground/20 hover:shadow-lg',
         props.class
       );
     }
 
-    // Mode 'manage'
-    return cn(baseStyles, 'border bg-card', 'border-border shadow-sm manage-mode', props.class);
+    return cn(base, 'shadow-sm hover:border-foreground/20 hover:shadow-md', props.class);
   };
 
   // Animation props based on performance
@@ -177,10 +174,10 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
       <div
         class={cn(
           'relative overflow-hidden',
-          mode() === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
+          mode() === 'order' ? 'h-28 w-full' : 'h-24 w-full',
           !isRealImage()
             ? `bg-gradient-to-br ${getCategoryColors(props.product.category)}`
-            : 'bg-muted/10'
+            : 'bg-foreground/5'
         )}
         style={isRealImage() ? imageStyle() : {}}
       >
@@ -263,19 +260,19 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
       {/* Product Info Section */}
       <div
         class={cn(
-          'flex-1 flex flex-col justify-between bg-gradient-to-b from-card/50 to-card border-t border-border/20',
-          mode() === 'order' ? 'p-3' : 'p-2'
+          'flex flex-col bg-background/80 text-left',
+          mode() === 'order' ? 'px-2.5 py-2' : 'px-2 py-1.5'
         )}
       >
         {/* Product Name */}
-        <div class={cn(mode() === 'order' ? 'mb-2' : 'mb-1')}>
+        <div class={cn(mode() === 'order' ? 'mb-1' : 'mb-0.5')}>
           <Motion.h3
             class={cn(
-              'font-extrabold line-clamp-2 leading-tight',
-              mode() === 'order' ? 'text-sm mb-0.5' : 'text-xs',
+              'font-bold line-clamp-2 leading-tight',
+              mode() === 'order' ? 'text-xs' : 'text-xs',
               isAdding() ? 'text-primary' : 'text-foreground'
             )}
-            animate={perf.enableAnimations && isAdding() ? { color: 'hsl(var(--success))' } : {}}
+            animate={perf.enableAnimations && isAdding() ? { color: 'var(--success)' } : {}}
             transition={{ duration: perf.transitionDuration }}
           >
             {props.product.name}
@@ -318,11 +315,11 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
           {/* Stock indicator para mode order */}
           <Show
             when={
-              mode() === 'order' && props.product.stock !== undefined && props.product.stock < 10
+              mode() === 'order' && typeof props.product.stock === 'number' && props.product.stock > 0 && props.product.stock < 10
             }
           >
-            <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
-              <span class="text-xs font-bold text-warning">Quedan {props.product.stock}</span>
+            <div class="px-2 py-0.5 bg-warning/15 rounded-md">
+              <span class="text-[11px] font-semibold text-warning">{props.product.stock} uds</span>
             </div>
           </Show>
 

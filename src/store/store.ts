@@ -21,9 +21,11 @@ import type { LicenseStatus } from '@/types/license';
 
 /**
  * Obtiene el NIF del negocio desde la configuración AEAT en localStorage.
+ * Exportado para que Login y componentes de licencia puedan construir contextos de auditoría
+ * antes de que haya un usuario seleccionado en el store.
  * @returns NIF string o cadena vacía si no está configurado
  */
-const getBusinessNif = (): string => {
+export const getBusinessNif = (): string => {
   try {
     const saved = localStorage.getItem('tpv-aeat-config');
     if (saved) {
@@ -102,24 +104,24 @@ const getStorageAdapterForMode = (mode: StorageMode): IStorageAdapter => {
 
 // Get initial storage mode from env, localStorage, or smart defaults
 const getInitialStorageMode = (): StorageMode => {
+  const inTauri = isTauri();
+
   try {
     const saved = localStorage.getItem('tpv-storage-mode') as StorageMode | null;
-    if (saved === 'sqlite' || saved === 'http' || saved === 'indexeddb') {
-      return saved;
-    }
+    // Only honor saved value if it's valid for the current environment:
+    // - sqlite requires Tauri (no invoke() in web)
+    // - http and indexeddb are always valid
+    if (saved === 'sqlite' && inTauri) return 'sqlite';
+    if (saved === 'http' || saved === 'indexeddb') return saved;
   } catch {
     // Ignore localStorage errors
   }
 
-  if (config.storage.defaultMode) {
-    return config.storage.defaultMode;
-  }
+  if (config.storage.defaultMode === 'sqlite' && inTauri) return 'sqlite';
+  if (config.storage.defaultMode === 'http') return 'http';
+  if (config.storage.defaultMode === 'indexeddb') return 'indexeddb';
 
-  if (isTauri()) {
-    return 'sqlite';
-  }
-
-  return 'indexeddb';
+  return inTauri ? 'sqlite' : 'indexeddb';
 };
 
 // Get initial stock images setting from localStorage
@@ -169,7 +171,7 @@ function createAppStore() {
     customers: [],
     storageMode: initialStorageMode,
     useStockImages: getInitialUseStockImages(),
-    debugMode: true,
+    debugMode: config.debug.enabled,
     isBackendConnected: false,
     orderHistory: [],
     paymentMethod: 'efectivo',
@@ -207,7 +209,19 @@ function createAppStore() {
     setState('users', users.slice());
   };
 
-  const setSelectedUser = (user: User | null) => setState('selectedUser', user);
+  const setSelectedUser = (user: User | null) => {
+    if (user !== null) {
+      // Login: construimos el contexto con el usuario que acaba de autenticarse
+      const nif = getBusinessNif();
+      const ctx: IAuditContext = { userId: user.id, userName: user.name, businessNif: nif };
+      void audit.logLogin(ctx, true);
+    } else {
+      // Logout: usamos el contexto del usuario actual antes de borrarlo
+      const ctx = getAuditContext();
+      if (ctx) void audit.logLogout(ctx);
+    }
+    setState('selectedUser', user);
+  };
 
   const setSelectedOrder = (order: Order | null) => setState('selectedOrder', order);
 
@@ -356,16 +370,22 @@ function createAppStore() {
   const setBackendConnected = (connected: boolean) => setState('isBackendConnected', connected);
 
   const setAutoOpenCashDrawer = (enabled: boolean) => {
+    const ctx = getAuditContext();
+    if (ctx) void audit.logSettingsChange(ctx, 'autoOpenCashDrawer', state.autoOpenCashDrawer, enabled);
     setState('autoOpenCashDrawer', enabled);
     debouncedLocalStorageSet('tpv-auto-open-cash-drawer', enabled.toString());
   };
 
   const setTaxRate = (rate: number) => {
+    const ctx = getAuditContext();
+    if (ctx) void audit.logSettingsChange(ctx, 'taxRate', state.taxRate, rate);
     setState('taxRate', rate);
     debouncedLocalStorageSet('tpv-tax-rate', rate.toString());
   };
 
   const setStorageMode = (mode: StorageMode) => {
+    const ctx = getAuditContext();
+    if (ctx) void audit.logSettingsChange(ctx, 'storageMode', state.storageMode, mode);
     batch(() => {
       setState('storageMode', mode);
       setStorageAdapterInternal(getStorageAdapterForMode(mode) as IStorageAdapter);
@@ -376,6 +396,66 @@ function createAppStore() {
   const setLicenseStatus = (status: LicenseStatus | null) => setState('licenseStatus', status);
 
   const setShowLicenseDialog = (show: boolean) => setState('showLicenseDialog', show);
+
+  // === PRODUCT CRUD ===
+
+  const addProduct = async (product: Product) => {
+    const result = await storageAdapter().createProduct(product);
+    if (result.ok) {
+      const ctx = getAuditContext();
+      if (ctx) void audit.logProductCreate(ctx, String(product.id), product);
+    }
+    return result;
+  };
+
+  const updateProduct = async (product: Product) => {
+    const oldProduct = state.products.find((p) => p.id === product.id);
+    const result = await storageAdapter().updateProduct(product);
+    if (result.ok) {
+      const ctx = getAuditContext();
+      if (ctx) void audit.logProductUpdate(ctx, String(product.id), oldProduct, product);
+    }
+    return result;
+  };
+
+  const deleteProduct = async (product: Product) => {
+    const result = await storageAdapter().deleteProduct(product);
+    if (result.ok) {
+      const ctx = getAuditContext();
+      if (ctx) void audit.logProductDelete(ctx, String(product.id), product);
+    }
+    return result;
+  };
+
+  // === CATEGORY CRUD ===
+
+  const addCategory = async (category: Category) => {
+    const result = await storageAdapter().createCategory(category);
+    if (result.ok) {
+      const ctx = getAuditContext();
+      if (ctx) void audit.logCategoryCreate(ctx, String(category.id), category);
+    }
+    return result;
+  };
+
+  const updateCategory = async (category: Category) => {
+    const oldCategory = state.categories.find((c) => c.id === category.id);
+    const result = await storageAdapter().updateCategory(category);
+    if (result.ok) {
+      const ctx = getAuditContext();
+      if (ctx) void audit.logCategoryUpdate(ctx, String(category.id), oldCategory, category);
+    }
+    return result;
+  };
+
+  const deleteCategory = async (category: Category) => {
+    const result = await storageAdapter().deleteCategory(category);
+    if (result.ok) {
+      const ctx = getAuditContext();
+      if (ctx) void audit.logCategoryDelete(ctx, String(category.id), category);
+    }
+    return result;
+  };
 
   // === COMPLEX ACTIONS ===
 
@@ -423,6 +503,8 @@ function createAppStore() {
               s.selectedOrder = updatedOrder;
             })
           );
+          const ctx = getAuditContext();
+          if (ctx) void audit.logTableAssign(ctx, tableId, emptyOrdersWithoutTable[0].id);
         } catch (error) {
           storeLog.error('Error updating empty order', error instanceof Error ? error : undefined);
         }
@@ -454,6 +536,11 @@ function createAppStore() {
             setState('selectedOrderId', newOrder.id);
             setState('selectedOrder', newOrder);
           });
+          const ctx = getAuditContext();
+          if (ctx) {
+            void audit.logOrderCreate(ctx, newOrder.id, newOrder, tableId);
+            void audit.logTableAssign(ctx, tableId, newOrder.id);
+          }
         } catch (error) {
           storeLog.error('Error creating new order', error instanceof Error ? error : undefined);
         }
@@ -483,7 +570,14 @@ function createAppStore() {
     );
     const ctx = getAuditContext();
     if (ctx) {
-      audit.logOrderComplete(ctx, completedOrder.id, completedOrder, completedOrder.paymentMethod);
+      void audit.logOrderComplete(ctx, completedOrder.id, completedOrder, completedOrder.paymentMethod);
+      if (completedOrder.paymentMethod) {
+        void audit.logPayment(ctx, completedOrder.id, completedOrder.paymentMethod, {
+          total: completedOrder.total,
+          itemCount: completedOrder.itemCount,
+          tableNumber: completedOrder.tableNumber,
+        });
+      }
     }
   };
 
@@ -535,6 +629,8 @@ function createAppStore() {
     if (updatedOrder) {
       const dataService = storageAdapter();
       await dataService.updateOrder(updatedOrder);
+      const ctx = getAuditContext();
+      if (ctx) void audit.logOrderUpdate(ctx, orderId, undefined, updatedOrder);
     }
   };
 
@@ -587,6 +683,8 @@ function createAppStore() {
       try {
         const dataService = storageAdapter();
         await dataService.updateOrder(updatedOrder);
+        const ctx = getAuditContext();
+        if (ctx) void audit.logOrderUpdate(ctx, orderId, undefined, updatedOrder);
       } catch (error) {
         storeLog.error('Error updating order', error instanceof Error ? error : undefined);
       }
@@ -611,6 +709,12 @@ function createAppStore() {
     addCustomer,
     updateCustomer,
     deleteCustomer,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    addCategory,
+    updateCategory,
+    deleteCategory,
     setOrderHistory,
     setActiveOrders,
     setRecentProducts,

@@ -236,33 +236,22 @@ function PaymentModal(props: PaymentModalProps) {
                         Cantidad en Efectivo
                       </Label>
                       <div class={cn('grid grid-cols-3', isMobile() ? 'gap-2' : 'gap-3')}>
-                        <Presence>
                           <For each={numpadButtons}>
-                            {(key, index) => (
-                              <Motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{
-                                  duration: 0.4,
-                                  delay: index() * 0.03,
-                                }}
-                              >
+                            {(key) => (
                                 <Button
                                   variant="outline"
                                   onClick={() => handleLocalCashInput(key)}
                                   class={cn(
-                                    'w-full bg-input border-2 border-border font-bold hover:bg-input/80 transition-all duration-150 touch-manipulation',
+                                    'w-full bg-input border border-foreground/10 font-bold hover:bg-foreground/10 transition-all duration-150 touch-manipulation',
                                     isMobile()
                                       ? 'h-16 text-2xl active:scale-95'
-                                      : 'h-24 text-4xl hover:scale-102 active:scale-95'
+                                      : 'h-20 text-3xl hover:scale-102 active:scale-95'
                                   )}
                                 >
                                   {key}
                                 </Button>
-                              </Motion.div>
                             )}
                           </For>
-                        </Presence>
                       </div>
                     </div>
 

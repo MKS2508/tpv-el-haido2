@@ -79,7 +79,7 @@ function OrderPanel(props: OrderPanelProps) {
   const total = createMemo(() => props.selectedOrder?.total ?? 0);
 
   return (
-    <div class="h-full flex flex-col bg-card overflow-hidden">
+    <div class="h-full flex flex-col overflow-hidden" style={{ background: 'color-mix(in oklch, var(--foreground) 4%, var(--background) 96%)' }}>
       <Show
         when={props.selectedOrder}
         fallback={
@@ -105,7 +105,7 @@ function OrderPanel(props: OrderPanelProps) {
         {(order) => (
           <>
             {/* Header del pedido - altura fija optimizada */}
-            <div class="h-10 px-3 border-b border-border bg-muted/30 flex items-center gap-2 flex-shrink-0">
+            <div class="h-10 px-3 border-b border-foreground/10 bg-foreground/5 flex items-center gap-2 flex-shrink-0">
               <Receipt class="w-3.5 h-3.5 text-muted-foreground" />
               <h3 class="text-xs font-medium text-foreground">
                 {order().tableNumber === 0 ? 'Barra' : `Mesa ${order().tableNumber}`}
@@ -133,11 +133,11 @@ function OrderPanel(props: OrderPanelProps) {
 
             {/* Footer con total y boton - STICKY BOTTOM, SIEMPRE VISIBLE */}
             <Motion.div
-              class="sticky bottom-0 flex-shrink-0 px-3 py-2 border-t border-border bg-card/95 backdrop-blur-sm z-10"
+              class="flex-shrink-0 px-3 py-2.5 border-t border-foreground/10 bg-foreground/5 z-10"
               animate={{
                 backgroundColor: showPaymentHighlight()
-                  ? 'hsl(var(--success) / 0.08)'
-                  : 'hsl(var(--card) / 0.95)',
+                  ? 'color-mix(in oklch, var(--success) 8%, transparent)'
+                  : 'color-mix(in oklch, var(--card) 95%, transparent)',
               }}
               transition={{ duration: 0.3 }}
             >
@@ -155,7 +155,7 @@ function OrderPanel(props: OrderPanelProps) {
                 }
               >
                 <div class="flex justify-between items-center mb-2">
-                  <span class="text-sm font-semibold text-card-foreground">Total:</span>
+                  <span class="text-sm font-semibold text-foreground">Total:</span>
                   <span class="text-lg font-bold text-primary">
                     <AnimatedCounter value={total()} animate={!props.disableAnimations} />
                   </span>
@@ -164,53 +164,27 @@ function OrderPanel(props: OrderPanelProps) {
                   <Button
                     variant="outline"
                     onClick={() => order().id && props.onOrderClose(order().id)}
-                    class="h-10 flex-shrink-0"
+                    class="h-11 w-11 flex-shrink-0 p-0"
                     title="Cerrar orden"
                   >
                     <X class="w-4 h-4" />
                   </Button>
-                  <Motion.div
-                    animate={{
-                      scale: showPaymentHighlight() ? 1.02 : 1,
-                      boxShadow: showPaymentHighlight()
-                        ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-                        : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                    }}
-                    transition={{ duration: 0.2 }}
-                    class="flex-1"
+                  <Button
+                    onClick={props.onPaymentStart}
+                    disabled={itemCount() === 0}
+                    class={cn(
+                      'payment-button flex-1 h-11 min-w-0',
+                      'bg-primary hover:bg-primary/90',
+                      'text-primary-foreground',
+                      'font-semibold text-sm',
+                      'transition-all duration-150',
+                      'active:scale-[0.98]',
+                      itemCount() === 0 && 'opacity-50 cursor-not-allowed'
+                    )}
                   >
-                    <Button
-                      onClick={props.onPaymentStart}
-                      disabled={itemCount() === 0}
-                      class={cn(
-                        'payment-button w-full h-10',
-                        'bg-primary hover:bg-primary/90',
-                        'text-primary-foreground',
-                        'font-semibold text-sm',
-                        'shadow-md',
-                        'transition-all duration-150',
-                        'active:scale-[0.98]',
-                        itemCount() === 0 && 'opacity-50 cursor-not-allowed'
-                      )}
-                    >
-                      <Motion.div
-                        class="flex items-center justify-center gap-2"
-                        animate={
-                          !props.disableAnimations && showPaymentHighlight()
-                            ? { scale: [1, 1.02, 1] }
-                            : {}
-                        }
-                        transition={{
-                          duration: 0.15,
-                          easing: 'ease-out',
-                        }}
-                      >
-                        <span>Completar</span>
-                        <AnimatedCounter value={total()} animate={!props.disableAnimations} />
-                        <ShoppingCartIcon class="w-4 h-4" />
-                      </Motion.div>
-                    </Button>
-                  </Motion.div>
+                    <span class="truncate">Completar</span>
+                    <span class="ml-1 flex-shrink-0"><AnimatedCounter value={total()} animate={!props.disableAnimations} /></span>
+                  </Button>
                 </div>
               </Show>
             </Motion.div>

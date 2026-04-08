@@ -1,87 +1,82 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2024-01-01",
+  "lastUpdated": "2026-04-08T00:00:00Z",
   "themes": [
     {
-      "id": "default",
-      "name": "default",
-      "label": "Default",
-      "description": "Default shadcn/ui theme",
-      "author": "shadcn",
+      "id": "synthwave84",
+      "name": "synthwave84",
+      "label": "Synthwave84",
+      "description": "Purple-toned synthwave aesthetic with neon accents",
+      "author": "mks2508",
+      "version": "1.0.0",
+      "source": "local",
+      "category": "built-in",
+      "default": true,
+      "modes": {
+        "light": "/themes/synthwave84-light.css",
+        "dark": "/themes/synthwave84-dark.css"
+      },
+      "fonts": {
+        "sans": "system-ui, -apple-system, sans-serif",
+        "serif": "Georgia, serif",
+        "mono": "Fira Code, ui-monospace, monospace"
+      },
+      "preview": {
+        "primary": "oklch(0.3527 0.1722 263.94)",
+        "background": "oklch(1.0000 0 0)",
+        "accent": "oklch(0.9702 0 0)"
+      },
+      "config": { "radius": "0.5rem" }
+    },
+    {
+      "id": "graphite",
+      "name": "graphite",
+      "label": "Graphite",
+      "description": "Elegant grayscale theme with subtle shadows",
+      "author": "mks2508",
       "version": "1.0.0",
       "source": "local",
       "category": "built-in",
       "modes": {
-        "light": "/src/themes/default-light.css",
-        "dark": "/src/themes/default-dark.css"
+        "light": "/themes/graphite-light.css",
+        "dark": "/themes/graphite-dark.css"
       },
       "fonts": {
-        "sans": "system-ui, sans-serif",
+        "sans": "Montserrat, system-ui, sans-serif",
         "serif": "Georgia, serif",
-        "mono": "ui-monospace, monospace"
+        "mono": "Fira Code, monospace"
       },
       "preview": {
-        "primary": "hsl(221.2 83.2% 53.3%)",
-        "background": "hsl(0 0% 100%)",
-        "accent": "hsl(210 40% 96%)"
+        "primary": "oklch(0.4891 0 0)",
+        "background": "oklch(0.9551 0 0)",
+        "accent": "oklch(0.8078 0 0)"
       },
-      "config": {
-        "radius": "0.5rem"
-      }
+      "config": { "radius": "0.35rem" }
     },
     {
-      "id": "supabase",
-      "name": "supabase",
-      "label": "Supabase",
-      "description": "Supabase inspired theme",
-      "author": "Supabase",
+      "id": "darkmatteviolet",
+      "name": "darkmatteviolet",
+      "label": "Dark Matte Violet",
+      "description": "Purple-accented dark theme with monospace aesthetics",
+      "author": "mks2508",
       "version": "1.0.0",
       "source": "local",
       "category": "built-in",
       "modes": {
-        "light": "/src/themes/supabase-light.css",
-        "dark": "/src/themes/supabase-dark.css"
+        "light": "/themes/darkmatteviolet-light.css",
+        "dark": "/themes/darkmatteviolet-dark.css"
       },
       "fonts": {
-        "sans": "Inter, system-ui, sans-serif",
-        "serif": "Georgia, serif",
-        "mono": "ui-monospace, monospace"
+        "sans": "Geist Mono, ui-monospace, monospace",
+        "serif": "serif",
+        "mono": "JetBrains Mono, monospace"
       },
       "preview": {
-        "primary": "hsl(151 55% 41.5%)",
-        "background": "hsl(0 0% 100%)",
-        "accent": "hsl(151 55% 91.5%)"
+        "primary": "oklch(0.5452 0.2088 308.6980)",
+        "background": "oklch(1.0000 0 0)",
+        "accent": "oklch(0.9491 0 0)"
       },
-      "config": {
-        "radius": "0.375rem"
-      }
-    },
-    {
-      "id": "tangerine",
-      "name": "tangerine",
-      "label": "Tangerine",
-      "description": "Warm tangerine theme",
-      "author": "Community",
-      "version": "1.0.0",
-      "source": "local", 
-      "category": "built-in",
-      "modes": {
-        "light": "/src/themes/tangerine-light.css",
-        "dark": "/src/themes/tangerine-dark.css"
-      },
-      "fonts": {
-        "sans": "system-ui, sans-serif",
-        "serif": "Georgia, serif",
-        "mono": "ui-monospace, monospace"
-      },
-      "preview": {
-        "primary": "hsl(24.6 95% 53.1%)",
-        "background": "hsl(0 0% 100%)",
-        "accent": "hsl(24.6 95% 93.1%)"
-      },
-      "config": {
-        "radius": "0.5rem"
-      }
+      "config": { "radius": "0.75rem" }
     }
   ]
 }

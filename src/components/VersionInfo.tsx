@@ -1,5 +1,5 @@
-import { AlertCircle, CheckCircle2, Download, Info, RefreshCw } from 'lucide-solid';
-import { createEffect, createSignal, onMount, Show } from 'solid-js';
+import { AlertCircle, Building2, CheckCircle2, Download, Info, KeyRound, Lock, RefreshCw, Shield, User } from 'lucide-solid';
+import { createSignal, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { useUpdater } from '@/hooks/useUpdater';
 import { cn } from '@/lib/utils';
@@ -61,10 +61,8 @@ export function VersionInfo(props: VersionInfoProps) {
   };
 
   // Auto-check on mount
-  createEffect(() => {
-    if (!lastChecked()) {
-      handleCheck();
-    }
+  onMount(() => {
+    void handleCheck();
   });
 
   return (
@@ -77,8 +75,49 @@ export function VersionInfo(props: VersionInfoProps) {
           <div class="flex items-center gap-2">
             <span class="text-sm text-muted-foreground">Versión</span>
             <span class="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-sm font-medium text-secondary-foreground">
-              {currentVersion() || '...'}
+              v{currentVersion() || '...'}
             </span>
+          </div>
+          <p class="text-xs text-muted-foreground">
+            Software de digitalización y gestión de procesos creado ad hoc para Bar El Haido
+          </p>
+        </div>
+      </div>
+
+      {/* Datos del beneficiario */}
+      <div class="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+        <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
+          <Building2 class="h-4 w-4 text-primary" />
+          Datos del beneficiario
+        </h3>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div class="flex items-center gap-2">
+            <User class="h-3.5 w-3.5 text-muted-foreground" />
+            <div>
+              <span class="text-muted-foreground text-xs">Titular</span>
+              <p class="font-medium text-foreground">GERMAN ASENSIO BLASCO</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <Shield class="h-3.5 w-3.5 text-muted-foreground" />
+            <div>
+              <span class="text-muted-foreground text-xs">NIF</span>
+              <p class="font-medium text-foreground">16639695T</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <Building2 class="h-3.5 w-3.5 text-muted-foreground" />
+            <div>
+              <span class="text-muted-foreground text-xs">Establecimiento</span>
+              <p class="font-medium text-foreground">Bar El Haido</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <Info class="h-3.5 w-3.5 text-muted-foreground" />
+            <div>
+              <span class="text-muted-foreground text-xs">Tipo</span>
+              <p class="font-medium text-foreground">PYME — Hostelería</p>
+            </div>
           </div>
         </div>
       </div>
@@ -236,17 +275,64 @@ export function VersionInfo(props: VersionInfoProps) {
         </div>
       </div>
 
-      {/* Información técnica */}
+      {/* Sistema actualizable */}
+      <div class="rounded-lg border border-primary/30 bg-primary/5 p-4">
+        <div class="flex items-start gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <RefreshCw class="h-5 w-5" />
+          </div>
+          <div class="space-y-1">
+            <p class="font-semibold text-foreground">Sistema actualizable</p>
+            <p class="text-sm text-muted-foreground">
+              Actualizaciones OTA (Over-The-Air) firmadas digitalmente. El sistema verifica e instala
+              nuevas versiones de forma automática sin intervención del usuario, garantizando que la
+              solución se mantiene actualizada con las últimas funcionalidades y parches de seguridad.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Protección por licencia */}
+      <div class="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+        <div class="flex items-start gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
+            <Lock class="h-5 w-5" />
+          </div>
+          <div class="space-y-1">
+            <p class="font-semibold text-foreground">Protección por licencia</p>
+            <p class="text-sm text-muted-foreground">
+              Este software requiere una licencia válida para su funcionamiento. La licencia es
+              otorgada únicamente por el responsable del desarrollo y/o por GERMAN ASENSIO BLASCO
+              como titular del establecimiento. El sistema es completamente inutilizable sin previa
+              activación y verificación de licencia, impidiendo copias ilegales o uso fraudulento
+              de la solución.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Información del producto */}
       <div class="space-y-2">
-        <h3 class="text-sm font-medium text-foreground">Información técnica</h3>
+        <h3 class="text-sm font-medium text-foreground">Información del producto</h3>
         <div class="grid grid-cols-2 gap-2 text-sm">
           <div class="rounded-md bg-muted/50 px-3 py-2">
-            <span class="text-muted-foreground">Plataforma</span>
-            <p class="font-medium text-foreground">{isTauri() ? 'Desktop (Tauri)' : 'Web'}</p>
+            <span class="text-muted-foreground">Identificador</span>
+            <p class="font-medium text-foreground">com.elhaido.tpv</p>
           </div>
           <div class="rounded-md bg-muted/50 px-3 py-2">
-            <span class="text-muted-foreground">Framework</span>
-            <p class="font-medium text-foreground">SolidJS + Vite</p>
+            <span class="text-muted-foreground">Categoría Kit Digital</span>
+            <p class="font-medium text-foreground">VI — Gestión de Procesos</p>
+          </div>
+          <div class="rounded-md bg-muted/50 px-3 py-2 flex items-start gap-2">
+            <KeyRound class="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <span class="text-muted-foreground">Licencia</span>
+              <p class="font-medium text-foreground">Activación obligatoria</p>
+            </div>
+          </div>
+          <div class="rounded-md bg-muted/50 px-3 py-2">
+            <span class="text-muted-foreground">Plataforma</span>
+            <p class="font-medium text-foreground">{isTauri() ? 'Desktop (Tauri)' : 'Web (PWA)'}</p>
           </div>
         </div>
       </div>

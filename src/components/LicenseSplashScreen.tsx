@@ -9,7 +9,9 @@ import { Label } from '@/components/ui/label';
 import { config } from '@/lib/config';
 import { createContextLogger } from '@/lib/logger';
 import { createOperationStateSignal, createTransactionStateSignal } from '@/lib/state-helpers';
+import { logLicenseActivate } from '@/services/audit.service';
 import { getPlatformService } from '@/services/platform';
+import { getBusinessNif } from '@/store/store';
 import type { LicenseActivationRequest, LicenseStatus } from '@/types/license';
 
 const log = createContextLogger('LicenseSplashScreen');
@@ -66,8 +68,8 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
 
     await activateOp.execute(async () => {
       const status = await platform.validateLicense(request.key, request.email);
-      if (!status.is_valid) {
-        const msg = status.error_message || 'Error al activar la licencia';
+      if (!status.isValid) {
+        const msg = status.errorMessage || 'Error al activar la licencia';
         toast.error(msg);
         throw new Error(msg);
       }
@@ -77,6 +79,10 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
     const opState = activateOp.state();
     if (opState.status === 'success' && opState.result) {
       toast.success('Licencia activada correctamente');
+      void logLicenseActivate(
+        { userId: 0, userName: 'system', businessNif: getBusinessNif() },
+        request.key
+      );
       props.onComplete(opState.result);
     }
   };
@@ -85,7 +91,7 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
     await checkOp.execute(async () => {
       const platform = getPlatformService();
       const status = await platform.checkLicense();
-      if (status.is_activated && status.is_valid) {
+      if (status.isActivated && status.isValid) {
         props.onComplete(status);
       }
       return ok(status);

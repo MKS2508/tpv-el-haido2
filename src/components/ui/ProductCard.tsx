@@ -51,8 +51,8 @@ const ProductCard = (props: ProductCardProps) => {
 
     return `data:image/svg+xml;base64,${btoa(`
             <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                <rect width="80" height="80" fill="hsl(var(--muted))"/>
-                <text x="40" y="45" text-anchor="middle" font-size="24" fill="hsl(var(--muted-foreground))">
+                <rect width="80" height="80" fill="var(--muted)"/>
+                <text x="40" y="45" text-anchor="middle" font-size="24" fill="var(--muted-foreground)">
                     ${local.product.icon || '🍽️'}
                 </text>
             </svg>
@@ -124,26 +124,21 @@ const ProductCard = (props: ProductCardProps) => {
   };
 
   const getCardStyles = () => {
-    const baseStyles =
-      'relative flex flex-col overflow-hidden rounded-xl cursor-pointer transition-all duration-200';
+    const base = 'relative flex flex-col overflow-hidden rounded-2xl cursor-pointer transition-all duration-150 border border-foreground/[0.08]';
 
     if (local.mode === 'order') {
       return cn(
-        baseStyles,
-        'border-2 touch-enhanced bg-gradient-to-b from-background to-card',
+        base,
+        'touch-enhanced shadow-md',
         isAdding()
-          ? 'border-success shadow-2xl shadow-success/40 ring-2 ring-success/30 scale-[1.02]'
+          ? 'border-success shadow-success/30'
           : showSuccess()
-            ? 'border-success/60 shadow-xl shadow-success/30'
-            : 'border-border shadow-lg hover:border-primary/40 hover:shadow-xl'
+            ? 'border-success/50'
+            : 'hover:border-foreground/20 hover:shadow-lg'
       );
     }
 
-    return cn(
-      baseStyles,
-      'border bg-card hover:shadow-md hover:border-primary/30',
-      'border-border shadow-sm'
-    );
+    return cn(base, 'shadow-sm hover:border-foreground/20 hover:shadow-md');
   };
 
   return (
@@ -151,21 +146,16 @@ const ProductCard = (props: ProductCardProps) => {
       class={cn(getCardStyles(), props.class)}
       onClick={handleClick as (e: MouseEvent) => void}
       style={others.style as JSX.CSSProperties}
-      animate={{
-        scale: isAdding() ? 1.03 : 1,
-      }}
-      transition={{
-        duration: 0.2,
-        easing: [0.25, 0.1, 0.25, 1],
-      }}
+      animate={{ scale: isAdding() ? 0.96 : 1 }}
+      transition={{ duration: 0.1, easing: 'ease-out' }}
     >
       <div
         class={cn(
-          'relative overflow-hidden',
-          local.mode === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
+          'relative overflow-hidden flex-shrink-0',
+          local.mode === 'order' ? 'h-28 w-full' : 'h-24 w-full',
           !isRealImage
             ? `bg-gradient-to-br ${getCategoryColors(local.product.category)}`
-            : 'bg-muted/10'
+            : 'bg-foreground/5'
         )}
         style={isRealImage() ? imageStyle() : {}}
       >
@@ -249,8 +239,8 @@ const ProductCard = (props: ProductCardProps) => {
       {/* Product Info Section */}
       <div
         class={cn(
-          'flex-1 flex flex-col justify-between bg-gradient-to-b from-card/50 to-card border-t border-border/20',
-          local.mode === 'order' ? 'p-3' : 'p-2'
+          'flex-1 flex flex-col justify-between bg-background/80',
+          local.mode === 'order' ? 'px-3 pt-2.5 pb-3' : 'px-2.5 pt-2 pb-2.5'
         )}
       >
         {/* Product Name */}
@@ -303,10 +293,11 @@ const ProductCard = (props: ProductCardProps) => {
 
           {/* Stock indicator para mode order */}
           {local.mode === 'order' &&
-            local.product.stock !== undefined &&
+            typeof local.product.stock === 'number' &&
+            local.product.stock > 0 &&
             local.product.stock < 10 && (
-              <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
-                <span class="text-xs font-bold text-warning">Quedan {local.product.stock}</span>
+              <div class="px-2 py-0.5 bg-warning/15 rounded-md">
+                <span class="text-[11px] font-semibold text-warning">{local.product.stock} uds</span>
               </div>
             )}
 
@@ -323,7 +314,7 @@ const ProductCard = (props: ProductCardProps) => {
         <Presence>
           {isAdding() && !showSuccess() && (
             <Motion.div
-              class="absolute inset-0 bg-primary/10 backdrop-blur-[2px] rounded-xl"
+              class="absolute inset-0 bg-success/10"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

@@ -33,7 +33,6 @@ import SettingsPanel from '@/components/Sections/SettingsPanel';
 import Sidebar from '@/components/SideBar';
 import SidebarToggleButton from '@/components/SideBarToggleButton';
 import UpdateChecker from '@/components/UpdateChecker';
-import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
 import { useAboutDialog } from '@/hooks/useAboutDialog';
 import { config } from '@/lib/config';
@@ -304,12 +303,12 @@ function App() {
     if (!platform.canUseLicenseSystem()) {
       log.info('PWA MODE - License system not available, skipping validation');
       const pwaStatus: LicenseStatus = {
-        is_activated: true,
-        is_valid: true,
+        isActivated: true,
+        isValid: true,
         email: 'pwa@web.local',
-        license_type: 'pwa',
-        days_remaining: null,
-        expires_at: null,
+        licenseType: 'pwa',
+        daysRemaining: null,
+        expiresAt: null,
       };
       store.setLicenseStatus(pwaStatus);
       setShowAppSplash(false);
@@ -321,12 +320,12 @@ function App() {
     if (config.debug.enabled) {
       log.info('DEBUG MODE - Skipping license validation');
       const debugStatus: LicenseStatus = {
-        is_activated: true,
-        is_valid: true,
+        isActivated: true,
+        isValid: true,
         email: 'debug@test.local',
-        license_type: 'enterprise',
-        days_remaining: 9999,
-        expires_at: null,
+        licenseType: 'enterprise',
+        daysRemaining: 9999,
+        expiresAt: null,
       };
       store.setLicenseStatus(debugStatus);
       setShowAppSplash(false);
@@ -337,15 +336,15 @@ function App() {
     try {
       const status = await platform.checkLicense();
       log.debug('License status', {
-        isActivated: status.is_activated,
-        isValid: status.is_valid,
-        type: status.license_type,
-        daysRemaining: status.days_remaining,
+        isActivated: status.isActivated,
+        isValid: status.isValid,
+        type: status.licenseType,
+        daysRemaining: status.daysRemaining,
       });
 
       store.setLicenseStatus(status);
 
-      if (!status.is_activated || !status.is_valid) {
+      if (!status.isActivated || !status.isValid) {
         setShowLicenseSplash(true);
         return;
       }
@@ -369,8 +368,8 @@ function App() {
     store.setLicenseStatus(status);
     setShowLicenseSplash(false);
 
-    if (!status.is_valid) {
-      log.warn('Invalid license activated', { email: status.email, type: status.license_type });
+    if (!status.isValid) {
+      log.warn('Invalid license activated', { email: status.email, type: status.licenseType });
     }
   };
 
@@ -420,7 +419,7 @@ function App() {
     <div
       class={cn(
         'flex h-screen w-screen bg-background text-foreground overscroll-none',
-        isMobile() ? 'pb-20 pt-0 px-0' : 'pt-4 pr-4 pb-4',
+        isMobile() ? 'pb-20 pt-0 px-0' : 'p-4',
         store.state.touchOptimizationsEnabled && 'touch-optimized'
       )}
     >
@@ -470,23 +469,19 @@ function App() {
           menuItems={menuItems}
           loggedUser={store.state.selectedUser!}
           onLogout={() => store.setSelectedUser(null)}
+          toggleSidebar={toggleSidebar}
         />
 
-        {/* Sidebar Toggle Button - Hide on mobile */}
-        <Show when={!isMobile()}>
-          <SidebarToggleButton isSidebarOpen={isSidebarOpen()} toggleSidebar={toggleSidebar} />
-        </Show>
-
         <main class={cn('flex-1 h-full relative overscroll-y-none', isMobile() && 'w-full')}>
-          <Card
+          <div
             class={cn(
-              'h-full w-full bg-card border-card-border shadow-xl overflow-hidden',
-              isMobile() ? 'rounded-none border-0' : 'rounded-3xl'
+              'h-full w-full overflow-hidden flex flex-col text-card-foreground',
+              isMobile() ? 'bg-card' : 'rounded-2xl border border-foreground/8'
             )}
+            style={!isMobile() ? { background: 'color-mix(in oklch, var(--card) 90%, var(--foreground) 10%)' } : {}}
           >
-            <CardContent class="p-0 h-full flex flex-col overflow-hidden bg-card text-card-foreground">
               <div
-                class={cn('flex-shrink-0', isMobile() ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6')}
+                class={cn('flex-shrink-0', isMobile() ? 'px-3 pt-3' : 'px-4 pt-4')}
               >
                 <SectionHeader menuItems={menuItems} activeSection={activeSection()} />
               </div>
@@ -497,7 +492,7 @@ function App() {
                     <div
                       class={cn(
                         'h-full overflow-y-auto',
-                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
                       )}
                     >
                       <ErrorBoundary
@@ -514,7 +509,7 @@ function App() {
                     <div
                       class={cn(
                         'h-full overflow-y-auto',
-                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
                       )}
                     >
                       <ErrorBoundary
@@ -543,7 +538,7 @@ function App() {
                     <div
                       class={cn(
                         'h-full overflow-y-auto',
-                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
                       )}
                     >
                       <ErrorBoundary
@@ -565,7 +560,7 @@ function App() {
                     <div
                       class={cn(
                         'h-full overflow-y-auto',
-                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
                       )}
                     >
                       <ErrorBoundary
@@ -582,7 +577,7 @@ function App() {
                     <div
                       class={cn(
                         'h-full overflow-y-auto',
-                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
                       )}
                     >
                       <ErrorBoundary
@@ -596,12 +591,7 @@ function App() {
                   </Match>
 
                   <Match when={activeSection() === 'settings' && store.state.selectedUser}>
-                    <div
-                      class={cn(
-                        'h-full overflow-y-auto',
-                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                      )}
-                    >
+                    <div class="h-full overflow-hidden">
                       <ErrorBoundary
                         level="section"
                         fallbackTitle="Error en Ajustes"
@@ -626,8 +616,7 @@ function App() {
                   </Match>
                 </Switch>
               </div>
-            </CardContent>
-          </Card>
+          </div>
         </main>
 
         {/* Bottom Navigation for Mobile */}

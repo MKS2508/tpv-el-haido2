@@ -1,7 +1,6 @@
 import { Motion } from '@motionone/solid';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-solid';
 import { type Component, splitProps } from 'solid-js';
-import { Button } from '@/components/ui/button.tsx';
 
 type SidebarToggleButtonProps = {
   isSidebarOpen: boolean;
@@ -13,22 +12,23 @@ const SidebarToggleButton: Component<SidebarToggleButtonProps> = (props) => {
 
   return (
     <Motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      class="absolute top-1/2 -translate-y-1/2 z-20"
+      style={{ left: '-14px' }}
     >
-      <Button
-        variant="outline"
-        size="icon"
-        class="absolute top-4 left-0 z-10 p-0 bg-background"
+      <button
+        type="button"
+        class="flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 hover:shadow-xl hover:scale-110 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         onClick={local.toggleSidebar}
       >
         {local.isSidebarOpen ? (
-          <ChevronLeftIcon class="h-12 w-12" />
+          <ChevronLeftIcon class="h-4 w-4" />
         ) : (
-          <ChevronRightIcon class="h-12 w-12" />
+          <ChevronRightIcon class="h-4 w-4" />
         )}
-      </Button>
+      </button>
     </Motion.div>
   );
 };

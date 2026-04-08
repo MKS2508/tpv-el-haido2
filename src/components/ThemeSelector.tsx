@@ -9,7 +9,9 @@ import {
   Sun,
   Upload,
 } from 'lucide-solid';
-import { createSignal, For, Show } from 'solid-js';
+import { ok, type ResultError } from '@mks2508/no-throw';
+import type { ThemeConfig } from '@mks2508/shadcn-basecoat-theme-manager';
+import { For, Show, createSignal } from 'solid-js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,9 +27,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
+import { createContextLogger } from '@/lib/logger';
 import { useAppTheme } from '@/lib/theme-context';
-import { PRESET_THEMES } from '@/lib/themes/preset-themes';
-import type { ThemeConfig } from '@/lib/themes/theme-config';
+import { createOperationStateSignal } from '@/lib/state-helpers';
+
+const log = createContextLogger('ThemeSelector');
 
 interface TweakCNTheme {
   name: string;
@@ -47,14 +51,17 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
   const appTheme = useAppTheme();
   const [isImportDialogOpen, setIsImportDialogOpen] = createSignal(false);
   const [importUrl, setImportUrl] = createSignal('');
-  const [isImporting, setIsImporting] = createSignal(false);
   const [previewTheme, setPreviewTheme] = createSignal<string | null>(null);
   const [touchModeEnabled, setTouchModeEnabled] = createSignal(
     document.documentElement.classList.contains('touch-mode')
   );
   const [tweakCNThemes, setTweakCNThemes] = createSignal<TweakCNTheme[]>([]);
-  const [isLoadingTweakCN, setIsLoadingTweakCN] = createSignal(false);
   const [showTweakCNThemes, setShowTweakCNThemes] = createSignal(false);
+
+  const importOp = createOperationStateSignal<void>();
+  const loadTweakCNOp = createOperationStateSignal<TweakCNTheme[]>();
+  const isImporting = () => importOp.state().status === 'pending';
+  const isLoadingTweakCN = () => loadTweakCNOp.state().status === 'pending';
 
   // Load TweakCN themes on demand
   const loadTweakCNThemes = async () => {
@@ -63,42 +70,24 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
       return;
     }
 
-    setIsLoadingTweakCN(true);
-    try {
+    await loadTweakCNOp.execute(async () => {
       const response = await fetch('https://tweakcn.com/r/registry.json');
       if (!response.ok) throw new Error('Failed to fetch registry');
-
       const data = await response.json();
-      const themes = data.themes || data.items || [];
+      const themes = (data.themes || data.items || []) as TweakCNTheme[];
       setTweakCNThemes(themes);
       setShowTweakCNThemes(true);
-
-      toast({
-        title: 'Temas cargados',
-        description: `Se encontraron ${themes.length} temas disponibles`,
-      });
-    } catch (error) {
-      console.error('Error loading TweakCN themes:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los temas de TweakCN',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoadingTweakCN(false);
-    }
+      toast({ title: 'Temas cargados', description: `Se encontraron ${themes.length} temas disponibles` });
+      return ok(themes);
+    });
   };
 
   const handleInstallTweakCNTheme = async (theme: TweakCNTheme) => {
-    setIsImporting(true);
-    try {
-      // Fetch individual theme data
+    await importOp.execute(async () => {
       const themeUrl = `https://tweakcn.com/r/themes/${theme.name}.json`;
       const response = await fetch(themeUrl);
       if (!response.ok) throw new Error('Failed to fetch theme');
-
       const themeData = await response.json();
-
       const themeManager = appTheme.themeManager();
       if (themeManager) {
         await themeManager.installTheme(
@@ -106,31 +95,19 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
           themeUrl
         );
         await appTheme.setTheme(themeData.name || theme.name);
-
-        toast({
-          title: 'Tema instalado',
-          description: `"${theme.label || theme.name}" instalado correctamente`,
-        });
+        toast({ title: 'Tema instalado', description: `"${theme.label || theme.name}" instalado correctamente` });
       }
-    } catch (error) {
-      console.error('Error installing theme:', error);
-      toast({
-        title: 'Error',
-        description: `No se pudo instalar "${theme.label || theme.name}"`,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsImporting(false);
+      return ok(undefined as void);
+    });
+    const s = importOp.state();
+    if (s.status === 'failed') {
+      log.error('Error installing theme', s.error as ResultError<string>);
+      toast({ title: 'Error', description: `No se pudo instalar "${theme.label || theme.name}"`, variant: 'destructive' });
     }
   };
 
   const isDarkMode = () => appTheme.effectiveMode() === 'dark';
   const currentTheme = () => appTheme.currentTheme();
-
-  const _handleThemeSelect = async (themeId: string) => {
-    await appTheme.setTheme(themeId);
-    setPreviewTheme(null);
-  };
 
   const handleDarkModeToggle = () => {
     appTheme.toggleMode();
@@ -173,20 +150,14 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
       return;
     }
 
-    setIsImporting(true);
-    try {
+    await importOp.execute(async () => {
       let jsonUrl = importUrl();
       if (importUrl().includes('tweakcn.com/') && !importUrl().endsWith('.json')) {
         jsonUrl = `${importUrl().replace('/themes/', '/r/themes/')}.json`;
       }
-
       const response = await fetch(jsonUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch theme data');
-      }
-
+      if (!response.ok) throw new Error('Failed to fetch theme data');
       const themeData = await response.json();
-
       const themeManager = appTheme.themeManager();
       if (themeManager) {
         await themeManager.installTheme(
@@ -198,53 +169,37 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
         );
         await appTheme.setTheme(themeData.name || `custom-${Date.now()}`);
       }
-
       toast({
         title: 'Tema importado',
         description: `Tema "${themeData.name || 'Personalizado'}" importado exitosamente`,
       });
-
       setIsImportDialogOpen(false);
       setImportUrl('');
-    } catch (error) {
-      console.error('Error importing theme:', error);
-      toast({
-        title: 'Error al importar tema',
-        description: 'No se pudo importar el tema. Verifica la URL e inténtalo de nuevo.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsImporting(false);
+      return ok(undefined as void);
+    });
+
+    const s = importOp.state();
+    if (s.status === 'failed') {
+      log.error('Error importing theme', s.error as ResultError<string>);
+      toast({ title: 'Error al importar tema', description: 'No se pudo importar el tema. Verifica la URL e inténtalo de nuevo.', variant: 'destructive' });
     }
   };
 
   const getCategoryIcon = (category: ThemeConfig['category']) => {
     switch (category) {
-      case 'restaurant':
-        return '🍽️';
-      case 'cafe':
-        return '☕';
-      case 'bar':
-        return '🍸';
-      case 'accessibility':
-        return '♿';
-      default:
-        return '🎨';
+      case 'built-in': return '🎨';
+      case 'installed': return '📦';
+      case 'custom': return '✏️';
+      default: return '🎨';
     }
   };
 
   const getCategoryColor = (category: ThemeConfig['category']) => {
     switch (category) {
-      case 'restaurant':
-        return 'bg-accent/20 text-accent-foreground border-accent/20';
-      case 'cafe':
-        return 'bg-secondary/20 text-secondary-foreground border-secondary/20';
-      case 'bar':
-        return 'bg-primary/20 text-primary-foreground border-primary/20';
-      case 'accessibility':
-        return 'bg-muted/20 text-muted-foreground border-muted/20';
-      default:
-        return 'bg-muted/20 text-muted-foreground border-muted/20';
+      case 'built-in': return 'bg-primary/20 text-primary-foreground border-primary/20';
+      case 'installed': return 'bg-secondary/20 text-secondary-foreground border-secondary/20';
+      case 'custom': return 'bg-accent/20 text-accent-foreground border-accent/20';
+      default: return 'bg-muted/20 text-muted-foreground border-muted/20';
     }
   };
 
@@ -373,7 +328,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
           <div class="space-y-4">
             <h4 class="font-medium">Temas Disponibles</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <For each={PRESET_THEMES}>
+              <For each={appTheme.availableThemes()}>
                 {(theme) => (
                   <Card
                     class={`cursor-pointer transition-all touch-enhanced ${
@@ -389,7 +344,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                       <div class="flex items-center justify-between">
                         <CardTitle class="text-sm flex items-center gap-2">
                           <span class="text-base">{getCategoryIcon(theme.category)}</span>
-                          {theme.name}
+                          {theme.label || theme.name}
                         </CardTitle>
                         <Show when={currentTheme() === theme.id}>
                           <Check class="h-4 w-4 text-primary" />
@@ -397,29 +352,29 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                       </div>
                     </CardHeader>
                     <CardContent class="space-y-3">
-                      <p class="text-xs text-muted-foreground">{theme.description}</p>
-
+                      <Show when={theme.description}>
+                        <p class="text-xs text-muted-foreground">{theme.description}</p>
+                      </Show>
                       <Badge variant="secondary" class={getCategoryColor(theme.category)}>
                         {theme.category}
                       </Badge>
-
                       {/* Color Preview */}
                       <Show when={theme.preview}>
                         <div class="flex gap-1">
                           <div
                             class="w-4 h-4 rounded-full border border-border"
-                            style={{ 'background-color': theme.preview!.primaryColor }}
+                            style={{ 'background-color': theme.preview.primary }}
                             title="Color primario"
                           />
                           <div
                             class="w-4 h-4 rounded-full border border-border"
-                            style={{ 'background-color': theme.preview!.secondaryColor }}
-                            title="Color secundario"
+                            style={{ 'background-color': theme.preview.background }}
+                            title="Color de fondo"
                           />
                           <div
                             class="w-4 h-4 rounded-full border border-border"
-                            style={{ 'background-color': theme.preview!.backgroundColor }}
-                            title="Color de fondo"
+                            style={{ 'background-color': theme.preview.accent }}
+                            title="Color de acento"
                           />
                         </div>
                       </Show>

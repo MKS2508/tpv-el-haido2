@@ -1,2 +1,1 @@
-/* Import all theme definitions */
-@import "./themes/index.css";
+/* Theme CSS is loaded dynamically by ThemeCore */

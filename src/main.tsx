@@ -3,10 +3,8 @@ import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { render } from 'solid-js/web';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ErrorBoundary';
 import { initializeLogger } from '@/lib/logger-init';
-import { ASSET_PATHS, getAssetPath, getSwPath, getSwScope } from '@/lib/paths';
+import { ASSET_PATHS, getSwPath, getSwScope } from '@/lib/paths';
 import { ThemeProvider } from '@/lib/theme-context';
-import { PRESET_THEMES } from '@/lib/themes/preset-themes';
-import type { ThemeConfig } from '@/lib/themes/theme-config';
 import { isTauri } from '@/services/platform/PlatformDetector';
 import App from './App';
 import './styles/optimized-product-card.css';
@@ -15,48 +13,6 @@ import './styles/optimized-login.css';
 
 // Initialize logger with transports and log levels FIRST
 initializeLogger();
-
-/**
- * Convert PRESET_THEMES format to ThemeCore cssVars format
- */
-function convertThemeToVars(theme: ThemeConfig): {
-  light: Record<string, string>;
-  dark: Record<string, string>;
-} {
-  const convertColors = (colors: ThemeConfig['colors']['light']) => {
-    const vars: Record<string, string> = {};
-    for (const [key, value] of Object.entries(colors) as [string, string][]) {
-      // ThemeCore expects CSS variable format
-      vars[`--${key}`] = value;
-    }
-    return vars;
-  };
-
-  return {
-    light: convertColors(theme.colors.light),
-    dark: convertColors(theme.colors.dark),
-  };
-}
-
-/**
- * Install all preset themes into ThemeCore
- */
-async function installPresetThemes(themeCore: Awaited<ReturnType<typeof ThemeCore.init>>) {
-  const themeLog = logger.component('Theme');
-  const registry = themeCore.getThemeRegistry();
-  for (const theme of PRESET_THEMES) {
-    try {
-      const cssVars = convertThemeToVars(theme);
-      await registry.installTheme({ name: theme.id, cssVars }, 'local://preset-themes');
-      themeLog.info(`Installed preset theme: ${theme.id}`);
-    } catch (error) {
-      themeLog.warn(
-        `Failed to install theme ${theme.id}`,
-        error instanceof Error ? error : undefined
-      );
-    }
-  }
-}
 
 async function registerServiceWorker() {
   const swLog = logger.component('ServiceWorker');
@@ -94,13 +50,44 @@ async function registerServiceWorker() {
   }
 }
 
+function ensureAeatConfig() {
+  const key = 'tpv-aeat-config';
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const cfg = JSON.parse(saved);
+      if (cfg?.businessData?.nif && cfg?.businessData?.nombreRazon) return;
+      // Patch missing fields
+      cfg.businessData = {
+        ...cfg.businessData,
+        nif: cfg.businessData?.nif || '16639695T',
+        nombreRazon: cfg.businessData?.nombreRazon || 'GERMAN ASENSIO BLASCO',
+      };
+      localStorage.setItem(key, JSON.stringify(cfg));
+    } else {
+      localStorage.setItem(key, JSON.stringify({
+        businessData: {
+          nif: '16639695T',
+          nombreRazon: 'GERMAN ASENSIO BLASCO',
+          serieFactura: 'HAI',
+          tipoFactura: 'F1',
+          descripcionOperacion: 'Venta de servicios de hostelería',
+        },
+        environment: 'production',
+        mode: 'sidecar',
+      }));
+    }
+  } catch { /* ignore */ }
+}
+
 async function initializeApp() {
   const appLog = logger.component('App');
+  ensureAeatConfig();
 
   try {
     appLog.info('Initializing ThemeCore...');
 
-    const themeCore = await ThemeCore.init({
+    await ThemeCore.init({
       debug: import.meta.env.DEV,
       registryPath: ASSET_PATHS.themes,
       fouc: {
@@ -109,14 +96,12 @@ async function initializeApp() {
         revealDelay: 0,
       },
       defaults: {
-        theme: 'amethyst-haze',
+        theme: 'synthwave84',
         mode: 'auto',
       },
     });
 
-    // Install preset themes
-    await installPresetThemes(themeCore);
-    appLog.success('ThemeCore initialization', { themesCount: PRESET_THEMES.length });
+    appLog.success('ThemeCore ready', { registryPath: ASSET_PATHS.themes });
 
     document.body.style.visibility = 'visible';
     document.body.style.opacity = '1';
@@ -148,20 +133,7 @@ async function initializeApp() {
         fallbackTitle="Error critico en la aplicacion"
         fallbackMessage="Lo sentimos, algo ha salido mal. Por favor, recarga la aplicacion para continuar."
       >
-        <ThemeProvider
-          config={{
-            debug: import.meta.env.DEV,
-            fouc: {
-              prevent: true,
-              method: 'auto',
-              revealDelay: 0,
-            },
-            defaults: {
-              theme: 'amethyst-haze',
-              mode: 'auto',
-            },
-          }}
-        >
+        <ThemeProvider>
           <App />
         </ThemeProvider>
       </AppErrorBoundary>

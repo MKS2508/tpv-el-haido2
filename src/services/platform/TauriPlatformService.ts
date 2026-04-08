@@ -196,9 +196,9 @@ export class TauriPlatformService implements PlatformService {
     } catch (error) {
       console.error('[TauriPlatformService] Error checking license:', error);
       return {
-        is_activated: false,
-        is_valid: false,
-        error_message: 'Error al verificar licencia',
+        isActivated: false,
+        isValid: false,
+        errorMessage: 'Error al verificar licencia',
       };
     }
   }
@@ -212,9 +212,9 @@ export class TauriPlatformService implements PlatformService {
     } catch (error) {
       console.error('[TauriPlatformService] Error validating license:', error);
       return {
-        is_activated: false,
-        is_valid: false,
-        error_message: 'Error de conexión con el servidor de licencias',
+        isActivated: false,
+        isValid: false,
+        errorMessage: 'Error de conexión con el servidor de licencias',
       };
     }
   }

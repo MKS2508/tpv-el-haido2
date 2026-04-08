@@ -14,7 +14,7 @@
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted) / 0.5) transparent;
+  scrollbar-color: color-mix(in oklch, var(--muted) / 0.5) transparent;
 }
 
 /* Custom scrollbar for WebKit browsers */
@@ -27,12 +27,12 @@
 }
 
 .neworder-scroll-container::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: color-mix(in oklch, var(--muted-foreground) / 0.3);
   border-radius: 4px;
 }
 
 .neworder-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: color-mix(in oklch, var(--muted-foreground) / 0.5);
 }
 
 /* Scroll snap items */
@@ -77,7 +77,7 @@
   right: 0;
   bottom: 0;
   width: 2rem;
-  background: linear-gradient(to left, hsl(var(--card)), transparent);
+  background: linear-gradient(to left, var(--card), transparent);
   pointer-events: none;
 }
 
@@ -106,8 +106,8 @@
     overflow-x: auto;
     gap: 0.25rem;
     padding: 0.5rem;
-    border-bottom: 1px solid hsl(var(--border));
-    background-color: hsl(var(--card) / 0.5);
+    border-bottom: 1px solid var(--border);
+    background-color: color-mix(in oklch, var(--card) / 0.5);
   }
 
   .neworder-category-tab--tablet {
@@ -115,23 +115,23 @@
     padding: 0.5rem 0.75rem;
     font-size: 0.75rem;
     font-weight: 500;
-    border-radius: hsl(var(--radius));
+    border-radius: var(--radius);
     white-space: nowrap;
     transition: all 0.15s ease;
   }
 
   .neworder-category-tab--tablet[data-selected="true"] {
-    background-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
+    background-color: var(--primary);
+    color: var(--primary-foreground);
   }
 
   .neworder-category-tab--tablet[data-selected="false"] {
-    background-color: hsl(var(--muted));
-    color: hsl(var(--muted-foreground));
+    background-color: var(--muted);
+    color: var(--muted-foreground);
   }
 
   .neworder-category-tab--tablet[data-selected="false"]:hover {
-    background-color: hsl(var(--muted) / 0.8);
+    background-color: color-mix(in oklch, var(--muted) / 0.8);
   }
 }
 
@@ -142,8 +142,8 @@
     width: 10rem;
     min-width: 10rem;
     max-width: 14rem;
-    border-right: 1px solid hsl(var(--border));
-    background-color: hsl(var(--sidebar));
+    border-right: 1px solid color-mix(in oklch, var(--foreground) 10%, transparent);
+    background-color: color-mix(in oklch, var(--foreground) 3%, var(--background));
   }
 
   /* Product grid */
@@ -154,9 +154,9 @@
 
   /* Order panel */
   .neworder-order-panel--desktop {
-    width: 18rem;
-    min-width: 18rem;
-    max-width: 20rem;
+    width: 22rem;
+    min-width: 22rem;
+    max-width: 26rem;
   }
 }
 
@@ -168,8 +168,8 @@
   }
 
   .neworder-order-panel--desktop {
-    width: 20rem;
-    min-width: 20rem;
+    width: 24rem;
+    min-width: 24rem;
   }
 }
 
@@ -182,7 +182,7 @@
   gap: 0.5rem;
   padding: 0.5rem 0.625rem;
   margin: 0.125rem 0;
-  border-radius: hsl(var(--radius) * 0.9);
+  border-radius: calc(var(--radius) * 0.9);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -190,19 +190,19 @@
 }
 
 .neworder-category-item[data-selected="true"] {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background-color: var(--primary);
+  color: var(--primary-foreground);
   box-shadow:
     0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .neworder-category-item[data-selected="false"] {
   background-color: transparent;
-  color: hsl(var(--sidebar-foreground));
+  color: var(--sidebar-foreground);
 }
 
 .neworder-category-item[data-selected="false"]:hover {
-  background-color: hsl(var(--sidebar-accent) / 0.5);
+  background-color: color-mix(in oklch, var(--sidebar-accent) 50%, transparent);
 }
 
 /* ==================== ORDER SHEET / DRAWER ==================== */
@@ -214,10 +214,10 @@
   left: 0;
   right: 0;
   z-index: 50;
-  background-color: hsl(var(--background));
-  border-top-left-radius: max(1rem, hsl(var(--radius) * 2));
-  border-top-right-radius: max(1rem, hsl(var(--radius) * 2));
-  border-top: 1px solid hsl(var(--border));
+  background-color: var(--background);
+  border-top-left-radius: max(1rem, calc(var(--radius) * 2));
+  border-top-right-radius: max(1rem, calc(var(--radius) * 2));
+  border-top: 1px solid var(--border);
   box-shadow:
     0 -4px 6px -1px rgb(0 0 0 / 0.1),
     0 -2px 4px -2px rgb(0 0 0 / 0.1);
@@ -230,7 +230,7 @@
 .neworder-sheet__handle {
   width: 3rem;
   height: 0.375rem;
-  background-color: hsl(var(--muted-foreground) / 0.3);
+  background-color: color-mix(in oklch, var(--muted-foreground) / 0.3);
   border-radius: 9999px;
   margin: 0.75rem auto 1rem;
   flex-shrink: 0;
@@ -244,9 +244,9 @@
   right: 0;
   z-index: 40;
   padding: 0.75rem 1rem;
-  background-color: hsl(var(--background) / 0.95);
+  background-color: color-mix(in oklch, var(--background) 95%, transparent);
   backdrop-filter: blur(8px);
-  border-top: 1px solid hsl(var(--border));
+  border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -348,7 +348,7 @@
   justify-content: center;
   padding: 2rem;
   text-align: center;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   min-height: 12rem;
 }
 
@@ -362,7 +362,7 @@
   font-size: 1.125rem;
   font-weight: 500;
   margin-bottom: 0.25rem;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .neworder-empty-state__description {
@@ -375,13 +375,13 @@
 .neworder-skeleton {
   background: linear-gradient(
     90deg,
-    hsl(var(--muted) / 0.5) 0%,
-    hsl(var(--muted) / 0.8) 50%,
-    hsl(var(--muted) / 0.5) 100%
+    color-mix(in oklch, var(--muted) / 0.5) 0%,
+    color-mix(in oklch, var(--muted) / 0.8) 50%,
+    color-mix(in oklch, var(--muted) / 0.5) 100%
   );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
-  border-radius: hsl(var(--radius));
+  border-radius: var(--radius);
 }
 
 @keyframes skeleton-shimmer {
@@ -392,7 +392,7 @@
 @media (prefers-reduced-motion: reduce) {
   .neworder-skeleton {
     animation: none;
-    background-color: hsl(var(--muted) / 0.5);
+    background-color: color-mix(in oklch, var(--muted) / 0.5);
   }
 }
 
@@ -400,7 +400,7 @@
 
 /* Focus visible styles */
 button:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -415,36 +415,36 @@ button:focus-visible {
 
 /* Available - Mesa libre sin asignar */
 .table-button--available {
-  background: hsl(var(--muted));
-  border-color: hsl(var(--border));
-  color: hsl(var(--muted-foreground));
+  background: var(--muted);
+  border-color: var(--border);
+  color: var(--muted-foreground);
 }
 
 .table-button--available:hover {
-  background: hsl(var(--muted) / 0.8);
+  background: color-mix(in oklch, var(--muted) / 0.8);
 }
 
 /* Selected - Mesa seleccionada pero sin productos */
 .table-button--selected {
-  background: hsl(var(--primary) / 0.1);
-  border-color: hsl(var(--primary));
+  background: color-mix(in oklch, var(--primary) / 0.1);
+  border-color: var(--primary);
   border-width: 2px;
-  color: hsl(var(--primary));
+  color: var(--primary);
 }
 
 .table-button--selected:hover {
-  background: hsl(var(--primary) / 0.15);
+  background: color-mix(in oklch, var(--primary) / 0.15);
 }
 
 /* Active - Mesa con productos en orden */
 .table-button--active {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background: var(--primary);
+  color: var(--primary-foreground);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 
 .table-button--active:hover {
-  background: hsl(var(--primary) / 0.9);
+  background: color-mix(in oklch, var(--primary) / 0.9);
 }
 
 /* ==================== PRINT STYLES ==================== */

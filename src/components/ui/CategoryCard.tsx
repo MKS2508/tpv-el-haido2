@@ -121,9 +121,9 @@ const CategoryCard: Component<CategoryCardProps> = (props) => {
       {/* Mode 'manage' - for Products page */}
       <Motion.div
         class={cn(
-          'relative overflow-hidden rounded-xl cursor-pointer transition-all duration-200',
-          'border bg-card hover:shadow-md hover:border-primary/30',
-          'border-border shadow-sm',
+          'relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-150',
+          'border border-foreground/[0.08] hover:border-foreground/20 hover:shadow-lg',
+          'shadow-sm',
           `bg-gradient-to-br ${getCategoryColors(local.category.name)}`,
           local.class
         )}
@@ -140,7 +140,7 @@ const CategoryCard: Component<CategoryCardProps> = (props) => {
         {/* Header with icon and title */}
         <div class="p-4">
           <div class="flex items-center gap-3 mb-3">
-            <div class="p-2 bg-background/80 rounded-lg shadow-sm">
+            <div class="p-2 bg-foreground/10 rounded-lg">
               {getCategoryIcon(local.category.name)}
             </div>
             <div class="flex-1 min-w-0">

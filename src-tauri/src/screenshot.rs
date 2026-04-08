@@ -1,5 +1,6 @@
 use std::fs;
 use base64::Engine;
+use tauri::Manager;
 
 #[derive(serde::Deserialize)]
 pub struct ScreenshotRequest {
@@ -10,6 +11,7 @@ pub struct ScreenshotRequest {
 
 #[tauri::command]
 pub fn save_screenshot_from_base64(
+    app: tauri::AppHandle,
     request: ScreenshotRequest,
 ) -> Result<String, String> {
     // Extraer los datos base64 del data URL
@@ -22,15 +24,21 @@ pub fn save_screenshot_from_base64(
         .decode(base64_data)
         .map_err(|e| format!("Error decodificando base64: {}", e))?;
 
-    // Guardar en carpeta screenshots del repositorio
-    let screenshots_dir = std::env::current_dir()
-        .map_err(|e| format!("Error obteniendo directorio actual: {}", e))?
-        .join("screenshots");
+    let save_dir = if request.save_to_downloads {
+        // Guardar en la carpeta de Descargas del usuario
+        app.path().download_dir()
+            .map_err(|e| format!("Error obteniendo directorio de descargas: {}", e))?
+    } else {
+        // Guardar en carpeta screenshots de la app
+        app.path().app_data_dir()
+            .map_err(|e| format!("Error obteniendo directorio de la app: {}", e))?
+            .join("screenshots")
+    };
 
-    fs::create_dir_all(&screenshots_dir)
-        .map_err(|e| format!("Error creando directorio screenshots: {}", e))?;
+    fs::create_dir_all(&save_dir)
+        .map_err(|e| format!("Error creando directorio: {}", e))?;
 
-    let file_path = screenshots_dir
+    let file_path = save_dir
         .join(format!("{}.png", request.filename))
         .to_str()
         .unwrap_or_default()
@@ -45,9 +53,9 @@ pub fn save_screenshot_from_base64(
 }
 
 #[tauri::command]
-pub fn get_screenshots_dir() -> Result<String, String> {
-    let screenshots_dir = std::env::current_dir()
-        .map_err(|e| format!("Error obteniendo directorio actual: {}", e))?
+pub fn get_screenshots_dir(app: tauri::AppHandle) -> Result<String, String> {
+    let screenshots_dir = app.path().app_data_dir()
+        .map_err(|e| format!("Error obteniendo directorio de la app: {}", e))?
         .join("screenshots");
 
     fs::create_dir_all(&screenshots_dir)

@@ -52,20 +52,21 @@ const log = createContextLogger('Updater');
 
 let checkFn: (() => Promise<any>) | null = null;
 let relaunchFn: (() => Promise<void>) | null = null;
+let pluginsLoadAttempted = false;
 
 async function loadTauriPlugins() {
-  if (isTauri() && !checkFn) {
-    try {
-      const plugins = await Promise.all([
-        import('@tauri-apps/plugin-updater'),
-        import('@tauri-apps/plugin-process'),
-      ]);
-      checkFn = plugins[0].check;
-      relaunchFn = plugins[1].relaunch;
-      log.debug('Tauri plugins loaded');
-    } catch (error) {
-      log.error('Failed to load Tauri plugins', error instanceof Error ? error : undefined);
-    }
+  if (!isTauri() || pluginsLoadAttempted) return;
+  pluginsLoadAttempted = true;
+  try {
+    const [updaterModule, processModule] = await Promise.all([
+      import('@tauri-apps/plugin-updater'),
+      import('@tauri-apps/plugin-process'),
+    ]);
+    checkFn = updaterModule.check ?? null;
+    relaunchFn = processModule.relaunch ?? null;
+    log.debug('Tauri plugins loaded', { checkFn: typeof checkFn });
+  } catch (error) {
+    log.error('Failed to load Tauri plugins', error instanceof Error ? error : undefined);
   }
 }
 
@@ -171,6 +172,12 @@ export function useUpdater() {
               });
             }
           } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            // Permission errors or dev mode — treat as "no updates" instead of surfacing error
+            if (msg.includes('not allowed') || msg.includes('Permissions')) {
+              log.warn('Updater permission not granted, treating as up-to-date', { reason: msg });
+              return ok({ available: false, version: null, notes: null, update: null });
+            }
             log.error('Failed to check for updates', err instanceof Error ? err : undefined);
             throw err;
           }

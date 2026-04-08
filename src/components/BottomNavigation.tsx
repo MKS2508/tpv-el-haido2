@@ -145,14 +145,14 @@ function BottomNavigation(props: BottomNavigationProps) {
             <Motion.div
               class="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center border border-primary/30"
               hover={{
-                backgroundColor: 'hsl(var(--destructive) / 0.1)',
-                borderColor: 'hsl(var(--destructive) / 0.3)',
+                backgroundColor: 'color-mix(in oklch, var(--destructive) 10%, transparent)',
+                borderColor: 'color-mix(in oklch, var(--destructive) 30%, transparent)',
               }}
               transition={{ duration: 0.2 }}
             >
               <Motion.span
                 class="text-xs font-semibold text-primary"
-                hover={{ color: 'hsl(var(--destructive))' }}
+                hover={{ color: 'var(--destructive)' }}
                 transition={{ duration: 0.2 }}
               >
                 {local.loggedUser?.name?.charAt(0) || 'U'}
@@ -165,7 +165,7 @@ function BottomNavigation(props: BottomNavigationProps) {
             class="text-xs font-medium mt-1 opacity-70 z-10"
             hover={{
               opacity: 1,
-              color: 'hsl(var(--destructive))',
+              color: 'var(--destructive)',
             }}
             transition={{ duration: 0.2 }}
           >

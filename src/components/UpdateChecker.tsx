@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, Download, RefreshCw, X } from 'lucide-solid';
-import { createEffect, onCleanup, Show } from 'solid-js';
+import { onCleanup, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -23,13 +23,11 @@ export function UpdateChecker(props: UpdateCheckerProps) {
   const updater = useUpdater();
 
   // Auto-check on mount and periodically
-  createEffect(() => {
+  onMount(() => {
     if (!autoCheck()) return;
 
-    // Check on mount
     updater.checkForUpdates();
 
-    // Set up interval
     const interval = setInterval(() => {
       updater.checkForUpdates();
     }, checkInterval());

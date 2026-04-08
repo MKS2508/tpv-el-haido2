@@ -95,6 +95,9 @@ const HomeHeader: Component<HomeHeaderProps> = (props) => (
         <p class={cn('text-muted-foreground mt-1.5', props.isMobile ? 'text-sm' : 'text-base')}>
           Bienvenido de nuevo al TPV de El Haido
         </p>
+        <p class={cn('text-muted-foreground/60 mt-0.5', props.isMobile ? 'text-xs' : 'text-xs')}>
+          GERMAN ASENSIO BLASCO · NIF 16639695T
+        </p>
       </div>
 
       <Show when={!props.isMobile}>
@@ -424,7 +427,7 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
     >
       <Card
         class={cn(
-          'bg-card/50 backdrop-blur-sm border-2 border-border transition-all duration-500',
+          'bg-muted/25 backdrop-blur-sm border-2 border-foreground/10 shadow-lg shadow-black/10 transition-all duration-500',
           'hover:shadow-lg hover:border-primary/20',
           responsive.isMobile() && 'hover:shadow-md'
         )}
@@ -559,7 +562,7 @@ const PieChartCard: Component<PieChartCardProps> = (props) => {
     >
       <Card
         class={cn(
-          'bg-card/50 backdrop-blur-sm border-2 border-border transition-all duration-500',
+          'bg-muted/25 backdrop-blur-sm border-2 border-foreground/10 shadow-lg shadow-black/10 transition-all duration-500',
           'hover:shadow-lg hover:border-accent/20',
           responsive.isMobile() && 'hover:shadow-md'
         )}
@@ -627,7 +630,7 @@ const RecentOrdersTable: Component<RecentOrdersTableProps> = (props) => {
     >
       <Card
         class={cn(
-          'bg-card/50 backdrop-blur-sm border-2 border-border transition-all duration-500',
+          'bg-muted/25 backdrop-blur-sm border-2 border-foreground/10 shadow-lg shadow-black/10 transition-all duration-500',
           'hover:shadow-lg hover:border-accent/20'
         )}
       >
@@ -728,7 +731,7 @@ const TopProductsCard: Component<TopProductsCardProps> = (props) => {
     >
       <Card
         class={cn(
-          'bg-card/50 backdrop-blur-sm border-2 border-border transition-all duration-500',
+          'bg-muted/25 backdrop-blur-sm border-2 border-foreground/10 shadow-lg shadow-black/10 transition-all duration-500',
           'hover:shadow-lg hover:border-warning/20'
         )}
       >

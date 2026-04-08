@@ -183,7 +183,7 @@ function OrderTable(props: OrderTableProps) {
                       opacity: 0,
                       x: 50,
                       scale: 0.95,
-                      backgroundColor: 'hsl(var(--primary) / 0.1)',
+                      backgroundColor: 'color-mix(in oklch, var(--primary) 10%, transparent)',
                     }}
                     animate={{
                       opacity: 1,
@@ -195,14 +195,14 @@ function OrderTable(props: OrderTableProps) {
                       opacity: 0,
                       x: -50,
                       scale: 0.95,
-                      backgroundColor: 'hsl(var(--destructive) / 0.1)',
+                      backgroundColor: 'color-mix(in oklch, var(--destructive) 10%, transparent)',
                     }}
                     transition={{
                       duration: 0.4,
                       delay: index() * 0.05,
                       easing: [0.4, 0, 0.2, 1],
                     }}
-                    hover={{ backgroundColor: 'hsl(var(--accent) / 0.05)' }}
+                    hover={{ backgroundColor: 'color-mix(in oklch, var(--accent) 5%, transparent)' }}
                   >
                     <TableCell class="text-card-foreground text-left w-[45%] px-2">
                       <Motion.span

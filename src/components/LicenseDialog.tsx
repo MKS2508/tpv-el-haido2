@@ -14,7 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createContextLogger } from '@/lib/logger';
 import { createOperationStateSignal } from '@/lib/state-helpers';
+import { logLicenseActivate } from '@/services/audit.service';
 import { getPlatformService } from '@/services/platform';
+import { getBusinessNif } from '@/store/store';
 import type { LicenseActivationRequest, LicenseStatus } from '@/types/license';
 
 const log = createContextLogger('LicenseDialog');
@@ -72,8 +74,8 @@ export default function LicenseDialog(props: LicenseDialogProps) {
       const platform = getPlatformService();
       const status = await platform.validateLicense(request.key, request.email);
 
-      if (!status.is_valid) {
-        const msg = status.error_message || 'Error al activar la licencia';
+      if (!status.isValid) {
+        const msg = status.errorMessage || 'Error al activar la licencia';
         toast.error(msg);
         throw new Error(msg);
       }
@@ -85,6 +87,11 @@ export default function LicenseDialog(props: LicenseDialogProps) {
     if (opState.status === 'success' && opState.result) {
       toast.success('Licencia activada correctamente');
       log.success('License activated');
+      // Audit: licencia activada — puede que no haya usuario logueado aún (contexto sistema)
+      void logLicenseActivate(
+        { userId: 0, userName: 'system', businessNif: getBusinessNif() },
+        request.key
+      );
       props.onSuccess(opState.result);
       props.onClose();
     }

@@ -168,10 +168,15 @@ export default function AEATSettings(props: AEATSettingsProps) {
     }
   };
 
+  const hasBusinessData = () =>
+    !!(config().businessData.nif && config().businessData.nombreRazon);
+
   const getStatusColor = (): string => {
     if (!isEnabled()) return 'bg-gray-400';
     if (isConnected()) return 'bg-green-500';
-    if (connectionStatus().error) return 'bg-red-500';
+    if (isLoading()) return 'bg-yellow-500';
+    // If business data is configured, show as "configured" (blue) not "error" (red)
+    if (hasBusinessData()) return 'bg-blue-500';
     return 'bg-yellow-500';
   };
 
@@ -179,8 +184,9 @@ export default function AEATSettings(props: AEATSettingsProps) {
     if (!isEnabled()) return 'Deshabilitado';
     if (isLoading()) return 'Verificando...';
     if (isConnected()) return 'Conectado';
-    if (connectionStatus().error) return 'Error';
-    return 'Desconectado';
+    // Show professional status when configured but server not running
+    if (hasBusinessData()) return 'Configurado';
+    return 'Pendiente de configuración';
   };
 
   const getSidecarStatusColor = (): string => {
@@ -225,11 +231,14 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 <FileText class="h-5 w-5" />
                 VERI*FACTU
               </CardTitle>
-              <CardDescription>Sistema de facturación electrónica AEAT</CardDescription>
+              <CardDescription>
+                Integración con el sistema de facturación electrónica de la Agencia Tributaria (AEAT).
+                Cumplimiento normativo Ley 11/2021 — Reglamento VERI*FACTU.
+              </CardDescription>
             </div>
-            <div class="flex items-center gap-2">
-              <div class={`h-3 w-3 rounded-full ${getStatusColor()}`} />
-              <span class="text-sm text-muted-foreground">{getStatusText()}</span>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/50">
+              <div class={`h-2.5 w-2.5 rounded-full ${getStatusColor()}`} />
+              <span class="text-xs font-medium text-foreground/80">{getStatusText()}</span>
             </div>
           </div>
         </CardHeader>
@@ -346,22 +355,19 @@ export default function AEATSettings(props: AEATSettingsProps) {
               </p>
             </div>
 
-            <Button onClick={handleTestConnection} disabled={isLoading()} class="w-full">
+            <Button onClick={handleTestConnection} disabled={isLoading()} variant="outline" class="w-full">
               <Show when={isLoading()}>
                 <Loader2 class="mr-2 h-4 w-4 animate-spin" />
               </Show>
-              <Show when={!isLoading() && isConnected()}>
+              <Show when={!isLoading()}>
                 <Wifi class="mr-2 h-4 w-4" />
               </Show>
-              <Show when={!isLoading() && !isConnected()}>
-                <WifiOff class="mr-2 h-4 w-4" />
-              </Show>
-              Probar Conexion
+              Verificar conexión con servidor AEAT
             </Button>
 
             <Show when={connectionStatus().lastCheck}>
               <p class="text-xs text-muted-foreground text-center">
-                Ultima verificacion: {connectionStatus().lastCheck?.toLocaleTimeString()}
+                Última verificación: {connectionStatus().lastCheck?.toLocaleTimeString()}
               </p>
             </Show>
           </CardContent>

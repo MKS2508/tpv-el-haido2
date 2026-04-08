@@ -452,7 +452,7 @@
 .order-control:focus-visible,
 .payment-button:focus-visible,
 .table-button:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -492,16 +492,16 @@
 
 /* Success/Error States with Touch Feedback */
 .touch-success {
-  background-color: hsl(var(--chart-3));
+  background-color: var(--chart-3);
   color: white;
 }
 
 .touch-error {
-  background-color: hsl(var(--destructive));
-  color: hsl(var(--destructive-foreground));
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
 }
 
 .touch-warning {
-  background-color: hsl(var(--chart-4));
-  color: hsl(var(--foreground));
+  background-color: var(--chart-4);
+  color: var(--foreground);
 }

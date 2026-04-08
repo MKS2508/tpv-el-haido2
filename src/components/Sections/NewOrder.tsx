@@ -278,7 +278,7 @@ function NewOrder() {
       {/* TopBar with table and order selector */}
       <div
         class={cn(
-          'border-b border-border bg-card flex-shrink-0',
+          'border-b border-foreground/10 bg-foreground/[0.03] flex-shrink-0',
           isMobile() ? 'px-2 py-1' : 'px-3 py-2'
         )}
       >
@@ -309,7 +309,7 @@ function NewOrder() {
           /* Mobile/Tablet Layout */
           <div class="flex-1 flex flex-col min-h-0">
             {/* Categories as horizontal tabs */}
-            <div class="border-b border-border bg-card/50 flex-shrink-0">
+            <div class="border-b border-foreground/10 bg-card/50 flex-shrink-0">
               <div class="flex gap-1 p-2 overflow-x-auto scrollbar-hide">
                 <button
                   type="button"
@@ -344,7 +344,7 @@ function NewOrder() {
 
             {/* Products section */}
             <div class="flex-1 flex flex-col overflow-hidden">
-              <div class="px-3 py-2 border-b border-border bg-card/30 flex items-center justify-between flex-shrink-0">
+              <div class="px-3 py-2 border-b border-foreground/10 bg-card/30 flex items-center justify-between flex-shrink-0">
                 <div class="flex items-center gap-2">
                   <Package class="w-4 h-4 text-foreground/70" />
                   <h3 class="text-sm font-medium text-foreground">
@@ -397,8 +397,8 @@ function NewOrder() {
           </div>
 
           {/* Products - Takes available space */}
-          <div class="neworder-products--desktop flex flex-col border-r border-sidebar-border overflow-hidden flex-shrink">
-            <div class="h-12 px-3 border-b border-sidebar-border bg-sidebar/40 flex items-center gap-2 flex-shrink-0">
+          <div class="neworder-products--desktop flex flex-col border-r border-foreground/10 overflow-hidden flex-shrink">
+            <div class="h-12 px-3 border-b border-foreground/10 bg-foreground/[0.03] flex items-center gap-2 flex-shrink-0">
               <Package class="w-4 h-4 text-sidebar-foreground" />
               <div class="flex-1 min-w-0">
                 <h3 class="text-sm font-medium text-sidebar-foreground truncate">

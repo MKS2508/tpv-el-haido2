@@ -5,7 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createContextLogger } from '@/lib/logger';
+import { logLicenseDeactivate } from '@/services/audit.service';
 import { getPlatformService } from '@/services/platform';
+import useStore from '@/store/store';
+import { getBusinessNif } from '@/store/store';
 import type { LicenseStatus } from '@/types/license';
 
 const log = createContextLogger('LicenseStatus');
@@ -35,10 +38,14 @@ const getLicenseTypeColor = (type: string): 'default' | 'secondary' | 'destructi
 };
 
 export default function LicenseStatusCard(props: LicenseStatusCardProps) {
+  const store = useStore();
+
   const handleClearLicense = async () => {
     try {
       const platform = getPlatformService();
+      const ctx = store.getAuditContext() ?? { userId: 0, userName: 'system', businessNif: getBusinessNif() };
       await platform.clearLicense();
+      void logLicenseDeactivate(ctx);
       toast.success('Licencia eliminada correctamente');
       props.onRefresh();
     } catch (error) {
@@ -52,7 +59,7 @@ export default function LicenseStatusCard(props: LicenseStatusCardProps) {
       return <AlertCircle class="h-5 w-5 text-muted-foreground" />;
     }
 
-    if (props.licenseStatus.is_valid) {
+    if (props.licenseStatus.isValid) {
       return <CheckCircle class="h-5 w-5 text-green-500" />;
     }
 
@@ -64,23 +71,23 @@ export default function LicenseStatusCard(props: LicenseStatusCardProps) {
       return 'No activada';
     }
 
-    if (props.licenseStatus.is_valid) {
+    if (props.licenseStatus.isValid) {
       return 'Válida';
     }
 
-    if (props.licenseStatus.error_message) {
-      return props.licenseStatus.error_message;
+    if (props.licenseStatus.errorMessage) {
+      return props.licenseStatus.errorMessage;
     }
 
     return 'Inválida';
   };
 
   const getExpiryText = () => {
-    if (!props.licenseStatus?.expires_at) {
+    if (!props.licenseStatus?.expiresAt) {
       return 'Sin límite';
     }
 
-    const days = props.licenseStatus.days_remaining;
+    const days = props.licenseStatus.daysRemaining;
     if (days === null || days === undefined) {
       return 'Desconocido';
     }
@@ -123,7 +130,7 @@ export default function LicenseStatusCard(props: LicenseStatusCardProps) {
 
       <CardContent class="space-y-4">
         <Show
-          when={props.licenseStatus?.is_activated}
+          when={props.licenseStatus?.isActivated}
           fallback={
             <div class="text-center py-8 text-muted-foreground">
               <p>No hay una licencia activa</p>
@@ -139,19 +146,19 @@ export default function LicenseStatusCard(props: LicenseStatusCardProps) {
               </div>
             </Show>
 
-            <Show when={props.licenseStatus?.license_type}>
+            <Show when={props.licenseStatus?.licenseType}>
               <div class="flex justify-between items-center">
                 <span class="text-sm text-muted-foreground">Tipo</span>
-                <Badge variant={getLicenseTypeColor(props.licenseStatus?.license_type || '')}>
-                  {getLicenseTypeLabel(props.licenseStatus?.license_type || '')}
+                <Badge variant={getLicenseTypeColor(props.licenseStatus?.licenseType || '')}>
+                  {getLicenseTypeLabel(props.licenseStatus?.licenseType || '')}
                 </Badge>
               </div>
             </Show>
 
             <Show
               when={
-                props.licenseStatus?.expires_at !== null &&
-                props.licenseStatus?.expires_at !== undefined
+                props.licenseStatus?.expiresAt !== null &&
+                props.licenseStatus?.expiresAt !== undefined
               }
             >
               <div class="flex justify-between items-center">

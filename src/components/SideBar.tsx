@@ -1,5 +1,5 @@
 import { Motion, Presence } from '@motionone/solid';
-import { LogOut } from 'lucide-solid';
+import { ChevronLeft, ChevronRight, LogOut } from 'lucide-solid';
 import { type Component, For, type JSX, Show, splitProps } from 'solid-js';
 
 import MoonSunSwitch from '@/components/MoonSunSwitch.tsx';
@@ -85,6 +85,7 @@ type SidebarProps = {
   menuItems: MenuItem[];
   loggedUser: User | null;
   onLogout?: () => void;
+  toggleSidebar?: () => void;
 };
 
 function Sidebar(props: SidebarProps) {
@@ -95,6 +96,7 @@ function Sidebar(props: SidebarProps) {
     'setActiveSection',
     'menuItems',
     'onLogout',
+    'toggleSidebar',
   ]);
 
   const responsive = useResponsive();
@@ -106,9 +108,9 @@ function Sidebar(props: SidebarProps) {
   // Adjust sidebar behavior based on screen size
   const getWidth = () => {
     if (isTablet()) {
-      return local.isSidebarOpen ? '180px' : '60px';
+      return local.isSidebarOpen ? '200px' : '60px';
     }
-    return local.isSidebarOpen ? '200px' : '80px';
+    return local.isSidebarOpen ? '224px' : '64px';
   };
 
   const getOpacity = () => {
@@ -128,34 +130,24 @@ function Sidebar(props: SidebarProps) {
           duration: 0.2,
           easing: 'ease-out',
         }}
-        class="relative h-full mr-4"
+        class="relative h-full mr-3"
       >
         <Card
           class={cn(
-            'h-full bg-sidebar border-sidebar-border rounded-r-3xl shadow-lg overflow-hidden',
+            'h-full border border-foreground/10 rounded-2xl overflow-hidden',
+            'bg-[color-mix(in_oklch,var(--sidebar)_85%,var(--foreground)_15%)]',
             isTablet()
               ? local.isSidebarOpen
-                ? 'w-44'
-                : 'w-14'
+                ? 'w-[200px]'
+                : 'w-[60px]'
               : local.isSidebarOpen
-                ? 'w-52'
-                : 'w-20'
+                ? 'w-56'
+                : 'w-16'
           )}
-          style={{ 'box-shadow': 'var(--shadow-lg)' }}
         >
-          <CardContent
-            class="flex flex-col h-full overflow-hidden"
-            style={{
-              padding: isTablet() ? 'calc(var(--spacing) * 1.5)' : 'calc(var(--spacing) * 2)',
-            }}
-          >
-            <div
-              class="flex items-center justify-center"
-              style={{
-                'margin-top': 'calc(var(--spacing) * 4)',
-                'margin-bottom': 'calc(var(--spacing) * 6)',
-              }}
-            >
+          <CardContent class="flex flex-col h-full overflow-hidden p-0">
+            {/* Logo + business info */}
+            <div class="flex flex-col items-center flex-shrink-0 py-4 gap-1">
               <img
                 src="/logo.svg"
                 alt="El Haido Logo"
@@ -163,42 +155,46 @@ function Sidebar(props: SidebarProps) {
                   'transition-all duration-200',
                   local.isSidebarOpen
                     ? isTablet()
-                      ? 'h-20 w-28'
-                      : 'h-24 w-32'
-                    : isTablet()
-                      ? 'h-8 w-8'
-                      : 'h-10 w-10'
+                      ? 'h-14 w-20'
+                      : 'h-16 w-24'
+                    : 'h-8 w-8'
                 )}
               />
+              <Presence>
+                <Show when={local.isSidebarOpen}>
+                  <Motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.15 }}
+                    class="text-center"
+                  >
+                    <p class="text-[10px] text-sidebar-foreground/50 leading-tight">
+                      GERMAN ASENSIO BLASCO
+                    </p>
+                    <p class="text-[9px] text-sidebar-foreground/40 leading-tight">
+                      NIF 16639695T
+                    </p>
+                  </Motion.div>
+                </Show>
+              </Presence>
             </div>
 
+            {/* User chip */}
             <Show when={local.loggedUser}>
               {(user) => (
                 <div
                   class={cn(
-                    'flex items-center',
-                    local.isSidebarOpen ? 'space-x-3' : 'justify-center'
+                    'flex items-center flex-shrink-0 mx-3 mb-3 px-3 py-2.5 rounded-xl',
+                    'bg-foreground/5 border border-foreground/10',
+                    local.isSidebarOpen ? 'gap-3' : 'justify-center'
                   )}
-                  style={{ 'margin-bottom': 'calc(var(--spacing) * 6)' }}
                 >
-                  <Avatar
-                    class={local.isSidebarOpen ? 'h-8 w-8' : 'h-6 w-6'}
-                    style={{
-                      'background-color': 'hsl(var(--sidebar-accent))',
-                      color: 'hsl(var(--sidebar-accent-foreground))',
-                    }}
-                  >
+                  <Avatar class="h-8 w-8 flex-shrink-0">
                     <Show
                       when={user().profilePicture}
                       fallback={
-                        <AvatarFallback
-                          style={{
-                            'background-color': 'hsl(var(--sidebar-accent))',
-                            color: 'hsl(var(--sidebar-accent-foreground))',
-                            'font-size': 'calc(var(--font-sans) * 0.875)',
-                            'font-weight': '500',
-                          }}
-                        >
+                        <AvatarFallback class="bg-sidebar-accent text-sidebar-accent-foreground text-xs font-semibold">
                           {user().name.charAt(0)}
                         </AvatarFallback>
                       }
@@ -213,14 +209,9 @@ function Sidebar(props: SidebarProps) {
                         animate={{ opacity: 1, width: 'auto' }}
                         exit={{ opacity: 0, width: 0 }}
                         transition={{ duration: 0.2 }}
+                        class="min-w-0"
                       >
-                        <p
-                          class="text-xs sm:text-sm font-medium text-sidebar-foreground whitespace-nowrap"
-                          style={{
-                            'font-family': 'var(--font-sans)',
-                            'letter-spacing': 'var(--tracking-normal)',
-                          }}
-                        >
+                        <p class="text-sm font-semibold text-sidebar-foreground truncate">
                           {user().name}
                         </p>
                       </Motion.div>
@@ -230,60 +221,70 @@ function Sidebar(props: SidebarProps) {
               )}
             </Show>
 
-            <ScrollArea class="flex-grow">
-              <nav class="space-y-2 sm:space-y-3">
-                <For each={local.menuItems}>
-                  {(item) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <button
-                        type="button"
-                        class={cn(
-                          'w-full h-12 sm:h-14 transition-all duration-200 ease-in-out',
-                          'flex items-center rounded-lg',
-                          'font-medium text-sm',
-                          'focus:outline-none focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-2 focus:ring-offset-sidebar',
-                          local.isSidebarOpen ? 'justify-start px-3' : 'justify-center',
-                          local.activeSection === item.id
-                            ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
-                            : 'bg-sidebar-accent border border-sidebar-border/50 text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground hover:border-sidebar-border'
-                        )}
-                        onClick={() => local.setActiveSection(item.id)}
-                      >
-                        <div class={cn('flex items-center', local.isSidebarOpen && 'gap-3')}>
-                          <IconComponent
-                            class={cn(
-                              'transition-all duration-200',
-                              local.isSidebarOpen ? 'h-5 w-5' : 'h-4 w-4'
-                            )}
-                          />
-                          <Presence>
-                            <Show when={local.isSidebarOpen}>
-                              <Motion.span
-                                initial={{ opacity: 0, width: 0 }}
-                                animate={{ opacity: 1, width: 'auto' }}
-                                exit={{ opacity: 0, width: 0 }}
-                                transition={{ duration: 0.2 }}
-                                class="text-sm sm:text-base whitespace-nowrap"
-                              >
-                                {item.label}
-                              </Motion.span>
-                            </Show>
-                          </Presence>
-                        </div>
-                      </button>
-                    );
-                  }}
-                </For>
-              </nav>
-            </ScrollArea>
+            {/* Navigation — items grow to fill available height */}
+            <nav class="flex-1 min-h-0 flex flex-col gap-1.5 px-3 py-3 overflow-y-auto">
+              <For each={local.menuItems}>
+                {(item) => {
+                  const IconComponent = item.icon;
+                  const isActive = () => local.activeSection === item.id;
+                  return (
+                    <button
+                      type="button"
+                      class={cn(
+                        'w-full flex-1 transition-all duration-150',
+                        'flex items-center rounded-xl',
+                        'font-medium text-[15px]',
+                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+                        'min-h-[48px] max-h-[72px]',
+                        local.isSidebarOpen
+                          ? 'justify-start px-4 gap-3'
+                          : 'justify-center px-2',
+                        isActive()
+                          ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md'
+                          : 'bg-foreground/5 text-sidebar-foreground hover:bg-foreground/10'
+                      )}
+                      onClick={() => local.setActiveSection(item.id)}
+                    >
+                      <IconComponent class="flex-shrink-0 h-5 w-5" />
+                      <Presence>
+                        <Show when={local.isSidebarOpen}>
+                          <Motion.span
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: 'auto' }}
+                            exit={{ opacity: 0, width: 0 }}
+                            transition={{ duration: 0.15 }}
+                            class="text-left leading-tight"
+                          >
+                            {item.label}
+                          </Motion.span>
+                        </Show>
+                      </Presence>
+                    </button>
+                  );
+                }}
+              </For>
+            </nav>
 
-            <div class="space-y-2" style={{ 'margin-top': 'calc(var(--spacing) * 4)' }}>
-              <div
-                class="flex items-center justify-center"
-                style={{ padding: 'calc(var(--spacing) * 2)' }}
-              >
+            {/* Footer — theme, logout, collapse */}
+            <div class="flex-shrink-0 px-3 pb-3 pt-2 border-t border-foreground/10 space-y-2">
+              {/* Theme switch + collapse toggle */}
+              <div class={cn(
+                'flex items-center py-1',
+                local.isSidebarOpen ? 'justify-between px-1' : 'justify-center'
+              )}>
                 <MoonSunSwitch size="sm" />
+                <Show when={local.toggleSidebar}>
+                  <button
+                    type="button"
+                    class="flex items-center justify-center h-8 w-8 rounded-lg text-sidebar-foreground hover:bg-foreground/10 transition-colors"
+                    onClick={() => local.toggleSidebar?.()}
+                  >
+                    {local.isSidebarOpen
+                      ? <ChevronLeft class="h-4 w-4" />
+                      : <ChevronRight class="h-4 w-4" />
+                    }
+                  </button>
+                </Show>
               </div>
 
               <Presence>
@@ -292,19 +293,14 @@ function Sidebar(props: SidebarProps) {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.15 }}
                   >
                     <button
                       type="button"
-                      class="w-full flex items-center justify-center bg-sidebar-accent border border-sidebar-border/50 text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground hover:border-sidebar-border text-xs sm:text-sm rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-2 focus:ring-offset-sidebar"
+                      class="w-full flex items-center justify-center gap-2.5 text-sidebar-foreground hover:bg-foreground/10 text-sm font-medium rounded-xl min-h-[44px] py-2.5 px-3 bg-foreground/5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                       onClick={() => local.onLogout?.()}
-                      style={{
-                        padding: 'calc(var(--spacing) * 2) calc(var(--spacing) * 3)',
-                        'font-family': 'var(--font-sans)',
-                        'font-weight': '500',
-                      }}
                     >
-                      <LogOut class="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                      <LogOut class="h-4 w-4" />
                       Cerrar Sesion
                     </button>
                   </Motion.div>

@@ -72,7 +72,7 @@ function Products() {
   });
 
   const handleAddProduct = async (newProduct: Product) => {
-    const result = await store.storageAdapter().createProduct(newProduct);
+    const result = await store.addProduct(newProduct);
     if (result.ok) {
       fetchProducts();
     } else {
@@ -81,7 +81,7 @@ function Products() {
   };
 
   const handleEditProduct = async (editedProduct: Product) => {
-    const result = await store.storageAdapter().updateProduct(editedProduct);
+    const result = await store.updateProduct(editedProduct);
     if (result.ok) {
       fetchProducts();
     } else {
@@ -98,7 +98,7 @@ function Products() {
     if (confirmation?.type === 'product') {
       const productToDelete = store.state.products.find((p) => p.id === confirmation.id);
       if (productToDelete) {
-        const result = await store.storageAdapter().deleteProduct(productToDelete);
+        const result = await store.deleteProduct(productToDelete);
         if (result.ok) {
           fetchProducts();
         } else {
@@ -111,7 +111,7 @@ function Products() {
   };
 
   const handleAddCategory = async (newCategory: Category) => {
-    const result = await store.storageAdapter().createCategory(newCategory);
+    const result = await store.addCategory(newCategory);
     if (result.ok) {
       fetchCategories();
     } else {
@@ -120,7 +120,7 @@ function Products() {
   };
 
   const handleEditCategory = async (editedCategory: Category) => {
-    const result = await store.storageAdapter().updateCategory(editedCategory);
+    const result = await store.updateCategory(editedCategory);
     if (result.ok) {
       fetchCategories();
     } else {
@@ -137,7 +137,7 @@ function Products() {
     if (confirmation?.type === 'category') {
       const categoryToDelete = categoryList().find((c) => c.id === confirmation.id);
       if (categoryToDelete) {
-        const result = await store.storageAdapter().deleteCategory(categoryToDelete);
+        const result = await store.deleteCategory(categoryToDelete);
         if (result.ok) {
           fetchCategories();
         } else {
@@ -247,7 +247,7 @@ function Products() {
   };
 
   return (
-    <div class="flex flex-col h-full space-y-6 p-4 md:flex-row md:space-x-6 md:space-y-0">
+    <div class="flex flex-col h-full space-y-4 p-3 md:flex-row md:space-x-4 md:space-y-0">
       {/* Products */}
       <div class="w-full md:w-2/3 flex flex-col space-y-6 min-h-0">
         <div class="flex flex-col space-y-4 flex-shrink-0">
@@ -356,7 +356,7 @@ function Products() {
 
         <div class="flex-1 min-h-0 overflow-auto">
           <Presence>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 p-1">
               <For each={filteredProducts()}>
                 {(product) => (
                   <Motion.div
@@ -382,15 +382,15 @@ function Products() {
       </div>
 
       {/* Categories */}
-      <div class="w-full md:w-1/3 flex flex-col space-y-6 min-h-0">
-        <div class="flex flex-col space-y-4 flex-shrink-0">
+      <div class="w-full md:w-1/3 flex flex-col space-y-4 min-h-0">
+        <div class="flex flex-col gap-3 flex-shrink-0">
           <Input
-            placeholder="Buscar categorias..."
+            placeholder="Buscar categorias ..."
             value={categorySearchTerm()}
             onInput={(e) => setCategorySearchTerm(e.currentTarget.value)}
-            class="flex-grow border border-input"
+            class="flex-grow"
           />
-          <Button onClick={() => setIsCategoryDialogOpen(true)}>
+          <Button onClick={() => setIsCategoryDialogOpen(true)} class="w-full">
             <PlusIcon class="mr-2 h-4 w-4" /> Anadir Categoria
           </Button>
         </div>
