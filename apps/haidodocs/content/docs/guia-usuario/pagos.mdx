@@ -1,0 +1,247 @@
+---
+title: Pagos
+description: 'Procesar pagos, imprimir tickets y gestionar cobros en TPV El Haido'
+---
+
+# Procesamiento de Pagos
+
+Aprende a cobrar pedidos, gestionar métodos de pago e imprimir tickets.
+
+## Cobrar un Pedido
+
+<Steps>
+
+### Abrir el pedido
+
+Desde la pantalla de Nueva Comanda o seleccionando un pedido activo.
+
+### Iniciar cobro
+
+Haz clic en el botón **Cobrar** (o el total del pedido).
+
+### Seleccionar método de pago
+
+| Método | Descripción |
+|--------|-------------|
+| **Efectivo** | Pago en metálico |
+| **Tarjeta** | Pago con tarjeta de crédito/débito |
+| **Otro** | Transferencia, vales, etc. |
+
+### Completar pago
+
+**Para efectivo:**
+1. Introduce el importe recibido
+2. El sistema calcula el cambio automáticamente
+3. Haz clic en **Confirmar**
+
+**Para tarjeta/otro:**
+1. Haz clic en **Confirmar**
+2. Procesa el pago en tu datáfono si lo tienes
+
+### Ticket impreso
+
+Si tienes impresora configurada, el ticket se imprime automáticamente.
+
+</Steps>
+
+## Métodos de Pago
+
+### Efectivo
+
+El flujo de pago en efectivo incluye:
+
+```mermaid
+graph LR
+    A[Total: 15.50€] --> B[Cliente paga: 20€]
+    B --> C[Cambio: 4.50€]
+    C --> D[Ticket impreso]
+```
+
+**Atajos de importe:**
+- Botones rápidos para billetes comunes (5€, 10€, 20€, 50€)
+- Campo para introducir importe exacto
+- Botón "Importe exacto" para cuando el cliente paga justo
+
+### Tarjeta
+
+1. Selecciona **Tarjeta** como método de pago
+2. Procesa el pago en tu terminal bancario
+3. Confirma en el TPV cuando el pago sea exitoso
+
+<Callout type="info">
+  La integración directa con datáfonos está en desarrollo. Por ahora, el cobro con tarjeta es manual.
+</Callout>
+
+### Pago Mixto
+
+Para combinar varios métodos de pago:
+
+<Steps>
+
+### Activar pago mixto
+
+En la pantalla de cobro, haz clic en **Pago Mixto**.
+
+### Añadir primer método
+
+1. Selecciona el método (ej: Tarjeta)
+2. Introduce el importe parcial
+3. Haz clic en **Añadir**
+
+### Añadir segundo método
+
+1. El resto del importe aparece pendiente
+2. Selecciona otro método (ej: Efectivo)
+3. Introduce el importe
+4. Confirma cuando la suma cubra el total
+
+</Steps>
+
+## Apertura de Cajón
+
+### Apertura automática
+
+El cajón se abre automáticamente al:
+- Completar un pago en efectivo
+- Usar la función "Abrir Cajón" manual
+
+Para activar/desactivar:
+1. Ve a **Ajustes → Impresora**
+2. Activa/desactiva "Abrir cajón automáticamente"
+
+### Apertura manual
+
+1. En el menú de Ajustes o en la barra de herramientas
+2. Haz clic en **Abrir Cajón**
+3. El cajón se abre (requiere impresora compatible)
+
+## Tickets
+
+### Contenido del Ticket
+
+Un ticket estándar incluye:
+
+| Sección | Contenido |
+|---------|-----------|
+| **Cabecera** | Nombre del negocio, dirección, CIF |
+| **Fecha/Hora** | Momento de la venta |
+| **Productos** | Listado con cantidad, nombre, precio |
+| **Impuestos** | Desglose de IVA |
+| **Total** | Importe total a pagar |
+| **Pago** | Método e importe pagado |
+| **Pie** | Mensaje personalizado, número de ticket |
+
+### Personalizar Ticket
+
+En **Ajustes → Impresora → Ticket**:
+
+| Opción | Descripción |
+|--------|-------------|
+| **Logo** | Imagen en la cabecera (BMP monocromo) |
+| **Nombre** | Nombre del negocio |
+| **Dirección** | Dirección fiscal |
+| **CIF/NIF** | Identificación fiscal |
+| **Teléfono** | Contacto |
+| **Mensaje pie** | Texto al final del ticket |
+
+### Reimprimir Ticket
+
+1. Ve a **Historial**
+2. Selecciona el pedido
+3. Haz clic en **Reimprimir Ticket**
+
+## Devoluciones
+
+### Anular Pedido
+
+Para anular un pedido antes de cerrarlo:
+1. Abre el pedido
+2. Haz clic en **Anular Pedido**
+3. Introduce el motivo (opcional)
+4. Confirma
+
+### Devolución Parcial
+
+Para devolver productos específicos:
+1. Ve al historial y abre el pedido
+2. Haz clic en **Devolución**
+3. Selecciona los productos a devolver
+4. Confirma el importe a reembolsar
+
+<Callout type="warning">
+  Las devoluciones generan un registro para contabilidad y pueden afectar a las facturas AEAT si ya fueron enviadas.
+</Callout>
+
+## Cierre de Caja
+
+### Realizar Cierre
+
+Al final del turno o día:
+
+<Steps>
+
+### Acceder a Cierre
+
+Ve a **Ajustes → Caja → Cierre**.
+
+### Revisar Resumen
+
+El sistema muestra:
+- Total de ventas
+- Desglose por método de pago
+- Número de operaciones
+- Diferencia esperado vs. real
+
+### Contar Efectivo
+
+Introduce el efectivo contado en caja.
+
+### Confirmar Cierre
+
+Haz clic en **Cerrar Caja** para registrar el cierre.
+
+</Steps>
+
+### Informe de Cierre
+
+El informe incluye:
+- Ventas por categoría
+- Ventas por producto
+- Ventas por usuario
+- Impuestos recaudados
+- Métodos de pago utilizados
+
+Puedes imprimir o exportar el informe.
+
+## Configuración
+
+### Tasa de Impuestos
+
+En **Ajustes → General**:
+- Configura el IVA por defecto (21%, 10%, 4%)
+- El IVA se aplica automáticamente según la categoría del producto
+
+### Redondeo
+
+Por defecto, los totales se redondean a 2 decimales. Esto es configurable en Ajustes.
+
+## Consejos
+
+### Flujo rápido
+
+- Usa los atajos de teclado para cobrar rápidamente
+- Configura botones de importe rápido para billetes comunes
+- El botón "Importe exacto" acelera pagos sin cambio
+
+### Errores comunes
+
+| Problema | Solución |
+|----------|----------|
+| Cambio incorrecto | Revisa el importe introducido |
+| Ticket no impreso | Verifica conexión de impresora |
+| Cajón no abre | Comprueba configuración y conexión |
+
+## Siguiente Paso
+
+- [Configurar Impresora](/docs/guia-usuario/impresora)
+- [Facturación VERI*FACTU](/docs/guia-usuario/facturacion)

@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Local environment overrides (secrets, tokens)
+.env
+.env.local
+.env.*.local
+.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,8 +29,28 @@ dist-ssr
 *.sln
 *.sw?
 
+# Screenshots (keep folder, ignore contents)
+screenshots/*.png
+screenshots/*.jpg
+screenshots/*.jpeg
+
 # Tauri signing keys (NEVER commit private keys)
 .tauri/
 *.key
 !*.key.pub
+# Exception: allow keys in tauri-keys/ for private repo builds
+!tauri-keys/*.key
+!tauri-keys/*.key.pub
 /target/rust-analyzer
+/apps/haidodocs/.source
+src-tauri/sidecars/aeat-bridge-x86_64-pc-windows-msvc.exe
+/apps/haidodocs/.next
+/apps/haidodocs/out
+.claude/settings.local.json
+sidecars/aeat-bridge-x86_64-pc-windows-msvc.exe
+# Build artifacts
+apps/haidodocs/public/tpv/
+
+# Docker
+.env.docker
+docker-compose.override.yml

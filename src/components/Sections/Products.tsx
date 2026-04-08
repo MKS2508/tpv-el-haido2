@@ -1,8 +1,8 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { BeerIcon, FilterIcon, PlusIcon } from 'lucide-react';
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { Motion, Presence } from '@motionone/solid';
+import { BeerIcon, FilterIcon, PlusIcon } from 'lucide-solid';
+import { createMemo, createSignal, For, onMount } from 'solid-js';
 import iconOptions from '@/assets/utils/icons/iconOptions.ts';
-import ProductDialog from '@/components/ProductDialog';
+import ProductDialog, { ProductDialogContent } from '@/components/ProductDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import CategoryCard from '@/components/ui/CategoryCard';
@@ -17,67 +17,73 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import ProductCard from '@/components/ui/ProductCard';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import type Category from '@/models/Category';
 import type Product from '@/models/Product';
-import CategoriesService from '@/services/categories.service.ts';
-import ProductService from '@/services/products.service.ts';
-import { useProductsData } from '@/store/selectors';
+import useStore from '@/store/store';
 
-const Products = memo(() => {
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+function Products() {
+  const store = useStore();
 
-  const [categoryList, setCategories] = useState<Category[]>([]);
-  const [productSearchTerm, setProductSearchTerm] = useState('');
-  const [categorySearchTerm, setCategorySearchTerm] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
-  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+  const [editingProduct, setEditingProduct] = createSignal<Product | null>(null);
+  const [editingCategory, setEditingCategory] = createSignal<Category | null>(null);
+
+  const [categoryList, setCategories] = createSignal<Category[]>([]);
+  const [productSearchTerm, setProductSearchTerm] = createSignal('');
+  const [categorySearchTerm, setCategorySearchTerm] = createSignal('');
+  const [selectedCategories, setSelectedCategories] = createSignal<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = createSignal<string[]>([]);
+  const [isProductDialogOpen, setIsProductDialogOpen] = createSignal(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = createSignal(false);
+  const [deleteConfirmation, setDeleteConfirmation] = createSignal<{
     type: 'product' | 'category';
     id: number;
   } | null>(null);
-  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = createSignal(false);
 
-  const { users, selectedUser, setUsers, setSelectedUser, products, setProducts } =
-    useProductsData();
+  const fetchProducts = async () => {
+    const result = await store.storageAdapter().getProducts();
+    if (result.ok) {
+      const productsWithIcons = result.value.map((product) => ({
+        ...product,
+        icon: iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
+      })) as Product[];
+      store.setProducts(productsWithIcons);
+    } else {
+      console.error('[Products] Error fetching products:', result.error.code);
+    }
+  };
 
-  // Memoizar servicios para evitar recreación en cada render
-  const productService = useMemo(() => new ProductService(), []);
-  const categoriesService = useMemo(() => new CategoriesService(), []);
+  const fetchCategories = async () => {
+    const result = await store.storageAdapter().getCategories();
+    if (result.ok) {
+      setCategories(result.value);
+    } else {
+      console.error('[Products] Error fetching categories:', result.error.code);
+    }
+  };
 
-  const fetchProducts = useCallback(async () => {
-    const fetchedProducts = await productService.getProducts();
-    const productsWithIcons = fetchedProducts.map((product) => ({
-      ...product,
-      icon: React.createElement(
-        iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
-      ),
-    }));
-    setProducts(productsWithIcons);
-  }, [productService, setProducts]);
-
-  const fetchCategories = useCallback(async () => {
-    const fetchedCategories = await categoriesService.getCategories();
-    setCategories(fetchedCategories);
-  }, [categoriesService]);
-
-  useEffect(() => {
+  onMount(() => {
     fetchProducts();
     fetchCategories();
-  }, [fetchCategories, fetchProducts]);
+  });
 
   const handleAddProduct = async (newProduct: Product) => {
-    await productService.createProduct(newProduct);
-    fetchProducts();
+    const result = await store.storageAdapter().createProduct(newProduct);
+    if (result.ok) {
+      fetchProducts();
+    } else {
+      console.error('[Products] Error creating product:', result.error.code);
+    }
   };
 
   const handleEditProduct = async (editedProduct: Product) => {
-    await productService.updateProduct(editedProduct);
-    fetchProducts();
+    const result = await store.storageAdapter().updateProduct(editedProduct);
+    if (result.ok) {
+      fetchProducts();
+    } else {
+      console.error('[Products] Error updating product:', result.error.code);
+    }
   };
 
   const handleDeleteProduct = async (id: number) => {
@@ -85,11 +91,16 @@ const Products = memo(() => {
   };
 
   const confirmDeleteProduct = async () => {
-    if (deleteConfirmation?.type === 'product') {
-      const productToDelete = products.find((p) => p.id === deleteConfirmation.id);
+    const confirmation = deleteConfirmation();
+    if (confirmation?.type === 'product') {
+      const productToDelete = store.state.products.find((p) => p.id === confirmation.id);
       if (productToDelete) {
-        await productService.deleteProduct(productToDelete);
-        fetchProducts();
+        const result = await store.storageAdapter().deleteProduct(productToDelete);
+        if (result.ok) {
+          fetchProducts();
+        } else {
+          console.error('[Products] Error deleting product:', result.error.code);
+        }
       }
       setDeleteConfirmation(null);
       setEditingProduct(null);
@@ -97,13 +108,21 @@ const Products = memo(() => {
   };
 
   const handleAddCategory = async (newCategory: Category) => {
-    await categoriesService.createCategory(newCategory);
-    fetchCategories();
+    const result = await store.storageAdapter().createCategory(newCategory);
+    if (result.ok) {
+      fetchCategories();
+    } else {
+      console.error('[Products] Error creating category:', result.error.code);
+    }
   };
 
   const handleEditCategory = async (editedCategory: Category) => {
-    await categoriesService.updateCategory(editedCategory);
-    fetchCategories();
+    const result = await store.storageAdapter().updateCategory(editedCategory);
+    if (result.ok) {
+      fetchCategories();
+    } else {
+      console.error('[Products] Error updating category:', result.error.code);
+    }
   };
 
   const handleDeleteCategory = (id: number) => {
@@ -111,11 +130,16 @@ const Products = memo(() => {
   };
 
   const confirmDeleteCategory = async () => {
-    if (deleteConfirmation?.type === 'category') {
-      const categoryToDelete = categoryList.find((c) => c.id === deleteConfirmation.id);
+    const confirmation = deleteConfirmation();
+    if (confirmation?.type === 'category') {
+      const categoryToDelete = categoryList().find((c) => c.id === confirmation.id);
       if (categoryToDelete) {
-        await categoriesService.deleteCategory(categoryToDelete);
-        fetchCategories();
+        const result = await store.storageAdapter().deleteCategory(categoryToDelete);
+        if (result.ok) {
+          fetchCategories();
+        } else {
+          console.error('[Products] Error deleting category:', result.error.code);
+        }
       }
       setDeleteConfirmation(null);
       setEditingCategory(null);
@@ -128,7 +152,7 @@ const Products = memo(() => {
     price: 0,
     brand: '',
     category: '',
-    icon: <></>,
+    icon: undefined,
     iconType: 'preset',
     selectedIcon: '',
     uploadedImage: null,
@@ -140,44 +164,45 @@ const Products = memo(() => {
     description: '',
   };
 
-  const filteredProducts = useMemo(() => {
+  const filteredProducts = createMemo(() => {
+    const products = store.state.products;
     if (!products) return [];
     return products.filter(
       (product) =>
-        (selectedCategories.length === 0 || selectedCategories.includes(product.category)) &&
-        (selectedBrands.length === 0 || selectedBrands.includes(product.brand)) &&
-        (product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-          product.brand.toLowerCase().includes(productSearchTerm.toLowerCase()))
+        (selectedCategories().length === 0 || selectedCategories().includes(product.category)) &&
+        (selectedBrands().length === 0 || selectedBrands().includes(product.brand)) &&
+        (product.name.toLowerCase().includes(productSearchTerm().toLowerCase()) ||
+          product.brand.toLowerCase().includes(productSearchTerm().toLowerCase()))
     );
-  }, [products, selectedCategories, selectedBrands, productSearchTerm]);
+  });
 
-  const filteredCategories = useMemo(() => {
-    return categoryList.filter(
+  const filteredCategories = createMemo(() => {
+    return categoryList().filter(
       (category) =>
-        category.name.toLowerCase().includes(categorySearchTerm.toLowerCase()) ||
-        category.description.toLowerCase().includes(categorySearchTerm.toLowerCase())
+        category.name.toLowerCase().includes(categorySearchTerm().toLowerCase()) ||
+        category.description.toLowerCase().includes(categorySearchTerm().toLowerCase())
     );
-  }, [categoryList, categorySearchTerm]);
+  });
 
-  const availableBrands = useMemo(() => {
+  const availableBrands = createMemo(() => {
     const brands = new Set<string>();
-    filteredProducts.forEach((product) => {
-      if (selectedCategories.length === 0 || selectedCategories.includes(product.category)) {
+    filteredProducts().forEach((product) => {
+      if (selectedCategories().length === 0 || selectedCategories().includes(product.category)) {
         brands.add(product.brand);
       }
     });
     return Array.from(brands);
-  }, [filteredProducts, selectedCategories]);
+  });
 
-  const availableCategories = useMemo(() => {
+  const availableCategories = createMemo(() => {
     const categories = new Set<string>();
-    filteredProducts.forEach((product) => {
-      if (selectedBrands.length === 0 || selectedBrands.includes(product.brand)) {
+    filteredProducts().forEach((product) => {
+      if (selectedBrands().length === 0 || selectedBrands().includes(product.brand)) {
         categories.add(product.category);
       }
     });
     return Array.from(categories);
-  }, [filteredProducts, selectedBrands]);
+  });
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategories((prev) =>
@@ -200,8 +225,9 @@ const Products = memo(() => {
   };
 
   const toggleFavorite = (productId: number) => {
+    const selectedUser = store.state.selectedUser;
     if (selectedUser) {
-      const updatedUsers = users.map((user) => {
+      const updatedUsers = store.state.users.map((user) => {
         if (user.id === selectedUser.id) {
           const favProductIds = user.pinnedProductIds || [];
           if (favProductIds.includes(productId)) {
@@ -212,198 +238,190 @@ const Products = memo(() => {
         }
         return user;
       });
-      setUsers(updatedUsers);
-      setSelectedUser(updatedUsers.find((user) => user.id === selectedUser.id)!);
+      store.setUsers(updatedUsers);
+      store.setSelectedUser(updatedUsers.find((user) => user.id === selectedUser.id)!);
     }
   };
 
   return (
-    <div className="flex flex-col space-y-6 p-4 md:flex-row md:space-x-6 md:space-y-0">
+    <div class="flex flex-col h-full space-y-6 p-4 md:flex-row md:space-x-6 md:space-y-0">
       {/* Products */}
-      <div className="w-full md:w-2/3 space-y-6">
-        <div className="flex flex-col space-y-4">
-          <div className="flex flex-wrap gap-4">
+      <div class="w-full md:w-2/3 flex flex-col space-y-6 min-h-0">
+        <div class="flex flex-col space-y-4 flex-shrink-0">
+          <div class="flex flex-wrap gap-4">
             <Input
               placeholder="Buscar productos..."
-              value={productSearchTerm}
-              onChange={(e) => setProductSearchTerm(e.target.value)}
-              className="flex-grow border border-input"
+              value={productSearchTerm()}
+              onInput={(e) => setProductSearchTerm(e.currentTarget.value)}
+              class="flex-grow border border-input"
             />
-            <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-              <SheetTrigger asChild>
+            <Sheet open={isFilterSheetOpen()} onOpenChange={setIsFilterSheetOpen}>
+              <SheetTrigger as="div">
                 <Button variant="outline">
-                  <FilterIcon className="mr-2 h-4 w-4" /> Filtros
+                  <FilterIcon class="mr-2 h-4 w-4" /> Filtros
                 </Button>
               </SheetTrigger>
               <SheetContent>
                 <SheetHeader>
                   <SheetTitle>Filtros</SheetTitle>
                 </SheetHeader>
-                <div className="py-4 space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium">Categorías</h3>
-                    {availableCategories.map((category, index) => (
-                      <div
-                        key={`category-filter-${category}-${index}`}
-                        className="flex items-center space-x-2 bg-destructive/10 border border-destructive/30 rounded p-2"
-                      >
-                        <Checkbox
-                          className="border-red-500"
-                          id={`category-${category}-${index}`}
-                          checked={selectedCategories.includes(category)}
-                          onCheckedChange={() => handleCategorySelect(category)}
-                        />
-                        <label
-                          htmlFor={`category-${category}-${index}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {category}
-                        </label>
-                      </div>
-                    ))}
+                <div class="py-4 space-y-4">
+                  <div class="space-y-2">
+                    <h3 class="text-sm font-medium">Categorias</h3>
+                    <For each={availableCategories()}>
+                      {(category, index) => (
+                        <div class="flex items-center space-x-2 bg-destructive/10 border border-destructive/30 rounded p-2">
+                          <Checkbox
+                            class="border-red-500"
+                            id={`category-${category}-${index()}`}
+                            checked={selectedCategories().includes(category)}
+                            onChange={() => handleCategorySelect(category)}
+                          />
+                          <label
+                            for={`category-${category}-${index()}`}
+                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {category}
+                          </label>
+                        </div>
+                      )}
+                    </For>
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium">Marcas</h3>
-                    {availableBrands.map((brand, index) => (
-                      <div
-                        key={`brand-filter-${brand}-${index}`}
-                        className="flex items-center space-x-2"
-                      >
-                        <Checkbox
-                          id={`brand-${brand}-${index}`}
-                          className="border-red-500"
-                          checked={selectedBrands.includes(brand)}
-                          onCheckedChange={() => handleBrandSelect(brand)}
-                        />
-                        <label
-                          htmlFor={`brand-${brand}-${index}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {brand}
-                        </label>
-                      </div>
-                    ))}
+                  <div class="space-y-2">
+                    <h3 class="text-sm font-medium">Marcas</h3>
+                    <For each={availableBrands()}>
+                      {(brand, index) => (
+                        <div class="flex items-center space-x-2">
+                          <Checkbox
+                            id={`brand-${brand}-${index()}`}
+                            class="border-red-500"
+                            checked={selectedBrands().includes(brand)}
+                            onChange={() => handleBrandSelect(brand)}
+                          />
+                          <label
+                            for={`brand-${brand}-${index()}`}
+                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {brand}
+                          </label>
+                        </div>
+                      )}
+                    </For>
                   </div>
                 </div>
               </SheetContent>
             </Sheet>
             <Button onClick={() => setIsProductDialogOpen(true)}>
-              <PlusIcon className="mr-2 h-4 w-4" /> Añadir Producto
+              <PlusIcon class="mr-2 h-4 w-4" /> Anadir Producto
             </Button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {selectedCategories.map((category, index) => (
-              <Badge
-                key={`selected-category-${category}-${index}`}
-                variant="secondary"
-                className="px-2 py-1"
-              >
-                {category}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="ml-2 h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => removeFilter('category', category)}
-                >
-                  <span className="sr-only">Eliminar filtro de categoría</span>
-                  &times;
-                </Button>
-              </Badge>
-            ))}
-            {selectedBrands.map((brand, index) => (
-              <Badge
-                key={`selected-brand-${brand}-${index}`}
-                variant="secondary"
-                className="px-2 py-1"
-              >
-                {brand}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="ml-2 h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => removeFilter('brand', brand)}
-                >
-                  <span className="sr-only">Eliminar filtro de marca</span>
-                  &times;
-                </Button>
-              </Badge>
-            ))}
+          <div class="flex flex-wrap gap-2">
+            <For each={selectedCategories()}>
+              {(category, _index) => (
+                <Badge variant="secondary" class="px-2 py-1">
+                  {category}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="ml-2 h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
+                    onClick={() => removeFilter('category', category)}
+                  >
+                    <span class="sr-only">Eliminar filtro de categoria</span>
+                    &times;
+                  </Button>
+                </Badge>
+              )}
+            </For>
+            <For each={selectedBrands()}>
+              {(brand, _index) => (
+                <Badge variant="secondary" class="px-2 py-1">
+                  {brand}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="ml-2 h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
+                    onClick={() => removeFilter('brand', brand)}
+                  >
+                    <span class="sr-only">Eliminar filtro de marca</span>
+                    &times;
+                  </Button>
+                </Badge>
+              )}
+            </For>
           </div>
         </div>
 
-        <ScrollArea className="h-[calc(100vh-300px)]">
-          <AnimatePresence>
-            <div
-              className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4`}
-            >
-              {filteredProducts.map((product) => (
-                <motion.div
-                  key={product.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <ProductCard
-                    product={product}
-                    mode="manage"
-                    onAction={() => setEditingProduct(product)}
-                    onFavoriteToggle={toggleFavorite}
-                    isPinned={selectedUser?.pinnedProductIds?.includes(product.id)}
-                    showCategory={false}
-                  />
-                </motion.div>
-              ))}
+        <div class="flex-1 min-h-0 overflow-auto">
+          <Presence>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              <For each={filteredProducts()}>
+                {(product) => (
+                  <Motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ProductCard
+                      product={product}
+                      mode="manage"
+                      onAction={() => setEditingProduct(product)}
+                      onFavoriteToggle={toggleFavorite}
+                      isPinned={store.state.selectedUser?.pinnedProductIds?.includes(product.id)}
+                      showCategory={false}
+                    />
+                  </Motion.div>
+                )}
+              </For>
             </div>
-          </AnimatePresence>
-        </ScrollArea>
+          </Presence>
+        </div>
       </div>
 
       {/* Categories */}
-      <div className="w-full md:w-1/3 space-y-6">
-        <div className="flex flex-col space-y-4">
+      <div class="w-full md:w-1/3 flex flex-col space-y-6 min-h-0">
+        <div class="flex flex-col space-y-4 flex-shrink-0">
           <Input
-            placeholder="Buscar categorías..."
-            value={categorySearchTerm}
-            onChange={(e) => setCategorySearchTerm(e.target.value)}
-            className="flex-grow border border-input"
+            placeholder="Buscar categorias..."
+            value={categorySearchTerm()}
+            onInput={(e) => setCategorySearchTerm(e.currentTarget.value)}
+            class="flex-grow border border-input"
           />
           <Button onClick={() => setIsCategoryDialogOpen(true)}>
-            <PlusIcon className="mr-2 h-4 w-4" /> Añadir Categoría
+            <PlusIcon class="mr-2 h-4 w-4" /> Anadir Categoria
           </Button>
         </div>
 
-        <ScrollArea className="h-[calc(100vh-300px)]">
-          <AnimatePresence>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredCategories.map((category) => (
-                <motion.div
-                  key={category.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <CategoryCard
-                    category={category}
-                    mode="manage"
-                    onAction={() => setEditingCategory(category)}
-                  />
-                </motion.div>
-              ))}
+        <div class="flex-1 min-h-0 overflow-auto">
+          <Presence>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <For each={filteredCategories()}>
+                {(category) => (
+                  <Motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <CategoryCard
+                      category={category}
+                      mode="manage"
+                      onAction={() => setEditingCategory(category)}
+                    />
+                  </Motion.div>
+                )}
+              </For>
             </div>
-          </AnimatePresence>
-        </ScrollArea>
+          </Presence>
+        </div>
       </div>
 
-      <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+      <Dialog open={isProductDialogOpen()} onOpenChange={setIsProductDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Añadir Producto</DialogTitle>
+            <DialogTitle>Anadir Producto</DialogTitle>
           </DialogHeader>
-          <ProductDialog
+          <ProductDialogContent
             editingProduct={defaultProduct}
             onProductSave={(product) => {
               handleAddProduct(product);
@@ -416,17 +434,17 @@ const Products = memo(() => {
             onProductDelete={handleDeleteProduct}
             onCategoryDelete={handleDeleteCategory}
             onCancel={() => setIsProductDialogOpen(false)}
-            categories={categoryList}
+            categories={categoryList()}
           />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+      <Dialog open={isCategoryDialogOpen()} onOpenChange={setIsCategoryDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Añadir Categoría</DialogTitle>
+            <DialogTitle>Anadir Categoria</DialogTitle>
           </DialogHeader>
-          <ProductDialog
+          <ProductDialogContent
             editingCategory={defaultCategory}
             onCategorySave={(category) => {
               handleAddCategory(category);
@@ -439,14 +457,14 @@ const Products = memo(() => {
             onProductDelete={handleDeleteProduct}
             onCategoryDelete={handleDeleteCategory}
             onCancel={() => setIsCategoryDialogOpen(false)}
-            categories={categoryList}
+            categories={categoryList()}
           />
         </DialogContent>
       </Dialog>
 
       <ProductDialog
-        editingProduct={editingProduct}
-        editingCategory={editingCategory}
+        editingProduct={editingProduct()}
+        editingCategory={editingCategory()}
         onProductSave={(product) => {
           handleEditProduct(product);
           setEditingProduct(null);
@@ -461,29 +479,34 @@ const Products = memo(() => {
           setEditingProduct(null);
           setEditingCategory(null);
         }}
-        categories={categoryList}
+        categories={categoryList()}
       />
 
-      <Dialog open={deleteConfirmation !== null} onOpenChange={() => setDeleteConfirmation(null)}>
-        <DialogContent>
+      <Dialog open={deleteConfirmation() !== null} onOpenChange={() => setDeleteConfirmation(null)}>
+        <DialogContent class="w-[90vw] max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirmar eliminación</DialogTitle>
-            <DialogDescription>
-              ¿Estás seguro de que quieres eliminar este{' '}
-              {deleteConfirmation?.type === 'product' ? 'producto' : 'categoría'}?
+            <DialogTitle class="text-2xl">Confirmar eliminacion</DialogTitle>
+            <DialogDescription class="text-base mt-2">
+              Estas seguro de que quieres eliminar este{' '}
+              {deleteConfirmation()?.type === 'product' ? 'producto' : 'categoria'}?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmation(null)}>
+          <DialogFooter class="flex-col sm:flex-row gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmation(null)}
+              class="h-14 text-lg flex-1"
+            >
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={
-                deleteConfirmation?.type === 'product'
+                deleteConfirmation()?.type === 'product'
                   ? confirmDeleteProduct
                   : confirmDeleteCategory
               }
+              class="h-14 text-lg flex-1"
             >
               Eliminar
             </Button>
@@ -492,8 +515,6 @@ const Products = memo(() => {
       </Dialog>
     </div>
   );
-});
-
-Products.displayName = 'Products';
+}
 
 export default Products;

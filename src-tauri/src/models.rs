@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+pub mod license;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Product {

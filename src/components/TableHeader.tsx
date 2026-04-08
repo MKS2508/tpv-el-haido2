@@ -1,4 +1,4 @@
-import type React from 'react';
+import { For } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import type Order from '@/models/Order';
 import type Table from '@/models/Table';
@@ -9,7 +9,7 @@ interface TableHeaderProps {
   onTableChange: (tableId: number) => void;
 }
 
-const TableHeader: React.FC<TableHeaderProps> = ({ tables, selectedOrder, onTableChange }) => {
+function TableHeader(props: TableHeaderProps) {
   const getButtonStyle = (isSelected: boolean) => `
         min-h-12 h-12 px-4 text-sm font-medium relative min-w-[120px]
         ${
@@ -21,48 +21,51 @@ const TableHeader: React.FC<TableHeaderProps> = ({ tables, selectedOrder, onTabl
         transition-all duration-200 active:scale-95
     `;
 
+  const nonBarTables = () => props.tables.filter((table) => table.id !== 0);
+
   return (
-    <div className="w-full bg-background border-b border-border p-4">
-      <div className="flex flex-wrap gap-3 justify-start">
+    <div class="w-full bg-background border-b border-border p-4">
+      <div class="flex flex-wrap gap-3 justify-start">
         <Button
-          onClick={() => onTableChange(0)}
+          onClick={() => props.onTableChange(0)}
           variant="outline"
-          className={getButtonStyle(selectedOrder?.tableNumber === 0)}
+          class={getButtonStyle(props.selectedOrder?.tableNumber === 0)}
         >
-          <span className="text-center flex items-center justify-center">Barra</span>
+          <span class="text-center flex items-center justify-center">Barra</span>
           <span
             role="img"
-            className={`absolute top-1 right-1 w-3 h-3 rounded-full ${
-              tables.find((t) => t.id === 0)?.available !== false ? 'bg-primary' : 'bg-destructive'
+            class={`absolute top-1 right-1 w-3 h-3 rounded-full ${
+              props.tables.find((t) => t.id === 0)?.available !== false
+                ? 'bg-primary'
+                : 'bg-destructive'
             }`}
             aria-label={
-              tables.find((t) => t.id === 0)?.available !== false ? 'Disponible' : 'Ocupado'
+              props.tables.find((t) => t.id === 0)?.available !== false ? 'Disponible' : 'Ocupado'
             }
           />
         </Button>
 
-        {tables
-          .filter((table) => table.id !== 0)
-          .map((table) => (
+        <For each={nonBarTables()}>
+          {(table) => (
             <Button
-              key={table.id}
-              onClick={() => onTableChange(table.id)}
+              onClick={() => props.onTableChange(table.id)}
               variant="outline"
-              className={getButtonStyle(selectedOrder?.tableNumber === table.id)}
+              class={getButtonStyle(props.selectedOrder?.tableNumber === table.id)}
             >
-              <span className="text-center flex items-center justify-center">{table.name}</span>
+              <span class="text-center flex items-center justify-center">{table.name}</span>
               <span
                 role="img"
-                className={`absolute top-1 right-1 w-3 h-3 rounded-full ${
+                class={`absolute top-1 right-1 w-3 h-3 rounded-full ${
                   table.available ? 'bg-primary' : 'bg-destructive'
                 }`}
                 aria-label={table.available ? 'Disponible' : 'Ocupado'}
               />
             </Button>
-          ))}
+          )}
+        </For>
       </div>
     </div>
   );
-};
+}
 
 export default TableHeader;

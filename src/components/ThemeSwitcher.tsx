@@ -1,50 +1,50 @@
-'use client';
-
-import { useState, lazy, Suspense } from 'react';
-import { Settings, Palette } from 'lucide-react';
-import { ThemeSelector, ModeToggle } from '@mks2508/theme-manager-react';
+import { Palette, Settings } from 'lucide-solid';
+import { createSignal } from 'solid-js';
 import { Button } from '@/components/ui/button';
-
-const ThemeManagementModal = lazy(() =>
-  import('@mks2508/theme-manager-react').then((m) => ({ default: m.ThemeManagementModal }))
-);
-const FontSettingsModal = lazy(() =>
-  import('@mks2508/theme-manager-react').then((m) => ({ default: m.FontSettingsModal }))
-);
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ModeToggle } from './ModeToggleSolid';
+import ThemeSelector from './ThemeSelector';
 
 export function ThemeSwitcher() {
-  const [showThemeManagement, setShowThemeManagement] = useState(false);
-  const [showFontSettings, setShowFontSettings] = useState(false);
+  const [showThemeManagement, setShowThemeManagement] = createSignal(false);
+  const [showFontSettings, setShowFontSettings] = createSignal(false);
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <ThemeSelector
-          onThemeManagement={() => setShowThemeManagement(true)}
-          onFontSettings={() => setShowFontSettings(true)}
-        />
+      <div class="flex items-center gap-2">
+        <ThemeSelector />
         <ModeToggle />
         <Button variant="outline" size="sm" onClick={() => setShowThemeManagement(true)}>
-          <Palette className="h-4 w-4 mr-2" />
+          <Palette class="h-4 w-4 mr-2" />
           Temas
         </Button>
         <Button variant="outline" size="sm" onClick={() => setShowFontSettings(true)}>
-          <Settings className="h-4 w-4 mr-2" />
+          <Settings class="h-4 w-4 mr-2" />
           Fuentes
         </Button>
       </div>
 
-      <Suspense fallback={null}>
-        {showThemeManagement && (
-          <ThemeManagementModal
-            open={showThemeManagement}
-            onOpenChange={setShowThemeManagement}
-          />
-        )}
-        {showFontSettings && (
-          <FontSettingsModal open={showFontSettings} onOpenChange={setShowFontSettings} />
-        )}
-      </Suspense>
+      <Dialog open={showThemeManagement()} onOpenChange={setShowThemeManagement}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gestión de Temas</DialogTitle>
+          </DialogHeader>
+          <p class="text-sm text-muted-foreground">
+            La gestión de temas avanzada está disponible a través del selector de temas.
+          </p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showFontSettings()} onOpenChange={setShowFontSettings}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Configuración de Fuentes</DialogTitle>
+          </DialogHeader>
+          <p class="text-sm text-muted-foreground">
+            La configuración de fuentes está disponible en el selector de temas.
+          </p>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

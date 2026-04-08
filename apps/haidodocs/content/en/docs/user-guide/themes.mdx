@@ -1,0 +1,214 @@
+---
+title: Themes and Customization
+description: 'Customize TPV El Haido appearance with themes and dark mode'
+---
+
+# Themes and Customization
+
+TPV El Haido includes a complete theme system to adapt the interface to your business.
+
+## Available Themes
+
+The application includes 6 predefined themes:
+
+| ID | Name | Style | Ideal for |
+|----|------|-------|-----------|
+| `amethyst-haze` | Amethyst Haze | Elegant violet | Sophisticated venues |
+| `bubble` | Bubble | Vibrant pink | Youthful atmosphere |
+| `restaurant-professional` | Restaurant Professional | Warm gold | Classic restaurants |
+| `modern-cafe` | Modern Cafe | Minimalist green | Modern cafes |
+| `night-bar` | Night Bar | Dark with neon | Night bars |
+| `accessibility-high-contrast` | High Contrast | Black/White | Maximum readability |
+
+## Change Theme
+
+<Steps>
+
+### Access Settings
+
+1. In the side menu, click **Settings**
+2. Go to the **Appearance** or **Theme** section
+
+### Select Theme
+
+1. You'll see a preview of each theme
+2. Click the theme you prefer
+3. The change applies immediately
+
+### Choose Mode
+
+Each theme supports light and dark mode:
+- **Light**: Light backgrounds, dark text
+- **Dark**: Dark backgrounds, light text
+- **System**: Follows operating system preference
+
+</Steps>
+
+## Theme Previews
+
+### Amethyst Haze
+
+Elegant theme with violet and purple tones.
+
+| Property | Light | Dark |
+|----------|-------|------|
+| Background | Soft lavender | Deep purple |
+| Primary | Violet | Bright violet |
+| Accent | Pink | Magenta |
+
+### Bubble
+
+Vibrant theme with pink tones and bubbles.
+
+| Property | Light | Dark |
+|----------|-------|------|
+| Background | Light pink | Dark pink |
+| Primary | Fuchsia | Neon pink |
+| Accent | Coral | Salmon |
+
+### Restaurant Professional
+
+Classic theme with warm, golden tones.
+
+| Property | Light | Dark |
+|----------|-------|------|
+| Background | Cream | Dark brown |
+| Primary | Gold | Amber |
+| Accent | Terracotta | Copper |
+
+### Modern Cafe
+
+Minimalist theme with green, natural tones.
+
+| Property | Light | Dark |
+|----------|-------|------|
+| Background | Mint green | Forest green |
+| Primary | Emerald green | Lime green |
+| Accent | Aquamarine | Turquoise |
+
+### Night Bar
+
+Dark theme with neon accents.
+
+| Property | Light | Dark |
+|----------|-------|------|
+| Background | Blue-gray | Black |
+| Primary | Electric blue | Neon cyan |
+| Accent | Purple | Neon pink |
+
+### High Contrast
+
+High contrast theme for maximum accessibility.
+
+| Property | Light | Dark |
+|----------|-------|------|
+| Background | Pure white | Pure black |
+| Primary | Black | White |
+| Accent | Dark blue | Yellow |
+
+## Light/Dark Mode
+
+### Manual Change
+
+1. In **Settings → Appearance**
+2. Select: **Light**, **Dark** or **System**
+
+### Quick Change
+
+- Click the sun/moon icon in the top bar
+- Or use the keyboard shortcut (if configured)
+
+### Follow System
+
+When you select "System":
+- Daytime: light mode
+- Nighttime: dark mode
+- Follows your operating system settings
+
+## Touch Optimizations
+
+Themes include optimizations for touch screens:
+
+### Button Sizes
+
+| Element | Size | CSS Variable |
+|---------|------|--------------|
+| Standard | 44×44px | `--touch-target-size` |
+| Large | 48×48px | `--touch-target-large` |
+| Extra large | 56×56px | `--touch-target-xl` |
+
+These sizes follow the [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/).
+
+### Spacing
+
+Themes include extra spacing between elements to prevent accidental touches on touch screens.
+
+## Accessibility
+
+### High Contrast Mode
+
+The **High Contrast** theme is designed for:
+- Users with visual difficulties
+- High-light environments
+- Low-quality screens
+
+### Respects System Preferences
+
+TPV El Haido automatically detects:
+- `prefers-reduced-motion`: Disables animations
+- `prefers-contrast: high`: Enables additional borders
+- `prefers-color-scheme`: Light/dark mode
+
+### Keyboard Navigation
+
+All themes maintain:
+- Visible focus for keyboard navigation
+- Sufficient contrast per WCAG 2.1
+- Readable text sizes
+
+## CSS Variables
+
+Themes use CSS variables you can inspect:
+
+```css
+:root {
+  --background: ...;
+  --foreground: ...;
+  --primary: ...;
+  --primary-foreground: ...;
+  --secondary: ...;
+  --accent: ...;
+  --muted: ...;
+  --destructive: ...;
+  --border: ...;
+  --ring: ...;
+}
+```
+
+## Tips
+
+### Choosing the Right Theme
+
+| Your Business | Recommended Theme |
+|---------------|-------------------|
+| Classic restaurant | Restaurant Professional |
+| Modern cafe | Modern Cafe |
+| Cocktail bar | Night Bar |
+| Youthful venue | Bubble |
+| Accessibility | High Contrast |
+| Elegant/boutique | Amethyst Haze |
+
+### Performance
+
+- On slow devices, consider using the High Contrast theme (fewer effects)
+- Dark mode can save battery on OLED screens
+
+### Consistency
+
+- Choose a theme and stick with it so your team gets familiar
+- Dark mode is useful for night shifts
+
+## Next Step
+
+- [Back to User Guide](/en/docs/user-guide)
+- [Development](/en/docs/development) - For developers

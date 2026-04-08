@@ -1,9 +1,11 @@
 import type { Result, ResultError } from '@mks2508/no-throw';
+import type { StorageErrorCode } from '@/lib/error-codes';
 import type Category from '@/models/Category';
+import type Customer from '@/models/Customer';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import type Table from '@/models/Table';
-import type { StorageErrorCode } from '@/lib/error-codes';
+import type User from '@/models/User';
 
 export type StorageMode = 'sqlite' | 'http' | 'indexeddb';
 
@@ -28,11 +30,23 @@ export interface IStorageAdapter {
   updateOrder(order: Order): Promise<StorageResult<void>>;
   deleteOrder(order: Order): Promise<StorageResult<void>>;
 
+  // Customers
+  getCustomers?(): Promise<StorageResult<Customer[]>>;
+  createCustomer?(customer: Customer): Promise<StorageResult<void>>;
+  updateCustomer?(customer: Customer): Promise<StorageResult<void>>;
+  deleteCustomer?(customer: Customer): Promise<StorageResult<void>>;
+
   // Tables (if needed for persistence)
   getTables?(): Promise<StorageResult<Table[]>>;
   createTable?(table: Table): Promise<StorageResult<void>>;
   updateTable?(table: Table): Promise<StorageResult<void>>;
   deleteTable?(table: Table): Promise<StorageResult<void>>;
+
+  // Users
+  getUsers(): Promise<StorageResult<User[]>>;
+  createUser(user: User): Promise<StorageResult<void>>;
+  updateUser(user: User): Promise<StorageResult<void>>;
+  deleteUser(user: User): Promise<StorageResult<void>>;
 
   // Utility methods
   clearAllData?(): Promise<StorageResult<void>>;
@@ -47,4 +61,9 @@ export interface IStorageAdapter {
 
   // Request cancellation
   cancelPendingRequests?(): void;
+
+  // Sync (PWA offline-first)
+  getPendingSyncCount?(): number;
+  getOnlineStatus?(): boolean;
+  processSyncQueue?(): Promise<void>;
 }

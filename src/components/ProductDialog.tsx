@@ -1,4 +1,4 @@
-import type React from 'react';
+import { Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,7 +12,7 @@ import type Product from '@/models/Product';
 import CategoryForm from './CategoryForm';
 import ProductForm from './ProductForm';
 
-interface ProductDialogProps {
+interface ProductDialogContentProps {
   editingProduct?: Product | null;
   editingCategory?: Category | null;
   onProductSave: (product: Product) => void;
@@ -23,61 +23,94 @@ interface ProductDialogProps {
   categories: Category[];
 }
 
-const ProductDialog: React.FC<ProductDialogProps> = ({
-  editingProduct,
-  editingCategory,
-  onProductSave,
-  onCategorySave,
-  onProductDelete,
-  onCategoryDelete,
-  onCancel,
-  categories,
-}) => {
+/**
+ * Contenido del dialog sin el wrapper Dialog.
+ * Usar cuando ya estas dentro de un DialogContent.
+ */
+export function ProductDialogContent(props: ProductDialogContentProps) {
   return (
     <>
-      {editingProduct && (
-        <Dialog open={!!editingProduct} onOpenChange={onCancel}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingProduct.id ? 'Editar Producto' : 'Añadir Producto'}</DialogTitle>
-            </DialogHeader>
+      <Show when={props.editingProduct}>
+        {(product) => (
+          <>
             <ProductForm
-              categories={categories}
-              product={editingProduct}
-              onSave={onProductSave}
-              onCancel={onCancel}
+              categories={props.categories}
+              product={product()}
+              onSave={props.onProductSave}
+              onCancel={props.onCancel}
             />
             <DialogFooter>
-              {editingProduct.id > 0 && (
-                <Button variant="destructive" onClick={() => onProductDelete(editingProduct.id)}>
+              <Show when={product().id > 0}>
+                <Button variant="destructive" onClick={() => props.onProductDelete(product().id)}>
                   Eliminar Producto
                 </Button>
-              )}
+              </Show>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-      {editingCategory && (
-        <Dialog open={!!editingCategory} onOpenChange={onCancel}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingCategory.id ? 'Editar Categoría' : 'Añadir Categoría'}
-              </DialogTitle>
-            </DialogHeader>
-            <CategoryForm category={editingCategory} onSave={onCategorySave} onCancel={onCancel} />
+          </>
+        )}
+      </Show>
+      <Show when={!props.editingProduct && props.editingCategory}>
+        {(category) => (
+          <>
+            <CategoryForm
+              category={category()}
+              onSave={props.onCategorySave}
+              onCancel={props.onCancel}
+            />
             <DialogFooter>
-              {editingCategory.id > 0 && (
-                <Button variant="destructive" onClick={() => onCategoryDelete(editingCategory.id)}>
-                  Eliminar Categoría
+              <Show when={category().id > 0}>
+                <Button variant="destructive" onClick={() => props.onCategoryDelete(category().id)}>
+                  Eliminar Categoria
                 </Button>
-              )}
+              </Show>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+          </>
+        )}
+      </Show>
     </>
   );
-};
+}
+
+interface ProductDialogProps extends ProductDialogContentProps {}
+
+/**
+ * Dialog completo con wrapper.
+ * Usar como componente standalone (no dentro de otro Dialog).
+ */
+function ProductDialog(props: ProductDialogProps) {
+  const isOpen = () => !!(props.editingProduct || props.editingCategory);
+  const title = () =>
+    props.editingProduct
+      ? props.editingProduct.id
+        ? 'Editar Producto'
+        : 'Anadir Producto'
+      : props.editingCategory
+        ? props.editingCategory.id
+          ? 'Editar Categoria'
+          : 'Anadir Categoria'
+        : '';
+
+  return (
+    <Show when={isOpen()}>
+      <Dialog open={isOpen()} onOpenChange={(open) => !open && props.onCancel()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{title()}</DialogTitle>
+          </DialogHeader>
+          <ProductDialogContent
+            editingProduct={props.editingProduct}
+            editingCategory={props.editingCategory}
+            onProductSave={props.onProductSave}
+            onCategorySave={props.onCategorySave}
+            onProductDelete={props.onProductDelete}
+            onCategoryDelete={props.onCategoryDelete}
+            onCancel={props.onCancel}
+            categories={props.categories}
+          />
+        </DialogContent>
+      </Dialog>
+    </Show>
+  );
+}
 
 export default ProductDialog;

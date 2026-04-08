@@ -1,0 +1,318 @@
+---
+title: Comandos
+description: 'Scripts de npm/bun disponibles en TPV El Haido'
+---
+
+# Comandos de Desarrollo
+
+Lista completa de scripts disponibles para desarrollo, build y mantenimiento.
+
+## Desarrollo
+
+| Comando | Descripción |
+|---------|-------------|
+| `bun run dev` | Servidor de desarrollo Vite (puerto 1420) |
+| `bun run tauri dev` | Desarrollo completo Tauri + frontend |
+| `bun run tauri:dev` | Alias de `tauri dev` |
+
+### Desarrollo Frontend
+
+```bash
+# Iniciar servidor de desarrollo
+bun run dev
+
+# Servidor disponible en http://localhost:1420
+# Hot Module Replacement (HMR) habilitado
+```
+
+### Desarrollo Completo
+
+```bash
+# Iniciar Tauri con frontend
+bun run tauri dev
+
+# Abre ventana de escritorio con hot-reload
+# Los cambios en el código se reflejan instantáneamente
+```
+
+## Build
+
+| Comando | Descripción |
+|---------|-------------|
+| `bun run build` | Build de producción (solo frontend) |
+| `bun run tauri build` | Build completo de la aplicación Tauri |
+| `bun run package` | Alias de `tauri build` |
+
+### Build Frontend
+
+```bash
+# Genera archivos optimizados en dist/
+bun run build
+
+# Output:
+# dist/
+# ├── index.html
+# ├── assets/
+# │   ├── index-[hash].js
+# │   └── index-[hash].css
+```
+
+### Build Tauri
+
+```bash
+# Genera instaladores para la plataforma actual
+bun run tauri build
+
+# Output (Windows):
+# src-tauri/target/release/bundle/
+# ├── msi/
+# │   └── TPV El Haido_x.x.x_x64_en-US.msi
+# └── nsis/
+#     └── TPV El Haido_x.x.x_x64-setup.exe
+```
+
+## Build Multiplataforma
+
+| Comando | Target |
+|---------|--------|
+| `bun run deploy:rpi` | Raspberry Pi (ARM64 Linux) |
+| `bun run build:rpi` | Build frontend para RPi |
+| `bun run build:rpi-full` | Build completo para RPi |
+
+### Raspberry Pi
+
+```bash
+# Añadir target ARM64
+rustup target add aarch64-unknown-linux-gnu
+
+# Build completo
+bun run deploy:rpi
+
+# O paso a paso:
+bun run build:rpi
+bun run tauri build -- --target aarch64-unknown-linux-gnu
+```
+
+## Linting y Formateo
+
+| Comando | Descripción |
+|---------|-------------|
+| `bun run lint` | Ejecutar Biome check |
+| `bun run lint:fix` | Auto-fix con Biome |
+| `bun run check` | Biome + Oxlint |
+| `bun run format` | Formatear con Biome |
+
+### Linting
+
+```bash
+# Verificar código
+bun run lint
+
+# Auto-corregir problemas
+bun run lint:fix
+
+# Check completo (Biome + Oxlint)
+bun run check
+```
+
+### Formateo
+
+```bash
+# Formatear todos los archivos
+bun run format
+
+# Verificar formateo sin modificar
+bun run format:check
+```
+
+## Type Checking
+
+| Comando | Descripción |
+|---------|-------------|
+| `bun run typecheck` | Type check con tsgo (rápido) |
+| `bun run typecheck:tsc` | Type check con tsc (completo) |
+
+### tsgo (Recomendado)
+
+```bash
+# Type check rápido con el compilador nativo
+bun run typecheck
+
+# Mucho más rápido que tsc tradicional
+```
+
+### TypeScript Tradicional
+
+```bash
+# Type check completo con tsc
+bun run typecheck:tsc
+
+# Más lento pero más exhaustivo
+```
+
+## Datos de Prueba
+
+| Comando | Descripción |
+|---------|-------------|
+| `bun run seed` | Poblar base de datos con datos de ejemplo |
+| `bun run seed:clear` | Limpiar y repoblar la base de datos |
+
+### Seed
+
+```bash
+# Añadir datos de ejemplo
+bun run seed
+
+# Datos incluidos:
+# - Productos de ejemplo (bebidas, tapas, postres)
+# - Categorías
+# - Usuario admin (PIN: 1234)
+```
+
+### Reset
+
+```bash
+# Limpiar todo y repoblar
+bun run seed:clear
+
+# ⚠️ Elimina todos los datos existentes
+```
+
+## Preview
+
+| Comando | Descripción |
+|---------|-------------|
+| `bun run preview` | Previsualizar build de producción |
+
+```bash
+# Primero hacer build
+bun run build
+
+# Luego previsualizar
+bun run preview
+
+# Servidor en http://localhost:4173
+```
+
+## Documentación (haidodocs)
+
+| Comando | Descripción |
+|---------|-------------|
+| `bun run docs:dev` | Servidor de desarrollo de docs |
+| `bun run docs:build` | Build de documentación |
+
+```bash
+# Desde la raíz del proyecto
+cd apps/haidodocs
+
+# Desarrollo
+bun run dev
+
+# Build
+bun run build
+```
+
+## Scripts Completos (package.json)
+
+```json
+{
+  "scripts": {
+    "dev": "vite --port 1420",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "package": "tauri build",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "check": "biome check && oxlint",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "typecheck": "tsgo",
+    "typecheck:tsc": "tsc --noEmit",
+    "seed": "bun run scripts/seed.ts",
+    "seed:clear": "bun run scripts/seed.ts --clear",
+    "deploy:rpi": "bun run build:rpi && tauri build --target aarch64-unknown-linux-gnu",
+    "build:rpi": "vite build",
+    "build:rpi-full": "bun run build:rpi && tauri build --target aarch64-unknown-linux-gnu"
+  }
+}
+```
+
+## Comandos Tauri Útiles
+
+```bash
+# Ver información del proyecto Tauri
+bunx tauri info
+
+# Generar iconos desde un PNG
+bunx tauri icon src-tauri/icons/app-icon.png
+
+# Actualizar dependencias de Tauri
+bunx tauri upgrade
+
+# Ver ayuda
+bunx tauri --help
+```
+
+## Comandos Rust
+
+```bash
+# Desde src-tauri/
+
+# Build de desarrollo
+cargo build
+
+# Build de producción
+cargo build --release
+
+# Verificar código Rust
+cargo check
+
+# Formatear código Rust
+cargo fmt
+
+# Linter Rust
+cargo clippy
+
+# Actualizar dependencias
+cargo update
+```
+
+## Variables de Entorno
+
+```bash
+# Opcional: configurar el puerto de desarrollo
+VITE_PORT=1420
+
+# Opcional: modo de almacenamiento por defecto
+VITE_STORAGE_MODE=sqlite
+
+# Para builds de producción
+TAURI_PRIVATE_KEY=...  # Para firmar actualizaciones
+TAURI_KEY_PASSWORD=... # Contraseña de la clave
+```
+
+## Flujo de Trabajo Típico
+
+```bash
+# 1. Clonar e instalar
+git clone https://github.com/MKS2508/tpv-el-haido2.git
+cd tpv-el-haido2
+bun install
+
+# 2. Desarrollo
+bun run tauri dev
+
+# 3. Antes de commit
+bun run lint:fix
+bun run typecheck
+
+# 4. Build para producción
+bun run tauri build
+```
+
+## Siguiente Paso
+
+- [Manejo de Errores](/docs/desarrollo/errores)
+- [Plataformas](/docs/desarrollo/plataformas)

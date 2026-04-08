@@ -1,0 +1,358 @@
+---
+title: Plataformas
+description: 'Compilación multiplataforma y targets de Tauri para TPV El Haido'
+---
+
+# Plataformas Soportadas
+
+TPV El Haido soporta múltiples plataformas gracias a Tauri. Esta guía cubre los targets de compilación y consideraciones específicas de cada plataforma.
+
+## Matriz de Plataformas
+
+| Plataforma | Target | Arquitectura | Estado |
+|------------|--------|--------------|--------|
+| Windows 10/11 | `x86_64-pc-windows-msvc` | x64 | ✅ Producción |
+| macOS Intel | `x86_64-apple-darwin` | x64 | ✅ Producción |
+| macOS Apple Silicon | `aarch64-apple-darwin` | ARM64 | ✅ Producción |
+| Linux x64 | `x86_64-unknown-linux-gnu` | x64 | ✅ Producción |
+| Linux ARM64 | `aarch64-unknown-linux-gnu` | ARM64 | ✅ Producción |
+| Raspberry Pi 4/5 | `aarch64-unknown-linux-gnu` | ARM64 | ✅ Producción |
+
+## Requisitos por Plataforma
+
+### Windows
+
+| Requisito | Versión |
+|-----------|---------|
+| Windows | 10 o superior |
+| WebView2 | Incluido en Windows 11, instalable en Windows 10 |
+| Visual Studio | Build Tools 2019+ |
+
+### macOS
+
+| Requisito | Versión |
+|-----------|---------|
+| macOS | 11 Big Sur o superior |
+| Xcode | Command Line Tools |
+| Rust | Con target aarch64 para Apple Silicon |
+
+### Linux
+
+| Requisito | Paquete |
+|-----------|---------|
+| WebKit2GTK | `libwebkit2gtk-4.1-0` |
+| GTK3 | `libgtk-3-0` |
+| libappindicator | Para system tray |
+
+```bash
+# Ubuntu/Debian
+sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libappindicator3-dev
+
+# Fedora
+sudo dnf install webkit2gtk4.1-devel gtk3-devel libappindicator-gtk3-devel
+```
+
+## Compilación Nativa
+
+### Windows
+
+```bash
+# Desde Windows
+bun run tauri build
+
+# Output:
+# src-tauri/target/release/bundle/
+# ├── msi/TPV El Haido_x.x.x_x64_en-US.msi
+# └── nsis/TPV El Haido_x.x.x_x64-setup.exe
+```
+
+### macOS
+
+```bash
+# Desde macOS
+bun run tauri build
+
+# Output:
+# src-tauri/target/release/bundle/
+# ├── dmg/TPV El Haido_x.x.x_x64.dmg      # Intel
+# └── dmg/TPV El Haido_x.x.x_aarch64.dmg  # Apple Silicon
+```
+
+### Linux
+
+```bash
+# Desde Linux
+bun run tauri build
+
+# Output:
+# src-tauri/target/release/bundle/
+# ├── deb/tpv-el-haido_x.x.x_amd64.deb
+# └── appimage/tpv-el-haido_x.x.x_amd64.AppImage
+```
+
+## Cross-Compilation
+
+### Para Raspberry Pi (desde Linux x64)
+
+<Steps>
+
+### Instalar toolchain ARM64
+
+```bash
+# Ubuntu/Debian
+sudo apt install gcc-aarch64-linux-gnu
+
+# Configurar Rust
+rustup target add aarch64-unknown-linux-gnu
+```
+
+### Configurar linker
+
+Crea o edita `~/.cargo/config.toml`:
+
+```toml
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+```
+
+### Compilar
+
+```bash
+bun run build
+bun run tauri build --target aarch64-unknown-linux-gnu
+```
+
+### Transferir a Raspberry Pi
+
+```bash
+scp src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb pi@raspberrypi:~
+```
+
+</Steps>
+
+### Para macOS Universal (Intel + Apple Silicon)
+
+```bash
+# Desde macOS con Apple Silicon
+rustup target add x86_64-apple-darwin
+
+# Build para ambas arquitecturas
+bun run tauri build --target universal-apple-darwin
+```
+
+## Raspberry Pi
+
+### Requisitos
+
+| Requisito | Especificación |
+|-----------|----------------|
+| Modelo | Raspberry Pi 4 o 5 |
+| Sistema | Raspberry Pi OS (64-bit) |
+| RAM | 2GB mínimo, 4GB recomendado |
+| Almacenamiento | 8GB mínimo |
+
+### Instalación
+
+```bash
+# Descargar el .deb ARM64
+wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_arm64.deb
+
+# Instalar
+sudo dpkg -i tpv-el-haido_arm64.deb
+sudo apt-get install -f
+```
+
+### Optimizaciones para RPi
+
+```bash
+# Aumentar GPU memory (raspi-config)
+sudo raspi-config
+# → Performance Options → GPU Memory → 256
+
+# Desactivar compositor si hay lag
+# Raspberry Pi OS → Preferences → Raspberry Pi Configuration → Display
+# → Disable compositor
+```
+
+### Autostart en Raspberry Pi
+
+Para iniciar TPV El Haido automáticamente:
+
+```bash
+# Crear archivo de autostart
+mkdir -p ~/.config/autostart
+cat > ~/.config/autostart/tpv-el-haido.desktop << EOF
+[Desktop Entry]
+Type=Application
+Name=TPV El Haido
+Exec=tpv-el-haido
+EOF
+```
+
+### Modo Kiosk
+
+Para usar la RPi como terminal dedicado:
+
+```bash
+# Editar /etc/xdg/lxsession/LXDE-pi/autostart
+sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
+
+# Añadir al final:
+@tpv-el-haido
+
+# Opcional: ocultar cursor después de inactividad
+@unclutter -idle 0.5 -root
+```
+
+## Formatos de Distribución
+
+### Windows
+
+| Formato | Extensión | Descripción |
+|---------|-----------|-------------|
+| MSI | `.msi` | Instalador Windows Installer |
+| NSIS | `.exe` | Instalador clásico Setup.exe |
+
+### macOS
+
+| Formato | Extensión | Descripción |
+|---------|-----------|-------------|
+| DMG | `.dmg` | Imagen de disco estándar |
+| App Bundle | `.app` | Aplicación sin instalador |
+
+### Linux
+
+| Formato | Extensión | Descripción |
+|---------|-----------|-------------|
+| DEB | `.deb` | Paquete Debian/Ubuntu |
+| AppImage | `.AppImage` | Portable, cualquier distro |
+| RPM | `.rpm` | Fedora/RHEL (si se configura) |
+
+## Configuración de Tauri
+
+### tauri.conf.json
+
+```json
+{
+  "productName": "TPV El Haido",
+  "version": "0.1.0",
+  "identifier": "com.elhaido.tpv",
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+      }
+    }
+  }
+}
+```
+
+## CI/CD con GitHub Actions
+
+### Workflow de Release
+
+```yaml
+# .github/workflows/release.yml
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Setup Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build
+        run: bun run tauri build --target ${{ matrix.target }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/
+```
+
+## Firmas y Actualizaciones
+
+### Generar Claves
+
+```bash
+# Generar par de claves Ed25519
+bunx tauri signer generate -w ~/.tauri/keys
+
+# Output:
+# - ~/.tauri/keys/tpv-el-haido.key (privada)
+# - ~/.tauri/keys/tpv-el-haido.key.pub (pública)
+```
+
+### Configurar Updater
+
+```json
+// tauri.conf.json
+{
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6...",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
+```
+
+## Siguiente Paso
+
+- [Volver a Desarrollo](/docs/desarrollo)
+- [Comandos](/docs/desarrollo/comandos)

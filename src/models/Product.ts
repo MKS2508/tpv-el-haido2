@@ -1,4 +1,4 @@
-import type React from 'react';
+import type { Component, JSX } from 'solid-js';
 
 export default interface Product {
   id: number;
@@ -6,9 +6,9 @@ export default interface Product {
   price: number;
   category: string;
   brand: string;
-  icon?: React.ReactElement;
+  icon?: Component<JSX.IntrinsicElements> | ((props: any) => JSX.Element) | string;
   iconType: string;
   selectedIcon: string;
   uploadedImage: string | null;
-  stock?: number; // Added stock property
+  stock?: number;
 }

@@ -1,0 +1,27 @@
+{
+  "name": "license-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "start": "bun run src/index.ts",
+    "db:init": "bun run src/db/schema.ts",
+    "db:seed": "bun run scripts/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@elysiajs/bearer": "^1.2.0",
+    "@elysiajs/cors": "^1.2.0",
+    "@elysiajs/openapi": "^1.4.14",
+    "@mks2508/better-logger": "^4.0.0",
+    "@mks2508/no-throw": "^0.1.0",
+    "@sinclair/typebox": "^0.34.48",
+    "elysia": "^1.4.22"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "bun-types": "latest"
+  }
+}

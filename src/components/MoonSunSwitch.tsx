@@ -1,13 +1,12 @@
-import type React from 'react';
+import type { Component } from 'solid-js';
+import { useAppTheme } from '@/lib/theme-context';
 import styles from './MoonSunSwitch.module.css';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-type DarkModeToggleProps = {
-  isDarkMode: boolean;
-  toggleDarkMode: () => void;
+interface MoonSunSwitchProps {
   size?: Size;
-};
+}
 
 const sizeClasses: Record<Size, string> = {
   xs: 'w-8 h-4',
@@ -27,33 +26,31 @@ const containerSizeClasses: Record<Size, string> = {
   '2xl': 'w-32 h-32',
 };
 
-const MoonSunSwitch: React.FC<DarkModeToggleProps> = ({
-  isDarkMode,
-  toggleDarkMode,
-  size = 'md',
-}) => {
-  const switchSize = sizeClasses[size];
-  const containerSize = containerSizeClasses[size];
+const MoonSunSwitch: Component<MoonSunSwitchProps> = (props) => {
+  const appTheme = useAppTheme();
+  const isDarkMode = () => appTheme.effectiveMode() === 'dark';
+  const switchSize = () => sizeClasses[props.size ?? 'md'];
+  const containerSize = () => containerSizeClasses[props.size ?? 'md'];
 
   return (
     <div
-      className={`flex items-center justify-center bg-transparent text-foreground ${containerSize}`}
+      class={`flex items-center justify-center bg-transparent text-foreground ${containerSize()}`}
     >
-      <label className={`${styles.container} relative inline-block ${switchSize}`}>
+      <label class={`${styles.container} relative inline-block ${switchSize()}`}>
         <input
           type="checkbox"
-          className="opacity-0 w-0 h-0"
-          checked={isDarkMode}
-          onChange={toggleDarkMode}
+          class="opacity-0 w-0 h-0"
+          checked={isDarkMode()}
+          onInput={() => appTheme.toggleMode()}
         />
         <span
-          className={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-600 ease-out overflow-hidden z-[1] rounded-full`}
+          class={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-600 ease-out overflow-hidden z-[1] rounded-full`}
         >
           <div
-            className={`${styles.background} absolute w-1.5 h-1.5 bg-white rounded-full bottom-0 right-0 transition-all duration-600 ease-out`}
-          ></div>
-          <div className={`${styles.star} scale-0 transition-all duration-600 ease-out`}></div>
-          <div className={`${styles.star} scale-0 transition-all duration-600 ease-out`}></div>
+            class={`${styles.background} absolute w-1.5 h-1.5 bg-white rounded-full bottom-0 right-0 transition-all duration-600 ease-out`}
+          />
+          <div class={`${styles.star} scale-0 transition-all duration-600 ease-out`} />
+          <div class={`${styles.star} scale-0 transition-all duration-600 ease-out`} />
         </span>
       </label>
     </div>

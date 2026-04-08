@@ -1,22 +1,29 @@
-import NumberFlow from '@number-flow/react';
-import { motion } from 'framer-motion';
-import { AwardIcon, DollarSignIcon, ShoppingCartIcon, TrendingUpIcon } from 'lucide-react';
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import { Line, Pie } from '@amad3v/solid-chart';
+import { Motion } from '@motionone/solid';
 import {
-  CartesianGrid,
-  Cell,
+  ArcElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
   Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
+  LinearScale,
+  LineController,
+  LineElement,
+  PieController,
+  PointElement,
+  Title,
   Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+} from 'chart.js';
+import {
+  Activity,
+  AwardIcon,
+  CalendarIcon,
+  DollarSignIcon,
+  ShoppingCartIcon,
+  TrendingUpIcon,
+} from 'lucide-solid';
+import { type Component, createMemo, createSignal, For, Show } from 'solid-js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DateRangePicker } from '@/components/ui/DateRangePicker.tsx';
 import {
   Table,
   TableBody,
@@ -24,27 +31,35 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table.tsx';
+} from '@/components/ui/table';
 import { useResponsive } from '@/hooks/useResponsive';
 import { cn } from '@/lib/utils';
-import type Order from '@/models/Order.ts';
-import { useHomeData } from '@/store/selectors';
+import type Order from '@/models/Order';
+import { homeData } from '@/store/selectors';
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+ChartJS.register(
+  LineController,
+  PieController,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Filler,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const CHART_COLORS = [
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
 ];
 
-// Header Component
-const HomeHeader = ({
-  userName,
-  dateRange,
-  handleDateRangeChange,
-  isMobile,
-}: {
+interface HomeHeaderProps {
   userName: string;
   dateRange: { from: Date; to: Date };
   handleDateRangeChange: (values: {
@@ -52,183 +67,191 @@ const HomeHeader = ({
     rangeCompare?: { from: Date; to: Date | undefined } | undefined;
   }) => void;
   isMobile: boolean;
-}) => (
-  <motion.div
-    className={cn(
-      'flex-none bg-background border-b border-border/50',
-      isMobile ? 'p-4 pb-3' : 'p-6'
+}
+
+const HomeHeader: Component<HomeHeaderProps> = (props) => (
+  <Motion.div
+    class={cn(
+      'flex-none bg-background/80 backdrop-blur-md border-b border-border',
+      props.isMobile ? 'p-4 pb-3' : 'p-6 pb-4'
     )}
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+    transition={{ duration: 0.6, easing: [0.4, 0, 0.2, 1] }}
   >
-    <div className={cn('flex items-center', isMobile ? 'flex-col gap-3' : 'justify-between')}>
-      <div className={isMobile ? 'text-center' : ''}>
+    <div class={cn('flex items-center justify-between', props.isMobile ? 'flex-col gap-4' : '')}>
+      <div class={props.isMobile ? 'text-center' : ''}>
         <h2
-          className={cn(
-            'font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
-            isMobile ? 'text-xl' : 'text-3xl'
+          class={cn(
+            'font-black tracking-tight',
+            'bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent',
+            'bg-[length:300%_100%]',
+            'animate-gradient',
+            props.isMobile ? 'text-2xl' : 'text-4xl'
           )}
         >
-          ¡Hola {userName}!
+          ¡Hola {props.userName}!
         </h2>
-        <p className={cn('text-muted-foreground mt-1', isMobile ? 'text-sm' : 'text-lg')}>
-          Bienvenido de nuevo al TPV de El Haido.
+        <p class={cn('text-muted-foreground mt-1.5', props.isMobile ? 'text-sm' : 'text-base')}>
+          Bienvenido de nuevo al TPV de El Haido
         </p>
       </div>
 
-      {!isMobile && (
-        <DateRangePicker
-          initialDateFrom={dateRange.from}
-          initialDateTo={dateRange.to}
-          onUpdate={handleDateRangeChange}
-        />
-      )}
+      <Show when={!props.isMobile}>
+        <div class="flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 bg-muted/50 text-sm text-muted-foreground">
+          <CalendarIcon class="h-4 w-4" />
+          <span>
+            {props.dateRange.from.toLocaleDateString('es-ES')} -{' '}
+            {props.dateRange.to.toLocaleDateString('es-ES')}
+          </span>
+        </div>
+      </Show>
     </div>
-  </motion.div>
+  </Motion.div>
 );
 
-// Stats Card Component
-type StatCardProps = {
+interface StatCardProps {
   title: string;
   value: string | number;
   numericValue?: number;
   suffix?: string;
   prefix?: string;
   isAnimated?: boolean;
-  Icon: React.ElementType;
+  Icon: Component<{ class?: string }>;
   variant?: 'success' | 'primary' | 'accent' | 'warning';
   index?: number;
-};
+  trend?: 'up' | 'down' | 'neutral';
+}
 
 const cardVariants = {
   success: {
-    cardClass:
-      'bg-gradient-to-br from-success/5 to-success/10 border-success/20 shadow-success/5 hover:shadow-success/10',
-    iconClass: 'h-5 w-5 text-success',
-    iconBg: 'bg-success/10',
+    container: 'group-hover:border-success/40',
+    iconBg: 'bg-success/10 group-hover:bg-success/20',
+    iconText: 'text-success group-hover:text-success',
+    trendBg: 'bg-success/5 text-success/80',
+    glow: 'group-hover:shadow-success/20',
   },
   primary: {
-    cardClass:
-      'bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 shadow-primary/5 hover:shadow-primary/10',
-    iconClass: 'h-5 w-5 text-primary',
-    iconBg: 'bg-primary/10',
+    container: 'group-hover:border-primary/40',
+    iconBg: 'bg-primary/10 group-hover:bg-primary/20',
+    iconText: 'text-primary group-hover:text-primary',
+    trendBg: 'bg-primary/5 text-primary/80',
+    glow: 'group-hover:shadow-primary/20',
   },
   accent: {
-    cardClass:
-      'bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20 shadow-accent/5 hover:shadow-accent/10',
-    iconClass: 'h-5 w-5 text-accent',
-    iconBg: 'bg-accent/10',
+    container: 'group-hover:border-accent/40',
+    iconBg: 'bg-accent/10 group-hover:bg-accent/20',
+    iconText: 'text-accent group-hover:text-accent',
+    trendBg: 'bg-accent/5 text-accent/80',
+    glow: 'group-hover:shadow-accent/20',
   },
   warning: {
-    cardClass:
-      'bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20 shadow-warning/5 hover:shadow-warning/10',
-    iconClass: 'h-5 w-5 text-warning',
-    iconBg: 'bg-warning/10',
+    container: 'group-hover:border-warning/40',
+    iconBg: 'bg-warning/10 group-hover:bg-warning/20',
+    iconText: 'text-warning group-hover:text-warning',
+    trendBg: 'bg-warning/5 text-warning/80',
+    glow: 'group-hover:shadow-warning/20',
   },
 };
 
-const StatCard = ({
-  title,
-  value,
-  numericValue,
-  suffix = '',
-  prefix = '',
-  isAnimated = false,
-  Icon,
-  variant = 'primary',
-  index = 0,
-}: StatCardProps) => {
-  const variantStyles = cardVariants[variant];
-  const { isMobile } = useResponsive();
+const StatCard: Component<StatCardProps> = (props) => {
+  const variantStyles = () => cardVariants[props.variant ?? 'primary'];
+  const responsive = useResponsive();
+  const index = () => props.index ?? 0;
+
+  const formattedValue = createMemo(() => {
+    if (props.isAnimated && props.numericValue !== undefined) {
+      const formatted =
+        props.suffix === '€' ? props.numericValue.toFixed(2) : props.numericValue.toString();
+      return `${props.prefix ?? ''}${formatted}${props.suffix ?? ''}`;
+    }
+    return props.value;
+  });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+    <Motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
         duration: 0.5,
-        delay: index * 0.1,
-        ease: [0.4, 0, 0.2, 1],
-      }}
-      whileHover={{
-        y: -4,
-        transition: { duration: 0.2 },
+        delay: index() * 0.08,
+        easing: [0.4, 0, 0.2, 1],
       }}
     >
-      <Card
-        className={cn(
-          `${variantStyles.cardClass} shadow-lg transition-all duration-300 hover:shadow-xl border-2`,
-          isMobile && 'shadow-md hover:shadow-lg'
+      <div
+        class={cn(
+          'group relative bg-card rounded-2xl border-2 border-border transition-all duration-500',
+          variantStyles().container,
+          'hover:shadow-lg',
+          variantStyles().glow,
+          responsive.isMobile() && 'hover:shadow-md'
         )}
       >
-        <CardHeader
-          className={cn(
-            'flex flex-row items-center justify-between space-y-0',
-            isMobile ? 'pb-1 px-3 pt-3' : 'pb-3'
-          )}
-        >
-          <CardTitle
-            className={cn(
-              'font-semibold text-card-foreground',
-              isMobile ? 'text-xs leading-tight' : 'text-sm'
-            )}
-          >
-            {title}
-          </CardTitle>
-          <div
-            className={cn(
-              `${variantStyles.iconBg} rounded-lg transition-transform duration-200 hover:scale-110`,
-              isMobile ? 'p-1.5' : 'p-2'
-            )}
-          >
-            {React.createElement(Icon, {
-              className: cn(variantStyles.iconClass, isMobile ? 'h-4 w-4' : 'h-5 w-5'),
-            })}
-          </div>
-        </CardHeader>
-        <CardContent className={cn('pt-0', isMobile ? 'px-3 pb-3' : '')}>
-          <motion.div
-            className={cn('font-bold text-card-foreground', isMobile ? 'text-lg' : 'text-3xl')}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{
-              duration: 0.6,
-              delay: index * 0.1 + 0.2,
-            }}
-          >
-            {isAnimated && numericValue !== undefined ? (
-              <NumberFlow
-                value={numericValue}
-                format={{ minimumFractionDigits: suffix === '€' ? 2 : 0 }}
-                suffix={suffix}
-                prefix={prefix}
-                transformTiming={{ duration: 400, easing: 'ease-out' }}
-                opacityTiming={{ duration: 200, easing: 'ease-out' }}
-                willChange
-                style={
-                  {
-                    fontVariantNumeric: 'tabular-nums',
-                    '--number-flow-char-height': '0.85em',
-                    '--number-flow-mask-height': '0.25em',
-                  } as React.CSSProperties
-                }
+        <div class={cn('p-5', responsive.isMobile() && 'p-4')}>
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <p
+                class={cn(
+                  'text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1',
+                  responsive.isMobile() && 'text-[10px]'
+                )}
+              >
+                {props.title}
+              </p>
+              <Motion.div
+                class={cn(
+                  'font-black tracking-tight',
+                  responsive.isMobile() ? 'text-2xl' : 'text-3xl'
+                )}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{
+                  duration: 0.6,
+                  delay: index() * 0.08 + 0.15,
+                  easing: [0.34, 1.56, 0.64, 1],
+                }}
+                style={{ 'font-variant-numeric': 'tabular-nums' }}
+              >
+                {formattedValue()}
+              </Motion.div>
+            </div>
+
+            <div
+              class={cn(
+                'flex-shrink-0 p-2.5 rounded-xl transition-all duration-300',
+                variantStyles().iconBg,
+                'group-hover:scale-105 group-hover:rotate-5'
+              )}
+            >
+              <props.Icon
+                class={cn(variantStyles().iconText, responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')}
               />
-            ) : (
-              value
-            )}
-          </motion.div>
-        </CardContent>
-      </Card>
-    </motion.div>
+            </div>
+          </div>
+
+          <div class="mt-3 flex items-center gap-1.5">
+            <div
+              class={cn(
+                'h-1 flex-1 rounded-full bg-muted overflow-hidden',
+                variantStyles().iconBg.replace('/10', '/5')
+              )}
+            >
+              <Motion.div
+                class={cn('h-full rounded-full', variantStyles().iconBg.replace('/10', ''))}
+                initial={{ width: '0%' }}
+                animate={{ width: '75%' }}
+                transition={{ duration: 1, delay: index() * 0.08 + 0.4 }}
+              />
+            </div>
+            <span class={cn('text-xs font-semibold', variantStyles().iconText)}>75%</span>
+          </div>
+        </div>
+      </div>
+    </Motion.div>
   );
 };
 
-// Stats Grid Component
-const StatsGrid = ({
-  stats,
-  isMobile,
-}: {
+interface StatsGridProps {
   stats: {
     totalSales: number;
     totalOrders: number;
@@ -236,17 +259,19 @@ const StatsGrid = ({
     bestSellerProduct: { name: string; timesOrdered: number };
   };
   isMobile: boolean;
-}) => (
+}
+
+const StatsGrid: Component<StatsGridProps> = (props) => (
   <div
-    className={cn(
+    class={cn(
       'grid gap-4',
-      isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+      props.isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
     )}
   >
     <StatCard
       title="Ventas Totales"
-      value={`${stats.totalSales.toFixed(2)}€`}
-      numericValue={stats.totalSales}
+      value={`${props.stats.totalSales.toFixed(2)}€`}
+      numericValue={props.stats.totalSales}
       suffix="€"
       isAnimated={true}
       Icon={DollarSignIcon}
@@ -254,18 +279,18 @@ const StatsGrid = ({
       index={0}
     />
     <StatCard
-      title="Pedidos Totales"
-      value={stats.totalOrders.toString()}
-      numericValue={stats.totalOrders}
+      title="Pedidos"
+      value={props.stats.totalOrders.toString()}
+      numericValue={props.stats.totalOrders}
       isAnimated={true}
       Icon={ShoppingCartIcon}
       variant="primary"
       index={1}
     />
     <StatCard
-      title="Valor Promedio de Pedido"
-      value={`${stats.averageOrderValue.toFixed(2)}€`}
-      numericValue={stats.averageOrderValue}
+      title="Ticket Promedio"
+      value={`${props.stats.averageOrderValue.toFixed(2)}€`}
+      numericValue={props.stats.averageOrderValue}
       suffix="€"
       isAnimated={true}
       Icon={TrendingUpIcon}
@@ -273,8 +298,8 @@ const StatsGrid = ({
       index={2}
     />
     <StatCard
-      title="Best Seller"
-      value={stats.bestSellerProduct.name}
+      title="Más Vendido"
+      value={props.stats.bestSellerProduct.name}
       Icon={AwardIcon}
       variant="warning"
       index={3}
@@ -282,277 +307,481 @@ const StatsGrid = ({
   </div>
 );
 
-// LineChart Component
-type LineChartCardProps = {
+interface LineChartCardProps {
   title: string;
   data: { date: string; sales: number }[];
   index?: number;
-};
+}
 
-const LineChartCard = ({ title, data, index = 0 }: LineChartCardProps) => {
-  const { isMobile } = useResponsive();
+const LineChartCard: Component<LineChartCardProps> = (props) => {
+  const responsive = useResponsive();
+  const index = () => props.index ?? 0;
+
+  const chartData = createMemo(() => {
+    const primaryColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#8b5cf6';
+    const backgroundColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--background').trim() ||
+      '#ffffff';
+
+    return {
+      labels: props.data.map((d) => d.date),
+      datasets: [
+        {
+          label: 'Ventas',
+          data: props.data.map((d) => d.sales),
+          borderColor: primaryColor,
+          backgroundColor: (context: any) => {
+            const ctx = context.chart.ctx;
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, primaryColor.replace(')', '/ 0.4)').replace('oklch', 'oklch'));
+            gradient.addColorStop(1, primaryColor.replace(')', '/ 0)').replace('oklch', 'oklch'));
+            return gradient;
+          },
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: primaryColor,
+          pointBorderColor: backgroundColor,
+          pointBorderWidth: 2,
+          pointRadius: responsive.isMobile() ? 3 : 4,
+          pointHoverRadius: 6,
+        },
+      ],
+    };
+  });
+
+  const chartOptions = createMemo(() => {
+    const cardColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a';
+    const cardForeground =
+      getComputedStyle(document.documentElement).getPropertyValue('--card-foreground').trim() ||
+      '#ffffff';
+    const borderColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#333333';
+    const mutedForeground =
+      getComputedStyle(document.documentElement).getPropertyValue('--muted-foreground').trim() ||
+      '#999999';
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index' as const,
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: cardColor,
+          titleColor: cardForeground,
+          bodyColor: cardForeground,
+          borderColor: borderColor,
+          borderWidth: 1,
+          padding: 12,
+          displayColors: false,
+          callbacks: {
+            label: (context: { raw: number }) => `${context.raw.toFixed(2)}€`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: {
+            color: borderColor,
+            drawBorder: false,
+          },
+          ticks: {
+            color: mutedForeground,
+            maxTicksLimit: responsive.isMobile() ? 4 : 8,
+            font: { size: 11 },
+          },
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: borderColor,
+            drawBorder: false,
+          },
+          ticks: {
+            color: mutedForeground,
+            callback: (value: number) => `${value}€`,
+            font: { size: 11 },
+          },
+        },
+      },
+    };
+  });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
+    <Motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{
         duration: 0.6,
-        delay: 0.4 + index * 0.1,
-        ease: [0.4, 0, 0.2, 1],
+        delay: 0.3 + index() * 0.08,
+        easing: [0.4, 0, 0.2, 1],
       }}
     >
       <Card
-        className={cn(
-          'bg-gradient-to-br from-card to-muted/20 border-2 shadow-lg hover:shadow-xl transition-all duration-300',
-          isMobile && 'shadow-md hover:shadow-lg'
+        class={cn(
+          'bg-card/50 backdrop-blur-sm border-2 border-border transition-all duration-500',
+          'hover:shadow-lg hover:border-primary/20',
+          responsive.isMobile() && 'hover:shadow-md'
         )}
       >
-        <CardHeader className={cn(isMobile ? 'pb-2 px-4 pt-4' : 'pb-4')}>
-          <div className="flex items-center gap-2">
-            <div className={cn('bg-primary/10 rounded-lg', isMobile ? 'p-1.5' : 'p-2')}>
-              <TrendingUpIcon className={cn('text-primary', isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
+        <CardHeader class={cn(responsive.isMobile() ? 'pb-3 px-4 pt-4' : 'pb-4 px-6 pt-5')}>
+          <div class="flex items-center gap-3">
+            <div
+              class={cn('p-2 rounded-xl bg-primary/10', responsive.isMobile() ? 'p-1.5' : 'p-2')}
+            >
+              <TrendingUpIcon
+                class={cn('text-primary', responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')}
+              />
             </div>
             <CardTitle
-              className={cn('font-semibold text-card-foreground', isMobile ? 'text-sm' : 'text-lg')}
+              class={cn(
+                'font-semibold text-card-foreground',
+                responsive.isMobile() ? 'text-sm' : 'text-lg'
+              )}
             >
-              {title}
+              {props.title}
             </CardTitle>
           </div>
         </CardHeader>
-        <CardContent className={isMobile ? 'px-4 pb-4' : ''}>
-          <ResponsiveContainer width="100%" height={isMobile ? 200 : 300}>
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis
-                dataKey="date"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={isMobile ? 10 : 12}
-              />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={isMobile ? 10 : 12} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  fontSize: isMobile ? '12px' : '14px',
-                }}
-              />
-              {!isMobile && <Legend />}
-              <Line
-                type="monotone"
-                dataKey="sales"
-                stroke="hsl(var(--primary))"
-                strokeWidth={isMobile ? 2 : 3}
-                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: isMobile ? 3 : 4 }}
-                activeDot={{ r: isMobile ? 4 : 6, stroke: 'hsl(var(--primary))', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <CardContent class={cn(responsive.isMobile() ? 'px-4 pb-4' : 'px-6 pb-5')}>
+          <div
+            class={cn(
+              'rounded-xl border border-border/50 bg-muted/30',
+              responsive.isMobile() ? 'h-[220px]' : 'h-[300px]'
+            )}
+          >
+            <Show
+              when={props.data.length > 0}
+              fallback={
+                <div class="flex items-center justify-center h-full text-center text-muted-foreground p-4">
+                  <Activity class="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p class="font-medium">Sin datos de ventas</p>
+                  <p class="text-sm mt-1">Añade pedidos para ver el gráfico</p>
+                </div>
+              }
+            >
+              <Line data={chartData()} options={chartOptions()} />
+            </Show>
+          </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </Motion.div>
   );
 };
 
-// PieChart Component
-type PieChartCardProps = {
+interface PieChartCardProps {
   title: string;
   data: { name: string; value: number }[];
   index?: number;
-};
+}
 
-const PieChartCard = ({ title, data, index = 0 }: PieChartCardProps) => {
-  const { isMobile } = useResponsive();
+const PieChartCard: Component<PieChartCardProps> = (props) => {
+  const responsive = useResponsive();
+  const index = () => props.index ?? 0;
+
+  const chartColors = createMemo(() => {
+    return CHART_COLORS.slice(0, props.data.length).map((cssVar) => {
+      const varName = cssVar.match(/var\((--[^)]+)\)/)?.[1];
+      if (!varName) return cssVar;
+      const color = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+      return color || cssVar;
+    });
+  });
+
+  const chartData = createMemo(() => ({
+    labels: props.data.map((d) => d.name),
+    datasets: [
+      {
+        data: props.data.map((d) => d.value),
+        backgroundColor: chartColors(),
+        borderColor:
+          getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a',
+        borderWidth: 2,
+        hoverOffset: 8,
+      },
+    ],
+  }));
+
+  const chartOptions = createMemo(() => {
+    const cardColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#1a1a1a';
+    const cardForeground =
+      getComputedStyle(document.documentElement).getPropertyValue('--card-foreground').trim() ||
+      '#ffffff';
+    const borderColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#333333';
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: !responsive.isMobile(),
+          position: 'right' as const,
+          labels: {
+            color: cardForeground,
+            boxWidth: 12,
+            padding: 12,
+            font: { size: 11 },
+            usePointStyle: true,
+            pointStyle: 'circle',
+          },
+        },
+        tooltip: {
+          backgroundColor: cardColor,
+          titleColor: cardForeground,
+          bodyColor: cardForeground,
+          borderColor: borderColor,
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: (context: { label: string; raw: number }) => `${context.label}: ${context.raw}`,
+          },
+        },
+      },
+    };
+  });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
+    <Motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{
         duration: 0.6,
-        delay: 0.5 + index * 0.1,
-        ease: [0.4, 0, 0.2, 1],
+        delay: 0.4 + index() * 0.08,
+        easing: [0.4, 0, 0.2, 1],
       }}
     >
       <Card
-        className={cn(
-          'bg-gradient-to-br from-card to-success/5 border-2 border-success/20 shadow-lg hover:shadow-xl transition-all duration-300',
-          isMobile && 'shadow-md hover:shadow-lg'
+        class={cn(
+          'bg-card/50 backdrop-blur-sm border-2 border-border transition-all duration-500',
+          'hover:shadow-lg hover:border-accent/20',
+          responsive.isMobile() && 'hover:shadow-md'
         )}
       >
-        <CardHeader className={cn(isMobile ? 'pb-2 px-4 pt-4' : 'pb-4')}>
+        <CardHeader class={cn(responsive.isMobile() ? 'pb-3 px-4 pt-4' : 'pb-4 px-6 pt-5')}>
           <CardTitle
-            className={cn(
-              'font-semibold text-card-foreground flex items-center gap-2',
-              isMobile ? 'text-sm' : 'text-lg'
+            class={cn(
+              'font-semibold text-card-foreground flex items-center gap-3',
+              responsive.isMobile() ? 'text-sm' : 'text-lg'
             )}
           >
-            <div className={cn('bg-success/10 rounded-lg', isMobile ? 'p-1.5' : 'p-2')}>
-              <DollarSignIcon className={cn('text-success', isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
+            <div class={cn('p-2 rounded-xl bg-accent/10', responsive.isMobile() ? 'p-1.5' : 'p-2')}>
+              <DollarSignIcon
+                class={cn('text-accent', responsive.isMobile() ? 'h-4 w-4' : 'h-5 w-5')}
+              />
             </div>
-            {title}
+            {props.title}
           </CardTitle>
         </CardHeader>
-        <CardContent className={isMobile ? 'px-4 pb-4' : ''}>
-          <ResponsiveContainer width="100%" height={isMobile ? 200 : 300}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={90}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-              >
-                {data.map((_, entryIndex) => (
-                  <Cell key={`cell-${entryIndex}`} fill={COLORS[entryIndex % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+        <CardContent class={cn(responsive.isMobile() ? 'px-4 pb-4' : 'px-6 pb-5')}>
+          <div
+            class={cn(
+              'rounded-xl border border-border/50 bg-muted/30',
+              responsive.isMobile() ? 'h-[220px]' : 'h-[300px]'
+            )}
+          >
+            <Show
+              when={props.data.length > 0}
+              fallback={
+                <div class="flex items-center justify-center h-full text-center text-muted-foreground p-4">
+                  <Activity class="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p class="font-medium">Sin datos</p>
+                  <p class="text-sm mt-1">No hay información disponible</p>
+                </div>
+              }
+            >
+              <Pie data={chartData()} options={chartOptions()} />
+            </Show>
+          </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </Motion.div>
   );
 };
 
-// Recent Orders Table Component
-type RecentOrdersTableProps = {
+interface RecentOrdersTableProps {
   orders: Order[];
   index?: number;
+}
+
+const RecentOrdersTable: Component<RecentOrdersTableProps> = (props) => {
+  const index = () => props.index ?? 0;
+  const responsive = useResponsive();
+  const displayOrders = createMemo(() => props.orders.slice(0, 5));
+
+  return (
+    <Motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.6,
+        delay: 0.5 + index() * 0.08,
+        easing: [0.4, 0, 0.2, 1],
+      }}
+    >
+      <Card
+        class={cn(
+          'bg-card/50 backdrop-blur-sm border-2 border-border transition-all duration-500',
+          'hover:shadow-lg hover:border-accent/20'
+        )}
+      >
+        <CardHeader class={cn('pb-4', responsive.isMobile() ? 'px-4 pt-4' : 'px-6 pt-5')}>
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-accent/10">
+              <ShoppingCartIcon class="h-5 w-5 text-accent" />
+            </div>
+            <CardTitle class="text-lg font-semibold text-card-foreground">
+              Pedidos Recientes
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent class={cn(responsive.isMobile() ? 'px-4 pb-4' : 'px-6 pb-5')}>
+          <Table>
+            <TableHeader>
+              <TableRow class="border-b border-border">
+                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">
+                  ID
+                </TableHead>
+                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">
+                  Fecha
+                </TableHead>
+                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">
+                  Total
+                </TableHead>
+                <TableHead class="text-muted-foreground font-semibold text-xs uppercase tracking-wider">
+                  Ubicacion
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <For each={displayOrders()}>
+                {(order, orderIndex) => (
+                  <Motion.tr
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: 0.6 + orderIndex() * 0.06,
+                    }}
+                    class="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                  >
+                    <TableCell class="font-medium text-card-foreground">#{order.id}</TableCell>
+                    <TableCell class="text-muted-foreground">
+                      {new Date(order.date).toLocaleDateString('es-ES')}
+                    </TableCell>
+                    <TableCell class="font-bold text-success">{order.total.toFixed(2)}€</TableCell>
+                    <TableCell>
+                      <span class="inline-flex items-center px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium border border-primary/20">
+                        {order.tableNumber ? `Mesa ${order.tableNumber}` : 'Barra'}
+                      </span>
+                    </TableCell>
+                  </Motion.tr>
+                )}
+              </For>
+              <Show when={displayOrders().length === 0}>
+                <tr>
+                  <TableCell colSpan={4} class="text-center text-muted-foreground py-8">
+                    No hay pedidos recientes
+                  </TableCell>
+                </tr>
+              </Show>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </Motion.div>
+  );
 };
 
-const RecentOrdersTable = ({ orders, index = 0 }: RecentOrdersTableProps) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{
-      duration: 0.6,
-      delay: 0.6 + index * 0.1,
-      ease: [0.4, 0, 0.2, 1],
-    }}
-  >
-    <Card className="bg-gradient-to-br from-card to-accent/5 border-2 border-accent/20 shadow-lg hover:shadow-xl transition-all duration-300">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <div className="bg-accent/10 p-2 rounded-lg">
-            <ShoppingCartIcon className="h-5 w-5 text-accent" />
-          </div>
-          <CardTitle className="text-lg font-semibold text-card-foreground">
-            Pedidos Recientes
-          </CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-muted-foreground font-semibold">ID</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Fecha</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Total</TableHead>
-              <TableHead className="text-muted-foreground font-semibold">Ubicación</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders.slice(0, 5).map((order, orderIndex) => (
-              <motion.tr
-                key={order.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{
-                  duration: 0.3,
-                  delay: 0.8 + orderIndex * 0.05,
-                }}
-                className="hover:bg-accent/5 transition-colors duration-200"
-              >
-                <TableCell className="font-medium">#{order.id}</TableCell>
-                <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                <TableCell className="font-semibold text-success">
-                  {order.total.toFixed(2)}€
-                </TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
-                    {order.tableNumber ? `Mesa ${order.tableNumber}` : 'Barra'}
-                  </span>
-                </TableCell>
-              </motion.tr>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  </motion.div>
-);
-
-// Top Products Card Component
-type TopProductsCardProps = {
+interface TopProductsCardProps {
   products: { name: string; timesOrdered: number }[];
   index?: number;
+}
+
+const TopProductsCard: Component<TopProductsCardProps> = (props) => {
+  const index = () => props.index ?? 0;
+  const responsive = useResponsive();
+
+  const rankColors = [
+    'bg-warning text-warning-foreground',
+    'bg-muted text-muted-foreground',
+    'bg-primary/20 text-primary',
+    'bg-accent/20 text-accent',
+    'bg-success/20 text-success',
+  ];
+
+  return (
+    <Motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.6,
+        delay: 0.6 + index() * 0.08,
+        easing: [0.4, 0, 0.2, 1],
+      }}
+    >
+      <Card
+        class={cn(
+          'bg-card/50 backdrop-blur-sm border-2 border-border transition-all duration-500',
+          'hover:shadow-lg hover:border-warning/20'
+        )}
+      >
+        <CardHeader class={cn('pb-4', responsive.isMobile() ? 'px-4 pt-4' : 'px-6 pt-5')}>
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-warning/10">
+              <AwardIcon class="h-5 w-5 text-warning" />
+            </div>
+            <CardTitle class="text-lg font-semibold text-card-foreground">
+              Top 5 Productos
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent class={cn(responsive.isMobile() ? 'px-4 pb-4' : 'px-6 pb-5')}>
+          <ul class="space-y-2">
+            <For each={props.products}>
+              {(product, productIndex) => (
+                <Motion.li
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: 0.7 + productIndex() * 0.06,
+                  }}
+                  class="flex items-center gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors group"
+                >
+                  <div
+                    class={cn(
+                      'flex items-center justify-center w-7 h-7 rounded-lg text-sm font-bold transition-transform group-hover:scale-110',
+                      rankColors[productIndex()]
+                    )}
+                  >
+                    {productIndex() + 1}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <span class="font-medium text-card-foreground">{product.name}</span>
+                  </div>
+                  <span class="inline-flex items-center px-2.5 py-1 bg-success/10 text-success text-xs rounded-full font-semibold border border-success/20 whitespace-nowrap">
+                    {product.timesOrdered}
+                  </span>
+                </Motion.li>
+              )}
+            </For>
+            <Show when={props.products.length === 0}>
+              <li class="text-center text-muted-foreground py-8">No hay datos de productos</li>
+            </Show>
+          </ul>
+        </CardContent>
+      </Card>
+    </Motion.div>
+  );
 };
 
-const TopProductsCard = ({ products, index = 0 }: TopProductsCardProps) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{
-      duration: 0.6,
-      delay: 0.7 + index * 0.1,
-      ease: [0.4, 0, 0.2, 1],
-    }}
-  >
-    <Card className="bg-gradient-to-br from-card to-warning/5 border-2 border-warning/20 shadow-lg hover:shadow-xl transition-all duration-300">
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <div className="bg-warning/10 p-2 rounded-lg">
-            <AwardIcon className="h-5 w-5 text-warning" />
-          </div>
-          <CardTitle className="text-lg font-semibold text-card-foreground">
-            Top 5 Productos
-          </CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-3">
-          {products.map((product, productIndex) => (
-            <motion.li
-              key={product.name}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                duration: 0.3,
-                delay: 0.9 + productIndex * 0.05,
-              }}
-              className="flex justify-between items-center p-3 rounded-lg bg-background/50 hover:bg-warning/5 transition-colors duration-200"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-6 h-6 bg-warning/10 text-warning rounded-full text-sm font-bold">
-                  {productIndex + 1}
-                </div>
-                <span className="font-medium text-card-foreground">{product.name}</span>
-              </div>
-              <span className="px-2 py-1 bg-success/10 text-success text-xs rounded-full font-semibold">
-                {product.timesOrdered} pedidos
-              </span>
-            </motion.li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  </motion.div>
-);
-
-// Utility Functions
 const getTotalSales = (orderHistory: Order[]) => {
   return orderHistory.reduce((total, order) => total + order.total, 0);
 };
@@ -648,124 +877,117 @@ const getSalesTrend = (orderHistory: Order[]): { date: string; sales: number }[]
   return Object.entries(salesByDate).map(([date, sales]) => ({ date, sales }));
 };
 
-type HomeProps = {
+interface HomeProps {
   userName: string;
-};
+}
 
-const Home = memo(({ userName }: HomeProps) => {
-  const { orderHistory } = useHomeData();
-  const { isMobile } = useResponsive();
-  const [dateRange, setDateRange] = useState({
+const Home: Component<HomeProps> = (props) => {
+  const data = homeData();
+  const responsive = useResponsive();
+
+  const [dateRange, setDateRange] = createSignal({
     from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     to: new Date(),
   });
 
-  // Memoizar filtros pesados para evitar recálculos innecesarios
-  const filteredOrders = useMemo(() => {
-    return orderHistory.filter((order) => {
+  const filteredOrders = createMemo(() => {
+    const range = dateRange();
+    return data.orderHistory.filter((order) => {
       const orderDate = new Date(order.date);
-      return orderDate >= dateRange.from && orderDate <= dateRange.to;
+      return orderDate >= range.from && orderDate <= range.to;
     });
-  }, [orderHistory, dateRange.from, dateRange.to]);
+  });
 
-  // Memoizar cálculos pesados de estadísticas
-  const stats = useMemo(
-    () => ({
-      totalSales: getTotalSales(filteredOrders),
-      totalOrders: getTotalOrders(filteredOrders),
-      averageOrderValue: getAverageOrderValue(filteredOrders),
-      bestSellerProduct: getBestSellerProduct(filteredOrders) || {
-        name: 'No hay productos en el pedido',
-        timesOrdered: 0,
-      },
-    }),
-    [filteredOrders]
-  );
-
-  // Memoizar cálculos pesados de gráficos
-  const chartData = useMemo(
-    () => ({
-      salesByCategory: getSalesByCategory(filteredOrders),
-      ordersByLocation: getOrdersByLocation(filteredOrders),
-      top5Products: getTop5Products(filteredOrders),
-      salesTrend: getSalesTrend(filteredOrders),
-    }),
-    [filteredOrders]
-  );
-
-  // Callback memoizado para cambios de fecha
-  const handleDateRangeChange = useCallback(
-    (values: {
-      range: { from: Date; to: Date | undefined };
-      rangeCompare?: { from: Date; to: Date | undefined } | undefined;
-    }) => {
-      const { from, to } = values.range;
-      if (!from || !to) return;
-      setDateRange({ from, to });
+  const stats = createMemo(() => ({
+    totalSales: getTotalSales(filteredOrders()),
+    totalOrders: getTotalOrders(filteredOrders()),
+    averageOrderValue: getAverageOrderValue(filteredOrders()),
+    bestSellerProduct: getBestSellerProduct(filteredOrders()) || {
+      name: 'Sin productos',
+      timesOrdered: 0,
     },
-    []
-  );
+  }));
+
+  const chartData = createMemo(() => ({
+    salesByCategory: getSalesByCategory(filteredOrders()),
+    ordersByLocation: getOrdersByLocation(filteredOrders()),
+    top5Products: getTop5Products(filteredOrders()),
+    salesTrend: getSalesTrend(filteredOrders()),
+  }));
+
+  const handleDateRangeChange = (values: {
+    range: { from: Date; to: Date | undefined };
+    rangeCompare?: { from: Date; to: Date | undefined } | undefined;
+  }) => {
+    const { from, to } = values.range;
+    if (!from || !to) return;
+    setDateRange({ from, to });
+  };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div class="flex flex-col h-full overflow-hidden bg-background">
       <HomeHeader
-        userName={userName}
-        dateRange={dateRange}
+        userName={props.userName}
+        dateRange={dateRange()}
         handleDateRangeChange={handleDateRangeChange}
-        isMobile={isMobile}
+        isMobile={responsive.isMobile()}
       />
 
       <div
-        className={cn(
+        class={cn(
           'flex-grow overflow-y-auto',
-          isMobile ? 'p-4 space-y-4' : 'p-4 space-y-4 lg:p-6 lg:space-y-6'
+          responsive.isMobile() ? 'p-4 space-y-4' : 'p-6 space-y-6'
         )}
       >
-        <StatsGrid stats={stats} isMobile={isMobile} />
+        <StatsGrid stats={stats()} isMobile={responsive.isMobile()} />
 
-        {/* Charts and Tables Section - Optimized for all screen sizes */}
         <div
-          className={cn(
-            'grid gap-3',
-            isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
-            'lg:gap-4'
+          class={cn(
+            'grid gap-4',
+            responsive.isMobile()
+              ? 'grid-cols-1'
+              : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
           )}
         >
-          {/* Line Chart - Takes more space on larger screens */}
-          <div className={cn(isMobile ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}>
-            <LineChartCard title="Tendencia de Ventas" data={chartData.salesTrend} index={0} />
+          <div
+            class={cn(responsive.isMobile() ? '' : 'lg:col-span-2 xl:col-span-2 2xl:col-span-2')}
+          >
+            <LineChartCard title="Tendencia de Ventas" data={chartData().salesTrend} index={0} />
           </div>
 
-          {/* Category Pie Chart */}
-          <div className={cn(isMobile ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
-            <PieChartCard title="Ventas por Categoría" data={chartData.salesByCategory} index={0} />
+          <div
+            class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}
+          >
+            <PieChartCard
+              title="Ventas por Categoría"
+              data={chartData().salesByCategory}
+              index={0}
+            />
           </div>
 
-          {/* Location Pie Chart */}
-          <div className={cn(isMobile ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}>
+          <div
+            class={cn(responsive.isMobile() ? '' : 'lg:col-span-1 xl:col-span-1 2xl:col-span-1')}
+          >
             <PieChartCard
               title="Pedidos por Ubicación"
-              data={chartData.ordersByLocation}
+              data={chartData().ordersByLocation}
               index={1}
             />
           </div>
         </div>
 
-        {/* Recent Orders and Top Products - Side by side on larger screens */}
         <div
-          className={cn(
-            'grid gap-3',
-            isMobile ? 'grid-cols-1 space-y-4' : 'grid-cols-1 lg:grid-cols-2 lg:gap-4'
+          class={cn(
+            'grid gap-4',
+            responsive.isMobile() ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'
           )}
         >
-          <RecentOrdersTable orders={filteredOrders} index={0} />
-          <TopProductsCard products={chartData.top5Products} index={1} />
+          <RecentOrdersTable orders={filteredOrders()} index={0} />
+          <TopProductsCard products={chartData().top5Products} index={1} />
         </div>
       </div>
     </div>
   );
-});
-
-Home.displayName = 'Home';
+};
 
 export default Home;

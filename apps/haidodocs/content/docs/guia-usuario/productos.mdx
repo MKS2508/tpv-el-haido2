@@ -1,0 +1,203 @@
+---
+title: Productos
+description: 'Gestión de productos y categorías en TPV El Haido'
+---
+
+# Gestión de Productos
+
+Aprende a gestionar tu catálogo de productos y categorías en TPV El Haido.
+
+## Acceder al Catálogo
+
+1. En el menú lateral, haz clic en **Productos**
+2. Verás el grid de productos con filtros y búsqueda
+
+![Vista del catálogo de productos](/screenshots/03_products.png)
+
+## Categorías
+
+Las categorías organizan tus productos para facilitar la navegación durante las ventas.
+
+### Crear Categoría
+
+<Steps>
+
+### Abrir gestión de categorías
+
+En la sección Productos, haz clic en el botón **Categorías** o el icono de carpeta.
+
+### Nueva categoría
+
+Haz clic en **Nueva Categoría**.
+
+### Rellenar datos
+
+| Campo | Descripción | Ejemplo |
+|-------|-------------|---------|
+| **Nombre** | Nombre de la categoría | "Bebidas Frías" |
+| **Descripción** | Descripción opcional | "Refrescos, zumos, agua..." |
+| **Icono** | Icono visual | 🍺 |
+
+### Guardar
+
+Haz clic en **Crear** para guardar la categoría.
+
+</Steps>
+
+### Editar Categoría
+
+1. En la lista de categorías, haz clic en el icono de edición (lápiz)
+2. Modifica los campos necesarios
+3. Haz clic en **Guardar**
+
+### Eliminar Categoría
+
+1. Haz clic en el icono de eliminar (papelera)
+2. Confirma la eliminación
+
+<Callout type="warning">
+  Al eliminar una categoría, los productos asociados se moverán a "Sin categoría".
+</Callout>
+
+## Productos
+
+### Crear Producto
+
+<Steps>
+
+### Abrir formulario
+
+En la sección Productos, haz clic en **Nuevo Producto**.
+
+### Información básica
+
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
+| **Nombre** | Nombre del producto | Sí |
+| **Precio** | Precio de venta (sin IVA) | Sí |
+| **Categoría** | Categoría del producto | Sí |
+| **Marca** | Marca (opcional) | No |
+
+### Configuración de IVA
+
+| Tipo | Porcentaje | Aplicación |
+|------|------------|------------|
+| **General** | 21% | Mayoría de productos |
+| **Reducido** | 10% | Alimentación, transporte |
+| **Superreducido** | 4% | Pan, leche, frutas, verduras |
+
+### Imagen del producto
+
+Tienes dos opciones:
+- **Icono predefinido**: Selecciona de la biblioteca de iconos
+- **Imagen personalizada**: Sube una foto del producto
+
+### Guardar
+
+Haz clic en **Crear Producto**.
+
+</Steps>
+
+### Editar Producto
+
+1. En el grid de productos, haz clic en el producto
+2. Se abrirá el diálogo de edición
+3. Modifica los campos necesarios
+4. Haz clic en **Guardar Cambios**
+
+### Eliminar Producto
+
+1. En el diálogo del producto, haz clic en **Eliminar**
+2. Confirma la eliminación
+
+<Callout type="info">
+  Los productos eliminados no aparecerán en nuevas comandas, pero se mantienen en el historial de pedidos anteriores.
+</Callout>
+
+## Búsqueda y Filtros
+
+### Barra de búsqueda
+
+Escribe en la barra de búsqueda para encontrar productos por:
+- Nombre
+- Marca
+- Categoría
+
+### Filtros por categoría
+
+En la barra lateral izquierda:
+1. Haz clic en una categoría para ver solo esos productos
+2. Haz clic en "Todas" para ver todos los productos
+
+### Ordenación
+
+Ordena los productos por:
+- Nombre (A-Z, Z-A)
+- Precio (menor a mayor, mayor a menor)
+- Más recientes
+
+## Importación Masiva
+
+Si tienes muchos productos, puedes importarlos desde un archivo:
+
+<Steps>
+
+### Preparar archivo CSV
+
+Crea un archivo CSV con las columnas:
+```csv
+nombre,precio,categoria,marca,iva
+Coca-Cola,1.80,Bebidas,Coca-Cola,21
+Café Solo,1.20,Cafés,,21
+Tostada,2.50,Desayunos,,10
+```
+
+### Importar
+
+1. Ve a **Ajustes → Importar/Exportar**
+2. Selecciona **Importar Productos**
+3. Carga tu archivo CSV
+4. Revisa la vista previa
+5. Confirma la importación
+
+</Steps>
+
+## Exportar Catálogo
+
+Para hacer una copia de seguridad o migrar datos:
+
+1. Ve a **Ajustes → Importar/Exportar**
+2. Selecciona **Exportar Productos**
+3. Elige el formato (CSV o JSON)
+4. Descarga el archivo
+
+## Consejos
+
+### Organización eficiente
+
+- Crea categorías que reflejen tu carta o menú
+- Usa nombres cortos y claros
+- Los productos más vendidos pueden tener un icono distintivo
+
+### Precios
+
+- Introduce siempre el precio **sin IVA**
+- El sistema calcula el PVP automáticamente
+- Puedes cambiar precios en cualquier momento (no afecta a pedidos anteriores)
+
+### Imágenes
+
+| Formato | Recomendación |
+|---------|---------------|
+| **Tamaño** | 200x200px mínimo |
+| **Formato** | PNG o JPG |
+| **Peso** | Menos de 500KB |
+
+<Callout type="tip">
+  Las imágenes cuadradas se muestran mejor en el grid de productos.
+</Callout>
+
+## Siguiente Paso
+
+- [Gestionar Pedidos](/docs/guia-usuario/pedidos)
+- [Configurar Pagos](/docs/guia-usuario/pagos)

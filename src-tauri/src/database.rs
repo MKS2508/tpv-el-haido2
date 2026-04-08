@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use crate::models::{Product, Category, Order, OrderItem, Table, User, ExportData, ImportData};
+use crate::models::license::LicenseKey;
 
 pub struct Database {
     conn: Mutex<Connection>,
@@ -85,6 +86,18 @@ impl Database {
                 profile_picture TEXT,
                 pin TEXT NOT NULL,
                 pinned_product_ids TEXT
+            );
+
+            -- Licenses table
+            CREATE TABLE IF NOT EXISTS licenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key_hash TEXT NOT NULL UNIQUE,
+                email TEXT NOT NULL,
+                machine_fingerprint TEXT NOT NULL,
+                activated_at INTEGER NOT NULL,
+                expires_at INTEGER,
+                is_active BOOLEAN NOT NULL DEFAULT 1,
+                license_type TEXT NOT NULL
             );
 
             -- Enable foreign keys
@@ -509,6 +522,66 @@ impl Database {
             DELETE FROM users;
             "
         )?;
+        Ok(())
+    }
+
+    // ==================== Licenses ====================
+
+    pub fn save_license(&self, license: &LicenseKey) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO licenses (key_hash, email, machine_fingerprint, activated_at, expires_at, is_active, license_type)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                license.key_hash,
+                license.email,
+                license.machine_fingerprint,
+                license.activated_at,
+                license.expires_at,
+                license.is_active as i32,
+                license.license_type
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_active_license(&self) -> Result<Option<LicenseKey>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT key_hash, email, machine_fingerprint, activated_at, expires_at, is_active, license_type
+             FROM licenses WHERE is_active = 1 LIMIT 1"
+        )?;
+
+        let mut rows = stmt.query_map([], |row| {
+            Ok(LicenseKey {
+                key_hash: row.get(0)?,
+                email: row.get(1)?,
+                machine_fingerprint: row.get(2)?,
+                activated_at: row.get(3)?,
+                expires_at: row.get(4)?,
+                is_active: row.get::<_, i32>(5)? != 0,
+                license_type: row.get(6)?,
+            })
+        })?;
+
+        match rows.next() {
+            Some(license) => Ok(Some(license?)),
+            None => Ok(None),
+        }
+    }
+
+    pub fn update_license_status(&self, key_hash: &str, is_active: bool) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE licenses SET is_active = ?1 WHERE key_hash = ?2",
+            params![is_active as i32, key_hash],
+        )?;
+        Ok(())
+    }
+
+    pub fn clear_license(&self) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM licenses", [])?;
         Ok(())
     }
 }

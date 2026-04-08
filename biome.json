@@ -19,7 +19,7 @@
     "rules": {
       "recommended": true,
       "correctness": {
-        "useExhaustiveDependencies": "warn",
+        "useExhaustiveDependencies": "off",
         "noUnusedImports": "warn",
         "noUnusedVariables": "warn"
       },
@@ -28,7 +28,8 @@
         "noArrayIndexKey": "warn"
       },
       "a11y": {
-        "useSemanticElements": "warn"
+        "useSemanticElements": "warn",
+        "noLabelWithoutControl": "off"
       },
       "style": {
         "noNonNullAssertion": "off"

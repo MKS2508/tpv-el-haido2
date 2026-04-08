@@ -7,7 +7,39 @@
 
 import type { StorageMode } from '@/services/storage-adapter.interface';
 
-export const config = {
+export interface Config {
+  api: {
+    baseUrl: string;
+    timeout: number;
+  };
+  aeat: {
+    port: number;
+    baseUrl: string;
+    timeout: number;
+    startupTimeout: number;
+    maxRestartAttempts: number;
+    healthCheckInterval: number;
+  };
+  printer: {
+    timeout: number;
+  };
+  storage: {
+    defaultMode: StorageMode;
+  };
+  performance: {
+    forceHighPerformance: boolean;
+  };
+  debug: {
+    enabled: boolean;
+    masterEmail: string;
+    masterKey: string;
+  };
+  onboarding: {
+    forceOnboarding: boolean;
+  };
+}
+
+export const config: Config = {
   /**
    * API/Backend configuration
    */
@@ -66,7 +98,19 @@ export const config = {
   debug: {
     /** Enable debug mode */
     enabled: import.meta.env.VITE_DEBUG_MODE === 'true',
+    /** Master license email for development/testing */
+    masterEmail: import.meta.env.VITE_MASTER_LICENSE_EMAIL || 'admin@haido.local',
+    /** Master license key for development/testing */
+    masterKey: import.meta.env.VITE_MASTER_LICENSE_KEY || 'HAI-MASTER-DEV-KEY-2026',
   },
-} as const;
+
+  /**
+   * Onboarding configuration
+   */
+  onboarding: {
+    /** Force onboarding to show even if completed */
+    forceOnboarding: import.meta.env.VITE_FORCE_ONBOARDING === 'true',
+  },
+};
 
 export default config;

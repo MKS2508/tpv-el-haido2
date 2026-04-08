@@ -1,10 +1,11 @@
-import { Package } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { Package } from 'lucide-solid';
+import { createEffect, createMemo, createSignal, For, Show } from 'solid-js';
 import { connectToThermalPrinter } from '@/assets/utils/utils';
-import CategorySidebar from '@/components/CategorySidebar.tsx';
-import OrderPanel from '@/components/OrderPanel.tsx';
+import CategorySidebar from '@/components/CategorySidebar';
+import ConfirmPaymentDialog from '@/components/ConfirmPaymentDialog';
+import OrderPanel from '@/components/OrderPanel';
 import PaymentModal from '@/components/PaymentModal';
-import ProductGrid from '@/components/Product.tsx';
+import ProductGrid from '@/components/Product';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,154 +15,98 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import OrderSheet from '@/components/ui/OrderSheet';
+import TableScroll from '@/components/ui/TableScroll';
 import { toast } from '@/components/ui/use-toast';
+import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
 import { useResponsive } from '@/hooks/useResponsive';
 import { cn } from '@/lib/utils';
 import type Order from '@/models/Order';
 import type { OrderItem } from '@/models/Order';
 import type Product from '@/models/Product';
-import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
-import ProductService from '@/services/products.service.ts';
-import { useNewOrderData } from '@/store/selectors';
+import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter';
+import useStore from '@/store/store';
+import '@/styles/neworder.css';
 
-const NewOrder = memo(() => {
-  const {
-    activeOrders,
-    recentProducts,
-    setProducts,
-    setRecentProducts,
-    selectedOrderId,
-    setSelectedOrderId,
-    setTables,
-    products,
-    selectedUser,
-    tables,
-    thermalPrinterOptions,
-    addToOrder,
-    removeFromOrder,
-    paymentMethod,
-    cashAmount,
-    showTicketDialog,
-    handleTableChange,
-    handleCompleteOrder,
-    closeOrder, // Added
-    setPaymentMethod,
-    setCashAmount,
-    setShowTicketDialog,
-    categories,
-    orderHistory,
-    setActiveOrders,
-    selectedOrder,
-    setSelectedOrder,
-  } = useNewOrderData();
+function NewOrder() {
+  const store = useStore();
+  const perf = usePerformanceConfig();
+  const responsive = useResponsive();
 
-  const { isMobile } = useResponsive();
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [isConfirmCloseModalOpen, setIsConfirmCloseModalOpen] = useState(false);
-  const [orderToClose, setOrderToClose] = useState<Order | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>('Fijados');
-  const [showOrderPanel, setShowOrderPanel] = useState(false);
+  // Signals
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = createSignal(false);
+  const [isConfirmPaymentDialogOpen, setIsConfirmPaymentDialogOpen] = createSignal(false);
+  const [isConfirmCloseModalOpen, setIsConfirmCloseModalOpen] = createSignal(false);
+  const [orderToClose, setOrderToClose] = createSignal<Order | null>(null);
+  const [selectedCategory, setSelectedCategory] = createSignal<string | null>('Fijados');
+  const [isOrderSheetOpen, setIsOrderSheetOpen] = createSignal(false);
 
-  // Memoizar ProductService para evitar recreación
-  const productsService = useMemo(() => new ProductService(), []);
+  // Responsive getters
+  const isMobile = () => responsive.isMobile();
+  const _isTablet = () => responsive.isTablet();
+  const isDesktop = () =>
+    responsive.isDesktop() || responsive.isLargeDesktop() || responsive.isUltraWide();
 
-  useEffect(() => {
-    const updatedTables = tables.map((table) => {
-      const activeOrder = activeOrders.find(
-        (order) => order.tableNumber === table.id && order.status === 'inProgress'
-      );
-      return {
-        ...table,
-        available: !activeOrder,
-        order: activeOrder || null,
-      };
-    });
+  // Memoize in-progress orders filter
+  const _inProgressOrders = createMemo(() => {
+    return store.state.orderHistory.filter((order) => order.status === 'inProgress');
+  });
 
-    if (JSON.stringify(updatedTables) !== JSON.stringify(tables)) {
-      setTables(updatedTables);
-    }
-  }, [activeOrders, setTables, tables]); // Remove 'tables' from the dependency array
+  // Memoize valid active orders (filter out null/undefined)
+  const validActiveOrders = createMemo(() => {
+    return store.state.activeOrders.filter(
+      (order): order is Order => order != null && order.id != null
+    );
+  });
 
-  // Memoizar filtro de órdenes en progreso para evitar recálculo en cada render
-  const inProgressOrders = useMemo(() => {
-    return orderHistory.filter((order) => order.status === 'inProgress');
-  }, [orderHistory]);
-
-  useEffect(() => {
-    if (activeOrders.length > 0 && !selectedOrderId) {
-      setSelectedOrderId(activeOrders[0].id);
-    } else if (activeOrders.length === 0) {
-      if (inProgressOrders.length > 0) {
-        setActiveOrders(inProgressOrders);
-      }
-    }
-  }, [
-    activeOrders.length,
-    selectedOrderId,
-    inProgressOrders,
-    setActiveOrders,
-    setSelectedOrderId,
-    activeOrders[0].id,
-  ]);
-
-  useEffect(() => {
-    if (selectedOrderId) {
-      const order = activeOrders.find((o) => o.id === selectedOrderId);
-      setSelectedOrder(order || null);
+  // Sync selected order with active orders
+  createEffect(() => {
+    if (store.state.selectedOrderId) {
+      const order = validActiveOrders().find((o) => o.id === store.state.selectedOrderId);
+      store.setSelectedOrder(order || null);
     } else {
-      setSelectedOrder(null);
+      store.setSelectedOrder(null);
     }
-  }, [selectedOrderId, activeOrders, setSelectedOrder]);
+  });
 
-  useEffect(() => {
-    if (selectedUser && products.length === 0) {
-      productsService.getProducts().then((fetchedProducts) => {
-        setProducts(fetchedProducts);
-      });
+  // Update recent products when user or products change
+  createEffect(() => {
+    if (store.state.selectedUser && store.state.products.length > 0) {
+      const pinnedProductIds = store.state.selectedUser.pinnedProductIds || [];
+      const pinnedProducts = store.state.products.filter((product) =>
+        pinnedProductIds.includes(product.id)
+      );
+      store.setRecentProducts(pinnedProducts);
     }
-  }, [selectedUser, products.length, productsService, setProducts]);
+  });
 
-  useEffect(() => {
-    if (selectedUser && products.length > 0) {
-      const pinnedProductIds = selectedUser.pinnedProductIds || [];
-      const pinnedProducts = productsService.getProductsByIdArray(pinnedProductIds, products);
-      setRecentProducts(pinnedProducts);
-    }
-  }, [selectedUser, products, productsService, setRecentProducts]);
+  const handleAddToOrder = (orderId: number, product: OrderItem | Product) => {
+    store.addToOrder(orderId, product);
+  };
 
-  const handleAddToOrder = useCallback(
-    (orderId: number, product: OrderItem | Product) => {
-      addToOrder(orderId, product);
-    },
-    [addToOrder]
-  );
-
-  const handleRemoveFromOrder = useCallback(
-    (orderId: number, productId: number) => {
-      removeFromOrder(orderId, productId);
-    },
-    [removeFromOrder]
-  );
+  const handleRemoveFromOrder = (orderId: number, productId: number) => {
+    store.removeFromOrder(orderId, productId);
+  };
 
   const handleTicketPrintingComplete = async (shouldPrintTicket: boolean) => {
     if (shouldPrintTicket) {
       try {
         const printer = await connectToThermalPrinter(
-          thermalPrinterOptions as ThermalPrinterServiceOptions
+          store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
         );
-        if (printer && selectedOrder) {
-          await printer.printOrder(selectedOrder);
+        if (printer && store.state.selectedOrder) {
+          await printer.printOrder(store.state.selectedOrder);
           await printer.disconnect();
           toast({
             title: 'Ticket impreso',
-            description: 'Ticket impreso con éxito.',
+            description: 'Ticket impreso con exito.',
             duration: 3000,
           });
         } else {
           console.error('Error al conectar la impresora.');
           toast({
             title: 'Error al imprimir ticket',
-            description: 'No se pudo imprimir el ticket. Por favor, inténtelo de nuevo.',
+            description: 'No se pudo imprimir el ticket. Por favor, intentelo de nuevo.',
             duration: 3000,
           });
         }
@@ -169,402 +114,404 @@ const NewOrder = memo(() => {
         console.error('Error al imprimir ticket:', error);
         toast({
           title: 'Error al imprimir ticket',
-          description: 'No se pudo imprimir el ticket. Por favor, inténtelo de nuevo.',
+          description: 'No se pudo imprimir el ticket. Por favor, intentelo de nuevo.',
           duration: 3000,
         });
       }
     }
-    setShowTicketDialog(false);
+    store.setShowTicketDialog(false);
     setIsPaymentModalOpen(false);
-    setSelectedOrderId(null);
+    setIsOrderSheetOpen(false);
+    store.setSelectedOrderId(null);
   };
 
   const handleCloseTab = (orderId: number) => {
-    const orderToClose = activeOrders.find((order) => order.id === orderId);
-    if (orderToClose && orderToClose.items.length > 0) {
-      setOrderToClose(orderToClose);
+    if (orderId == null || orderId === undefined) {
+      console.error('[NewOrder] Invalid order ID:', orderId);
+      return;
+    }
+    const orderToCloseItem = store.state.activeOrders.find((order) => order.id === orderId);
+    if (orderToCloseItem && orderToCloseItem.items.length > 0) {
+      setOrderToClose(orderToCloseItem);
       setIsConfirmCloseModalOpen(true);
     } else {
-      closeOrder(orderId);
+      store.closeOrder(orderId);
     }
   };
 
-  // Memoizar filtros costosos para optimizar rendimiento
-  const filteredProducts = useMemo(() => {
-    if (!selectedCategory) return [];
+  const handlePaymentStart = () => {
+    setIsConfirmPaymentDialogOpen(true);
+  };
 
-    if (selectedCategory === 'Fijados') {
-      return recentProducts;
+  const handleConfirmPayment = () => {
+    setIsConfirmPaymentDialogOpen(false);
+    setIsPaymentModalOpen(true);
+  };
+
+  // Memoize filtered products for performance
+  const filteredProducts = createMemo(() => {
+    if (!selectedCategory()) return [];
+
+    if (selectedCategory() === 'Fijados') {
+      return store.state.recentProducts;
     }
 
-    return products.filter((product) => product.category === selectedCategory);
-  }, [selectedCategory, products, recentProducts]);
+    return store.state.products.filter((product) => product.category === selectedCategory());
+  });
 
-  // Memoizar tablas disponibles - filtro costoso que se ejecutaba en cada render
-  const availableTables = useMemo(() => {
-    return tables.filter(
-      (table) =>
-        table.id !== 0 &&
-        table.available &&
-        !activeOrders.find((order) => order.tableNumber === table.id)
+  // Unified table list with computed state for each table
+  // This ensures tables maintain their position and only styles change
+  type TableState = 'available' | 'selected-empty' | 'has-items';
+
+  interface UnifiedTableEntry {
+    id: number;
+    name: string;
+    state: TableState;
+    order: Order | null;
+    itemCount: number;
+  }
+
+  const unifiedTableList = createMemo((): UnifiedTableEntry[] => {
+    // Start with Bar (id: 0) then all tables sorted by id
+    const allTables = [{ id: 0, name: 'Barra' }, ...store.state.tables.filter((t) => t.id !== 0)];
+
+    return allTables.map((table) => {
+      const activeOrder = store.state.activeOrders.find((o) => o.tableNumber === table.id);
+      const isSelected = activeOrder?.id === store.state.selectedOrderId;
+      const hasItems = (activeOrder?.items.length ?? 0) > 0;
+
+      let state: TableState = 'available';
+      if (activeOrder) {
+        state = hasItems ? 'has-items' : isSelected ? 'selected-empty' : 'available';
+      }
+
+      return {
+        id: table.id,
+        name: table.name,
+        state,
+        order: activeOrder ?? null,
+        itemCount: activeOrder?.items.length ?? 0,
+      };
+    });
+  });
+
+  // Handle table click - either select existing order or create new one
+  const handleTableClick = (entry: UnifiedTableEntry) => {
+    if (entry.order) {
+      store.setSelectedOrderId(entry.order.id);
+    } else {
+      store.handleTableChange(entry.id);
+    }
+  };
+
+  // Unified table button renderer
+  const renderUnifiedTableButton = (entry: UnifiedTableEntry, index: number) => {
+    const isSelected = entry.order?.id === store.state.selectedOrderId;
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleTableClick(entry)}
+        class={cn(
+          'table-button',
+          'neworder-scroll-snap-item',
+          'group relative',
+          'flex items-center gap-1.5',
+          'px-3 py-1.5',
+          'text-xs font-medium',
+          'rounded-lg',
+          'border',
+          'transition-all duration-200 ease-out',
+          'active:scale-[0.97]',
+          'flex-shrink-0 min-w-0',
+          // State-based styles
+          entry.state === 'available' &&
+            'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border hover:bg-sidebar-accent/80 hover:border-sidebar-foreground/20 shadow-sm',
+          entry.state === 'selected-empty' &&
+            'bg-primary/15 text-primary border-primary/50 shadow-md ring-1 ring-primary/30',
+          entry.state === 'has-items' &&
+            'bg-primary text-primary-foreground border-primary shadow-lg',
+          // Selected ring for items
+          isSelected &&
+            entry.state === 'has-items' &&
+            'ring-2 ring-primary/50 ring-offset-1 ring-offset-background',
+          perf.enableAnimations && 'neworder-stagger-item'
+        )}
+        style={perf.enableAnimations ? { 'animation-delay': `${index * 30}ms` } : {}}
+      >
+        {/* Status indicator dot */}
+        <span
+          class={cn(
+            'w-2 h-2 rounded-full flex-shrink-0 transition-colors duration-200',
+            entry.state === 'available' && 'bg-sidebar-accent-foreground/50',
+            entry.state === 'selected-empty' && 'bg-primary animate-pulse',
+            entry.state === 'has-items' && 'bg-primary-foreground'
+          )}
+        />
+
+        {/* Table name */}
+        <span class="truncate">{entry.name}</span>
+
+        {/* Item count badge */}
+        <Show when={entry.itemCount > 0}>
+          <span
+            class={cn(
+              'ml-auto text-[10px] font-semibold',
+              'bg-primary-foreground/20 px-1.5 py-0.5 rounded-full',
+              'min-w-[1.25rem] text-center',
+              'transition-transform duration-200',
+              isSelected && 'scale-110'
+            )}
+          >
+            {entry.itemCount}
+          </span>
+        </Show>
+      </button>
     );
-  }, [tables, activeOrders]);
-
-  // Memoizar si la barra está libre
-  const isBarAvailable = useMemo(() => {
-    return !activeOrders.find((order) => order.tableNumber === 0);
-  }, [activeOrders]);
-
-  // Memoizar tablas ocupadas
-  // const occupiedTables = useMemo(() => {
-  //     return tables.filter(table =>
-  //         activeOrders.find(order => order.tableNumber === table.id)
-  //     )
-  // }, [tables, activeOrders])
-
-  // Memoizar total de tablas para mostrar fade indicator
-  const totalAvailableTables = useMemo(() => {
-    return availableTables.length + activeOrders.length;
-  }, [availableTables.length, activeOrders.length]);
+  };
 
   return (
-    <div className="h-full w-full flex flex-col bg-background overflow-hidden">
-      {/* TopBar con selector de mesas y comandas - optimizado para mobile */}
+    <div class="h-full w-full flex flex-col bg-background overflow-hidden">
+      {/* TopBar with table and order selector */}
       <div
-        className={cn(
+        class={cn(
           'border-b border-border bg-card flex-shrink-0',
-          isMobile ? 'px-2 py-1' : 'px-3 py-1.5'
+          isMobile() ? 'px-2 py-1' : 'px-3 py-2'
         )}
       >
-        <div className="relative min-h-[2.5rem] flex items-center">
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory w-full pb-1 -mb-1">
-            {/* Barra (si está libre) */}
-            {isBarAvailable && (
-              <button
-                type="button"
-                onClick={() => handleTableChange(0)}
-                className={cn(
-                  'table-button bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border rounded-lg flex items-center font-medium transition-all duration-150 hover:bg-sidebar-accent/90 active:scale-[0.98] flex-shrink-0 snap-start',
-                  isMobile ? 'px-2 py-1.5 text-xs' : ''
-                )}
-                style={{
-                  padding: isMobile
-                    ? 'calc(var(--spacing) * 1) calc(var(--spacing) * 2)'
-                    : 'calc(var(--spacing) * 1.5) calc(var(--spacing) * 3)',
-                  gap: 'calc(var(--spacing) * 1.5)',
-                  fontSize: isMobile ? '0.7rem' : '0.75rem',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
-                <span className="w-2 h-2 bg-sidebar-accent-foreground rounded-full animate-pulse"></span>
-                Barra
-              </button>
-            )}
-
-            {/* Mesas libres */}
-            {availableTables.map((table) => (
-              <button
-                type="button"
-                key={`available-${table.id}`}
-                onClick={() => handleTableChange(table.id)}
-                className={cn(
-                  'table-button bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border rounded-lg flex items-center font-medium transition-all duration-150 hover:bg-sidebar-accent/90 active:scale-[0.98] flex-shrink-0 snap-start',
-                  isMobile ? 'px-2 py-1.5 text-xs' : ''
-                )}
-                style={{
-                  padding: isMobile
-                    ? 'calc(var(--spacing) * 1) calc(var(--spacing) * 2)'
-                    : 'calc(var(--spacing) * 1.5) calc(var(--spacing) * 3)',
-                  gap: 'calc(var(--spacing) * 1.5)',
-                  fontSize: isMobile ? '0.7rem' : '0.75rem',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
-                <span className="w-2 h-2 bg-sidebar-accent-foreground rounded-full animate-pulse"></span>
-                {table.name}
-              </button>
-            ))}
-
-            {/* Comandas Activas (mezcladas en la misma fila) */}
-            {activeOrders.map((order) => (
-              <button
-                type="button"
-                key={`order-${order.id}`}
-                className={cn(
-                  'table-button border rounded-lg flex items-center font-medium transition-all duration-150 active:scale-[0.98] flex-shrink-0 snap-start cursor-pointer',
-                  selectedOrderId === order.id
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary'
-                    : 'bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted/80',
-                  isMobile ? 'px-2 py-1.5 text-xs' : ''
-                )}
-                style={{
-                  padding: isMobile
-                    ? 'calc(var(--spacing) * 1) calc(var(--spacing) * 2)'
-                    : 'calc(var(--spacing) * 1.5) calc(var(--spacing) * 3)',
-                  gap: 'calc(var(--spacing) * 1.5)',
-                  fontSize: isMobile ? '0.7rem' : '0.75rem',
-                  boxShadow: selectedOrderId === order.id ? 'var(--shadow-md)' : 'var(--shadow-sm)',
-                }}
-                onClick={() => setSelectedOrderId(order.id)}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    selectedOrderId === order.id
-                      ? 'bg-sidebar-primary-foreground animate-pulse'
-                      : 'bg-muted-foreground'
-                  }`}
-                ></span>
-                <span className="whitespace-nowrap">
-                  {order.tableNumber === 0 ? 'Barra' : `Mesa ${order.tableNumber}`}
-                </span>
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseTab(order.id);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.stopPropagation();
-                      handleCloseTab(order.id);
-                    }
-                  }}
-                  className={cn(
-                    'text-current opacity-70 hover:opacity-100 flex items-center justify-center rounded-full hover:bg-destructive/20 transition-all duration-150',
-                    isMobile ? 'ml-0.5 text-sm w-4 h-4' : 'ml-1 text-sm w-4 h-4'
-                  )}
-                  title="Cerrar comanda"
-                >
-                  ×
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Fade indicator único al final (si hay muchos elementos) */}
-          {totalAvailableTables > 6 && (
-            <div className="absolute top-0 right-0 bottom-1 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none" />
-          )}
-        </div>
+        <Show
+          when={isMobile()}
+          fallback={
+            /* Desktop: Multi-row layout with wrap - unified table list */
+            <div class="flex flex-wrap gap-1.5 max-w-full min-h-[2.75rem]">
+              <For each={unifiedTableList()}>
+                {(entry, index) => renderUnifiedTableButton(entry, index())}
+              </For>
+            </div>
+          }
+        >
+          {/* Mobile/Tablet: Horizontal scroll with unified table list */}
+          <TableScroll showFadeIndicator={() => unifiedTableList().length > 6}>
+            <For each={unifiedTableList()}>
+              {(entry, index) => renderUnifiedTableButton(entry, index())}
+            </For>
+          </TableScroll>
+        </Show>
       </div>
 
-      {/* Layout responsive - Desktop: 3 columnas, Mobile: stack vertical */}
-      {isMobile ? (
-        /* Mobile Layout */
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Categories as horizontal tabs */}
-          <div className="border-b border-border bg-card/50 flex-shrink-0">
-            <div className="flex gap-1 p-2 overflow-x-auto scrollbar-hide">
-              {categories.map((category) => (
+      {/* Responsive layout */}
+      <Show
+        when={isDesktop()}
+        fallback={
+          /* Mobile/Tablet Layout */
+          <div class="flex-1 flex flex-col min-h-0">
+            {/* Categories as horizontal tabs */}
+            <div class="border-b border-border bg-card/50 flex-shrink-0">
+              <div class="flex gap-1 p-2 overflow-x-auto scrollbar-hide">
                 <button
                   type="button"
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.name)}
-                  className={cn(
-                    'px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
-                    selectedCategory === category.name
+                  onClick={() => setSelectedCategory('Fijados')}
+                  class={cn(
+                    'px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap flex-shrink-0',
+                    selectedCategory() === 'Fijados'
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   )}
                 >
-                  {category.name}
+                  Favoritos
                 </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setSelectedCategory('Fijados')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
-                  selectedCategory === 'Fijados'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                )}
-              >
-                Favoritos
-              </button>
-            </div>
-          </div>
-
-          {/* Products section */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-3 py-2 border-b border-border bg-card/30 flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-foreground/70" />
-                <h3 className="text-sm font-medium text-foreground">
-                  {selectedCategory === 'Fijados' ? 'Productos Favoritos' : selectedCategory}
-                </h3>
+                <For each={store.state.categories}>
+                  {(category) => (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory(category.name)}
+                      class={cn(
+                        'px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap flex-shrink-0',
+                        selectedCategory() === category.name
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      )}
+                    >
+                      {category.name}
+                    </button>
+                  )}
+                </For>
               </div>
-              {selectedOrderId && selectedOrder && (
-                <Button
-                  onClick={() => setShowOrderPanel(true)}
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                >
-                  Ver Pedido ({selectedOrder.items.length})
-                </Button>
-              )}
             </div>
-            <div className="flex-1 min-h-0">
-              <ProductGrid
-                products={filteredProducts}
-                handleAddToOrder={(product) => {
-                  if (selectedOrderId) {
-                    handleAddToOrder(selectedOrderId, product);
-                  }
-                }}
-                selectedOrderId={selectedOrderId}
-              />
-            </div>
-          </div>
 
-          {/* Mobile Order Panel Modal */}
-          <Dialog open={showOrderPanel} onOpenChange={setShowOrderPanel}>
-            <DialogContent className="max-w-[95vw] max-h-[85vh] p-0">
-              <div className="h-[80vh] flex flex-col">
-                <DialogHeader className="px-4 py-3 border-b">
-                  <DialogTitle>
-                    Pedido -{' '}
-                    {selectedOrder?.tableNumber === 0
-                      ? 'Barra'
-                      : `Mesa ${selectedOrder?.tableNumber}`}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 overflow-hidden">
-                  <OrderPanel
-                    activeOrders={activeOrders}
-                    selectedOrder={selectedOrder}
-                    selectedOrderId={selectedOrderId}
-                    tables={tables}
-                    onOrderSelect={setSelectedOrderId}
-                    onOrderClose={handleCloseTab}
-                    onNewOrder={() => handleTableChange(0)}
-                    onTableChange={handleTableChange}
-                    onPaymentStart={() => {
-                      setShowOrderPanel(false);
-                      setIsPaymentModalOpen(true);
-                    }}
-                    onRemoveFromOrder={handleRemoveFromOrder}
-                    onAddToOrder={handleAddToOrder}
-                    disableAnimations={true}
-                  />
+            {/* Products section */}
+            <div class="flex-1 flex flex-col overflow-hidden">
+              <div class="px-3 py-2 border-b border-border bg-card/30 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-2">
+                  <Package class="w-4 h-4 text-foreground/70" />
+                  <h3 class="text-sm font-medium text-foreground">
+                    {selectedCategory() === 'Fijados' ? 'Productos Favoritos' : selectedCategory()}
+                  </h3>
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      ) : (
-        /* Desktop Layout - 3 columnas optimizadas */
-        <div className="flex-1 flex min-h-0 w-full overflow-hidden">
-          {/* Categorías - Ancho mínimo flexible */}
-          <div className="w-48 min-w-[12rem] max-w-[16rem] flex-shrink-0 border-r border-border overflow-hidden">
+              <div class="flex-1 min-h-0 overflow-hidden max-w-full">
+                <ProductGrid
+                  products={filteredProducts()}
+                  handleAddToOrder={(product) => {
+                    if (store.state.selectedOrderId) {
+                      handleAddToOrder(store.state.selectedOrderId, product);
+                    }
+                  }}
+                  selectedOrderId={store.state.selectedOrderId}
+                />
+              </div>
+            </div>
+
+            {/* Order Sheet for mobile/tablet */}
+            <OrderSheet
+              open={isOrderSheetOpen}
+              onOpenChange={setIsOrderSheetOpen}
+              activeOrders={store.state.activeOrders}
+              selectedOrder={store.state.selectedOrder}
+              selectedOrderId={store.state.selectedOrderId}
+              tables={store.state.tables}
+              onOrderSelect={store.setSelectedOrderId}
+              onOrderClose={handleCloseTab}
+              onNewOrder={() => store.handleTableChange(0)}
+              onTableChange={store.handleTableChange}
+              onPaymentStart={handlePaymentStart}
+              onRemoveFromOrder={handleRemoveFromOrder}
+              onAddToOrder={handleAddToOrder}
+              disableAnimations={!perf.enableAnimations}
+            />
+          </div>
+        }
+      >
+        {/* Desktop Layout - 3 optimized columns */}
+        <div class="flex-1 flex min-h-0 w-full max-w-full overflow-hidden">
+          {/* Categories - Fixed width */}
+          <div class="neworder-categories--desktop overflow-hidden flex">
             <CategorySidebar
-              categories={categories}
-              selectedCategory={selectedCategory}
+              categories={store.state.categories}
+              selectedCategory={selectedCategory()}
               onCategorySelect={setSelectedCategory}
             />
           </div>
 
-          {/* Productos - Toma espacio disponible con scroll independiente */}
-          <div className="flex-1 min-w-0 flex flex-col border-r border-sidebar-border overflow-hidden">
-            <div className="h-12 px-3 border-b border-sidebar-border bg-sidebar/40 flex items-center gap-2 flex-shrink-0">
-              <Package className="w-4 h-4 text-sidebar-foreground" />
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-sidebar-foreground truncate">
-                  {selectedCategory === 'Fijados' ? 'Productos Favoritos' : selectedCategory}
+          {/* Products - Takes available space */}
+          <div class="neworder-products--desktop flex flex-col border-r border-sidebar-border overflow-hidden flex-shrink">
+            <div class="h-12 px-3 border-b border-sidebar-border bg-sidebar/40 flex items-center gap-2 flex-shrink-0">
+              <Package class="w-4 h-4 text-sidebar-foreground" />
+              <div class="flex-1 min-w-0">
+                <h3 class="text-sm font-medium text-sidebar-foreground truncate">
+                  {selectedCategory() === 'Fijados' ? 'Productos Favoritos' : selectedCategory()}
                 </h3>
-                {selectedOrderId ? (
-                  <p className="text-xs text-sidebar-foreground/70 truncate">
+                <Show
+                  when={store.state.selectedOrderId}
+                  fallback={
+                    <p class="text-xs text-sidebar-foreground/50 truncate">
+                      Selecciona una mesa para comenzar
+                    </p>
+                  }
+                >
+                  <p class="text-xs text-sidebar-foreground/70 truncate">
                     Agregando a{' '}
-                    {selectedOrder?.tableNumber === 0
+                    {store.state.selectedOrder?.tableNumber === 0
                       ? 'Barra'
-                      : `Mesa ${selectedOrder?.tableNumber}`}
+                      : `Mesa ${store.state.selectedOrder?.tableNumber}`}
                   </p>
-                ) : (
-                  <p className="text-xs text-sidebar-foreground/50 truncate">
-                    Selecciona una mesa para comenzar
-                  </p>
-                )}
+                </Show>
               </div>
             </div>
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div class="flex-1 min-h-0 overflow-hidden max-w-full">
               <ProductGrid
-                products={filteredProducts}
+                products={filteredProducts()}
                 handleAddToOrder={(product) => {
-                  if (selectedOrderId) {
-                    handleAddToOrder(selectedOrderId, product);
+                  if (store.state.selectedOrderId) {
+                    handleAddToOrder(store.state.selectedOrderId, product);
                   }
                 }}
-                selectedOrderId={selectedOrderId}
+                selectedOrderId={store.state.selectedOrderId}
               />
             </div>
           </div>
 
-          {/* Resumen del Pedido - Ancho fijo óptimo con overflow independiente */}
-          <div className="w-80 min-w-[20rem] max-w-[24rem] flex-shrink-0 overflow-hidden">
+          {/* Order Summary - Fixed width */}
+          <div class="neworder-order-panel--desktop flex-shrink-0 overflow-hidden">
             <OrderPanel
-              activeOrders={activeOrders}
-              selectedOrder={selectedOrder}
-              selectedOrderId={selectedOrderId}
-              tables={tables}
-              onOrderSelect={setSelectedOrderId}
+              activeOrders={store.state.activeOrders}
+              selectedOrder={store.state.selectedOrder}
+              selectedOrderId={store.state.selectedOrderId}
+              tables={store.state.tables}
+              onOrderSelect={store.setSelectedOrderId}
               onOrderClose={handleCloseTab}
-              onNewOrder={() => handleTableChange(0)}
-              onTableChange={handleTableChange}
-              onPaymentStart={() => setIsPaymentModalOpen(true)}
+              onNewOrder={() => store.handleTableChange(0)}
+              onTableChange={store.handleTableChange}
+              onPaymentStart={handlePaymentStart}
               onRemoveFromOrder={handleRemoveFromOrder}
               onAddToOrder={handleAddToOrder}
+              disableAnimations={!perf.enableAnimations}
             />
           </div>
         </div>
-      )}
+      </Show>
 
-      {/* Modales */}
-      {selectedOrder && (
+      {/* Modals */}
+      <ConfirmPaymentDialog
+        isOpen={isConfirmPaymentDialogOpen()}
+        onClose={() => setIsConfirmPaymentDialogOpen(false)}
+        onConfirm={handleConfirmPayment}
+        order={store.state.selectedOrder}
+        paymentMethod={store.state.paymentMethod}
+      />
+
+      <Show when={store.state.selectedOrder}>
         <PaymentModal
-          isPaymentModalOpen={isPaymentModalOpen}
+          isPaymentModalOpen={isPaymentModalOpen()}
           setIsPaymentModalOpen={setIsPaymentModalOpen}
-          cashAmount={cashAmount}
-          setCashAmount={setCashAmount}
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-          newOrder={selectedOrder}
-          handleCompleteOrder={handleCompleteOrder}
-          showTicketDialog={showTicketDialog}
-          setShowTicketDialog={setShowTicketDialog}
+          cashAmount={store.state.cashAmount}
+          setCashAmount={store.setCashAmount}
+          paymentMethod={store.state.paymentMethod}
+          setPaymentMethod={store.setPaymentMethod}
+          newOrder={store.state.selectedOrder!}
+          handleCompleteOrder={store.handleCompleteOrder}
+          showTicketDialog={store.state.showTicketDialog}
+          setShowTicketDialog={store.setShowTicketDialog}
           handleTicketPrintingComplete={handleTicketPrintingComplete}
         />
-      )}
+      </Show>
 
-      <Dialog open={isConfirmCloseModalOpen} onOpenChange={setIsConfirmCloseModalOpen}>
-        <DialogContent className="bg-background dark:bg-background rounded-lg shadow-xl">
+      <Dialog open={isConfirmCloseModalOpen()} onOpenChange={setIsConfirmCloseModalOpen}>
+        <DialogContent
+          class={cn(
+            'flex flex-col justify-center',
+            isMobile() ? 'w-[95vw] max-w-[95vw] p-6' : 'w-[80vw] max-w-[600px] p-8'
+          )}
+        >
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-foreground dark:text-foreground">
-              ¿Estás seguro de eliminar esta comanda?
+            <DialogTitle
+              class={cn('font-semibold text-center', isMobile() ? 'text-2xl' : 'text-4xl')}
+            >
+              Esta seguro de eliminar esta comanda?
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground dark:text-muted-foreground">
-              Esta acción eliminará la comanda en progreso para la{' '}
-              {orderToClose?.tableNumber === 0 ? 'Barra' : `Mesa ${orderToClose?.tableNumber}`}.
+            <DialogDescription class={cn('text-center mt-4', isMobile() ? 'text-base' : 'text-xl')}>
+              Esta accion eliminara la comanda en progreso para la{' '}
+              {orderToClose()?.tableNumber === 0 ? 'Barra' : `Mesa ${orderToClose()?.tableNumber}`}.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter class={cn('gap-4 mt-6', isMobile() ? 'flex-col' : 'flex-row')}>
             <Button
               variant="outline"
               onClick={() => setIsConfirmCloseModalOpen(false)}
-              className="text-foreground dark:text-foreground hover:bg-secondary dark:hover:bg-secondary"
+              class={cn('flex-1 touch-manipulation', isMobile() ? 'h-16 text-xl' : 'h-20 text-2xl')}
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={() => {
-                if (orderToClose) {
-                  closeOrder(orderToClose.id);
+                const order = orderToClose();
+                if (order) {
+                  store.closeOrder(order.id);
                 }
                 setIsConfirmCloseModalOpen(false);
               }}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              class={cn('flex-1 touch-manipulation', isMobile() ? 'h-16 text-xl' : 'h-20 text-2xl')}
             >
               Eliminar
             </Button>
@@ -573,8 +520,6 @@ const NewOrder = memo(() => {
       </Dialog>
     </div>
   );
-});
-
-NewOrder.displayName = 'NewOrder';
+}
 
 export default NewOrder;

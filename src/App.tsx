@@ -1,108 +1,127 @@
 import './App.css';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Motion, Presence } from '@motionone/solid';
 import {
   BeerIcon,
   ClipboardListIcon,
   HistoryIcon,
   HomeIcon,
   PlusCircleIcon,
+  ReceiptIcon,
   SettingsIcon,
-} from 'lucide-react';
-import React, { useCallback, useEffect, useRef } from 'react';
-import iconOptions from '@/assets/utils/icons/iconOptions.ts';
+  UsersIcon,
+} from 'lucide-solid';
+import { createEffect, createSignal, Match, onMount, Show, Switch } from 'solid-js';
 import fallbackProducts from '@/assets/products.json';
-import BottomNavigation from '@/components/BottomNavigation.tsx';
-import DebugIndicator from '@/components/DebugIndicator.tsx';
-import ErrorBoundary from '@/components/ErrorBoundary.tsx';
-import Home from '@/components/Sections/Home.tsx';
-import Login from '@/components/Sections/Login.tsx';
-import NewOrder from '@/components/Sections/NewOrder.tsx';
-import OrderHistory from '@/components/Sections/OrderHistory.tsx';
-import Products from '@/components/Sections/Products.tsx';
-import SectionHeader from '@/components/Sections/SectionHeader.tsx';
-import SettingsPanel from '@/components/Sections/SettingsPanel.tsx';
-import Sidebar from '@/components/SideBar.tsx';
-import SidebarToggleButton from '@/components/SideBarToggleButton.tsx';
-import UpdateChecker from '@/components/UpdateChecker.tsx';
+import iconOptions from '@/assets/utils/icons/iconOptions';
+import AppSplashScreen from '@/components/AppSplashScreen';
+import BottomNavigation from '@/components/BottomNavigation';
+import DebugIndicator from '@/components/DebugIndicator';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import LicenseSplashScreen from '@/components/LicenseSplashScreen';
+import { OnboardingProvider } from '@/components/Onboarding/OnboardingProvider';
+import PWAStatus from '@/components/PWAStatus';
+import ScreenshotOverlay from '@/components/ScreenshotOverlay';
+import AEATInvoices from '@/components/Sections/AEATInvoices';
+import Customers from '@/components/Sections/Customers';
+import Home from '@/components/Sections/Home';
+import Login from '@/components/Sections/Login';
+import NewOrder from '@/components/Sections/NewOrder';
+import OrderHistory from '@/components/Sections/OrderHistory';
+import Products from '@/components/Sections/Products';
+import SectionHeader from '@/components/Sections/SectionHeader';
+import SettingsPanel from '@/components/Sections/SettingsPanel';
+import Sidebar from '@/components/SideBar';
+import SidebarToggleButton from '@/components/SideBarToggleButton';
+import UpdateChecker from '@/components/UpdateChecker';
 import { Card, CardContent } from '@/components/ui/card';
-import { Toaster } from '@/components/ui/toaster.tsx';
-import { useSectionTitle } from '@/hooks/useDocumentTitle';
-import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
-import { useResponsive } from '@/hooks/useResponsive';
-import { useTheme } from '@mks2508/theme-manager-react';
+import { Toaster } from '@/components/ui/toaster';
+import { useAboutDialog } from '@/hooks/useAboutDialog';
+import { ASSET_PATHS } from '@/lib/paths';
+import { config } from '@/lib/config';
+import { setupNativeMenu } from '@/lib/setupNativeMenu';
+import { useAppTheme } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
-import type Product from '@/models/Product.ts';
+import type Product from '@/models/Product';
 import {
   BreakLine,
   CharacterSet,
   PrinterTypes,
   type ThermalPrinterServiceOptions,
-} from '@/models/ThermalPrinter.ts';
-import { useAppData } from '@/store/selectors';
+} from '@/models/ThermalPrinter';
+import { getPlatformService } from '@/services/platform';
+import useStore from '@/store/store';
+import type { LicenseStatus } from '@/types/license';
 
 function App() {
-  const {
-    users,
-    selectedUser,
-    selectedOrder,
-    thermalPrinterOptions,
-    tables,
-    categories,
-    products,
-    touchOptimizationsEnabled,
-    debugMode,
-    storageAdapter,
-    setBackendConnected,
+  const store = useStore();
+  const _appTheme = useAppTheme();
 
-    setUsers,
-    setSelectedUser,
-    setSelectedOrder,
-    setSelectedOrderId,
-    setThermalPrinterOptions,
-    setTables,
-    setCategories,
-    setProducts,
+  // App splash state
+  const [showAppSplash, setShowAppSplash] = createSignal(true);
 
-    setOrderHistory,
-  } = useAppData();
+  // License state
+  const [showLicenseSplash, setShowLicenseSplash] = createSignal(true);
 
-  // Use the perfect new theme system
-  const { currentMode, setTheme, currentTheme } = useTheme();
-  const { isMobile, isTablet } = useResponsive();
-  const performanceConfig = usePerformanceConfig();
+  // About dialog state
+  const [forceAboutTab, setForceAboutTab] = createSignal(false);
 
-  const [activeSection, setActiveSection] = React.useState('home');
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(!isMobile && !isTablet); // Start closed on mobile/tablet
-  const prevSectionRef = useRef('home');
+  // Responsive state
+  const [isMobile, setIsMobile] = createSignal(window.innerWidth < 768);
+  const [_isTablet, setIsTablet] = createSignal(
+    window.innerWidth >= 768 && window.innerWidth < 1024
+  );
+
+  // Section state
+  const [activeSection, setActiveSection] = createSignal('home');
+  const [isSidebarOpen, setIsSidebarOpen] = createSignal(true);
+  let prevSection = 'home';
+
+  // Handle window resize for responsive
+  onMount(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  });
 
   // Update document title based on active section
-  useSectionTitle(activeSection);
-
-  const toggleDarkMode = () => {
-    setTheme(currentTheme, currentMode === 'dark' ? 'light' : 'dark');
-  };
+  createEffect(() => {
+    const section = activeSection();
+    const titles: Record<string, string> = {
+      home: 'Inicio - TPV El Haido',
+      products: 'Productos - TPV El Haido',
+      newOrder: 'Nueva Comanda - TPV El Haido',
+      orderHistory: 'Historial - TPV El Haido',
+      customers: 'Clientes - TPV El Haido',
+      aeatInvoices: 'Facturas AEAT - TPV El Haido',
+      settings: 'Ajustes - TPV El Haido',
+    };
+    document.title = titles[section] || 'TPV El Haido';
+  });
 
   const handleThermalPrinterOptionsChange = (options: ThermalPrinterServiceOptions | null) => {
-    setThermalPrinterOptions(options);
+    store.setThermalPrinterOptions(options);
   };
 
-  // Helper function to get fallback products when backend is unavailable
+  // Helper function to get fallback products
   const getFallbackProducts = (): Product[] => {
     console.log('[App] Loading fallback products from products.json');
     const productsWithIcons = fallbackProducts.map((product) => ({
       ...product,
-      icon: React.createElement(
-        iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
-      ),
-    }));
+      icon: iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
+    })) as Product[];
     console.log(`[App] Loaded ${productsWithIcons.length} fallback products`);
     return productsWithIcons;
   };
 
-  // Helper function to get fallback categories from products
+  // Helper function to get fallback categories
   const getFallbackCategories = () => {
     console.log('[App] Extracting fallback categories from products.json');
-    const uniqueCategories = [...new Set(fallbackProducts.map((product) => product.category))].filter(Boolean);
+    const uniqueCategories = [
+      ...new Set(fallbackProducts.map((product) => product.category)),
+    ].filter(Boolean);
     return uniqueCategories.map((categoryName, index) => ({
       id: index + 1,
       name: categoryName,
@@ -111,130 +130,142 @@ function App() {
     }));
   };
 
-  // Apply performance-based CSS classes to root element
-  useEffect(() => {
-    const root = document.documentElement;
-
-    // Remove existing performance classes
-    root.classList.remove(
-      'low-performance',
-      'very-low-performance',
-      'reduced-motion',
-      'animations-disabled'
-    );
-
-    // Apply new classes based on performance config
-    if (performanceConfig.isVeryLowPerformance) {
-      root.classList.add('very-low-performance');
-    }
-    if (performanceConfig.isLowPerformance) {
-      root.classList.add('low-performance');
-    }
-    if (performanceConfig.reduceMotion) {
-      root.classList.add('reduced-motion');
-    }
-    if (!performanceConfig.enableAnimations) {
-      root.classList.add('animations-disabled');
-    }
-
-    // Set CSS custom properties for animation durations
-    root.style.setProperty('--animation-duration', `${performanceConfig.animationDuration}s`);
-    root.style.setProperty('--transition-duration', `${performanceConfig.transitionDuration}s`);
-
-    console.log('[Performance] Config applied:', {
-      isLowPerformance: performanceConfig.isLowPerformance,
-      isVeryLowPerformance: performanceConfig.isVeryLowPerformance,
-      enableAnimations: performanceConfig.enableAnimations,
-      animationDuration: performanceConfig.animationDuration,
-    });
-  }, [performanceConfig]);
-
-  // Initialize state if it's empty
-  useEffect(() => {
-    const initializeCategories = async () => {
-      if (categories.length === 0) {
-        const result = await storageAdapter.getCategories();
-
-        if (result.ok) {
-          setCategories(result.value);
-          if (result.value.length > 0) {
-            setBackendConnected(true);
-          }
-          console.log('[App] Categories loaded:', result.value.length);
-        } else {
-          console.error('[App] Error loading categories:', result.error.code, result.error.message);
-          // Use fallback categories
-          const fallbackCats = getFallbackCategories();
-          setCategories(fallbackCats);
-          setBackendConnected(false);
-        }
+  // Seed products to database if empty
+  const seedProductsIfNeeded = async () => {
+    const result = await store.storageAdapter().getProducts();
+    if (result.ok && result.value.length === 0) {
+      console.log('[App] Seeding products from fallback...');
+      const fallbackProds = getFallbackProducts();
+      for (const product of fallbackProds) {
+        await store.storageAdapter().createProduct(product);
       }
-    };
-
-    const initializeProducts = async () => {
-      if (products.length === 0) {
-        const result = await storageAdapter.getProducts();
-
-        if (result.ok) {
-          const productsWithIcons = result.value.map((product) => ({
-            ...product,
-            icon: React.createElement(
-              iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon
-            ),
-          }));
-          setProducts(productsWithIcons);
-          if (result.value.length > 0) {
-            setBackendConnected(true);
-          }
-          console.log('[App] Products loaded:', result.value.length);
-        } else {
-          console.error('[App] Error loading products:', result.error.code, result.error.message);
-          // Use fallback products
-          setProducts(getFallbackProducts());
-          setBackendConnected(false);
-        }
+      // Recargar productos después de seed
+      const reloaded = await store.storageAdapter().getProducts();
+      if (reloaded.ok) {
+        store.setProducts(reloaded.value);
+        store.setBackendConnected(true);
+        console.log(`[App] Seeded ${reloaded.value.length} products to database`);
       }
-    };
+    }
+  };
 
-    const initializeOrderHistory = async () => {
-      const result = await storageAdapter.getOrders();
+  // Seed categories to database if empty
+  const seedCategoriesIfNeeded = async () => {
+    const result = await store.storageAdapter().getCategories();
+    if (result.ok && result.value.length === 0) {
+      console.log('[App] Seeding categories from fallback...');
+      const fallbackCats = getFallbackCategories();
+      for (const category of fallbackCats) {
+        await store.storageAdapter().createCategory(category);
+      }
+      // Recargar categorías después de seed
+      const reloaded = await store.storageAdapter().getCategories();
+      if (reloaded.ok) {
+        store.setCategories(reloaded.value);
+        console.log(`[App] Seeded ${reloaded.value.length} categories to database`);
+      }
+    }
+  };
 
-      if (result.ok) {
-        // Filter to only include paid orders for history
-        const paidOrders = result.value.filter((order) => order.status === 'paid');
-        setOrderHistory(paidOrders);
-        console.log('[App] Order history loaded:', paidOrders.length);
+  // Initialize data
+  const initializeData = async () => {
+    // Setup native menu (Tauri only)
+    const platform = getPlatformService();
+    if (platform.isTauri()) {
+      setupNativeMenu();
+    }
+
+    // If app splash or license splash is active, don't initialize data yet
+    if (showAppSplash() || showLicenseSplash()) {
+      return;
+    }
+
+    // Initialize categories
+    if (store.state.categories.length === 0) {
+      const result = await store.storageAdapter().getCategories();
+      if (result.ok && result.value.length > 0) {
+        store.setCategories(result.value);
+        store.setBackendConnected(true);
+        console.log('[App] Categories loaded:', result.value.length);
       } else {
-        console.error('[App] Error loading orders:', result.error.code, result.error.message);
-        // Keep existing order history on error
+        await seedCategoriesIfNeeded();
+        if (store.state.categories.length === 0) {
+          const fallbackCats = getFallbackCategories();
+          store.setCategories(fallbackCats);
+          console.log('[App] Using fallback categories:', fallbackCats.length);
+        }
       }
-    };
-
-    initializeProducts();
-    initializeCategories();
-    initializeOrderHistory();
-
-    if (users.length === 0) {
-      setUsers([
-        {
-          id: 1,
-          name: 'Germán',
-          profilePicture: '/panxo.svg',
-          pin: '1111',
-          pinnedProductIds: [1, 2, 3, 4, 5, 6],
-        },
-        {
-          id: 2,
-          name: 'Marta',
-          profilePicture: '/nuka.svg',
-          pin: '1234',
-          pinnedProductIds: [1, 2, 3],
-        },
-      ]);
     }
 
-    if (tables.length === 0) {
-      setTables([
+    // Initialize products
+    if (store.state.products.length === 0) {
+      const result = await store.storageAdapter().getProducts();
+      if (result.ok && result.value.length > 0) {
+        const productsWithIcons = result.value.map((product) => ({
+          ...product,
+          icon:
+            iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
+        })) as Product[];
+        store.setProducts(productsWithIcons);
+        store.setBackendConnected(true);
+        console.log('[App] Products loaded:', result.value.length);
+      } else {
+        await seedProductsIfNeeded();
+        if (store.state.products.length === 0) {
+          const productsWithIcons = getFallbackProducts().map((product) => ({
+            ...product,
+            icon:
+              iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
+          })) as Product[];
+          store.setProducts(productsWithIcons);
+          console.log('[App] Using fallback products');
+        }
+      }
+    }
+
+    // Initialize order history
+    const ordersResult = await store.storageAdapter().getOrders();
+    if (ordersResult.ok) {
+      const paidOrders = ordersResult.value.filter((order) => order.status === 'paid');
+      store.setOrderHistory(paidOrders);
+      console.log('[App] Order history loaded:', paidOrders.length);
+    }
+
+    // Initialize users from database
+    if (store.state.users.length === 0) {
+      const usersResult = await store.storageAdapter().getUsers();
+      if (usersResult.ok && usersResult.value.length > 0) {
+        store.setUsers(usersResult.value);
+        console.log('[App] Users loaded from database:', usersResult.value.length);
+      } else {
+        // Create default users if database is empty
+        const defaultUsers = [
+          {
+            id: 1,
+            name: 'Germán',
+            profilePicture: ASSET_PATHS.panxo,
+            pin: '1111',
+            pinnedProductIds: [1, 2, 3, 4, 5, 6],
+          },
+          {
+            id: 2,
+            name: 'Marta',
+            profilePicture: ASSET_PATHS.nuka,
+            pin: '1234',
+            pinnedProductIds: [1, 2, 3],
+          },
+        ];
+        for (const user of defaultUsers) {
+          await store.storageAdapter().createUser(user);
+        }
+        store.setUsers(defaultUsers);
+        console.log('[App] Default users created and loaded:', defaultUsers.length);
+      }
+    }
+
+    // Initialize tables if empty
+    if (store.state.tables.length === 0) {
+      store.setTables([
         { id: 0, name: 'Barra', available: true },
         { id: 1, name: 'Mesa 1', available: true },
         { id: 2, name: 'Mesa 2', available: true },
@@ -248,8 +279,9 @@ function App() {
       ]);
     }
 
-    if (!thermalPrinterOptions) {
-      setThermalPrinterOptions({
+    // Initialize thermal printer options
+    if (!store.state.thermalPrinterOptions) {
+      store.setThermalPrinterOptions({
         type: PrinterTypes.EPSON,
         interface: '//COM3',
         characterSet: CharacterSet.PC852_LATIN2,
@@ -259,314 +291,363 @@ function App() {
         options: { timeout: 3000 },
       });
     }
-  }, [
-    categories.length,
-    products.length,
-    storageAdapter,
-    setBackendConnected,
-    setCategories,
-    setOrderHistory,
-    setProducts,
-    setTables,
-    setThermalPrinterOptions,
-    setUsers,
-    tables.length,
-    thermalPrinterOptions,
-    users.length,
-  ]);
-
-  const menuItems = [
-    { id: 'home', icon: <HomeIcon />, label: 'Inicio' },
-    { id: 'products', icon: <ClipboardListIcon />, label: 'Productos' },
-    { id: 'newOrder', icon: <PlusCircleIcon />, label: 'Nueva Comanda' },
-    { id: 'orderHistory', icon: <HistoryIcon />, label: 'Historial' },
-    { id: 'settings', icon: <SettingsIcon />, label: 'Ajustes' },
-  ];
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
-  useEffect(() => {
-    const previousSection = prevSectionRef.current;
-    console.log('🔄 SECTION CHANGE:', {
-      from: previousSection,
-      to: activeSection,
-      isMobile,
-      timestamp: new Date().toLocaleTimeString(),
-    });
-    prevSectionRef.current = activeSection;
-  }, [activeSection, isMobile]);
-  // Optimized page variants - mantiene direcciones pero elimina scale y cálculos complejos
-  const pageVariants = {
-    enter: (direction: { axis: 'x' | 'y'; value: number }) => {
-      // Simplified calculation - mantener direcciones forward/upward
-      const enterValue =
-        direction.value > 0
-          ? direction.axis === 'x'
-            ? '100%'
-            : '30vh'
-          : // Forward: right/down
-            direction.axis === 'x'
-            ? '-100%'
-            : '-30vh'; // Backward: left/up
-
-      return {
-        [direction.axis]: enterValue,
-        opacity: 0,
-        // Eliminado: scale (costoso para GPU)
-      };
-    },
-    center: {
-      x: 0,
-      y: 0,
-      opacity: 1,
-      // Eliminado: scale
-    },
-    exit: (direction: { axis: 'x' | 'y'; value: number }) => {
-      // Simplified calculation - mantener direcciones
-      const exitValue =
-        direction.value > 0
-          ? direction.axis === 'x'
-            ? '-100%'
-            : '-30vh'
-          : // Forward: left/up
-            direction.axis === 'x'
-            ? '100%'
-            : '30vh'; // Backward: right/down
-
-      return {
-        [direction.axis]: exitValue,
-        opacity: 0,
-        // Eliminado: scale
-      };
-    },
   };
 
-  // Optimized transition - más simple y rápido
-  const pageTransition = {
-    type: 'tween' as const,
-    ease: 'easeOut' as const,
-    duration: isMobile ? 0.25 : 0.3,
-  };
+  // License check function
+  const checkLicense = async () => {
+    const platform = getPlatformService();
 
-  const getDirection = useCallback(
-    (current: string) => {
-      const previous = prevSectionRef.current;
-      const menuOrder = ['home', 'products', 'newOrder', 'orderHistory', 'settings'];
-      const currentIndex = menuOrder.indexOf(current);
-      const previousIndex = menuOrder.indexOf(previous);
-
-      // Fix: Handle equal case properly
-      const direction =
-        currentIndex === previousIndex
-          ? 0 // No movement when same section
-          : currentIndex > previousIndex
-            ? 1
-            : -1;
-
-      const result = {
-        axis: isMobile ? ('x' as const) : ('y' as const),
-        value: direction,
+    // PWA MODE: Skip license validation entirely (no native fingerprinting)
+    if (!platform.canUseLicenseSystem()) {
+      console.log('[License] PWA MODE - License system not available, skipping validation');
+      const pwaStatus: LicenseStatus = {
+        is_activated: true,
+        is_valid: true,
+        email: 'pwa@web.local',
+        license_type: 'pwa',
+        days_remaining: null,
+        expires_at: null,
       };
+      store.setLicenseStatus(pwaStatus);
+      setShowAppSplash(false);
+      setShowLicenseSplash(false);
+      return;
+    }
 
-      // Debug logging
-      if (direction !== 0) {
-        console.log('🎯 TRANSITION DEBUG:', {
-          current,
-          previous,
-          currentIndex,
-          previousIndex,
-          direction: direction > 0 ? 'FORWARD' : 'BACKWARD',
-          isMobile,
-          axis: result.axis,
-          finalDirection: result.value,
-        });
+    // DEBUG MODE: Skip license validation entirely
+    if (config.debug.enabled) {
+      console.log('[License] DEBUG MODE - Skipping license validation');
+      const debugStatus: LicenseStatus = {
+        is_activated: true,
+        is_valid: true,
+        email: 'debug@test.local',
+        license_type: 'enterprise',
+        days_remaining: 9999,
+        expires_at: null,
+      };
+      store.setLicenseStatus(debugStatus);
+      setShowAppSplash(false);
+      setShowLicenseSplash(false);
+      return;
+    }
+
+    try {
+      const status = await platform.checkLicense();
+      console.log('[License] Status:', status);
+
+      store.setLicenseStatus(status);
+
+      if (!status.is_activated || !status.is_valid) {
+        setShowLicenseSplash(true);
+        return;
       }
 
-      return result;
-    },
-    [isMobile]
-  );
+      setShowLicenseSplash(false);
+    } catch (error) {
+      console.error('[License] Error checking license:', error);
+      setShowLicenseSplash(true);
+    }
+  };
+
+  // Handle app splash complete
+  const handleAppSplashComplete = async () => {
+    setShowAppSplash(false);
+    // Check license after splash completes
+    await checkLicense();
+  };
+
+  // Handle license activation complete
+  const handleLicenseComplete = (status: LicenseStatus) => {
+    store.setLicenseStatus(status);
+    setShowLicenseSplash(false);
+
+    if (!status.is_valid) {
+      console.error('[License] Invalid license activated:', status);
+    }
+  };
+
+  // Refresh license status
+  const _refreshLicenseStatus = async () => {
+    await checkLicense();
+  };
+
+  // Watch for splash completion to initialize data
+  createEffect(() => {
+    const appSplashDone = !showAppSplash();
+    const licenseSplashDone = !showLicenseSplash();
+    if (appSplashDone && licenseSplashDone) {
+      // Initialize data when both splashes are done
+      initializeData();
+    }
+  });
+
+  const menuItems = [
+    { id: 'home', icon: HomeIcon, label: 'Inicio' },
+    { id: 'products', icon: ClipboardListIcon, label: 'Productos' },
+    { id: 'newOrder', icon: PlusCircleIcon, label: 'Nueva Comanda' },
+    { id: 'orderHistory', icon: HistoryIcon, label: 'Historial' },
+    { id: 'customers', icon: UsersIcon, label: 'Clientes' },
+    { id: 'aeatInvoices', icon: ReceiptIcon, label: 'Facturas AEAT' },
+    { id: 'settings', icon: SettingsIcon, label: 'Ajustes' },
+  ];
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen());
+
+  // Track section changes
+  createEffect(() => {
+    const current = activeSection();
+    console.log('🔄 SECTION CHANGE:', {
+      from: prevSection,
+      to: current,
+      isMobile: isMobile(),
+      timestamp: new Date().toLocaleTimeString(),
+    });
+    prevSection = current;
+  });
+
+  // Handle about dialog from native menu
+  useAboutDialog(() => {
+    setActiveSection('settings');
+    setForceAboutTab(true);
+    // Reset the force after a short delay
+    setTimeout(() => setForceAboutTab(false), 100);
+  });
 
   return (
     <div
-      className={cn(
+      class={cn(
         'flex h-screen w-screen bg-background text-foreground overscroll-none',
-        isMobile ? 'pb-20 pt-0 px-0' : 'pt-4 pr-4 pb-4', // Add bottom padding for mobile nav
-        touchOptimizationsEnabled && 'touch-optimized'
+        isMobile() ? 'pb-20 pt-0 px-0' : 'pt-4 pr-4 pb-4',
+        store.state.touchOptimizationsEnabled && 'touch-optimized'
       )}
     >
       <Toaster />
+      <PWAStatus />
       <UpdateChecker autoCheck={true} checkInterval={3600000} />
 
-      {/* Main Content */}
-      {!selectedUser ? (
-        <AnimatePresence>
-          <motion.div
-            key="login"
-            custom={getDirection(activeSection)}
-            variants={pageVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={pageTransition}
-            className="absolute inset-0 bg-transparent"
-          >
-            <ErrorBoundary level="section" fallbackTitle="Error en Login">
-              <Login users={users} onLogin={setSelectedUser} />
-            </ErrorBoundary>
-          </motion.div>
-        </AnimatePresence>
-      ) : (
-        <>
-          <Sidebar
-            isSidebarOpen={isSidebarOpen}
-            activeSection={activeSection}
-            setActiveSection={setActiveSection}
-            isDarkMode={currentMode === 'dark'}
-            toggleDarkMode={toggleDarkMode}
-            menuItems={menuItems}
-            loggedUser={selectedUser}
-            onLogout={() => setSelectedUser(null)}
-          />
+      {/* App Splash Screen - Brand intro */}
+      <Show when={showAppSplash()}>
+        <AppSplashScreen onComplete={handleAppSplashComplete} />
+      </Show>
 
-          {/* Sidebar Toggle Button - Hide on mobile */}
-          {!isMobile && (
-            <SidebarToggleButton isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-          )}
+      {/* License Splash Screen - Only show if app splash is done */}
+      <Show when={!showAppSplash() && showLicenseSplash()}>
+        <LicenseSplashScreen onComplete={handleLicenseComplete} />
+      </Show>
 
-          <main
-            className={cn(
-              'flex-1 h-full relative overflow-hidden overscroll-y-none',
-              isMobile && 'w-full'
+      {/* Main Content - Only show if both splashes are done */}
+      <Show
+        when={!showAppSplash() && !showLicenseSplash() && store.state.selectedUser}
+        fallback={
+          <Show when={!showAppSplash() && !showLicenseSplash()}>
+            <Presence>
+              <Motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                class="absolute inset-0 bg-transparent"
+              >
+                <ErrorBoundary
+                  level="page"
+                  fallbackTitle="Error en Login"
+                  fallbackMessage="No se ha podido cargar la pantalla de inicio de sesión."
+                >
+                  <Login users={store.state.users} onLogin={store.setSelectedUser} />
+                </ErrorBoundary>
+              </Motion.div>
+            </Presence>
+          </Show>
+        }
+      >
+        <Sidebar
+          isSidebarOpen={isSidebarOpen()}
+          activeSection={activeSection()}
+          setActiveSection={setActiveSection}
+          menuItems={menuItems}
+          loggedUser={store.state.selectedUser!}
+          onLogout={() => store.setSelectedUser(null)}
+        />
+
+        {/* Sidebar Toggle Button - Hide on mobile */}
+        <Show when={!isMobile()}>
+          <SidebarToggleButton isSidebarOpen={isSidebarOpen()} toggleSidebar={toggleSidebar} />
+        </Show>
+
+        <main class={cn('flex-1 h-full relative overscroll-y-none', isMobile() && 'w-full')}>
+          <Card
+            class={cn(
+              'h-full w-full bg-card border-card-border shadow-xl overflow-hidden',
+              isMobile() ? 'rounded-none border-0' : 'rounded-3xl'
             )}
           >
-            <AnimatePresence custom={getDirection(activeSection)}>
-              <motion.div
-                key={activeSection}
-                custom={getDirection(activeSection)}
-                variants={pageVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={pageTransition}
-                className="absolute inset-0 overflow-hidden"
+            <CardContent class="p-0 h-full flex flex-col overflow-hidden bg-card text-card-foreground">
+              <div
+                class={cn('flex-shrink-0', isMobile() ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6')}
               >
-                <Card
-                  className={cn(
-                    'h-full w-full bg-card border-card-border shadow-xl overflow-hidden',
-                    isMobile ? 'rounded-none border-0' : 'rounded-3xl'
-                  )}
-                >
-                  <CardContent className="p-0 h-full flex flex-col overflow-hidden bg-card text-card-foreground">
+                <SectionHeader menuItems={menuItems} activeSection={activeSection()} />
+              </div>
+
+              <div class="flex-1 overflow-hidden">
+                <Switch>
+                  <Match when={activeSection() === 'home'}>
                     <div
-                      className={cn(
-                        'flex-shrink-0',
-                        isMobile ? 'px-4 pt-4' : 'px-2 sm:px-6 pt-2 sm:pt-6'
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
                       )}
                     >
-                      <SectionHeader menuItems={menuItems} activeSection={activeSection} />
+                      <ErrorBoundary
+                        level="section"
+                        fallbackTitle="Error en Inicio"
+                        fallbackMessage="No se ha podido cargar la pantalla de inicio."
+                      >
+                        <Home userName={store.state.selectedUser?.name || 'Usuario desconocido'} />
+                      </ErrorBoundary>
                     </div>
+                  </Match>
 
-                    {/*SECTIONS */}
-
-                    <div className="flex-1 overflow-hidden">
-                      {/* Home Section */}
-                      {activeSection === 'home' && (
-                        <div
-                          className={cn(
-                            'h-full overflow-y-auto',
-                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                          )}
-                        >
-                          <ErrorBoundary level="section" fallbackTitle="Error en Inicio">
-                            <Home userName={selectedUser?.name || 'Usuario desconocido'} />
-                          </ErrorBoundary>
-                        </div>
+                  <Match when={activeSection() === 'products'}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
                       )}
-                      {/* Products Section */}
-                      {activeSection === 'products' && (
-                        <div
-                          className={cn(
-                            'h-full overflow-y-auto',
-                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                          )}
-                        >
-                          <ErrorBoundary level="section" fallbackTitle="Error en Productos">
-                            <Products />
-                          </ErrorBoundary>
-                        </div>
-                      )}
-                      {/* NewOrder Section - No padding for mobile layout */}
-                      {activeSection === 'newOrder' && (
-                        <div className="h-full overflow-hidden">
-                          <ErrorBoundary level="section" fallbackTitle="Error en Nueva Comanda">
-                            <NewOrder />
-                          </ErrorBoundary>
-                        </div>
-                      )}
-                      {activeSection === 'orderHistory' && (
-                        <div
-                          className={cn(
-                            'h-full overflow-y-auto',
-                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                          )}
-                        >
-                          <ErrorBoundary level="section" fallbackTitle="Error en Historial">
-                            <OrderHistory
-                              setSelectedOrderId={setSelectedOrderId}
-                              setActiveSection={setActiveSection}
-                              selectedOrder={selectedOrder}
-                              setSelectedOrder={setSelectedOrder}
-                            />
-                          </ErrorBoundary>
-                        </div>
-                      )}
-                      {activeSection === 'settings' && selectedUser && (
-                        <div
-                          className={cn(
-                            'h-full overflow-y-auto',
-                            isMobile ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
-                          )}
-                        >
-                          <ErrorBoundary level="section" fallbackTitle="Error en Ajustes">
-                            <SettingsPanel
-                              users={users}
-                              selectedUser={selectedUser}
-                              handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
-                              thermalPrinterOptions={
-                                thermalPrinterOptions as ThermalPrinterServiceOptions
-                              }
-                              isDarkMode={currentMode === 'dark'}
-                              toggleDarkMode={toggleDarkMode}
-                              isSidebarOpen={isSidebarOpen}
-                              setSelectedUser={setSelectedUser}
-                              setUsers={setUsers}
-                            />
-                          </ErrorBoundary>
-                        </div>
-                      )}
+                    >
+                      <ErrorBoundary
+                        level="section"
+                        fallbackTitle="Error en Productos"
+                        fallbackMessage="No se ha podido cargar la pantalla de productos."
+                      >
+                        <Products />
+                      </ErrorBoundary>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </AnimatePresence>
-          </main>
+                  </Match>
 
-          {/* Bottom Navigation for Mobile */}
-          {isMobile && (
-            <BottomNavigation
-              activeSection={activeSection}
-              setActiveSection={setActiveSection}
-              menuItems={menuItems}
-              loggedUser={selectedUser}
-              onLogout={() => setSelectedUser(null)}
-            />
-          )}
-        </>
-      )}
+                  <Match when={activeSection() === 'newOrder'}>
+                    <div class="h-full overflow-hidden">
+                      <ErrorBoundary
+                        level="section"
+                        fallbackTitle="Error en Nueva Comanda"
+                        fallbackMessage="No se ha podido cargar la pantalla de nuevas comandas."
+                      >
+                        <NewOrder />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
+
+                  <Match when={activeSection() === 'orderHistory'}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        level="section"
+                        fallbackTitle="Error en Historial"
+                        fallbackMessage="No se ha podido cargar el historial de pedidos."
+                      >
+                        <OrderHistory
+                          setSelectedOrderId={store.setSelectedOrderId}
+                          setActiveSection={setActiveSection}
+                          selectedOrder={store.state.selectedOrder}
+                          setSelectedOrder={store.setSelectedOrder}
+                        />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
+
+                  <Match when={activeSection() === 'customers'}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        level="section"
+                        fallbackTitle="Error en Clientes"
+                        fallbackMessage="No se ha podido cargar la pantalla de clientes."
+                      >
+                        <Customers />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
+
+                  <Match when={activeSection() === 'aeatInvoices'}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        level="section"
+                        fallbackTitle="Error en Facturas AEAT"
+                        fallbackMessage="No se ha podido cargar la pantalla de facturación."
+                      >
+                        <AEATInvoices />
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
+
+                  <Match when={activeSection() === 'settings' && store.state.selectedUser}>
+                    <div
+                      class={cn(
+                        'h-full overflow-y-auto',
+                        isMobile() ? 'px-4 pb-4' : 'px-2 sm:px-6 pb-2 sm:pb-6'
+                      )}
+                    >
+                      <ErrorBoundary
+                        level="section"
+                        fallbackTitle="Error en Ajustes"
+                        fallbackMessage="No se ha podido cargar la pantalla de ajustes."
+                      >
+                        <OnboardingProvider>
+                          <SettingsPanel
+                            users={store.state.users}
+                            selectedUser={store.state.selectedUser!}
+                            handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
+                            thermalPrinterOptions={
+                              store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
+                            }
+                            isSidebarOpen={isSidebarOpen()}
+                            setSelectedUser={store.setSelectedUser}
+                            setUsers={store.setUsers}
+                            forceAboutTab={forceAboutTab()}
+                          />
+                        </OnboardingProvider>
+                      </ErrorBoundary>
+                    </div>
+                  </Match>
+                </Switch>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+
+        {/* Bottom Navigation for Mobile */}
+        <Show when={isMobile()}>
+          <BottomNavigation
+            activeSection={activeSection()}
+            setActiveSection={setActiveSection}
+            menuItems={menuItems}
+            loggedUser={store.state.selectedUser!}
+            onLogout={() => store.setSelectedUser(null)}
+          />
+        </Show>
+      </Show>
 
       {/* Debug Indicator */}
-      {debugMode && <DebugIndicator />}
+      <Show when={store.state.debugMode}>
+        <DebugIndicator />
+      </Show>
+
+      {/* Screenshot Overlay - Solo en modo debug */}
+      <Show when={store.state.debugMode}>
+        <ScreenshotOverlay activeSection={store.state.selectedUser ? activeSection() : 'login'} />
+      </Show>
     </div>
   );
 }

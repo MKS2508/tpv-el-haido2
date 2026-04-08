@@ -1,6 +1,32 @@
-import { relaunch } from '@tauri-apps/plugin-process';
-import { check, type Update } from '@tauri-apps/plugin-updater';
-import { useCallback, useState } from 'react';
+import { createSignal } from 'solid-js';
+import { isTauri } from '@/services/platform';
+
+// Stub Update type for PWA
+interface UpdateStub {
+  version: string;
+  body: string | null;
+  downloaded: boolean;
+  downloadAndInstall: (callback: (event: any) => void) => Promise<void>;
+}
+
+// Lazy load Tauri plugins only when needed
+let checkFn: (() => Promise<any>) | null = null;
+let relaunchFn: (() => Promise<void>) | null = null;
+
+async function loadTauriPlugins() {
+  if (isTauri() && !checkFn) {
+    try {
+      const plugins = await Promise.all([
+        import('@tauri-apps/plugin-updater'),
+        import('@tauri-apps/plugin-process'),
+      ]);
+      checkFn = plugins[0].check;
+      relaunchFn = plugins[1].relaunch;
+    } catch (error) {
+      console.error('[useUpdater] Failed to load Tauri plugins:', error);
+    }
+  }
+}
 
 export interface UpdateProgress {
   contentLength: number | null;
@@ -18,7 +44,7 @@ export interface UpdateState {
 }
 
 export function useUpdater() {
-  const [state, setState] = useState<UpdateState>({
+  const [state, setState] = createSignal<UpdateState>({
     available: false,
     checking: false,
     downloading: false,
@@ -28,16 +54,27 @@ export function useUpdater() {
     notes: null,
   });
 
-  const [update, setUpdate] = useState<Update | null>(null);
+  const [update, setUpdate] = createSignal<UpdateStub | null>(null);
 
-  const checkForUpdates = useCallback(async () => {
+  const checkForUpdates = async () => {
+    // Skip if not Tauri
+    if (!isTauri()) {
+      setState((prev) => ({ ...prev, checking: false, available: false }));
+      return false;
+    }
+
     setState((prev) => ({ ...prev, checking: true, error: null }));
 
     try {
-      const result = await check();
+      await loadTauriPlugins();
+      if (!checkFn) {
+        throw new Error('Tauri updater plugin not available');
+      }
+
+      const result = await checkFn();
 
       if (result) {
-        setUpdate(result);
+        setUpdate(result as any);
         setState((prev) => ({
           ...prev,
           checking: false,
@@ -62,10 +99,17 @@ export function useUpdater() {
       }));
       return false;
     }
-  }, []);
+  };
 
-  const downloadAndInstall = useCallback(async () => {
-    if (!update) {
+  const downloadAndInstall = async () => {
+    // Skip if not Tauri
+    if (!isTauri()) {
+      setState((prev) => ({ ...prev, error: 'Updates not available in PWA mode' }));
+      return false;
+    }
+
+    const currentUpdate = update();
+    if (!currentUpdate) {
       setState((prev) => ({ ...prev, error: 'No update available' }));
       return false;
     }
@@ -81,7 +125,7 @@ export function useUpdater() {
       let contentLength: number | null = null;
       let downloaded = 0;
 
-      await update.downloadAndInstall((event) => {
+      await (currentUpdate as any).downloadAndInstall((event: any) => {
         switch (event.event) {
           case 'Started':
             contentLength = event.data.contentLength ?? null;
@@ -108,7 +152,9 @@ export function useUpdater() {
       });
 
       // Relaunch the app after install
-      await relaunch();
+      if (relaunchFn) {
+        await relaunchFn();
+      }
       return true;
     } catch (error) {
       setState((prev) => ({
@@ -118,9 +164,9 @@ export function useUpdater() {
       }));
       return false;
     }
-  }, [update]);
+  };
 
-  const dismissUpdate = useCallback(() => {
+  const dismissUpdate = () => {
     setUpdate(null);
     setState((prev) => ({
       ...prev,
@@ -128,10 +174,20 @@ export function useUpdater() {
       version: null,
       notes: null,
     }));
-  }, []);
+  };
 
+  // Return signal accessors and actions
   return {
-    ...state,
+    // Signal accessors - call these as functions to get reactive values
+    available: () => state().available,
+    checking: () => state().checking,
+    downloading: () => state().downloading,
+    error: () => state().error,
+    progress: () => state().progress,
+    version: () => state().version,
+    notes: () => state().notes,
+
+    // Actions
     checkForUpdates,
     downloadAndInstall,
     dismissUpdate,

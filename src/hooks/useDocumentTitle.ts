@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { createEffect, onCleanup } from 'solid-js';
 import { isTauriEnvironment } from '@/utils/environment';
 
 interface UseDocumentTitleOptions {
@@ -13,7 +13,7 @@ interface UseDocumentTitleOptions {
 export function useDocumentTitle(title: string, options: UseDocumentTitleOptions = {}) {
   const { suffix = '', prefix = 'El Haido TPV' } = options;
 
-  useEffect(() => {
+  createEffect(() => {
     const prevTitle = document.title;
 
     // Construir el nuevo título
@@ -46,14 +46,13 @@ export function useDocumentTitle(title: string, options: UseDocumentTitleOptions
       }
     }
 
-    // Cleanup function para restaurar título anterior si es necesario
-    return () => {
+    onCleanup(() => {
       // Solo restaurar si el título actual aún es el que establecimos
       if (document.title === newTitle) {
         document.title = prevTitle;
       }
-    };
-  }, [title, prefix, suffix]);
+    });
+  });
 }
 
 /**

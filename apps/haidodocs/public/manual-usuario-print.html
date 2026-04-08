@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TPV El Haido - Manual de Usuario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* RESET & BASE */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --color-primary: #2563eb;
+      --color-primary-dark: #1e40af;
+      --color-secondary: #f59e0b;
+      --color-accent: #10b981;
+      --color-dark: #0f172a;
+      --color-light: #f8fafc;
+      --color-text: #1e293b;
+      --color-text-muted: #64748b;
+      --color-border: #e2e8f0;
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --font-code: 'JetBrains Mono', monospace;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+      --spacing-3xl: 4rem;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      line-height: 1.7;
+      color: var(--color-text);
+      background: var(--color-light);
+      overflow-x: hidden;
+    }
+
+    /* COVER PAGE - HERO BANNER */
+    .cover-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #0ea5e9 100%);
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+    }
+
+    .cover-page::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: rotate 30s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .cover-page::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 200px;
+      background: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
+    }
+
+    .cover-logo {
+      font-size: 5rem;
+      margin-bottom: var(--spacing-xl);
+      filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .cover-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 900;
+      color: white;
+      text-align: center;
+      line-height: 1.1;
+      margin-bottom: var(--spacing-lg);
+      text-shadow: 0 4px 30px rgba(0,0,0,0.3);
+      letter-spacing: -0.02em;
+    }
+
+    .cover-subtitle {
+      font-size: 1.5rem;
+      color: rgba(255,255,255,0.9);
+      text-align: center;
+      font-weight: 400;
+      margin-bottom: var(--spacing-3xl);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .cover-info {
+      display: flex;
+      gap: var(--spacing-2xl);
+      color: rgba(255,255,255,0.8);
+      font-size: 0.9rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cover-info-item {
+      text-align: center;
+    }
+
+    .cover-info-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: var(--spacing-xs);
+      opacity: 0.7;
+    }
+
+    .cover-info-value {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    /* MAIN CONTENT */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: var(--spacing-3xl) var(--spacing-xl);
+    }
+
+    /* SECTIONS */
+    section {
+      margin-bottom: var(--spacing-3xl);
+      page-break-after: always;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-xl);
+      padding-bottom: var(--spacing-md);
+      border-bottom: 3px solid var(--color-primary);
+    }
+
+    .section-number {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--color-primary);
+      line-height: 1;
+      min-width: 80px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--color-dark);
+    }
+
+    h3 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-dark);
+      margin: var(--spacing-xl) 0 var(--spacing-md);
+      page-break-after: avoid;
+    }
+
+    h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-text);
+      margin: var(--spacing-lg) 0 var(--spacing-sm);
+    }
+
+    p {
+      margin-bottom: var(--spacing-md);
+    }
+
+    /* TABLE OF CONTENTS */
+    .toc {
+      background: white;
+      border-radius: 12px;
+      padding: var(--spacing-xl);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      margin-bottom: var(--spacing-3xl);
+      page-break-after: always;
+    }
+
+    .toc-title {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--color-dark);
+      margin-bottom: var(--spacing-lg);
+      text-align: center;
+    }
+
+    .toc-list {
+      list-style: none;
+    }
+
+    .toc-item {
+      padding: var(--spacing-sm) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .toc-item:last-child {
+      border-bottom: none;
+    }
+
+    .toc-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--color-text);
+      text-decoration: none;
+      padding: var(--spacing-sm);
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .toc-link:hover {
+      background: var(--color-light);
+      color: var(--color-primary);
+      transform: translateX(4px);
+    }
+
+    .toc-number {
+      font-weight: 700;
+      color: var(--color-primary);
+      min-width: 40px;
+    }
+
+    .toc-title-text {
+      flex: 1;
+    }
+
+    .toc-page {
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* CALLOUTS & BLOCKQUOTES */
+    blockquote {
+      margin: var(--spacing-lg) 0;
+      padding: var(--spacing-lg) var(--spacing-xl);
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border-left: 4px solid var(--color-primary);
+      border-radius: 0 12px 12px 0;
+      page-break-inside: avoid;
+    }
+
+    blockquote strong {
+      color: var(--color-primary-dark);
+      display: block;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    /* IMAGES */
+    figure {
+      margin: var(--spacing-2xl) 0;
+      page-break-inside: avoid;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto var(--spacing-md);
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      border: 1px solid var(--color-border);
+    }
+
+    figcaption {
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      font-style: italic;
+      margin-top: var(--spacing-sm);
+    }
+
+    /* TABLES */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: var(--spacing-lg) 0;
+      page-break-inside: avoid;
+      font-size: 0.95rem;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    thead {
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    }
+
+    thead th {
+      color: white;
+      font-weight: 600;
+      padding: var(--spacing-md);
+      text-align: left;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    tbody tr:nth-child(even) {
+      background: #fafbfc;
+    }
+
+    tbody tr:hover {
+      background: #f1f5f9;
+    }
+
+    td {
+      padding: var(--spacing-md);
+    }
+
+    /* CODE BLOCKS */
+    pre {
+      background: var(--color-dark);
+      color: #e2e8f0;
+      padding: var(--spacing-lg);
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: var(--spacing-lg) 0;
+      page-break-inside: avoid;
+      font-family: var(--font-code);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      border: 1px solid #334155;
+    }
+
+    code {
+      font-family: var(--font-code);
+      background: #f1f5f9;
+      color: var(--color-primary-dark);
+      padding: 0.2em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    /* LISTS */
+    ul, ol {
+      margin: var(--spacing-md) 0;
+      padding-left: var(--spacing-xl);
+    }
+
+    li {
+      margin-bottom: var(--spacing-sm);
+    }
+
+    /* MERMAID DIAGRAMS */
+    .mermaid {
+      text-align: center;
+      margin: var(--spacing-2xl) 0;
+      page-break-inside: avoid;
+      padding: var(--spacing-lg);
+      background: var(--color-light);
+      border-radius: 12px;
+    }
+
+    /* STEP LISTS */
+    .step-list {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+    }
+
+    .step-list li {
+      counter-increment: step;
+      position: relative;
+      padding-left: 50px;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .step-list li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    /* FOOTER */
+    .footer {
+      margin-top: var(--spacing-3xl);
+      padding: var(--spacing-2xl) 0;
+      text-align: center;
+      border-top: 2px solid var(--color-border);
+      color: var(--color-text-muted);
+      page-break-before: always;
+    }
+
+    .footer-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .footer-links a {
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+
+    .footer-copy {
+      font-size: 0.85rem;
+    }
+
+    /* PRINT STYLES */
+    @media print {
+      @page {
+        size: A4;
+        margin: 2cm 1.5cm;
+      }
+
+      body {
+        background: white;
+        font-size: 10.5pt;
+      }
+
+      .cover-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #0ea5e9 100%) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      section {
+        page-break-after: always;
+      }
+
+      h2, h3, h4 {
+        page-break-after: avoid;
+        page-break-inside: avoid;
+      }
+
+      img, figure, table, pre, blockquote, li {
+        page-break-inside: avoid;
+      }
+
+      .toc {
+        page-break-after: always;
+      }
+
+      a {
+        color: var(--color-primary) !important;
+        text-decoration: underline;
+      }
+
+      a[href]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #666;
+      }
+
+      /* Page numbers */
+      @page {
+        @bottom-center {
+          content: "Página " counter(page) " de " counter(pages);
+          font-size: 9pt;
+          color: #666;
+          padding-top: 10px;
+        }
+      }
+
+      /* Hide animations in print */
+      @keyframes rotate, float {
+        display: none;
+      }
+
+      /* Better table printing */
+      table {
+        page-break-inside: avoid;
+      }
+
+      thead {
+        display: table-header-group;
+      }
+
+      /* Code blocks */
+      pre {
+        background: #f8f8f8 !important;
+        color: #333 !important;
+        border: 1px solid #ddd !important;
+        page-break-inside: avoid;
+      }
+
+      /* Images */
+      img {
+        max-width: 100%;
+        page-break-inside: avoid;
+      }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .container {
+        padding: var(--spacing-lg) var(--spacing-md);
+      }
+
+      .cover-title {
+        font-size: 2rem;
+      }
+
+      .section-number {
+        font-size: 2rem;
+        min-width: 50px;
+      }
+
+      .section-title {
+        font-size: 1.5rem;
+      }
+
+      .cover-info {
+        flex-direction: column;
+        gap: var(--spacing-md);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- COVER PAGE -->
+  <div class="cover-page">
+    <div class="cover-logo">🖥️</div>
+    <h1 class="cover-title">TPV El Haido</h1>
+    <p class="cover-subtitle">Manual de Usuario Oficial</p>
+    <div class="cover-info">
+      <div class="cover-info-item">
+        <div class="cover-info-label">Versión</div>
+        <div class="cover-info-value">1.0.0</div>
+      </div>
+      <div class="cover-info-item">
+        <div class="cover-info-label">Fecha</div>
+        <div class="cover-info-value">Febrero 2026</div>
+      </div>
+      <div class="cover-info-item">
+        <div class="cover-info-label">Sistema</div>
+        <div class="cover-info-value">Punto de Venta</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE OF CONTENTS -->
+  <div class="container">
+    <nav class="toc">
+      <h2 class="toc-title">Índice de Contenidos</h2>
+      <ul class="toc-list">
+        <li class="toc-item">
+          <a href="#introduccion" class="toc-link">
+            <span class="toc-number">1</span>
+            <span class="toc-title-text">Introducción</span>
+            <span class="toc-page">3</span>
+          </a>
+        </li>
+        <li class="toc-item">
+          <a href="#instalacion" class="toc-link">
+            <span class="toc-number">2</span>
+            <span class="toc-title-text">Instalación</span>
+            <span class="toc-page">6</span>
+          </a>
+        </li>
+        <li class="toc-item">
+          <a href="#primeros-pasos" class="toc-link">
+            <span class="toc-number">3</span>
+            <span class="toc-title-text">Primeros Pasos</span>
+            <span class="toc-page">12</span>
+          </a>
+        </li>
+        <li class="toc-item">
+          <a href="#pedidos" class="toc-link">
+            <span class="toc-number">4</span>
+            <span class="toc-title-text">Gestión de Pedidos</span>
+            <span class="toc-page">18</span>
+          </a>
+        </li>
+        <li class="toc-item">
+          <a href="#productos" class="toc-link">
+            <span class="toc-number">5</span>
+            <span class="toc-title-text">Gestión de Productos</span>
+            <span class="toc-page">26</span>
+          </a>
+        </li>
+        <li class="toc-item">
+          <a href="#clientes" class="toc-link">
+            <span class="toc-number">6</span>
+            <span class="toc-title-text">Gestión de Clientes</span>
+            <span class="toc-page">32</span>
+          </a>
+        </li>
+        <li class="toc-item">
+          <a href="#pagos" class="toc-link">
+            <span class="toc-number">7</span>
+            <span class="toc-title-text">Procesamiento de Pagos</span>
+            <span class="toc-page">38</span>
+          </a>
+        </li>
+        <li class="toc-item">
+          <a href="#verifactu" class="toc-link">
+            <span class="toc-number">8</span>
+            <span class="toc-title-text">Facturación VERI*FACTU</span>
+            <span class="toc-page">46</span>
+          </a>
+        </li>
+        <li class="toc-item">
+          <a href="#impresora" class="toc-link">
+            <span class="toc-number">9</span>
+            <span class="toc-title-text">Configuración de Impresora</span>
+            <span class="toc-page">54</span>
+          </a>
+        </li>
+        <li class="toc-item">
+          <a href="#temas" class="toc-link">
+            <span class="toc-number">10</span>
+            <span class="toc-title-text">Temas y Personalización</span>
+            <span class="toc-page">60</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- CONTENT SECTIONS -->
+    <section id="introduccion">
+      <div class="section-header">
+        <span class="section-number">1</span>
+        <h2 class="section-title">Introducción</h2>
+      </div>
+
+      <p>Bienvenido a <strong>TPV El Haido</strong>, tu sistema de punto de venta diseñado específicamente para hostelería. Esta guía te acompañará desde la instalación hasta el dominio completo de todas las funcionalidades.</p>
+
+      <h3>1.1 ¿Qué puedes hacer con TPV El Haido?</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Funcionalidad</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Pedidos</strong></td>
+            <td>Crea comandas, gestiona mesas y cobra de forma rápida</td>
+          </tr>
+          <tr>
+            <td><strong>Productos</strong></td>
+            <td>Organiza tu catálogo con categorías, precios e imágenes</td>
+          </tr>
+          <tr>
+            <td><strong>Clientes</strong></td>
+            <td>Mantén una base de datos para facturas completas</td>
+          </tr>
+          <tr>
+            <td><strong>Pagos</strong></td>
+            <td>Efectivo, tarjeta o mixto con cálculo automático de cambio</td>
+          </tr>
+          <tr>
+            <td><strong>Impresión</strong></td>
+            <td>Tickets térmicos personalizados con tu logo</td>
+          </tr>
+          <tr>
+            <td><strong>Facturación</strong></td>
+            <td>Envío automático a la AEAT con VERI*FACTU</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>1.2 Flujo de trabajo típico</h3>
+      <p>El uso diario de TPV El Haido sigue este flujo sencillo:</p>
+
+      <pre class="mermaid">graph LR
+  A[Login] --> B[Seleccionar Mesa]
+  B --> C[Añadir Productos]
+  C --> D[Cobrar]
+  D --> E[Imprimir Ticket]
+
+  style A fill:#e1f5ff
+  style B fill:#fff4e1
+  style C fill:#e8f5e9
+  style D fill:#fce4ec
+  style E fill:#f3e5f5</pre>
+
+      <blockquote>
+        <strong>💡 Consejo:</strong>
+        Para empezar rápidamente, completa el asistente de configuración inicial y crea tu primer producto en menos de 5 minutos.
+      </blockquote>
+    </section>
+
+    <section id="instalacion">
+      <div class="section-header">
+        <span class="section-number">2</span>
+        <h2 class="section-title">Instalación</h2>
+      </div>
+
+      <h3>2.1 Requisitos del sistema</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Componente</th>
+            <th>Mínimo</th>
+            <th>Recomendado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>RAM</strong></td>
+            <td>512 MB</td>
+            <td>1 GB o más</td>
+          </tr>
+          <tr>
+            <td><strong>Almacenamiento</strong></td>
+            <td>100 MB</td>
+            <td>500 MB</td>
+          </tr>
+          <tr>
+            <td><strong>Pantalla</strong></td>
+            <td>800×600</td>
+            <td>1024×768 o superior</td>
+          </tr>
+          <tr>
+            <td><strong>Internet</strong></td>
+            <td>Opcional</td>
+            <td>Requerido para VERI*FACTU</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>2.2 Instalación en Windows 10/11</h3>
+      <ol class="step-list">
+        <li>Accede a <a href="https://github.com/MKS2508/tpv-el-haido2/releases/latest" target="_blank">GitHub Releases</a></li>
+        <li>Descarga el archivo <code>TPV.El.Haido_x.x.x_x64-setup.exe</code></li>
+        <li>Haz doble clic en el archivo descargado</li>
+        <li>Si aparece Windows SmartScreen, haz clic en "Más información" y luego "Ejecutar de todas formas"</li>
+        <li>Sigue el asistente de instalación</li>
+        <li>Busca "TPV El Haido" en el menú de inicio</li>
+      </ol>
+
+      <blockquote>
+        <strong>⚠️ Windows SmartScreen:</strong>
+        Al ser una aplicación no firmada por Microsoft, Windows puede mostrar una advertencia. Esto es completamente normal para software independiente.
+      </blockquote>
+    </section>
+
+    <section id="primeros-pasos">
+      <div class="section-header">
+        <span class="section-number">3</span>
+        <h2 class="section-title">Primeros Pasos</h2>
+      </div>
+
+      <h3>3.1 Pantalla de login</h3>
+      <p>Después de la configuración, verás la pantalla de acceso:</p>
+
+      <figure>
+        <img src="screenshots/01_login.png" alt="Pantalla de login con selección de usuario por avatar">
+        <figcaption>Imagen 1: Pantalla de login con selección de usuario</figcaption>
+      </figure>
+
+      <p><strong>Para acceder:</strong></p>
+      <ol>
+        <li>Toca tu avatar para seleccionar tu usuario</li>
+        <li>Introduce tu PIN de 4 dígitos</li>
+        <li>Pulsa Enter o el botón de acceso</li>
+      </ol>
+
+      <h3>3.2 Realizar tu primera venta</h3>
+      <p><strong>Paso 1:</strong> En el menú lateral, haz clic en <strong>Nueva Comanda</strong></p>
+
+      <figure>
+        <img src="screenshots/05_newOrder.png" alt="Interfaz de nueva comanda con categorías y productos">
+        <figcaption>Imagen 2: Pantalla de Nueva Comanda</figcaption>
+      </figure>
+
+      <p><strong>Paso 2:</strong> Añade productos tocando las categorías y seleccionando los productos</p>
+
+      <p><strong>Paso 3:</strong> Haz clic en <strong>Cobrar</strong>, selecciona el método de pago y confirma</p>
+
+      <p>El ticket se imprimirá automáticamente si tienes una impresora configurada.</p>
+    </section>
+
+    <section id="pedidos">
+      <div class="section-header">
+        <span class="section-number">4</span>
+        <h2 class="section-title">Gestión de Pedidos</h2>
+      </div>
+
+      <h3>4.1 Crear una nueva comanda</h3>
+      <p>El proceso es simple:</p>
+      <ol class="step-list">
+        <li>Selecciona una mesa (o "Barra" / "Para llevar")</li>
+        <li>Navega por las categorías en la barra lateral</li>
+        <li>Haz clic en los productos para añadirlos</li>
+        <li>Revisa el resumen en el panel derecho</li>
+        <li>Haz clic en "Cobrar" cuando estés listo</li>
+      </ol>
+
+      <h3>4.2 Estados del pedido</h3>
+      <p>Los pedidos pasan por diferentes estados:</p>
+
+      <pre class="mermaid">graph LR
+  A[En Curso 🔵] --> B[Pendiente de Pago 🟡]
+  B --> C[Pagado 🟢]
+  C --> D[Cerrado ⚪]
+  A --> E[Cancelado 🔴]
+
+  style A fill:#e3f2fd
+  style B fill:#fff9c4
+  style C fill:#c8e6c9
+  style D fill:#f5f5f5
+  style E fill:#ffcdd2</pre>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Estado</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>En Curso</strong></td>
+            <td>Pedido activo, se pueden añadir/quitar productos</td>
+          </tr>
+          <tr>
+            <td><strong>Pendiente de Pago</strong></td>
+            <td>Listo para cobrar</td>
+          </tr>
+          <tr>
+            <td><strong>Pagado</strong></td>
+            <td>Pago recibido correctamente</td>
+          </tr>
+          <tr>
+            <td><strong>Cerrado</strong></td>
+            <td>Pedido finalizado completamente</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="productos">
+      <div class="section-header">
+        <span class="section-number">5</span>
+        <h2 class="section-title">Gestión de Productos</h2>
+      </div>
+
+      <h3>5.1 Crear un producto</h3>
+      <ol class="step-list">
+        <li>Ve a <strong>Productos</strong> en el menú lateral</li>
+        <li>Haz clic en <strong>Nuevo Producto</strong></li>
+        <li>Rellena la información:</li>
+      </ol>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Ejemplo</th>
+            <th>Obligatorio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Nombre</strong></td>
+            <td>Cerveza</td>
+            <td>Sí</td>
+          </tr>
+          <tr>
+            <td><strong>Precio</strong></td>
+            <td>2.50</td>
+            <td>Sí</td>
+          </tr>
+          <tr>
+            <td><strong>Categoría</strong></td>
+            <td>Bebidas</td>
+            <td>Sí</td>
+          </tr>
+          <tr>
+            <td><strong>IVA</strong></td>
+            <td>21%</td>
+            <td>Sí</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>Precio sin IVA:</strong> Introduce siempre el precio sin IVA. El sistema calcula el PVP automáticamente.</p>
+    </section>
+
+    <section id="clientes">
+      <div class="section-header">
+        <span class="section-number">6</span>
+        <h2 class="section-title">Gestión de Clientes</h2>
+      </div>
+
+      <h3>6.1 Crear un nuevo cliente</h3>
+      <ol class="step-list">
+        <li>En el menú lateral, haz clic en <strong>Clientes</strong></li>
+        <li>Haz clic en <strong>Nuevo Cliente</strong></li>
+        <li>Completa los datos básicos:</li>
+      </ol>
+
+      <ul>
+        <li><strong>Nombre</strong>: Nombre completo o razón social</li>
+        <li><strong>NIF/CIF</strong>: Identificación fiscal</li>
+        <li><strong>Email</strong>: Correo electrónico</li>
+        <li><strong>Teléfono</strong>: Número de contacto</li>
+      </ul>
+
+      <blockquote>
+        <strong>💡 Facturación:</strong>
+        Para generar facturas completas (F1), el cliente debe tener NIF y dirección fiscal completa.
+      </blockquote>
+    </section>
+
+    <section id="pagos">
+      <div class="section-header">
+        <span class="section-number">7</span>
+        <h2 class="section-title">Procesamiento de Pagos</h2>
+      </div>
+
+      <h3>7.1 Cobrar en efectivo</h3>
+      <figure>
+        <img src="screenshots/7.1.png" alt="Pantalla de cobro con métodos de pago">
+        <figcaption>Imagen 3: Pantalla de cobro</figcaption>
+      </figure>
+
+      <p>El sistema calcula automáticamente el cambio a devolver:</p>
+
+      <pre class="mermaid">graph LR
+  A["💰 Total: 15.50€"] --> B["💵 Cliente paga: 20.00€"]
+  B --> C["💶 Cambio: 4.50€"]
+  C --> D["🧾 Ticket impreso"]
+
+  style A fill:#ffcdd2
+  style B fill:#fff9c4
+  style C fill:#c8e6c9
+  style D fill:#e1f5fe</pre>
+
+      <h3>7.2 Pago mixto</h3>
+      <p>Para combinar varios métodos de pago:</p>
+      <ol class="step-list">
+        <li>En la pantalla de cobro, haz clic en <strong>Pago Mixto</strong></li>
+        <li>Selecciona el primer método (ej: Tarjeta) e introduce el importe parcial</li>
+        <li>Haz clic en <strong>Añadir</strong></li>
+        <li>El resto aparece pendiente</li>
+        <li>Selecciona otro método y completa</li>
+        <li>Confirma cuando la suma cubra el total</li>
+      </ol>
+    </section>
+
+    <section id="verifactu">
+      <div class="section-header">
+        <span class="section-number">8</span>
+        <h2 class="section-title">Facturación VERI*FACTU</h2>
+      </div>
+
+      <p>TPV El Haido incluye integración con el sistema VERI*FACTU de la Agencia Tributaria.</p>
+
+      <h3>8.1 Configuración inicial</h3>
+      <figure>
+        <img src="screenshots/08_settings_verifactu.png" alt="Configuración de VERI*FACTU en Ajustes">
+        <figcaption>Imagen 4: Configuración de VERI*FACTU</figcaption>
+      </figure>
+
+      <p><strong>Pasos para configurar:</strong></p>
+      <ol class="step-list">
+        <li>Ve a <strong>Ajustes → VERI*FACTU</strong></li>
+        <li>Introduce los datos del emisor (NIF, Razón Social, Dirección)</li>
+        <li>Configura la serie de factura (prefijo y número inicial)</li>
+        <li>Selecciona el tipo de factura (F1 completa o F2 simplificada)</li>
+        <li>Carga tu certificado digital (PFX/P12)</li>
+        <li>Selecciona el entorno (Pruebas o Producción)</li>
+      </ol>
+
+      <blockquote>
+        <strong>⚠️ Importante:</strong>
+        Asegúrate de estar en modo <strong>Producción</strong> cuando operes de forma real. Las facturas en modo Pruebas no son válidas fiscalmente.
+      </blockquote>
+    </section>
+
+    <section id="impresora">
+      <div class="section-header">
+        <span class="section-number">9</span>
+        <h2 class="section-title">Configuración de Impresora</h2>
+      </div>
+
+      <h3>9.1 Impresoras compatibles</h3>
+      <p>TPV El Haido soporta cualquier impresora compatible con el protocolo <strong>ESC/POS</strong>:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Marca</th>
+            <th>Modelos probados</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Epson</strong></td>
+            <td>TM-T20, TM-T88, TM-T82</td>
+          </tr>
+          <tr>
+            <td><strong>Star</strong></td>
+            <td>TSP100, TSP650, mPOP</td>
+          </tr>
+          <tr>
+            <td><strong>Bixolon</strong></td>
+            <td>SRP-330, SRP-350</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>9.2 Personalizar tickets</h3>
+      <figure>
+        <img src="screenshots/9.5.png" alt="Ejemplo de ticket impreso">
+        <figcaption>Imagen 5: Ejemplo de ticket impreso de 80mm</figcaption>
+      </figure>
+
+      <p>En <strong>Ajustes → Impresora → Ticket</strong> puedes configurar:</p>
+      <ul>
+        <li><strong>Logo</strong>: Imagen en la cabecera (BMP monocromo)</li>
+        <li><strong>Nombre negocio</strong>: Se muestra en grande en la cabecera</li>
+        <li><strong>Dirección</strong>: Línea de dirección</li>
+        <li><strong>CIF/NIF</strong>: Identificación fiscal</li>
+        <li><strong>Teléfono</strong>: Número de contacto</li>
+        <li><strong>Mensaje pie</strong>: Texto personalizado al final</li>
+      </ul>
+    </section>
+
+    <section id="temas">
+      <div class="section-header">
+        <span class="section-number">10</span>
+        <h2 class="section-title">Temas y Personalización</h2>
+      </div>
+
+      <h3>10.1 Temas disponibles</h3>
+      <figure>
+        <img src="screenshots/12_themes.png" alt="Selector de temas disponibles">
+        <figcaption>Imagen 6: Selector de temas con vista previa</figcaption>
+      </figure>
+
+      <p>La aplicación incluye <strong>6 temas predefinidos</strong>:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tema</th>
+            <th>Estilo</th>
+            <th>Ideal para</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Amethyst Haze</strong></td>
+            <td>Violeta elegante</td>
+            <td>Locales sofisticados</td>
+          </tr>
+          <tr>
+            <td><strong>Bubble</strong></td>
+            <td>Rosa vibrante</td>
+            <td>Ambiente juvenil</td>
+          </tr>
+          <tr>
+            <td><strong>Restaurant Professional</strong></td>
+            <td>Dorado cálido</td>
+            <td>Restaurantes clásicos</td>
+          </tr>
+          <tr>
+            <td><strong>Modern Cafe</strong></td>
+            <td>Verde minimalista</td>
+            <td>Cafeterías modernas</td>
+          </tr>
+          <tr>
+            <td><strong>Night Bar</strong></td>
+            <td>Oscuro con neón</td>
+            <td>Bares nocturnos</td>
+          </tr>
+          <tr>
+            <td><strong>High Contrast</strong></td>
+            <td>Blanco/Negro</td>
+            <td>Máxima legibilidad</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>10.2 Cambiar tema</h3>
+      <ol class="step-list">
+        <li>Ve a <strong>Ajustes → Apariencia</strong> (o <strong>Tema</strong>)</li>
+        <li>Haz clic en el tema que prefieras</li>
+        <li>El cambio se aplica inmediatamente</li>
+      </ol>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <h3 class="footer-title">¡Gracias por usar TPV El Haido!</h3>
+      <div class="footer-links">
+        <a href="https://docs.elhaido.es" target="_blank">📖 Documentación online</a>
+        <a href="https://github.com/MKS2508/tpv-el-haido2/issues" target="_blank">🐛 Reportar errores</a>
+      </div>
+      <p class="footer-copy">© 2026 TPV El Haido. Todos los derechos reservados.</p>
+    </footer>
+  </div>
+</body>
+</html>

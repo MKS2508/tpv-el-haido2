@@ -1,0 +1,208 @@
+---
+title: Stack Tecnológico
+description: 'Dependencias y versiones exactas de TPV El Haido'
+---
+
+# Stack Tecnológico
+
+Listado completo de tecnologías y dependencias utilizadas en TPV El Haido.
+
+## Frontend
+
+### Framework y UI
+
+| Dependencia | Versión | Uso |
+|-------------|---------|-----|
+| react | 19.2.4 | Framework UI |
+| react-dom | 19.2.4 | Renderizado DOM |
+| @radix-ui/* | latest | Componentes accesibles headless |
+| tailwindcss | 4.1.18 | Estilos utilitarios |
+| framer-motion | 12.29.2 | Animaciones |
+| lucide-react | 0.563.0 | Iconos |
+
+### Estado y Datos
+
+| Dependencia | Versión | Uso |
+|-------------|---------|-----|
+| zustand | 5.0.10 | Estado global |
+| immer | 10.x | Inmutabilidad |
+| @tanstack/react-virtual | latest | Virtualización de listas |
+
+### Utilidades
+
+| Dependencia | Versión | Uso |
+|-------------|---------|-----|
+| @mks2508/no-throw | latest | Result pattern |
+| date-fns | latest | Manipulación de fechas |
+| uuid | latest | Generación de IDs |
+| clsx | latest | Condicionales de clases |
+| tailwind-merge | latest | Merge de clases Tailwind |
+
+## Backend (Tauri/Rust)
+
+### Core
+
+| Dependencia | Versión | Uso |
+|-------------|---------|-----|
+| tauri | 2.0 | Framework desktop |
+| rusqlite | 0.31 | Base de datos SQLite |
+| serde | 1.x | Serialización JSON |
+| serde_json | 1.x | Parsing JSON |
+| tokio | 1.x | Runtime async |
+
+### Plugins Tauri
+
+| Plugin | Versión | Función |
+|--------|---------|---------|
+| tauri-plugin-shell | 2.3.4 | Ejecución de sidecars |
+| tauri-plugin-http | 2.5.6 | Peticiones HTTP |
+| tauri-plugin-updater | 2.9.0 | Auto-actualización |
+| tauri-plugin-process | 2.3.1 | Control de procesos |
+| tauri-plugin-fs | 2.x | Sistema de archivos |
+| tauri-plugin-dialog | 2.x | Diálogos nativos |
+
+## Build Tools
+
+| Herramienta | Versión | Uso |
+|-------------|---------|-----|
+| vite | 7.3.1 | Bundler y dev server |
+| typescript | 5.9.3 | Type checking |
+| @biomejs/biome | 2.3.13 | Linter y formatter |
+| oxlint | 1.42.0 | Linter adicional |
+| tsgo | 7.0.0-dev | Type checking nativo |
+
+## Runtime
+
+| Runtime | Versión | Uso |
+|---------|---------|-----|
+| bun | 1.0+ | Package manager y runtime |
+| node | 18+ | Fallback / CI |
+
+## Sidecars
+
+### aeat-bridge
+
+Sidecar Node.js para comunicación con AEAT:
+
+| Dependencia | Uso |
+|-------------|-----|
+| express | Servidor HTTP |
+| soap | Cliente SOAP |
+| node-forge | Manejo de certificados |
+
+### thermal-printer-cli
+
+Sidecar Node.js para impresión:
+
+| Dependencia | Uso |
+|-------------|-----|
+| escpos | Protocolo ESC/POS |
+| usb | Comunicación USB |
+| serialport | Comunicación serie |
+
+## Versiones de package.json
+
+```json
+{
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "@tauri-apps/api": "^2.5.0",
+    "@tauri-apps/plugin-shell": "^2.3.4",
+    "@tauri-apps/plugin-http": "^2.5.6",
+    "@tauri-apps/plugin-updater": "^2.9.0",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@radix-ui/react-dialog": "latest",
+    "@radix-ui/react-dropdown-menu": "latest",
+    "@radix-ui/react-popover": "latest",
+    "@radix-ui/react-select": "latest",
+    "@radix-ui/react-slot": "latest",
+    "@radix-ui/react-tabs": "latest",
+    "zustand": "^5.0.10",
+    "framer-motion": "^12.29.2",
+    "lucide-react": "^0.563.0",
+    "tailwindcss": "^4.1.18",
+    "clsx": "latest",
+    "tailwind-merge": "latest",
+    "@mks2508/no-throw": "latest"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1",
+    "typescript": "^5.9.3",
+    "@biomejs/biome": "^2.3.13",
+    "oxlint": "^1.42.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "latest"
+  }
+}
+```
+
+## Versiones de Cargo.toml
+
+```toml
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-http = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.31", features = ["bundled"] }
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+```
+
+## Compatibilidad de Navegadores
+
+Para el modo web/PWA:
+
+| Navegador | Versión Mínima |
+|-----------|----------------|
+| Chrome | 90+ |
+| Firefox | 90+ |
+| Safari | 14+ |
+| Edge | 90+ |
+
+## Requisitos del Sistema
+
+### Desarrollo
+
+| Requisito | Especificación |
+|-----------|----------------|
+| Node.js | 18+ |
+| Bun | 1.0+ |
+| Rust | 1.70+ |
+| RAM | 4 GB mínimo |
+| Disco | 2 GB (con dependencias) |
+
+### Producción
+
+| Requisito | Especificación |
+|-----------|----------------|
+| RAM | 512 MB mínimo |
+| Disco | 100 MB |
+| Sistema | Windows 10+, macOS 11+, Linux |
+
+## Actualización de Dependencias
+
+```bash
+# Actualizar dependencias de bun
+bun update
+
+# Actualizar dependencias de Rust
+cargo update
+
+# Verificar vulnerabilidades
+bun audit
+cargo audit
+```
+
+## Siguiente Paso
+
+- [Patrones](/docs/desarrollo/patrones)
+- [Comandos](/docs/desarrollo/comandos)

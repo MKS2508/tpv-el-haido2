@@ -1,0 +1,373 @@
+---
+title: Error Handling
+description: 'Error code system and Result Pattern in TPV El Haido'
+---
+
+# Error Handling
+
+TPV El Haido uses the Result Pattern with `@mks2508/no-throw` for explicit and typed error handling.
+
+## Philosophy
+
+Instead of using `try/catch` and exceptions:
+
+```typescript
+// ❌ Avoid
+try {
+  const products = await getProducts();
+  // use products
+} catch (error) {
+  // What type of error is it? We don't know
+  console.error(error);
+}
+```
+
+We use Results that make errors explicit:
+
+```typescript
+// ✅ Preferred
+const result = await getProducts();
+if (isErr(result)) {
+  // We know exactly what error it is
+  console.error(`[${result.error.code}] ${result.error.message}`);
+  return;
+}
+// TypeScript knows result.value exists here
+const products = result.value;
+```
+
+## Error Codes by Domain
+
+Errors are organized by functional domain:
+
+### Storage Errors
+
+| Code | Description | Common Cause |
+|------|-------------|--------------|
+| `STORAGE_READ_FAILED` | Error reading data | Corrupted DB, permissions |
+| `STORAGE_WRITE_FAILED` | Error writing data | Full disk, permissions |
+| `STORAGE_DELETE_FAILED` | Error deleting data | FK constraint |
+| `STORAGE_NOT_FOUND` | Record not found | Invalid ID |
+
+```typescript
+// src/lib/error-codes.ts
+
+export const StorageErrorCode = {
+  ReadFailed: 'STORAGE_READ_FAILED',
+  WriteFailed: 'STORAGE_WRITE_FAILED',
+  DeleteFailed: 'STORAGE_DELETE_FAILED',
+  NotFound: 'STORAGE_NOT_FOUND',
+} as const;
+```
+
+### Printer Errors
+
+| Code | Description | Common Cause |
+|------|-------------|--------------|
+| `PRINTER_CONNECTION_FAILED` | Can't connect | Wrong port, printer off |
+| `PRINTER_PRINT_FAILED` | Print error | No paper, cover open |
+| `PRINTER_NOT_CONFIGURED` | Printer not configured | Missing configuration |
+
+```typescript
+export const PrinterErrorCode = {
+  ConnectionFailed: 'PRINTER_CONNECTION_FAILED',
+  PrintFailed: 'PRINTER_PRINT_FAILED',
+  NotConfigured: 'PRINTER_NOT_CONFIGURED',
+} as const;
+```
+
+### Order Errors
+
+| Code | Description | Common Cause |
+|------|-------------|--------------|
+| `ORDER_CREATE_FAILED` | Error creating order | Validation error |
+| `ORDER_INVALID_STATE` | Invalid state | Transition not allowed |
+| `ORDER_EMPTY` | Empty order | No products |
+
+```typescript
+export const OrderErrorCode = {
+  CreateFailed: 'ORDER_CREATE_FAILED',
+  InvalidState: 'ORDER_INVALID_STATE',
+  EmptyOrder: 'ORDER_EMPTY',
+} as const;
+```
+
+### Product Errors
+
+| Code | Description | Common Cause |
+|------|-------------|--------------|
+| `PRODUCT_LOAD_FAILED` | Error loading products | DB error |
+| `PRODUCT_CREATE_FAILED` | Error creating product | Invalid data |
+| `PRODUCT_UPDATE_FAILED` | Error updating | ID doesn't exist |
+| `PRODUCT_DELETE_FAILED` | Error deleting | Product in use |
+
+```typescript
+export const ProductErrorCode = {
+  LoadFailed: 'PRODUCT_LOAD_FAILED',
+  CreateFailed: 'PRODUCT_CREATE_FAILED',
+  UpdateFailed: 'PRODUCT_UPDATE_FAILED',
+  DeleteFailed: 'PRODUCT_DELETE_FAILED',
+} as const;
+```
+
+### Auth Errors
+
+| Code | Description | Common Cause |
+|------|-------------|--------------|
+| `AUTH_INVALID_PIN` | Incorrect PIN | User typed wrong |
+| `AUTH_USER_NOT_FOUND` | User doesn't exist | Invalid ID |
+| `AUTH_SESSION_EXPIRED` | Session expired | Timeout |
+
+```typescript
+export const AuthErrorCode = {
+  InvalidPin: 'AUTH_INVALID_PIN',
+  UserNotFound: 'AUTH_USER_NOT_FOUND',
+  SessionExpired: 'AUTH_SESSION_EXPIRED',
+} as const;
+```
+
+### Network Errors
+
+| Code | Description | Common Cause |
+|------|-------------|--------------|
+| `NETWORK_TIMEOUT` | Network timeout | Slow server |
+| `NETWORK_OFFLINE` | No connection | WiFi disconnected |
+| `NETWORK_ERROR` | Generic network error | DNS, firewall |
+
+```typescript
+export const NetworkErrorCode = {
+  Timeout: 'NETWORK_TIMEOUT',
+  Offline: 'NETWORK_OFFLINE',
+  Error: 'NETWORK_ERROR',
+} as const;
+```
+
+### AEAT Errors
+
+| Code | Description | Common Cause |
+|------|-------------|--------------|
+| `AEAT_CERT_EXPIRED` | Certificate expired | Renew certificate |
+| `AEAT_CERT_INVALID` | Invalid certificate | Corrupted file |
+| `AEAT_CONNECTION_FAILED` | Connection error | AEAT down |
+| `AEAT_REJECTED` | Invoice rejected | Incorrect data |
+
+```typescript
+export const AEATErrorCode = {
+  CertExpired: 'AEAT_CERT_EXPIRED',
+  CertInvalid: 'AEAT_CERT_INVALID',
+  ConnectionFailed: 'AEAT_CONNECTION_FAILED',
+  Rejected: 'AEAT_REJECTED',
+} as const;
+```
+
+## @mks2508/no-throw API
+
+### Creating Results
+
+```typescript
+import { ok, err } from '@mks2508/no-throw';
+
+// Create an Ok
+const success = ok(42);
+// { ok: true, value: 42 }
+
+// Create an Err
+const failure = err('ERROR_CODE', 'Error message');
+// { ok: false, error: { code: 'ERROR_CODE', message: 'Error message' } }
+
+// Error with original cause
+const failureWithCause = err('ERROR_CODE', 'Message', originalError);
+```
+
+### Checking Type
+
+```typescript
+import { isOk, isErr } from '@mks2508/no-throw';
+
+const result = await someOperation();
+
+if (isOk(result)) {
+  // TypeScript knows result.value exists
+  console.log(result.value);
+}
+
+if (isErr(result)) {
+  // TypeScript knows result.error exists
+  console.error(result.error.code);
+}
+```
+
+### Catching Exceptions
+
+```typescript
+import { tryCatch, tryCatchAsync } from '@mks2508/no-throw';
+
+// Synchronous
+const parseResult = tryCatch(
+  () => JSON.parse(jsonString),
+  'PARSE_ERROR'
+);
+
+// Asynchronous
+const fetchResult = await tryCatchAsync(
+  async () => {
+    const response = await fetch('/api/data');
+    if (!response.ok) throw new Error('HTTP error');
+    return response.json();
+  },
+  'FETCH_ERROR'
+);
+```
+
+### Effects on Errors
+
+```typescript
+import { tapErr } from '@mks2508/no-throw';
+
+const result = await loadProducts();
+
+// Execute effect if error (logging, notifications)
+tapErr(result, (error) => {
+  console.error(`[${error.code}] ${error.message}`);
+  notifyUser('Error loading products');
+});
+
+// Original result is not modified
+```
+
+### Default Values
+
+```typescript
+import { unwrapOr } from '@mks2508/no-throw';
+
+const result = await loadProducts();
+
+// If error, use default value
+const products = unwrapOr(result, []);
+```
+
+### Transform Values
+
+```typescript
+import { map, mapErr } from '@mks2508/no-throw';
+
+const result = await loadProducts();
+
+// Transform value if Ok
+const names = map(result, (products) => products.map(p => p.name));
+
+// Transform error if Err
+const userFriendly = mapErr(result, (error) => ({
+  ...error,
+  message: translateError(error.code),
+}));
+```
+
+## ErrorBoundary
+
+For React rendering errors, we use ErrorBoundary:
+
+### Levels
+
+| Level | Use | Fallback |
+|-------|-----|----------|
+| `app` | Wraps entire app | Full screen error |
+| `section` | Main sections | Card with message |
+| `component` | Individual components | Minimal inline |
+
+### Implementation
+
+```tsx
+// src/components/ErrorBoundary.tsx
+
+interface Props {
+  level: 'app' | 'section' | 'component';
+  fallback?: ReactNode;
+  children: ReactNode;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <DefaultFallback level={this.props.level} />;
+    }
+    return this.props.children;
+  }
+}
+```
+
+### Usage
+
+```tsx
+// App level - main.tsx
+<ErrorBoundary level="app">
+  <App />
+</ErrorBoundary>
+
+// Section level - App.tsx
+<ErrorBoundary level="section" fallback={<SectionError />}>
+  <ProductList />
+</ErrorBoundary>
+
+// Component level
+<ErrorBoundary level="component">
+  <PriceDisplay price={price} />
+</ErrorBoundary>
+```
+
+## Complete Example
+
+```typescript
+// src/services/product.service.ts
+
+import { tryCatchAsync, isErr, tapErr, unwrapOr } from '@mks2508/no-throw';
+import { StorageErrorCode, ProductErrorCode } from '@/lib/error-codes';
+import type { Product } from '@/models/Product';
+import type { StorageResult } from '@/services/storage-adapter.interface';
+
+export async function loadProducts(
+  adapter: IStorageAdapter
+): Promise<StorageResult<Product[]>> {
+  const result = await adapter.getProducts();
+
+  // Error logging
+  tapErr(result, (error) => {
+    console.error(`[ProductService] Failed to load products: ${error.code}`);
+  });
+
+  return result;
+}
+
+export async function createProduct(
+  adapter: IStorageAdapter,
+  product: Product
+): Promise<StorageResult<void>> {
+  // Validate product
+  if (!product.name || product.price < 0) {
+    return err(ProductErrorCode.CreateFailed, 'Invalid product data');
+  }
+
+  const result = await adapter.createProduct(product);
+
+  tapErr(result, (error) => {
+    console.error(`[ProductService] Failed to create product: ${error.code}`);
+  });
+
+  return result;
+}
+```
+
+## Next Step
+
+- [Platforms](/en/docs/development/platforms)
+- [Back to Development](/en/docs/development)

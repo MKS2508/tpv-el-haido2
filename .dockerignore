@@ -27,9 +27,10 @@ Thumbs.db
 *.key
 !*.key.pub
 
-# Documentation
-*.md
-!README.md
+# Documentation (keep mdx for haidodocs content)
+CLAUDE.md
+CHANGELOG.md
+# Keep .md and .mdx in apps/haidodocs/content
 
 # Test files
 *.test.*

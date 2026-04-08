@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import type * as React from 'react';
+import type { JSX } from 'solid-js';
+import { splitProps } from 'solid-js';
 
 import { cn } from '@/lib/utils';
 
@@ -23,11 +24,12 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends JSX.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
+function Badge(props: BadgeProps) {
+  const [local, others] = splitProps(props, ['class', 'variant']);
+  return <div class={cn(badgeVariants({ variant: local.variant }), local.class)} {...others} />;
 }
 
 export { Badge, badgeVariants };

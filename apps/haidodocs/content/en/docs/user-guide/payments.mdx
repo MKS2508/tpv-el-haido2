@@ -1,0 +1,247 @@
+---
+title: Payments
+description: 'Process payments, print receipts and manage checkout in TPV El Haido'
+---
+
+# Payment Processing
+
+Learn how to charge orders, manage payment methods, and print receipts.
+
+## Checkout an Order
+
+<Steps>
+
+### Open the order
+
+From the New Order screen or by selecting an active order.
+
+### Start checkout
+
+Click the **Checkout** button (or the order total).
+
+### Select payment method
+
+| Method | Description |
+|--------|-------------|
+| **Cash** | Cash payment |
+| **Card** | Credit/debit card payment |
+| **Other** | Transfer, vouchers, etc. |
+
+### Complete payment
+
+**For cash:**
+1. Enter the amount received
+2. The system calculates change automatically
+3. Click **Confirm**
+
+**For card/other:**
+1. Click **Confirm**
+2. Process payment on your card terminal if you have one
+
+### Receipt printed
+
+If you have a printer configured, the receipt prints automatically.
+
+</Steps>
+
+## Payment Methods
+
+### Cash
+
+The cash payment flow includes:
+
+```mermaid
+graph LR
+    A[Total: €15.50] --> B[Customer pays: €20]
+    B --> C[Change: €4.50]
+    C --> D[Receipt printed]
+```
+
+**Quick amount shortcuts:**
+- Quick buttons for common bills (€5, €10, €20, €50)
+- Field to enter exact amount
+- "Exact amount" button when customer pays exactly
+
+### Card
+
+1. Select **Card** as payment method
+2. Process payment on your bank terminal
+3. Confirm in the POS when payment is successful
+
+<Callout type="info">
+  Direct integration with card terminals is in development. For now, card payment is manual.
+</Callout>
+
+### Mixed Payment
+
+To combine multiple payment methods:
+
+<Steps>
+
+### Enable mixed payment
+
+On the checkout screen, click **Mixed Payment**.
+
+### Add first method
+
+1. Select the method (e.g., Card)
+2. Enter the partial amount
+3. Click **Add**
+
+### Add second method
+
+1. The remaining amount appears as pending
+2. Select another method (e.g., Cash)
+3. Enter the amount
+4. Confirm when the sum covers the total
+
+</Steps>
+
+## Cash Drawer
+
+### Automatic opening
+
+The drawer opens automatically when:
+- Completing a cash payment
+- Using the manual "Open Drawer" function
+
+To enable/disable:
+1. Go to **Settings → Printer**
+2. Enable/disable "Open drawer automatically"
+
+### Manual opening
+
+1. In the Settings menu or toolbar
+2. Click **Open Drawer**
+3. The drawer opens (requires compatible printer)
+
+## Receipts
+
+### Receipt Content
+
+A standard receipt includes:
+
+| Section | Content |
+|---------|---------|
+| **Header** | Business name, address, Tax ID |
+| **Date/Time** | Time of sale |
+| **Products** | List with quantity, name, price |
+| **Taxes** | VAT breakdown |
+| **Total** | Total amount to pay |
+| **Payment** | Method and amount paid |
+| **Footer** | Custom message, receipt number |
+
+### Customize Receipt
+
+In **Settings → Printer → Receipt**:
+
+| Option | Description |
+|--------|-------------|
+| **Logo** | Header image (monochrome BMP) |
+| **Name** | Business name |
+| **Address** | Tax address |
+| **Tax ID** | Tax identification |
+| **Phone** | Contact |
+| **Footer message** | Text at the end of receipt |
+
+### Reprint Receipt
+
+1. Go to **History**
+2. Select the order
+3. Click **Reprint Receipt**
+
+## Returns
+
+### Cancel Order
+
+To cancel an order before closing it:
+1. Open the order
+2. Click **Cancel Order**
+3. Enter the reason (optional)
+4. Confirm
+
+### Partial Return
+
+To return specific products:
+1. Go to history and open the order
+2. Click **Return**
+3. Select products to return
+4. Confirm the amount to refund
+
+<Callout type="warning">
+  Returns generate a record for accounting and may affect AEAT invoices if already sent.
+</Callout>
+
+## Cash Close
+
+### Perform Close
+
+At the end of shift or day:
+
+<Steps>
+
+### Access Close
+
+Go to **Settings → Cash → Close**.
+
+### Review Summary
+
+The system shows:
+- Total sales
+- Breakdown by payment method
+- Number of operations
+- Expected vs. actual difference
+
+### Count Cash
+
+Enter the cash counted in the drawer.
+
+### Confirm Close
+
+Click **Close Cash** to record the close.
+
+</Steps>
+
+### Close Report
+
+The report includes:
+- Sales by category
+- Sales by product
+- Sales by user
+- Taxes collected
+- Payment methods used
+
+You can print or export the report.
+
+## Configuration
+
+### Tax Rate
+
+In **Settings → General**:
+- Configure default VAT (21%, 10%, 4%)
+- VAT is applied automatically based on product category
+
+### Rounding
+
+By default, totals are rounded to 2 decimal places. This is configurable in Settings.
+
+## Tips
+
+### Quick flow
+
+- Use keyboard shortcuts for quick checkout
+- Configure quick amount buttons for common bills
+- The "Exact amount" button speeds up payments without change
+
+### Common errors
+
+| Problem | Solution |
+|---------|----------|
+| Incorrect change | Check the amount entered |
+| Receipt not printed | Verify printer connection |
+| Drawer won't open | Check configuration and connection |
+
+## Next Step
+
+- [Configure Printer](/en/docs/user-guide/printer)
+- [VERI*FACTU Invoicing](/en/docs/user-guide/invoicing)

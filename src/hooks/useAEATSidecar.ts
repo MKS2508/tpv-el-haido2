@@ -10,10 +10,11 @@
 
 import { err, isErr, ok, type Result, tryCatchAsync } from '@mks2508/no-throw';
 import { type Child, Command } from '@tauri-apps/plugin-shell';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
+import { createEffect, createSignal, onCleanup, onMount } from 'solid-js';
 import { config } from '@/lib/config';
+import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
 import type { AEATSidecarState } from '@/models/AEAT';
+import { isTauri } from '@/services/platform';
 
 // ==================== Types ====================
 
@@ -27,7 +28,7 @@ interface UseAEATSidecarOptions {
 }
 
 interface UseAEATSidecarReturn {
-  state: AEATSidecarState;
+  state: () => AEATSidecarState;
   start: () => Promise<SidecarResult<void>>;
   stop: () => Promise<SidecarResult<void>>;
   restart: () => Promise<SidecarResult<void>>;
@@ -42,13 +43,6 @@ const DEFAULT_MAX_RESTART_ATTEMPTS = config.aeat.maxRestartAttempts;
 const STARTUP_TIMEOUT = config.aeat.startupTimeout;
 
 // ==================== Utilities ====================
-
-/**
- * Verifica si estamos en entorno Tauri
- */
-const isTauri = (): boolean => {
-  return typeof window !== 'undefined' && '__TAURI__' in window;
-};
 
 /**
  * Espera a que el servicio esté listo
@@ -89,16 +83,16 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
   } = options;
 
   // State
-  const [state, setState] = useState<AEATSidecarState>({
+  const [state, setState] = createSignal<AEATSidecarState>({
     status: 'stopped',
     port,
   });
 
-  // Refs
-  const childProcessRef = useRef<Child | null>(null);
-  const healthCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const restartAttemptsRef = useRef(0);
-  const isStartingRef = useRef(false);
+  // Refs (using signals for mutable state)
+  let childProcessRef: Child | null = null;
+  let healthCheckIntervalRef: ReturnType<typeof setInterval> | null = null;
+  let restartAttemptsCount = 0;
+  let isStarting = false;
 
   // Check if sidecar feature is available (only in Tauri)
   const isAvailable = isTauri();
@@ -106,7 +100,7 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
   /**
    * Inicia el sidecar
    */
-  const start = useCallback(async (): Promise<SidecarResult<void>> => {
+  const start = async (): Promise<SidecarResult<void>> => {
     if (!isAvailable) {
       return err({
         code: AEATErrorCode.ModeNotAvailable,
@@ -114,30 +108,30 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
       });
     }
 
-    if (isStartingRef.current) {
+    if (isStarting) {
       return err({
         code: AEATErrorCode.SidecarStartFailed,
         message: 'Sidecar is already starting',
       });
     }
 
-    if (state.status === 'running') {
+    if (state().status === 'running') {
       return ok(undefined);
     }
 
-    isStartingRef.current = true;
+    isStarting = true;
     setState((prev) => ({ ...prev, status: 'starting', error: undefined }));
 
-    const result = await tryCatchAsync(async () => {
+    const startSidecar = async () => {
       // Crear comando del sidecar
       const command = Command.sidecar('sidecars/aeat-bridge', ['--port', port.toString()]);
 
       // Configurar listeners
-      command.on('close', (data) => {
+      const handleClose = (data: { code: number | null }) => {
         console.log(`[AEAT Sidecar] Process closed with code ${data.code}`);
-        childProcessRef.current = null;
+        childProcessRef = null;
 
-        if (data.code !== 0 && state.status === 'running') {
+        if (data.code !== null && data.code !== 0 && state().status === 'running') {
           setState((prev) => ({
             ...prev,
             status: 'error',
@@ -145,17 +139,18 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
           }));
 
           // Auto-restart si no hemos excedido el límite
-          if (restartAttemptsRef.current < maxRestartAttempts) {
-            restartAttemptsRef.current++;
+          if (restartAttemptsCount < maxRestartAttempts) {
+            restartAttemptsCount++;
             console.log(
-              `[AEAT Sidecar] Attempting restart ${restartAttemptsRef.current}/${maxRestartAttempts}`
+              `[AEAT Sidecar] Attempting restart ${restartAttemptsCount}/${maxRestartAttempts}`
             );
             setTimeout(() => start(), 2000);
           }
         } else {
           setState((prev) => ({ ...prev, status: 'stopped' }));
         }
-      });
+      };
+      command.on('close', handleClose);
 
       command.on('error', (error) => {
         console.error('[AEAT Sidecar] Process error:', error);
@@ -176,7 +171,7 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
 
       // Spawn el proceso
       const child = await command.spawn();
-      childProcessRef.current = child;
+      childProcessRef = child;
 
       // Esperar a que el servicio esté listo
       const isReady = await waitForServiceReady(port);
@@ -188,16 +183,18 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
       }
 
       // Éxito
-      restartAttemptsRef.current = 0;
+      restartAttemptsCount = 0;
       setState({
         status: 'running',
         pid: child.pid,
         port,
         startedAt: new Date(),
       });
-    }, AEATErrorCode.SidecarStartFailed);
+    };
 
-    isStartingRef.current = false;
+    const result = await tryCatchAsync(startSidecar, AEATErrorCode.SidecarStartFailed);
+
+    isStarting = false;
 
     if (isErr(result)) {
       setState((prev) => ({
@@ -208,12 +205,12 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
     }
 
     return result;
-  }, [isAvailable, state.status, port, maxRestartAttempts]);
+  };
 
   /**
    * Detiene el sidecar
    */
-  const stop = useCallback(async (): Promise<SidecarResult<void>> => {
+  const stop = async (): Promise<SidecarResult<void>> => {
     if (!isAvailable) {
       return err({
         code: AEATErrorCode.ModeNotAvailable,
@@ -221,7 +218,7 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
       });
     }
 
-    if (state.status === 'stopped' || !childProcessRef.current) {
+    if (state().status === 'stopped' || !childProcessRef) {
       setState((prev) => ({ ...prev, status: 'stopped' }));
       return ok(undefined);
     }
@@ -229,9 +226,9 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
     setState((prev) => ({ ...prev, status: 'stopping' }));
 
     const result = await tryCatchAsync(async () => {
-      if (childProcessRef.current) {
-        await childProcessRef.current.kill();
-        childProcessRef.current = null;
+      if (childProcessRef) {
+        await childProcessRef.kill();
+        childProcessRef = null;
       }
       setState({ status: 'stopped', port });
     }, AEATErrorCode.SidecarStopFailed);
@@ -245,12 +242,12 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
     }
 
     return result;
-  }, [isAvailable, state.status, port]);
+  };
 
   /**
    * Reinicia el sidecar
    */
-  const restart = useCallback(async (): Promise<SidecarResult<void>> => {
+  const restart = async (): Promise<SidecarResult<void>> => {
     const stopResult = await stop();
     if (isErr(stopResult)) {
       return stopResult;
@@ -260,21 +257,22 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     return start();
-  }, [stop, start]);
+  };
 
   /**
    * Health check periódico
    */
-  useEffect(() => {
-    if (state.status !== 'running' || !healthCheckInterval) {
-      if (healthCheckIntervalRef.current) {
-        clearInterval(healthCheckIntervalRef.current);
-        healthCheckIntervalRef.current = null;
+  createEffect(() => {
+    const currentState = state();
+    if (currentState.status !== 'running' || !healthCheckInterval) {
+      if (healthCheckIntervalRef) {
+        clearInterval(healthCheckIntervalRef);
+        healthCheckIntervalRef = null;
       }
       return;
     }
 
-    healthCheckIntervalRef.current = setInterval(async () => {
+    healthCheckIntervalRef = setInterval(async () => {
       try {
         const response = await fetch(`http://localhost:${port}/api/health`, {
           method: 'GET',
@@ -289,38 +287,28 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
         // El proceso puede haber muerto, el listener de 'close' manejará esto
       }
     }, healthCheckInterval);
-
-    return () => {
-      if (healthCheckIntervalRef.current) {
-        clearInterval(healthCheckIntervalRef.current);
-        healthCheckIntervalRef.current = null;
-      }
-    };
-  }, [state.status, healthCheckInterval, port]);
-
-  /**
-   * Auto-start al montar
-   */
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Deliberadamente excluimos start y state.status para evitar loops infinitos
-  useEffect(() => {
-    if (autoStart && isAvailable && state.status === 'stopped') {
-      start();
-    }
-  }, [autoStart, isAvailable]);
+  });
 
   /**
    * Cleanup al desmontar
    */
-  useEffect(() => {
-    return () => {
-      if (childProcessRef.current) {
-        childProcessRef.current.kill().catch(console.error);
-      }
-      if (healthCheckIntervalRef.current) {
-        clearInterval(healthCheckIntervalRef.current);
-      }
-    };
-  }, []);
+  onCleanup(() => {
+    if (childProcessRef) {
+      childProcessRef.kill().catch(console.error);
+    }
+    if (healthCheckIntervalRef) {
+      clearInterval(healthCheckIntervalRef);
+    }
+  });
+
+  /**
+   * Auto-start al montar
+   */
+  onMount(() => {
+    if (autoStart && isAvailable && state().status === 'stopped') {
+      start();
+    }
+  });
 
   return {
     state,

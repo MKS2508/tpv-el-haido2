@@ -119,7 +119,7 @@
 .environment-bright .category-button,
 .environment-bright .payment-button {
   border-width: 2px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 /* Low Light Environment Mode */

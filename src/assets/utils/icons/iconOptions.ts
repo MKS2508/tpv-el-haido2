@@ -6,7 +6,7 @@ import {
   IceCreamIcon,
   UtensilsIcon,
   WineIcon,
-} from 'lucide-react';
+} from 'lucide-solid';
 
 const iconOptions = [
   { value: 'CoffeeIcon', label: 'Coffee', icon: CoffeeIcon },

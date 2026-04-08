@@ -1,10 +1,8 @@
-import { BeerIcon } from 'lucide-react';
-import React from 'react';
-import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
-import iconOptions from '@/assets/utils/icons/iconOptions';
+import { batch, createRoot, createSignal } from 'solid-js';
+import { createStore, produce } from 'solid-js/store';
 import { config } from '@/lib/config';
 import type Category from '@/models/Category';
+import type Customer from '@/models/Customer';
 import type Order from '@/models/Order';
 import type { OrderItem } from '@/models/Order';
 import type Product from '@/models/Product';
@@ -13,27 +11,31 @@ import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter';
 import type User from '@/models/User';
 import { HttpStorageAdapter } from '@/services/http-storage-adapter';
 import { IndexedDbStorageAdapter } from '@/services/indexeddb-storage-adapter';
+import { isTauri } from '@/services/platform';
 import { SqliteStorageAdapter } from '@/services/sqlite-storage-adapter';
 import type { IStorageAdapter, StorageMode } from '@/services/storage-adapter.interface';
+import type { LicenseStatus } from '@/types/license';
 
-// Debounce utility para localStorage
-const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number): T => {
-  let timeoutId: NodeJS.Timeout;
-  return ((...args: any[]) => {
+// Debounce utility for localStorage
+const debounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number): T => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return ((...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   }) as T;
 };
 
-// Debounced localStorage setters para reducir escrituras
+// Debounced localStorage setters
+// @ts-expect-error - Type assertion for debounce signature mismatch
 const debouncedLocalStorageSet = debounce((key: string, value: string) => {
   try {
     localStorage.setItem(key, value);
   } catch (error) {
     console.warn(`Failed to save ${key} to localStorage:`, error);
   }
-}, 300);
+}, 300) as (key: string, value: string) => void;
 
+// State types
 export interface AppState {
   users: User[];
   selectedUser: User | null;
@@ -43,57 +45,28 @@ export interface AppState {
   tables: ITable[];
   categories: Category[];
   products: Product[];
+  customers: Customer[];
   orderHistory: Order[];
   paymentMethod: string;
   cashAmount: string;
   showTicketDialog: boolean;
   storageMode: StorageMode;
-  storageAdapter: IStorageAdapter;
   useStockImages: boolean;
-  touchOptimizationsEnabled: boolean; // New property
+  touchOptimizationsEnabled: boolean;
   debugMode: boolean;
   isBackendConnected: boolean;
   autoOpenCashDrawer: boolean;
   taxRate: number;
-  setUsers: (users: User[]) => void;
-  setSelectedUser: (user: User | null) => void;
-  setSelectedOrder: (order: Order | null) => void;
-  setSelectedOrderId: (orderId: number | null) => void;
-  setThermalPrinterOptions: (options: ThermalPrinterServiceOptions | null) => void;
-  setTables: (tables: ITable[]) => void;
-  setCategories: (categories: Category[]) => void;
-  setProducts: (products: Product[]) => void;
-  setOrderHistory: (orderHistory: Order[]) => void;
   activeOrders: Order[];
   recentProducts: Product[];
-  setActiveOrders: (activeOrders: Order[]) => void;
-  addToOrder: (orderId: number, product: Product | OrderItem) => void;
-  setRecentProducts: (recentProducts: Product[]) => void;
-  removeFromOrder: (orderId: number, productId: number) => void;
-  setPaymentMethod: (method: string) => void;
-  setCashAmount: (amount: string) => void;
-  setShowTicketDialog: (show: boolean) => void;
-  setTouchOptimizationsEnabled: (enabled: boolean) => void; // New setter
-  setStorageMode: (mode: StorageMode) => void;
-  setUseStockImages: (use: boolean) => void;
-  setDebugMode: (enabled: boolean) => void;
-  setBackendConnected: (connected: boolean) => void;
-  setAutoOpenCashDrawer: (enabled: boolean) => void;
-  setTaxRate: (rate: number) => void;
-  handleTableChange: (tableId: number) => void;
-  handleCompleteOrder: (order: Order) => void;
-  closeOrder: (orderId: number) => void;
+  licenseStatus: LicenseStatus | null;
+  showLicenseDialog: boolean;
 }
 
 // Initialize storage adapters
 const sqliteAdapter = new SqliteStorageAdapter();
 const httpAdapter = new HttpStorageAdapter();
 const indexedDbAdapter = new IndexedDbStorageAdapter();
-
-// Check if running in Tauri environment
-const isTauri = (): boolean => {
-  return typeof window !== 'undefined' && '__TAURI__' in window;
-};
 
 // Get storage adapter based on mode
 const getStorageAdapterForMode = (mode: StorageMode): IStorageAdapter => {
@@ -109,7 +82,6 @@ const getStorageAdapterForMode = (mode: StorageMode): IStorageAdapter => {
 
 // Get initial storage mode from env, localStorage, or smart defaults
 const getInitialStorageMode = (): StorageMode => {
-  // First, check if there's a saved preference in localStorage
   try {
     const saved = localStorage.getItem('tpv-storage-mode') as StorageMode | null;
     if (saved === 'sqlite' || saved === 'http' || saved === 'indexeddb') {
@@ -119,22 +91,18 @@ const getInitialStorageMode = (): StorageMode => {
     // Ignore localStorage errors
   }
 
-  // If env variable is set, use that as default
   if (config.storage.defaultMode) {
     return config.storage.defaultMode;
   }
 
-  // Otherwise, use smart defaults based on environment
   if (isTauri()) {
-    // When running in Tauri, default to sqlite
     return 'sqlite';
   }
 
-  // When running in browser (development), default to indexeddb
   return 'indexeddb';
 };
 
-// Get initial stock images setting from localStorage or default to true
+// Get initial stock images setting from localStorage
 const getInitialUseStockImages = (): boolean => {
   try {
     const saved = localStorage.getItem('tpv-use-stock-images');
@@ -144,7 +112,7 @@ const getInitialUseStockImages = (): boolean => {
   }
 };
 
-// Get initial auto-open cash drawer setting from localStorage or default to false
+// Get initial auto-open cash drawer setting
 const getInitialAutoOpenCashDrawer = (): boolean => {
   try {
     const saved = localStorage.getItem('tpv-auto-open-cash-drawer');
@@ -154,7 +122,7 @@ const getInitialAutoOpenCashDrawer = (): boolean => {
   }
 };
 
-// Get initial tax rate from localStorage or default to 21 (Spain IVA)
+// Get initial tax rate from localStorage
 const getInitialTaxRate = (): number => {
   try {
     const saved = localStorage.getItem('tpv-tax-rate');
@@ -166,8 +134,10 @@ const getInitialTaxRate = (): number => {
 
 const initialStorageMode = getInitialStorageMode();
 
-const useStore = create(
-  immer<AppState>((set, get) => ({
+// Create the store using createRoot to ensure it's a singleton
+function createAppStore() {
+  // State store (for serializable data)
+  const [state, setState] = createStore<AppState>({
     users: [],
     selectedUser: null,
     selectedOrder: null,
@@ -176,288 +146,332 @@ const useStore = create(
     tables: [],
     categories: [],
     products: [],
+    customers: [],
     storageMode: initialStorageMode,
-    storageAdapter: getStorageAdapterForMode(initialStorageMode),
     useStockImages: getInitialUseStockImages(),
-    debugMode: true, // Activado por defecto
+    debugMode: true,
     isBackendConnected: false,
-    orderHistory: [
-      {
-        id: 1,
-        date: '2023-03-01T00:00:00.000Z',
-        total: 100,
-        change: 0,
-        totalPaid: 0,
-        itemCount: 0,
-        tableNumber: 0,
-        paymentMethod: 'efectivo',
-        ticketPath: '',
-        status: 'paid',
-        items: [
-          {
-            id: 1,
-            name: 'Café solo ☕️',
-            quantity: 1,
-            price: 10,
-            category: 'Cafés ☕️',
-            brand: 'El Haido',
-            icon: React.createElement(
-              iconOptions.find((option) => option.value === 'CoffeeIcon')?.icon || BeerIcon
-            ),
-            iconType: 'preset',
-            selectedIcon: '',
-            uploadedImage: null,
-          },
-        ],
-      },
-    ],
+    orderHistory: [],
     paymentMethod: 'efectivo',
-    selectedLanguage: 'es',
     cashAmount: '',
     showTicketDialog: false,
     activeOrders: [],
     recentProducts: [],
-    touchOptimizationsEnabled: false, // Initial state for touch optimizations
+    touchOptimizationsEnabled: false,
     autoOpenCashDrawer: getInitialAutoOpenCashDrawer(),
     taxRate: getInitialTaxRate(),
-    // Methods
-    setUsers: (users) =>
-      set((state) => {
-        state.users = users;
-      }),
-    setSelectedUser: (user) =>
-      set((state) => {
-        state.selectedUser = user;
-      }),
-    setSelectedOrder: (order) =>
-      set((state) => {
-        state.selectedOrder = order;
-      }),
-    setSelectedOrderId: (orderId) =>
-      set((state) => {
-        state.selectedOrderId = orderId;
-        state.selectedOrder = state.activeOrders.find((o: Order) => o.id === orderId) || null;
-      }),
-    setThermalPrinterOptions: (options) =>
-      set((state) => {
-        state.thermalPrinterOptions = options;
-      }),
-    setTables: (tables) =>
-      set((state) => {
-        state.tables = tables;
-      }),
-    setCategories: (categories) =>
-      set((state) => {
-        state.categories = categories;
-      }),
-    setProducts: (products) =>
-      set((state) => {
-        // Deduplicar productos por ID para evitar duplicados
-        const uniqueProducts = products.filter(
-          (product, index, self) => index === self.findIndex((p) => p.id === product.id)
+    licenseStatus: null,
+    showLicenseDialog: false,
+  });
+
+  // Storage adapter signal (non-serializable)
+  const [storageAdapter, setStorageAdapterInternal] = createSignal<IStorageAdapter>(
+    getStorageAdapterForMode(initialStorageMode)
+  );
+
+  // === SETTERS ===
+
+  const setUsers = (users: User[]) => {
+    // Ensure we create a new array reference to trigger reactivity
+    setState('users', users.slice());
+  };
+
+  const setSelectedUser = (user: User | null) => setState('selectedUser', user);
+
+  const setSelectedOrder = (order: Order | null) => setState('selectedOrder', order);
+
+  const setSelectedOrderId = (orderId: number | null) => {
+    batch(() => {
+      setState('selectedOrderId', orderId);
+      const foundOrder = state.activeOrders.find((o) => o.id === orderId) || null;
+      setState('selectedOrder', foundOrder);
+    });
+  };
+
+  const setThermalPrinterOptions = (options: ThermalPrinterServiceOptions | null) =>
+    setState('thermalPrinterOptions', options);
+
+  const setTables = (tables: ITable[]) => {
+    setState('tables', tables.slice());
+  };
+
+  const setCategories = (categories: Category[]) => {
+    setState('categories', categories.slice());
+  };
+
+  const setProducts = (products: Product[]) => {
+    const uniqueProducts = products.filter(
+      (product, index, self) => index === self.findIndex((p) => p.id === product.id)
+    );
+    setState('products', uniqueProducts.slice());
+  };
+
+  const setCustomers = (customers: Customer[]) => {
+    const uniqueCustomers = customers.filter(
+      (customer, index, self) => index === self.findIndex((c) => c.id === customer.id)
+    );
+    setState('customers', uniqueCustomers.slice());
+  };
+
+  const addCustomer = async (customer: Customer) => {
+    const dataService = storageAdapter();
+    if (dataService.createCustomer) {
+      const result = await dataService.createCustomer(customer);
+      if (result.ok) {
+        setState(
+          produce((s) => {
+            s.customers.push(customer);
+          })
         );
-        state.products = uniqueProducts;
-      }),
-    setOrderHistory: (orderHistory) =>
-      set((state) => {
-        state.orderHistory = orderHistory;
-      }),
-    setActiveOrders: (activeOrders) =>
-      set((state) => {
-        state.activeOrders = activeOrders;
-      }),
-    setRecentProducts: (recentProducts) =>
-      set((state) => {
-        state.recentProducts = recentProducts;
-      }),
-    setPaymentMethod: (method) =>
-      set((state) => {
-        state.paymentMethod = method;
-      }),
-    setCashAmount: (amount) =>
-      set((state) => {
-        state.cashAmount = amount;
-      }),
-    setShowTicketDialog: (show) =>
-      set((state) => {
-        state.showTicketDialog = show;
-      }),
-    setSelectedLanguage: (language: string) =>
-      set((state) => {
-        (state as any).selectedLanguage = language;
-      }),
-    setUseStockImages: (use: boolean) =>
-      set((state) => {
-        state.useStockImages = use;
-        debouncedLocalStorageSet('tpv-use-stock-images', use.toString());
-      }),
-    setTouchOptimizationsEnabled: (enabled) =>
-      set((state) => {
-        state.touchOptimizationsEnabled = enabled;
-        debouncedLocalStorageSet('tpv-touch-optimizations', enabled.toString());
-      }),
+      }
+      return result;
+    }
+    // Fallback: just add to state if storage doesn't support customers
+    setState(
+      produce((s) => {
+        s.customers.push(customer);
+      })
+    );
+  };
 
-    setDebugMode: (enabled) =>
-      set((state) => {
-        state.debugMode = enabled;
-        debouncedLocalStorageSet('tpv-debug-mode', enabled.toString());
-      }),
+  const updateCustomer = async (customer: Customer) => {
+    const dataService = storageAdapter();
+    if (dataService.updateCustomer) {
+      const result = await dataService.updateCustomer(customer);
+      if (result.ok) {
+        setState(
+          produce((s) => {
+            const index = s.customers.findIndex((c) => c.id === customer.id);
+            if (index !== -1) {
+              s.customers[index] = customer;
+            }
+          })
+        );
+      }
+      return result;
+    }
+    // Fallback: just update state if storage doesn't support customers
+    setState(
+      produce((s) => {
+        const index = s.customers.findIndex((c) => c.id === customer.id);
+        if (index !== -1) {
+          s.customers[index] = customer;
+        }
+      })
+    );
+  };
 
-    setBackendConnected: (connected) =>
-      set((state) => {
-        state.isBackendConnected = connected;
-      }),
+  const deleteCustomer = async (customerId: number) => {
+    const dataService = storageAdapter();
+    const customerToDelete = state.customers.find((c) => c.id === customerId);
+    if (customerToDelete && dataService.deleteCustomer) {
+      const result = await dataService.deleteCustomer(customerToDelete);
+      if (result.ok) {
+        setState(
+          produce((s) => {
+            s.customers = s.customers.filter((c) => c.id !== customerId);
+          })
+        );
+      }
+      return result;
+    }
+    // Fallback: just remove from state if storage doesn't support customers
+    setState(
+      produce((s) => {
+        s.customers = s.customers.filter((c) => c.id !== customerId);
+      })
+    );
+  };
 
-    setAutoOpenCashDrawer: (enabled) =>
-      set((state) => {
-        state.autoOpenCashDrawer = enabled;
-        debouncedLocalStorageSet('tpv-auto-open-cash-drawer', enabled.toString());
-      }),
+  const setOrderHistory = (orderHistory: Order[]) => {
+    setState('orderHistory', orderHistory.slice());
+  };
 
-    setTaxRate: (rate) =>
-      set((state) => {
-        state.taxRate = rate;
-        debouncedLocalStorageSet('tpv-tax-rate', rate.toString());
-      }),
+  const setActiveOrders = (activeOrders: Order[]) => {
+    setState('activeOrders', activeOrders.slice());
+  };
 
-    // Storage management methods
-    setStorageMode: (mode: StorageMode) =>
-      set((state) => {
-        state.storageMode = mode;
-        state.storageAdapter = getStorageAdapterForMode(mode);
-        localStorage.setItem('tpv-storage-mode', mode);
-      }),
-    getStorageAdapter: () => {
-      const state = get();
-      return state.storageAdapter;
-    },
+  const setRecentProducts = (recentProducts: Product[]) =>
+    setState('recentProducts', recentProducts.slice());
 
-    handleTableChange: async (tableId: number) => {
-      const state = get();
-      const dataService = state.storageAdapter;
-      console.log(`[handleTableChange] Changing to table ${tableId}`);
+  const setPaymentMethod = (method: string) => setState('paymentMethod', method);
 
-      // Buscar si ya existe una orden para esta mesa específica
-      const existingOrder = state.activeOrders.find(
-        (order: Order) => order.tableNumber === tableId && order.status === 'inProgress'
+  const setCashAmount = (amount: string) => setState('cashAmount', amount);
+
+  const setShowTicketDialog = (show: boolean) => setState('showTicketDialog', show);
+
+  const setUseStockImages = (use: boolean) => {
+    setState('useStockImages', use);
+    debouncedLocalStorageSet('tpv-use-stock-images', use.toString());
+  };
+
+  const setTouchOptimizationsEnabled = (enabled: boolean) => {
+    setState('touchOptimizationsEnabled', enabled);
+    debouncedLocalStorageSet('tpv-touch-optimizations', enabled.toString());
+  };
+
+  const setDebugMode = (enabled: boolean) => {
+    setState('debugMode', enabled);
+    debouncedLocalStorageSet('tpv-debug-mode', enabled.toString());
+  };
+
+  const setBackendConnected = (connected: boolean) => setState('isBackendConnected', connected);
+
+  const setAutoOpenCashDrawer = (enabled: boolean) => {
+    setState('autoOpenCashDrawer', enabled);
+    debouncedLocalStorageSet('tpv-auto-open-cash-drawer', enabled.toString());
+  };
+
+  const setTaxRate = (rate: number) => {
+    setState('taxRate', rate);
+    debouncedLocalStorageSet('tpv-tax-rate', rate.toString());
+  };
+
+  const setStorageMode = (mode: StorageMode) => {
+    batch(() => {
+      setState('storageMode', mode);
+      setStorageAdapterInternal(getStorageAdapterForMode(mode) as IStorageAdapter);
+    });
+    localStorage.setItem('tpv-storage-mode', mode);
+  };
+
+  const setLicenseStatus = (status: LicenseStatus | null) => setState('licenseStatus', status);
+
+  const setShowLicenseDialog = (show: boolean) => setState('showLicenseDialog', show);
+
+  // === COMPLEX ACTIONS ===
+
+  const handleTableChange = async (tableId: number) => {
+    const dataService = storageAdapter();
+    console.log(`[handleTableChange] Changing to table ${tableId}`);
+
+    // Only find existing orders with items (active orders)
+    const existingOrder = state.activeOrders.find(
+      (order) =>
+        order.tableNumber === tableId && order.status === 'inProgress' && order.items.length > 0
+    );
+
+    if (existingOrder) {
+      console.log(
+        `[handleTableChange] Found existing active order ${existingOrder.id} for table ${tableId}`
+      );
+      batch(() => {
+        setState('selectedOrderId', existingOrder.id);
+        setState('selectedOrder', existingOrder);
+      });
+    } else {
+      // Look for empty orders to reuse
+      const emptyOrdersWithoutTable = state.activeOrders.filter(
+        (order) =>
+          order.items.length === 0 && (order.tableNumber === 0 || order.tableNumber === null)
       );
 
-      if (existingOrder) {
+      if (emptyOrdersWithoutTable.length > 0) {
         console.log(
-          `[handleTableChange] Found existing order ${existingOrder.id} for table ${tableId}`
+          `[handleTableChange] Assigning empty order ${emptyOrdersWithoutTable[0].id} to table ${tableId}`
         );
-        set((state) => {
-          state.selectedOrderId = existingOrder.id;
-          state.selectedOrder = existingOrder;
-        });
-      } else {
-        // Solo buscar órdenes vacías que NO tengan mesa asignada (tableNumber === 0 o null)
-        const emptyOrdersWithoutTable = state.activeOrders.filter(
-          (order: Order) =>
-            order.items.length === 0 && (order.tableNumber === 0 || order.tableNumber === null)
-        );
+        const updatedOrder: Order = { ...emptyOrdersWithoutTable[0], tableNumber: tableId };
 
-        if (emptyOrdersWithoutTable.length > 0) {
-          console.log(
-            `[handleTableChange] Assigning empty order ${emptyOrdersWithoutTable[0].id} to table ${tableId}`
-          );
-          const updatedOrder: Order = { ...emptyOrdersWithoutTable[0], tableNumber: tableId };
-
-          try {
-            await dataService.updateOrder(updatedOrder);
-            set((state) => {
-              const orderIndex = state.activeOrders.findIndex(
-                (order: Order) => order.id === emptyOrdersWithoutTable[0].id
+        try {
+          await dataService.updateOrder(updatedOrder);
+          setState(
+            produce((s) => {
+              const orderIndex = s.activeOrders.findIndex(
+                (order) => order.id === emptyOrdersWithoutTable[0].id
               );
               if (orderIndex !== -1) {
-                state.activeOrders[orderIndex] = updatedOrder;
+                s.activeOrders[orderIndex] = updatedOrder;
               }
-              state.selectedOrderId = emptyOrdersWithoutTable[0].id;
-              state.selectedOrder = updatedOrder;
-            });
-          } catch (error) {
-            console.error('[handleTableChange] Error updating empty order:', error);
-          }
-        } else {
-          console.log(`[handleTableChange] Creating new order for table ${tableId}`);
-          // Generar ID único más robusto
-          const newId = Date.now() + Math.floor(Math.random() * 1000);
-          const newOrder: Order = {
-            id: newId,
-            tableNumber: tableId,
-            status: 'inProgress',
-            ticketPath: '',
-            paymentMethod: 'efectivo',
-            items: [],
-            total: 0,
-            date: new Date().toISOString().split('T')[0],
-            itemCount: 0,
-            totalPaid: 0,
-            change: 0,
-          };
-
-          try {
-            await dataService.createOrder(newOrder);
-            set((state) => {
-              state.activeOrders.push(newOrder);
-              state.selectedOrderId = newOrder.id;
-              state.selectedOrder = newOrder;
-            });
-          } catch (error) {
-            console.error('[handleTableChange] Error creating new order:', error);
-          }
-        }
-      }
-    },
-
-    handleCompleteOrder: async (order: Order) => {
-      const state = get();
-      const dataService = state.storageAdapter;
-      const currentOrder = state.activeOrders.find((o: Order) => o.id === order.id) || order;
-      const completedOrder: Order = {
-        ...currentOrder,
-        status: 'paid',
-        itemCount: currentOrder.items.reduce(
-          (sum: number, item: { quantity: number }) => sum + item.quantity,
-          0
-        ),
-        ticketPath: `/home/mks/WebStormProjects/tpv/tickets/ticket-${currentOrder.id}_${new Date().toISOString().split('T')[0]}.pdf`,
-      };
-      await dataService.updateOrder(completedOrder);
-      set((state) => {
-        state.orderHistory.push(completedOrder);
-        state.activeOrders = state.activeOrders.filter((o: Order) => o.id !== completedOrder.id);
-        state.paymentMethod = 'efectivo';
-        state.cashAmount = '';
-        state.showTicketDialog = false;
-        state.selectedOrderId = null;
-      });
-    },
-
-    closeOrder: async (orderId: number) => {
-      const state = get();
-      const dataService = state.storageAdapter;
-      const orderToDelete = state.activeOrders.find((o: Order) => o.id === orderId);
-      if (orderToDelete) {
-        await dataService.deleteOrder(orderToDelete);
-      }
-      set((state) => {
-        state.activeOrders = state.activeOrders.filter((o: Order) => o.id !== orderId);
-        state.orderHistory = state.orderHistory.filter((o: Order) => o.id !== orderId);
-        if (state.selectedOrderId === orderId) {
-          state.selectedOrderId = state.activeOrders.length > 0 ? state.activeOrders[0].id : null;
-        }
-      });
-    },
-
-    addToOrder: async (orderId: number, item: Product | OrderItem) => {
-      set((state) => {
-        const orderIndex = state.activeOrders.findIndex((order: Order) => order.id === orderId);
-        if (orderIndex !== -1) {
-          const order = state.activeOrders[orderIndex];
-          const existingItemIndex = order.items.findIndex(
-            (orderItem: OrderItem) => orderItem.id === item.id
+              s.selectedOrderId = emptyOrdersWithoutTable[0].id;
+              s.selectedOrder = updatedOrder;
+            })
           );
+        } catch (error) {
+          console.error('[handleTableChange] Error updating empty order:', error);
+        }
+      } else {
+        console.log(`[handleTableChange] Creating new order for table ${tableId}`);
+        const newId = Date.now() + Math.floor(Math.random() * 1000);
+        const newOrder: Order = {
+          id: newId,
+          tableNumber: tableId,
+          status: 'inProgress',
+          ticketPath: '',
+          paymentMethod: 'efectivo',
+          items: [] as OrderItem[],
+          total: 0,
+          date: new Date().toISOString().split('T')[0],
+          itemCount: 0,
+          totalPaid: 0,
+          change: 0,
+        };
+
+        try {
+          await dataService.createOrder(newOrder);
+          batch(() => {
+            setState(
+              produce((s) => {
+                s.activeOrders.push(newOrder);
+              })
+            );
+            setState('selectedOrderId', newOrder.id);
+            setState('selectedOrder', newOrder);
+          });
+        } catch (error) {
+          console.error('[handleTableChange] Error creating new order:', error);
+        }
+      }
+    }
+  };
+
+  const handleCompleteOrder = async (order: Order) => {
+    const dataService = storageAdapter();
+    const currentOrder = state.activeOrders.find((o) => o.id === order.id) || order;
+    const completedOrder: Order = {
+      ...currentOrder,
+      status: 'paid',
+      itemCount: currentOrder.items.reduce((sum, item) => sum + item.quantity, 0),
+      ticketPath: `/home/mks/WebStormProjects/tpv/tickets/ticket-${currentOrder.id}_${new Date().toISOString().split('T')[0]}.pdf`,
+    };
+    await dataService.updateOrder(completedOrder);
+    setState(
+      produce((s) => {
+        s.orderHistory.push(completedOrder);
+        s.activeOrders = s.activeOrders.filter((o) => o.id !== completedOrder.id);
+        s.paymentMethod = 'efectivo';
+        s.cashAmount = '';
+        s.showTicketDialog = false;
+        s.selectedOrderId = null;
+      })
+    );
+  };
+
+  const closeOrder = async (orderId: number) => {
+    const dataService = storageAdapter();
+    const orderToDelete = state.activeOrders.find((o) => o.id === orderId);
+    if (orderToDelete) {
+      await dataService.deleteOrder(orderToDelete);
+    }
+    setState(
+      produce((s) => {
+        s.activeOrders = s.activeOrders.filter((o) => o.id !== orderId);
+        s.orderHistory = s.orderHistory.filter((o) => o.id !== orderId);
+        // Clear selection if the closed order was selected, don't auto-select another
+        if (s.selectedOrderId === orderId) {
+          s.selectedOrderId = null;
+          s.selectedOrder = null;
+        }
+      })
+    );
+  };
+
+  const addToOrder = async (orderId: number, item: Product | OrderItem) => {
+    setState(
+      produce((s) => {
+        const orderIndex = s.activeOrders.findIndex((order) => order.id === orderId);
+        if (orderIndex !== -1) {
+          const order = s.activeOrders[orderIndex];
+          const existingItemIndex = order.items.findIndex((orderItem) => orderItem.id === item.id);
           if (existingItemIndex !== -1) {
             order.items[existingItemIndex].quantity += 1;
           } else {
@@ -472,24 +486,24 @@ const useStore = create(
           order.itemCount += 1;
           order.total += item.price;
         }
-      });
-      const updatedOrder = get().activeOrders.find((order: Order) => order.id === orderId);
-      if (updatedOrder) {
-        const dataService = get().storageAdapter;
-        await dataService.updateOrder(updatedOrder);
-      }
-    },
+      })
+    );
+    const updatedOrder = state.activeOrders.find((order) => order.id === orderId);
+    if (updatedOrder) {
+      const dataService = storageAdapter();
+      await dataService.updateOrder(updatedOrder);
+    }
+  };
 
-    removeFromOrder: async (orderId: number, productId: number) => {
-      console.log(`[removeFromOrder] Removing product ${productId} from order ${orderId}`);
+  const removeFromOrder = async (orderId: number, productId: number) => {
+    console.log(`[removeFromOrder] Removing product ${productId} from order ${orderId}`);
 
-      set((state) => {
-        const orderIndex = state.activeOrders.findIndex((order: Order) => order.id === orderId);
+    setState(
+      produce((s) => {
+        const orderIndex = s.activeOrders.findIndex((order) => order.id === orderId);
         if (orderIndex !== -1) {
-          const order = state.activeOrders[orderIndex];
-          const existingItemIndex = order.items.findIndex(
-            (item: { id: number }) => item.id === productId
-          );
+          const order = s.activeOrders[orderIndex];
+          const existingItemIndex = order.items.findIndex((item) => item.id === productId);
 
           if (existingItemIndex !== -1) {
             const item = order.items[existingItemIndex];
@@ -507,7 +521,7 @@ const useStore = create(
               order.total = Math.max(0, order.total - item.price);
             }
 
-            // Recalcular total desde cero para asegurar exactitud
+            // Recalculate totals from scratch
             order.total = order.items.reduce(
               (sum, orderItem) => sum + orderItem.price * orderItem.quantity,
               0
@@ -519,19 +533,72 @@ const useStore = create(
             );
           }
         }
-      });
+      })
+    );
 
-      const updatedOrder = get().activeOrders.find((order: Order) => order.id === orderId);
-      if (updatedOrder) {
-        try {
-          const dataService = get().storageAdapter;
-          await dataService.updateOrder(updatedOrder);
-        } catch (error) {
-          console.error('[removeFromOrder] Error updating order:', error);
-        }
+    const updatedOrder = state.activeOrders.find((order) => order.id === orderId);
+    if (updatedOrder) {
+      try {
+        const dataService = storageAdapter();
+        await dataService.updateOrder(updatedOrder);
+      } catch (error) {
+        console.error('[removeFromOrder] Error updating order:', error);
       }
-    },
-  }))
-);
+    }
+  };
+
+  return {
+    // State (reactive)
+    state,
+    // Storage adapter signal
+    storageAdapter,
+    // Setters
+    setUsers,
+    setSelectedUser,
+    setSelectedOrder,
+    setSelectedOrderId,
+    setThermalPrinterOptions,
+    setTables,
+    setCategories,
+    setProducts,
+    setCustomers,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    setOrderHistory,
+    setActiveOrders,
+    setRecentProducts,
+    setPaymentMethod,
+    setCashAmount,
+    setShowTicketDialog,
+    setUseStockImages,
+    setTouchOptimizationsEnabled,
+    setDebugMode,
+    setBackendConnected,
+    setAutoOpenCashDrawer,
+    setTaxRate,
+    setStorageMode,
+    setLicenseStatus,
+    setShowLicenseDialog,
+    // Complex actions
+    handleTableChange,
+    handleCompleteOrder,
+    closeOrder,
+    addToOrder,
+    removeFromOrder,
+  };
+}
+
+// Create singleton store inside createRoot for proper ownership
+let store: ReturnType<typeof createAppStore>;
+
+export function useStore() {
+  if (!store) {
+    createRoot(() => {
+      store = createAppStore();
+    });
+  }
+  return store;
+}
 
 export default useStore;

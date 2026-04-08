@@ -1,0 +1,19 @@
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 3937 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) C:/Users/4NUBI$/Documents/GitHub/tpv-el-haido2/node_modules/@mks2508/theme-manager-react/dist/index.mjs is dynamically imported by C:/Users/4NUBI$/Documents/GitHub/tpv-el-haido2/src/components/ThemeSwitcher.tsx, C:/Users/4NUBI$/Documents/GitHub/tpv-el-haido2/src/components/ThemeSwitcher.tsx but also statically imported by C:/Users/4NUBI$/Documents/GitHub/tpv-el-haido2/src/App.tsx, C:/Users/4NUBI$/Documents/GitHub/tpv-el-haido2/src/components/ThemeDebugger.tsx, C:/Users/4NUBI$/Documents/GitHub/tpv-el-haido2/src/components/ThemeSwitcher.tsx, C:/Users/4NUBI$/Documents/GitHub/tpv-el-haido2/src/main.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+[2mdist/[22m[32mindex.html                                         [39m[1m[2m    1.91 kB[22m[1m[22m[2m Γöé gzip:   0.68 kB[22m
+[2mdist/[22m[32massets/CaskaydiaCoveNerdFont-Regular-zfQ0eU9c.ttf  [39m[1m[2m2,577.09 kB[22m[1m[22m
+[2mdist/[22m[35massets/index-Bsxipej4.css                          [39m[1m[2m  141.86 kB[22m[1m[22m[2m Γöé gzip:  20.97 kB[22m
+[2mdist/[22m[36massets/window-9Q9e_fpq.js                          [39m[1m[2m   14.24 kB[22m[1m[22m[2m Γöé gzip:   3.57 kB[22m
+[2mdist/[22m[36massets/index-CWxHoho4.js                           [39m[1m[33m1,468.99 kB[39m[22m[2m Γöé gzip: 423.60 kB[22m
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[32mΓ£ô built in 8.33s[39m

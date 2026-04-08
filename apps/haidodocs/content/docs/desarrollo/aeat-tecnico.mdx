@@ -1,0 +1,359 @@
+---
+title: Integración AEAT Técnica
+description: 'Detalles técnicos de la integración con AEAT VERI*FACTU'
+---
+
+# Integración AEAT - Detalles Técnicos
+
+Documentación técnica de la integración con el sistema VERI*FACTU de la Agencia Tributaria.
+
+## Arquitectura
+
+```mermaid
+sequenceDiagram
+    participant TPV as TPV El Haido<br/>(Frontend)
+    participant Store as Zustand Store
+    participant Service as AEAT Service
+    participant Bridge as aeat-bridge<br/>(Sidecar :3001)
+    participant AEAT as AEAT SOAP<br/>(Web Service)
+
+    TPV->>Store: completeOrder()
+    Store->>Service: emitInvoice(order)
+    Service->>Bridge: POST /facturas/alta
+    Bridge->>Bridge: Build SOAP Request
+    Bridge->>Bridge: Sign with Certificate
+    Bridge->>AEAT: SOAP SuministroLRFacturasEmitidas
+    AEAT-->>Bridge: SOAP Response
+    Bridge->>Bridge: Parse Response
+    Bridge-->>Service: { csv, estado, errores }
+    Service-->>Store: Update invoice status
+    Store-->>TPV: Render updated state
+```
+
+## Sidecar aeat-bridge
+
+El sidecar `aeat-bridge` es un proceso Node.js independiente que maneja la comunicación SOAP con la AEAT.
+
+### Estructura
+
+```
+sidecars/
+└── aeat-bridge/
+    ├── src/
+    │   ├── index.ts         # Express server
+    │   ├── soap-client.ts   # Cliente SOAP
+    │   ├── certificate.ts   # Manejo de certificados
+    │   └── types.ts         # Tipos TypeScript
+    ├── package.json
+    └── tsconfig.json
+```
+
+### Endpoints
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/health` | GET | Verificar que el sidecar está activo |
+| `/facturas/alta` | POST | Enviar factura a AEAT |
+| `/facturas/anulacion` | POST | Anular factura |
+| `/config` | GET/POST | Obtener/actualizar configuración |
+| `/certificate/load` | POST | Cargar certificado |
+| `/certificate/verify` | GET | Verificar certificado actual |
+
+### Request: Alta de Factura
+
+```typescript
+// POST /facturas/alta
+interface AltaFacturaRequest {
+  factura: {
+    numeroFactura: string;
+    fechaExpedicion: string;  // YYYY-MM-DD
+    tipoFactura: 'F1' | 'F2';
+    descripcionOperacion: string;
+    importeTotal: number;
+    baseImponible: number;
+    cuotaRepercutida: number;
+    tipoImpositivo: number;
+  };
+  receptor?: {
+    nif: string;
+    nombreRazon: string;
+  };
+}
+```
+
+### Response
+
+```typescript
+interface AltaFacturaResponse {
+  success: boolean;
+  csv?: string;              // Código Seguro de Verificación
+  estado?: 'Aceptada' | 'AceptadaConErrores' | 'Rechazada';
+  errores?: Array<{
+    codigo: string;
+    descripcion: string;
+  }>;
+}
+```
+
+## Configuración AEAT
+
+### Tipos TypeScript
+
+```typescript
+// src/hooks/useAEAT.ts
+
+export type AEATMode = 'disabled' | 'sidecar' | 'external';
+export type AEATEnvironment = 'test' | 'production';
+
+export interface AEATConfig {
+  mode: AEATMode;
+  environment: AEATEnvironment;
+  sidecarPort: number;
+  externalUrl?: string;
+  certificate?: AEATCertificateConfig;
+  businessData: AEATBusinessData;
+  autoSendInvoices: boolean;
+}
+
+export interface AEATCertificateConfig {
+  type: 'pfx' | 'pem';
+  path: string;
+  password?: string;
+}
+
+export interface AEATBusinessData {
+  nif: string;
+  nombreRazon: string;
+  serieFactura: string;
+  tipoFactura: 'F1' | 'F2';
+}
+```
+
+### Modos de Conexión
+
+| Modo | Descripción | Configuración |
+|------|-------------|---------------|
+| `disabled` | VERI*FACTU desactivado | Sin comunicación con AEAT |
+| `sidecar` | Proceso local aeat-bridge | Puerto 3001 (default) |
+| `external` | Servidor AEAT Bridge remoto | URL del servidor |
+
+### Entornos
+
+| Entorno | URL AEAT | Uso |
+|---------|----------|-----|
+| `test` | Sandbox AEAT | Pruebas sin efectos legales |
+| `production` | Producción AEAT | Envío real de facturas |
+
+## Cliente SOAP
+
+El sidecar usa `soap` para construir y enviar las peticiones:
+
+```typescript
+// sidecars/aeat-bridge/src/soap-client.ts
+
+import * as soap from 'soap';
+import * as forge from 'node-forge';
+
+const WSDL_URLS = {
+  test: 'https://www2.agenciatributaria.gob.es/static_files/common/...',
+  production: 'https://www1.agenciatributaria.gob.es/...',
+};
+
+export async function sendFactura(
+  factura: Factura,
+  config: AEATConfig
+): Promise<AEATResponse> {
+  const client = await soap.createClientAsync(WSDL_URLS[config.environment]);
+
+  // Configurar certificado para firma
+  client.setSecurity(
+    new soap.ClientSSLSecurity(
+      config.certificate.key,
+      config.certificate.cert,
+      { rejectUnauthorized: true }
+    )
+  );
+
+  // Construir el XML de la factura
+  const request = buildSuministroRequest(factura, config.businessData);
+
+  // Enviar
+  const [result] = await client.SuministroLRFacturasEmitidasAsync(request);
+
+  return parseResponse(result);
+}
+```
+
+## Manejo de Certificados
+
+### Formatos Soportados
+
+| Formato | Extensión | Contenido |
+|---------|-----------|-----------|
+| PFX/P12 | `.pfx`, `.p12` | Certificado + clave privada encriptados |
+| PEM | `.crt` + `.key` | Certificado y clave separados |
+
+### Carga de Certificado PFX
+
+```typescript
+// sidecars/aeat-bridge/src/certificate.ts
+
+import * as forge from 'node-forge';
+import * as fs from 'fs';
+
+export function loadPfxCertificate(path: string, password: string) {
+  const pfxBuffer = fs.readFileSync(path);
+  const pfxAsn1 = forge.asn1.fromDer(pfxBuffer.toString('binary'));
+  const pfx = forge.pkcs12.pkcs12FromAsn1(pfxAsn1, password);
+
+  // Extraer certificado
+  const certBag = pfx.getBags({ bagType: forge.pki.oids.certBag })[
+    forge.pki.oids.certBag
+  ]![0];
+  const cert = certBag.cert!;
+
+  // Extraer clave privada
+  const keyBag = pfx.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[
+    forge.pki.oids.pkcs8ShroudedKeyBag
+  ]![0];
+  const key = keyBag.key!;
+
+  return {
+    cert: forge.pki.certificateToPem(cert),
+    key: forge.pki.privateKeyToPem(key),
+    subject: cert.subject.getField('CN').value,
+    validTo: cert.validity.notAfter,
+  };
+}
+```
+
+## Hook useAEAT
+
+```typescript
+// src/hooks/useAEAT.ts
+
+import { useStore } from '@/store/store';
+import { tryCatchAsync, isErr } from '@mks2508/no-throw';
+import { AEATErrorCode } from '@/lib/error-codes';
+
+export function useAEAT() {
+  const config = useStore((s) => s.aeatConfig);
+  const setInvoiceStatus = useStore((s) => s.setInvoiceStatus);
+
+  const emitInvoice = async (order: Order) => {
+    if (config.mode === 'disabled') {
+      return ok({ skipped: true });
+    }
+
+    const url = config.mode === 'sidecar'
+      ? `http://localhost:${config.sidecarPort}`
+      : config.externalUrl;
+
+    const result = await tryCatchAsync(
+      async () => {
+        const response = await fetch(`${url}/facturas/alta`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildFacturaPayload(order, config)),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.json();
+      },
+      AEATErrorCode.ConnectionFailed
+    );
+
+    if (isErr(result)) {
+      setInvoiceStatus(order.id, 'error', result.error.message);
+      return result;
+    }
+
+    const { csv, estado, errores } = result.value;
+
+    if (estado === 'Rechazada') {
+      setInvoiceStatus(order.id, 'rejected', errores?.[0]?.descripcion);
+      return err(AEATErrorCode.Rejected, errores?.[0]?.descripcion ?? 'Rechazada');
+    }
+
+    setInvoiceStatus(order.id, 'accepted', csv);
+    return ok({ csv, estado });
+  };
+
+  return { emitInvoice, config };
+}
+```
+
+## Estados de Factura
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Pedido completado
+    Pending --> Sending: Auto-send / Manual
+    Sending --> Accepted: AEAT acepta
+    Sending --> Rejected: AEAT rechaza
+    Sending --> Error: Error de conexión
+    Error --> Sending: Reintentar
+    Rejected --> Pending: Corregir y reenviar
+```
+
+| Estado | Descripción | Acción |
+|--------|-------------|--------|
+| `pending` | Pendiente de envío | Enviar manualmente o esperar auto-send |
+| `sending` | Enviando a AEAT | Esperar respuesta |
+| `accepted` | Aceptada por AEAT | CSV disponible |
+| `rejected` | Rechazada por AEAT | Revisar errores y corregir |
+| `error` | Error de comunicación | Reintentar |
+
+## Circuit Breaker
+
+Para evitar saturar la AEAT en caso de errores:
+
+```typescript
+class CircuitBreaker {
+  private failures = 0;
+  private lastFailure: Date | null = null;
+  private readonly threshold = 5;
+  private readonly timeout = 60000; // 1 minuto
+
+  async execute<T>(fn: () => Promise<T>): Promise<Result<T>> {
+    if (this.isOpen()) {
+      return err('CIRCUIT_OPEN', 'Too many failures, try later');
+    }
+
+    try {
+      const result = await fn();
+      this.reset();
+      return ok(result);
+    } catch (e) {
+      this.recordFailure();
+      throw e;
+    }
+  }
+
+  private isOpen(): boolean {
+    if (this.failures < this.threshold) return false;
+    if (!this.lastFailure) return false;
+
+    const elapsed = Date.now() - this.lastFailure.getTime();
+    return elapsed < this.timeout;
+  }
+
+  private recordFailure() {
+    this.failures++;
+    this.lastFailure = new Date();
+  }
+
+  private reset() {
+    this.failures = 0;
+    this.lastFailure = null;
+  }
+}
+```
+
+## Siguiente Paso
+
+- [Comandos](/docs/desarrollo/comandos)
+- [Manejo de Errores](/docs/desarrollo/errores)

@@ -1,53 +1,48 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Plus, Star } from 'lucide-react';
-import type React from 'react';
-import { useState } from 'react';
+import { Motion, Presence } from '@motionone/solid';
+import { Check, Plus, Star } from 'lucide-solid';
+import type { JSX } from 'solid-js';
+import { createSignal, splitProps } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import { cn } from '@/lib/utils.ts';
 import type Product from '@/models/Product.ts';
 import stockImagesService from '@/services/stock-images.service';
 import useStore from '@/store/store';
 import { Button } from './button';
 
-interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ProductCardProps extends JSX.HTMLAttributes<HTMLDivElement> {
   product: Product;
-  mode: 'order' | 'manage'; // 'order' para NewOrder, 'manage' para Products page
-  onAction?: (product: Product) => void; // handleAddToOrder o onClick para editar
+  mode: 'order' | 'manage';
+  onAction?: (product: Product) => void;
   onFavoriteToggle?: (productId: number) => void;
   isPinned?: boolean;
   showCategory?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({
-  product,
-  mode = 'order',
-  onAction,
-  onFavoriteToggle,
-  isPinned = false,
-  showCategory = true,
-  className,
-  onAnimationStart, // Destructure conflicting prop
-  onAnimationEnd, // Destructure conflicting prop
-  onAnimationIteration, // Destructure conflicting prop
-  onDragStart, // Destructure conflicting prop
-  onDragEnd, // Destructure conflicting prop
-  onDrag, // Destructure conflicting prop
-  ...props
-}) => {
-  const [isAdding, setIsAdding] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const { useStockImages } = useStore();
+const ProductCard = (props: ProductCardProps) => {
+  const [local, others] = splitProps(props, [
+    'product',
+    'mode',
+    'onAction',
+    'onFavoriteToggle',
+    'isPinned',
+    'showCategory',
+    'class',
+  ]);
 
-  // Obtener imagen: personalizada > stock > fallback
+  const [isAdding, setIsAdding] = createSignal(false);
+  const [showSuccess, setShowSuccess] = createSignal(false);
+  const state = useStore();
+
   const getProductImage = () => {
-    if (product.uploadedImage) {
-      return product.uploadedImage;
+    if (local.product.uploadedImage) {
+      return local.product.uploadedImage;
     }
 
-    if (useStockImages) {
+    if (state.state.useStockImages) {
       const stockImage = stockImagesService.getConsistentStockImage(
-        product.id,
-        product.name,
-        product.category
+        local.product.id,
+        local.product.name,
+        local.product.category
       );
       if (stockImage) {
         return stockImage;
@@ -58,34 +53,32 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
                 <rect width="80" height="80" fill="hsl(var(--muted))"/>
                 <text x="40" y="45" text-anchor="middle" font-size="24" fill="hsl(var(--muted-foreground))">
-                    ${product.icon || '🍽️'}
+                    ${local.product.icon || '🍽️'}
                 </text>
             </svg>
         `)}`;
   };
 
-  const productImage = getProductImage();
-  const isRealImage = productImage && !productImage.startsWith('data:');
+  const productImage = () => getProductImage();
+  const isRealImage = () => productImage() && !productImage().startsWith('data:');
 
-  const imageStyle = {
-    backgroundImage: `url(${productImage})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-  };
+  const imageStyle = () => ({
+    'background-image': `url(${productImage()})`,
+    'background-size': 'cover',
+    'background-position': 'center',
+  });
 
   const handleClick = async () => {
-    if (mode === 'manage') {
-      onAction?.(product);
+    if (local.mode === 'manage') {
+      local.onAction?.(local.product);
       return;
     }
 
-    // Mode 'order' - add to order logic
-    if (isAdding) return;
+    if (isAdding()) return;
 
     setIsAdding(true);
-    onAction?.(product);
+    local.onAction?.(local.product);
 
-    // Show success feedback
     setTimeout(() => {
       setShowSuccess(true);
       setTimeout(() => {
@@ -95,12 +88,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }, 200);
   };
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = (e: Event) => {
     e.stopPropagation();
-    onFavoriteToggle?.(product.id);
+    local.onFavoriteToggle?.(local.product.id);
   };
 
-  // Colores por categoría usando tokens semánticos
   const getCategoryColors = (category: string | undefined) => {
     if (!category) return 'from-muted/50 to-muted/20';
 
@@ -110,44 +102,43 @@ const ProductCard: React.FC<ProductCardProps> = ({
       categoryLower.includes('drink') ||
       categoryLower.includes('refresco')
     ) {
-      return 'from-chart-3/40 to-chart-3/15'; // Cyan/Blue for drinks
+      return 'from-chart-3/40 to-chart-3/15';
     }
     if (categoryLower.includes('café') || categoryLower.includes('cafe')) {
-      return 'from-chart-1/40 to-chart-1/15'; // Primary theme color
+      return 'from-chart-1/40 to-chart-1/15';
     }
     if (categoryLower.includes('postre') || categoryLower.includes('dessert')) {
-      return 'from-chart-5/40 to-chart-5/15'; // Green for desserts
+      return 'from-chart-5/40 to-chart-5/15';
     }
     if (
       categoryLower.includes('entrante') ||
       categoryLower.includes('starter') ||
       categoryLower.includes('tapa')
     ) {
-      return 'from-chart-4/40 to-chart-4/15'; // Warning/Orange
+      return 'from-chart-4/40 to-chart-4/15';
     }
     if (categoryLower.includes('cerveza') || categoryLower.includes('beer')) {
-      return 'from-chart-4/40 to-chart-4/15'; // Warning/Orange for beer
+      return 'from-chart-4/40 to-chart-4/15';
     }
-    return 'from-chart-2/30 to-chart-2/10'; // Secondary accent
+    return 'from-chart-2/30 to-chart-2/10';
   };
 
   const getCardStyles = () => {
     const baseStyles =
       'relative flex flex-col overflow-hidden rounded-xl cursor-pointer transition-all duration-200';
 
-    if (mode === 'order') {
+    if (local.mode === 'order') {
       return cn(
         baseStyles,
         'border-2 touch-enhanced bg-gradient-to-b from-background to-card',
-        isAdding
+        isAdding()
           ? 'border-success shadow-2xl shadow-success/40 ring-2 ring-success/30 scale-[1.02]'
-          : showSuccess
+          : showSuccess()
             ? 'border-success/60 shadow-xl shadow-success/30'
             : 'border-border shadow-lg hover:border-primary/40 hover:shadow-xl'
       );
     }
 
-    // Mode 'manage'
     return cn(
       baseStyles,
       'border bg-card hover:shadow-md hover:border-primary/30',
@@ -156,106 +147,98 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <motion.div
-      className={cn(getCardStyles(), className)}
-      onClick={handleClick}
-      whileTap={{ scale: mode === 'order' ? 0.97 : 0.98 }}
-      whileHover={{ scale: mode === 'order' ? 1.02 : 1.01 }}
+    <Motion.div
+      class={cn(getCardStyles(), props.class)}
+      onClick={handleClick as (e: MouseEvent) => void}
+      style={others.style as JSX.CSSProperties}
       animate={{
-        scale: isAdding ? 1.03 : 1,
+        scale: isAdding() ? 1.03 : 1,
       }}
       transition={{
-        scale: { duration: 0.2, type: 'spring', stiffness: 300, damping: 25 },
-        opacity: { duration: 0.15, ease: 'easeOut' },
+        duration: 0.2,
+        easing: [0.25, 0.1, 0.25, 1],
       }}
-      {...props}
     >
-      {/* Image Section */}
       <div
-        className={cn(
+        class={cn(
           'relative overflow-hidden',
-          mode === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
-          !isRealImage ? `bg-gradient-to-br ${getCategoryColors(product.category)}` : 'bg-muted/10'
+          local.mode === 'order' ? 'h-24 sm:h-28 w-full' : 'h-20 w-full',
+          !isRealImage
+            ? `bg-gradient-to-br ${getCategoryColors(local.product.category)}`
+            : 'bg-muted/10'
         )}
-        style={isRealImage ? imageStyle : {}}
+        style={isRealImage() ? imageStyle() : {}}
       >
-        {/* Overlay para mejor legibilidad en imágenes reales */}
-        {isRealImage && (
-          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+        {isRealImage() && (
+          <div class="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
         )}
 
-        {/* Emoji/Icon si es imagen SVG fallback */}
         {!isRealImage && (
-          <motion.div
-            className={cn(
+          <Motion.div
+            class={cn(
               'flex items-center justify-center h-full',
-              mode === 'order' ? 'text-4xl sm:text-5xl' : 'text-3xl'
+              local.mode === 'order' ? 'text-4xl sm:text-5xl' : 'text-3xl'
             )}
             animate={{
-              scale: isAdding ? 1.08 : 1,
+              scale: isAdding() ? 1.08 : 1,
             }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
+            transition={{ duration: 0.15, easing: 'ease-out' }}
           >
-            {product.icon || '🍽️'}
-          </motion.div>
+            {local.product.icon ? <Dynamic component={local.product.icon} /> : '🍽️'}
+          </Motion.div>
         )}
 
-        {/* Category badge */}
-        {showCategory && product.category && (
-          <div className="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
-            {product.category}
+        {local.showCategory && local.product.category && (
+          <div class="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
+            {local.product.category}
           </div>
         )}
 
-        {/* Action button - top right */}
-        <div className="absolute top-2 right-2">
-          {mode === 'order' ? (
-            <AnimatePresence mode="wait">
-              {!showSuccess ? (
-                <motion.div
-                  key="plus"
-                  className={cn(
+        <div class="absolute top-2 right-2">
+          {local.mode === 'order' ? (
+            <Presence>
+              {!showSuccess() ? (
+                <Motion.div
+                  class={cn(
                     'rounded-full p-2 shadow-2xl',
-                    isAdding
+                    isAdding()
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-accent text-accent-foreground'
                   )}
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{
-                    scale: isAdding ? 1.15 : 1,
+                    scale: isAdding() ? 1.15 : 1,
                     opacity: 1,
                   }}
                   exit={{ scale: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, type: 'spring', stiffness: 300 }}
+                  transition={{ duration: 0.2, easing: [0.25, 0.1, 0.25, 1] }}
                 >
-                  <Plus className="w-4 h-4" strokeWidth={2.5} />
-                </motion.div>
+                  <Plus class="w-4 h-4" strokeWidth={2.5} />
+                </Motion.div>
               ) : (
-                <motion.div
-                  key="check"
-                  className="bg-success text-success-foreground rounded-full p-2 shadow-2xl"
+                <Motion.div
+                  class="bg-success text-success-foreground rounded-full p-2 shadow-2xl"
                   initial={{ scale: 0, opacity: 0, rotate: -90 }}
                   animate={{ scale: 1, opacity: 1, rotate: 0 }}
                   exit={{ scale: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
+                  transition={{ duration: 0.3, easing: [0.25, 0.1, 0.25, 1] }}
                 >
-                  <Check className="w-4 h-4" strokeWidth={3} />
-                </motion.div>
+                  <Check class="w-4 h-4" strokeWidth={3} />
+                </Motion.div>
               )}
-            </AnimatePresence>
+            </Presence>
           ) : (
-            // Mode 'manage' - show favorite star
-            onFavoriteToggle && (
+            local.onFavoriteToggle && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+                class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
                 onClick={handleFavoriteClick}
               >
                 <Star
-                  className={cn(
+                  class={cn(
                     'h-4 w-4',
-                    isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
+                    local.isPinned ? 'text-warning fill-warning' : 'text-muted-foreground'
                   )}
                 />
               </Button>
@@ -263,93 +246,93 @@ const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
       </div>
-
       {/* Product Info Section */}
       <div
-        className={cn(
+        class={cn(
           'flex-1 flex flex-col justify-between bg-gradient-to-b from-card/50 to-card border-t border-border/20',
-          mode === 'order' ? 'p-3' : 'p-2'
+          local.mode === 'order' ? 'p-3' : 'p-2'
         )}
       >
         {/* Product Name */}
-        <div className={cn(mode === 'order' ? 'mb-2' : 'mb-1')}>
+        <div class={cn(local.mode === 'order' ? 'mb-2' : 'mb-1')}>
           <h3
-            className={cn(
+            class={cn(
               'font-extrabold line-clamp-2 leading-tight',
-              mode === 'order' ? 'text-sm mb-0.5' : 'text-xs',
-              isAdding ? 'text-primary' : 'text-foreground'
+              local.mode === 'order' ? 'text-sm mb-0.5' : 'text-xs',
+              isAdding() ? 'text-primary' : 'text-foreground'
             )}
           >
-            {product.name}
+            {local.product.name}
           </h3>
-          {product.brand && (
+          {local.product.brand && (
             <p
-              className={cn(
+              class={cn(
                 'text-muted-foreground font-medium opacity-90',
-                mode === 'order' ? 'text-xs' : 'text-[10px]'
+                local.mode === 'order' ? 'text-xs' : 'text-[10px]'
               )}
             >
-              {product.brand}
+              {local.product.brand}
             </p>
           )}
         </div>
 
         {/* Price Section */}
-        <div className="flex items-end justify-between">
-          <motion.div
-            className="flex flex-col"
+        <div class="flex items-end justify-between">
+          <Motion.div
+            class="flex flex-col"
             animate={{
-              scale: isAdding ? 1.08 : 1,
+              scale: isAdding() ? 1.08 : 1,
             }}
             transition={{ duration: 0.15 }}
           >
             <span
-              className={cn(
+              class={cn(
                 'font-black tracking-tight',
-                mode === 'order' ? 'text-2xl' : 'text-lg',
-                isAdding ? 'text-success drop-shadow-md' : 'text-primary'
+                local.mode === 'order' ? 'text-2xl' : 'text-lg',
+                isAdding() ? 'text-success drop-shadow-md' : 'text-primary'
               )}
             >
-              {product.price.toFixed(2)}€
+              {local.product.price.toFixed(2)}€
             </span>
-            {mode === 'order' && (
-              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
+            {local.mode === 'order' && (
+              <span class="text-[10px] text-muted-foreground font-bold uppercase tracking-wider opacity-80">
                 unidad
               </span>
             )}
-          </motion.div>
+          </Motion.div>
 
           {/* Stock indicator para mode order */}
-          {mode === 'order' && product.stock !== undefined && product.stock < 10 && (
-            <div className="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
-              <span className="text-xs font-bold text-warning">Quedan {product.stock}</span>
-            </div>
-          )}
+          {local.mode === 'order' &&
+            local.product.stock !== undefined &&
+            local.product.stock < 10 && (
+              <div class="px-2 py-1 bg-warning/20 border-2 border-warning/50 rounded-lg">
+                <span class="text-xs font-bold text-warning">Quedan {local.product.stock}</span>
+              </div>
+            )}
 
           {/* Category info para mode manage */}
-          {mode === 'manage' && product.category && (
-            <div className="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
-              {product.category}
+          {local.mode === 'manage' && local.product.category && (
+            <div class="px-1.5 py-0.5 bg-secondary/80 rounded text-[10px] font-medium text-secondary-foreground">
+              {local.product.category}
             </div>
           )}
         </div>
       </div>
-
       {/* Loading overlay solo para mode order */}
-      {mode === 'order' && (
-        <AnimatePresence>
-          {isAdding && !showSuccess && (
-            <motion.div
-              className="absolute inset-0 bg-primary/10 backdrop-blur-[2px] rounded-xl"
+      {local.mode === 'order' && (
+        <Presence>
+          {isAdding() && !showSuccess() && (
+            <Motion.div
+              class="absolute inset-0 bg-primary/10 backdrop-blur-[2px] rounded-xl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
             />
           )}
-        </AnimatePresence>
+        </Presence>
       )}
-    </motion.div>
+    </Motion.div>
   );
 };
 

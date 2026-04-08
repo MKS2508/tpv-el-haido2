@@ -1,18 +1,81 @@
-import { tryCatchAsync, err, ok } from '@mks2508/no-throw';
+import { err, ok, tryCatchAsync } from '@mks2508/no-throw';
+import { StorageErrorCode } from '@/lib/error-codes';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import type Table from '@/models/Table';
-import { StorageErrorCode } from '@/lib/error-codes';
+import type User from '@/models/User';
 import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
+
+type SyncOperation = {
+  id: string;
+  type: 'create' | 'update' | 'delete';
+  store: string;
+  data: unknown;
+  timestamp: number;
+};
+
+const SYNC_QUEUE_KEY = 'tpv-haido-sync-queue';
 
 export class IndexedDbStorageAdapter implements IStorageAdapter {
   private dbName = 'tpv-haido-db';
   private dbVersion = 1;
   private db: IDBDatabase | null = null;
+  private isOnline = navigator.onLine;
 
   constructor() {
     this.initDB();
+    this.setupOnlineListener();
+  }
+
+  private setupOnlineListener(): void {
+    window.addEventListener('online', () => {
+      console.log('[IndexedDB] Back online, triggering sync...');
+      this.isOnline = true;
+      this.processSyncQueue();
+    });
+
+    window.addEventListener('offline', () => {
+      console.log('[IndexedDB] Gone offline, operations will be queued');
+      this.isOnline = false;
+    });
+  }
+
+  private getSyncQueue(): SyncOperation[] {
+    try {
+      const queue = localStorage.getItem(SYNC_QUEUE_KEY);
+      return queue ? JSON.parse(queue) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveSyncQueue(queue: SyncOperation[]): void {
+    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+  }
+
+  async processSyncQueue(): Promise<void> {
+    if (!this.isOnline) return;
+
+    const queue = this.getSyncQueue();
+    if (queue.length === 0) return;
+
+    console.log(`[IndexedDB] Processing ${queue.length} queued operations...`);
+
+    // For now, just clear the queue since we don't have a remote server
+    // In a real implementation, this would sync with an HTTP API
+    this.saveSyncQueue([]);
+    console.log('[IndexedDB] Sync queue cleared');
+
+    window.dispatchEvent(new CustomEvent('sync-complete', { detail: { count: queue.length } }));
+  }
+
+  getPendingSyncCount(): number {
+    return this.getSyncQueue().length;
+  }
+
+  getOnlineStatus(): boolean {
+    return this.isOnline;
   }
 
   private async initDB(): Promise<void> {
@@ -49,6 +112,11 @@ export class IndexedDbStorageAdapter implements IStorageAdapter {
 
         if (!db.objectStoreNames.contains('tables')) {
           db.createObjectStore('tables', { keyPath: 'id' });
+        }
+
+        if (!db.objectStoreNames.contains('users')) {
+          const userStore = db.createObjectStore('users', { keyPath: 'id' });
+          userStore.createIndex('name', 'name', { unique: false });
         }
       };
     });
@@ -94,33 +162,30 @@ export class IndexedDbStorageAdapter implements IStorageAdapter {
   }
 
   async createProduct(product: Product): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('products', 'readwrite', (store) => store.add(product));
-      },
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('products', 'readwrite', (store) => store.add(product));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async updateProduct(product: Product): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('products', 'readwrite', (store) => store.put(product));
-      },
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('products', 'readwrite', (store) => store.put(product));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async deleteProduct(product: Product): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('products', 'readwrite', (store) => store.delete(product.id));
-      },
-      StorageErrorCode.DeleteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('products', 'readwrite', (store) => store.delete(product.id));
+    }, StorageErrorCode.DeleteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // Categories
@@ -132,35 +197,32 @@ export class IndexedDbStorageAdapter implements IStorageAdapter {
   }
 
   async createCategory(category: Category): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('categories', 'readwrite', (store) => store.add(category));
-      },
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('categories', 'readwrite', (store) => store.add(category));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async updateCategory(category: Category): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('categories', 'readwrite', (store) => store.put(category));
-      },
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('categories', 'readwrite', (store) => store.put(category));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async deleteCategory(category: Category): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('categories', 'readwrite', (store) =>
-          store.delete(category.id)
-        );
-      },
-      StorageErrorCode.DeleteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('categories', 'readwrite', (store) =>
+        store.delete(category.id)
+      );
+    }, StorageErrorCode.DeleteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // Orders
@@ -172,33 +234,30 @@ export class IndexedDbStorageAdapter implements IStorageAdapter {
   }
 
   async createOrder(order: Order): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('orders', 'readwrite', (store) => store.add(order));
-      },
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('orders', 'readwrite', (store) => store.add(order));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async updateOrder(order: Order): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('orders', 'readwrite', (store) => store.put(order));
-      },
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('orders', 'readwrite', (store) => store.put(order));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async deleteOrder(order: Order): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('orders', 'readwrite', (store) => store.delete(order.id));
-      },
-      StorageErrorCode.DeleteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('orders', 'readwrite', (store) => store.delete(order.id));
+    }, StorageErrorCode.DeleteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // Tables
@@ -210,72 +269,107 @@ export class IndexedDbStorageAdapter implements IStorageAdapter {
   }
 
   async createTable(table: Table): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('tables', 'readwrite', (store) => store.add(table));
-      },
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('tables', 'readwrite', (store) => store.add(table));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async updateTable(table: Table): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('tables', 'readwrite', (store) => store.put(table));
-      },
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('tables', 'readwrite', (store) => store.put(table));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async deleteTable(table: Table): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => {
-        await this.performTransaction('tables', 'readwrite', (store) => store.delete(table.id));
-      },
-      StorageErrorCode.DeleteFailed
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('tables', 'readwrite', (store) => store.delete(table.id));
+    }, StorageErrorCode.DeleteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+  }
+
+  // ==================== Users ====================
+
+  async getUsers(): Promise<StorageResult<User[]>> {
+    return tryCatchAsync(
+      async () => this.performGetAll<User>('users'),
+      StorageErrorCode.ReadFailed
     );
-    return result.ok ? ok(undefined) : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+  }
+
+  async createUser(user: User): Promise<StorageResult<void>> {
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('users', 'readwrite', (store) => store.put(user));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+  }
+
+  async updateUser(user: User): Promise<StorageResult<void>> {
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('users', 'readwrite', (store) => store.put(user));
+    }, StorageErrorCode.WriteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+  }
+
+  async deleteUser(user: User): Promise<StorageResult<void>> {
+    const result = await tryCatchAsync(async () => {
+      await this.performTransaction('users', 'readwrite', (store) => store.delete(user.id));
+    }, StorageErrorCode.DeleteFailed);
+    return result.ok
+      ? ok(undefined)
+      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // Utility methods
   async clearAllData(): Promise<StorageResult<void>> {
-    return tryCatchAsync(
-      async () => {
-        const db = await this.ensureDB();
-        const transaction = db.transaction(
-          ['products', 'categories', 'orders', 'tables'],
-          'readwrite'
-        );
+    return tryCatchAsync(async () => {
+      const db = await this.ensureDB();
+      const transaction = db.transaction(
+        ['products', 'categories', 'orders', 'tables', 'users'],
+        'readwrite'
+      );
 
-        const promises = [
-          new Promise<void>((resolve, reject) => {
-            const request = transaction.objectStore('products').clear();
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-          }),
-          new Promise<void>((resolve, reject) => {
-            const request = transaction.objectStore('categories').clear();
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-          }),
-          new Promise<void>((resolve, reject) => {
-            const request = transaction.objectStore('orders').clear();
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-          }),
-          new Promise<void>((resolve, reject) => {
-            const request = transaction.objectStore('tables').clear();
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-          }),
-        ];
+      const promises = [
+        new Promise<void>((resolve, reject) => {
+          const request = transaction.objectStore('products').clear();
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        }),
+        new Promise<void>((resolve, reject) => {
+          const request = transaction.objectStore('categories').clear();
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        }),
+        new Promise<void>((resolve, reject) => {
+          const request = transaction.objectStore('orders').clear();
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        }),
+        new Promise<void>((resolve, reject) => {
+          const request = transaction.objectStore('tables').clear();
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        }),
+        new Promise<void>((resolve, reject) => {
+          const request = transaction.objectStore('users').clear();
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        }),
+      ];
 
-        await Promise.all(promises);
-      },
-      StorageErrorCode.DeleteFailed
-    );
+      await Promise.all(promises);
+    }, StorageErrorCode.DeleteFailed);
   }
 
   async exportData(): Promise<

@@ -1,6 +1,9 @@
-import type React from 'react';
+import { Motion } from '@motionone/solid';
+import { createMemo, For, Show } from 'solid-js';
 import OptimizedProductCard from '@/components/ui/OptimizedProductCard.tsx';
+import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
 import { useResponsive } from '@/hooks/useResponsive';
+import { cn } from '@/lib/utils';
 import type { OrderItem } from '@/models/Order.ts';
 import type Product from '@/models/Product.ts';
 
@@ -10,70 +13,97 @@ type ProductGridProps = {
   selectedOrderId?: number | null;
 };
 
-const ProductGrid: React.FC<ProductGridProps> = ({
-  products,
-  handleAddToOrder,
-  selectedOrderId,
-}) => {
-  const { isMobile } = useResponsive();
+function ProductGrid(props: ProductGridProps) {
+  const { isMobile, isTablet, isDesktop } = useResponsive();
+  const perf = usePerformanceConfig();
 
-  // Si no hay selectedOrderId, mostrar mensaje pero mantener estructura de scroll
-  if (!selectedOrderId) {
-    return (
-      <div className="h-full w-full overflow-hidden bg-background">
-        <div className="h-full overflow-y-auto overflow-x-hidden">
-          <div className="min-h-full flex items-center justify-center p-3">
-            <div className="text-center text-muted-foreground">
-              <div className="text-6xl mb-4">🍽️</div>
-              <p className="text-xl font-medium mb-2">Selecciona una mesa</p>
-              <p className="text-sm">Elige una mesa para comenzar a agregar productos</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Si no hay productos
-  if (products.length === 0) {
-    return (
-      <div className="h-full w-full overflow-hidden bg-background">
-        <div className="h-full overflow-y-auto overflow-x-hidden">
-          <div className="min-h-full flex items-center justify-center p-3">
-            <div className="text-center text-muted-foreground">
-              <div className="text-4xl mb-3">📦</div>
-              <p className="text-lg font-medium">No hay productos disponibles</p>
-              <p className="text-sm">Esta categoría no tiene productos</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Responsive grid columns
+  const gridColumns = createMemo(() => {
+    if (isMobile()) return 'grid-cols-2';
+    if (isTablet()) return 'grid-cols-3';
+    if (isDesktop()) return 'grid-cols-3';
+    return 'grid-cols-3';
+  });
 
   return (
-    <div className="h-full w-full overflow-hidden bg-background">
-      <div className="h-full overflow-y-auto overflow-x-hidden p-3">
-        <div
-          className={`
-                    grid gap-3 w-full
-                    ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}
-                `}
-        >
-          {products.map((product) => (
-            <OptimizedProductCard
-              key={product.id}
-              product={product}
-              mode="order"
-              onAction={handleAddToOrder}
-              showCategory={true}
-              className="w-full"
-            />
-          ))}
+    <Show
+      when={props.selectedOrderId}
+      fallback={
+        <div class="h-full w-full overflow-hidden bg-background">
+          <div class="h-full overflow-y-auto overflow-x-hidden">
+            <div class="min-h-full flex items-center justify-center p-3">
+              <div class="text-center text-muted-foreground">
+                <div class="neworder-empty-state">
+                  <div class="neworder-empty-state__icon">🍽️</div>
+                  <p class="neworder-empty-state__title">Selecciona una mesa</p>
+                  <p class="neworder-empty-state__description">
+                    Elige una mesa para comenzar a agregar productos
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      }
+    >
+      <Show
+        when={props.products.length > 0}
+        fallback={
+          <div class="h-full w-full overflow-hidden bg-background">
+            <div class="h-full overflow-y-auto overflow-x-hidden">
+              <div class="min-h-full flex items-center justify-center p-3">
+                <div class="text-center text-muted-foreground">
+                  <div class="neworder-empty-state">
+                    <div class="neworder-empty-state__icon">📦</div>
+                    <p class="neworder-empty-state__title">No hay productos disponibles</p>
+                    <p class="neworder-empty-state__description">
+                      Esta categoría no tiene productos
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      >
+        <div class="h-full w-full max-w-full overflow-hidden bg-background">
+          <div class="h-full overflow-y-auto overflow-x-hidden p-3">
+            <Motion.div
+              class={cn(
+                'neworder-product-grid',
+                gridColumns(),
+                perf.enableAnimations && 'stagger-container'
+              )}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: perf.animationDuration, delay: 0.1 }}
+            >
+              <For each={props.products}>
+                {(product, index) => (
+                  <Motion.div
+                    initial={perf.enableAnimations ? { opacity: 0, y: 10 } : undefined}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: perf.transitionDuration,
+                      delay: perf.enableAnimations ? index() * 0.025 : 0,
+                    }}
+                  >
+                    <OptimizedProductCard
+                      product={product}
+                      mode="order"
+                      onAction={props.handleAddToOrder}
+                      showCategory={true}
+                      class="w-full max-w-full"
+                    />
+                  </Motion.div>
+                )}
+              </For>
+            </Motion.div>
+          </div>
+        </div>
+      </Show>
+    </Show>
   );
-};
+}
 
 export default ProductGrid;
