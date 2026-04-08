@@ -1,6 +1,8 @@
+import logger from '@mks2508/better-logger';
 import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { render } from 'solid-js/web';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ErrorBoundary';
+import { initializeLogger } from '@/lib/logger-init';
 import { ASSET_PATHS, getAssetPath, getSwPath, getSwScope } from '@/lib/paths';
 import { ThemeProvider } from '@/lib/theme-context';
 import { PRESET_THEMES } from '@/lib/themes/preset-themes';
@@ -10,6 +12,9 @@ import App from './App';
 import './styles/optimized-product-card.css';
 import './styles/optimized-order-history.css';
 import './styles/optimized-login.css';
+
+// Initialize logger with transports and log levels FIRST
+initializeLogger();
 
 /**
  * Convert PRESET_THEMES format to ThemeCore cssVars format
@@ -37,26 +42,32 @@ function convertThemeToVars(theme: ThemeConfig): {
  * Install all preset themes into ThemeCore
  */
 async function installPresetThemes(themeCore: Awaited<ReturnType<typeof ThemeCore.init>>) {
+  const themeLog = logger.component('Theme');
   const registry = themeCore.getThemeRegistry();
   for (const theme of PRESET_THEMES) {
     try {
       const cssVars = convertThemeToVars(theme);
       await registry.installTheme({ name: theme.id, cssVars }, 'local://preset-themes');
-      console.log(`[Theme] Installed preset theme: ${theme.id}`);
+      themeLog.info(`Installed preset theme: ${theme.id}`);
     } catch (error) {
-      console.warn(`[Theme] Failed to install theme ${theme.id}:`, error);
+      themeLog.warn(
+        `Failed to install theme ${theme.id}`,
+        error instanceof Error ? error : undefined
+      );
     }
   }
 }
 
 async function registerServiceWorker() {
+  const swLog = logger.component('ServiceWorker');
+
   if (isTauri()) {
-    console.log('[SW] Skipping service worker registration in Tauri');
+    swLog.debug('Skipping service worker registration in Tauri');
     return;
   }
 
   if (!('serviceWorker' in navigator)) {
-    console.log('[SW] Service workers not supported');
+    swLog.debug('Service workers not supported');
     return;
   }
 
@@ -65,27 +76,29 @@ async function registerServiceWorker() {
       scope: getSwScope(),
     });
 
-    console.log('[SW] Service worker registered:', registration.scope);
+    swLog.info(`Service worker registered: ${registration.scope}`);
 
     registration.addEventListener('updatefound', () => {
       const newWorker = registration.installing;
       if (newWorker) {
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log('[SW] New version available');
+            swLog.info('New version available');
             window.dispatchEvent(new CustomEvent('sw-update-available'));
           }
         });
       }
     });
   } catch (error) {
-    console.error('[SW] Registration failed:', error);
+    swLog.error('Registration failed', error instanceof Error ? error : undefined);
   }
 }
 
 async function initializeApp() {
+  const appLog = logger.component('App');
+
   try {
-    console.log('Initializing ThemeCore...');
+    appLog.info('Initializing ThemeCore...');
 
     const themeCore = await ThemeCore.init({
       debug: import.meta.env.DEV,
@@ -103,15 +116,15 @@ async function initializeApp() {
 
     // Install preset themes
     await installPresetThemes(themeCore);
-    console.log(`[Theme] Installed ${PRESET_THEMES.length} preset themes`);
+    appLog.success('ThemeCore initialization', { themesCount: PRESET_THEMES.length });
 
     document.body.style.visibility = 'visible';
     document.body.style.opacity = '1';
     document.body.style.transition = 'opacity 0.15s ease-out';
 
-    console.log('ThemeCore ready, mounting Solid app...');
+    appLog.info('ThemeCore ready, mounting Solid app...');
   } catch (error) {
-    console.error('ThemeCore initialization failed:', error);
+    appLog.error('ThemeCore initialization failed', error instanceof Error ? error : undefined);
     document.body.style.visibility = 'visible';
     document.body.style.opacity = '1';
   }
@@ -119,7 +132,7 @@ async function initializeApp() {
   // Safety fallback
   setTimeout(() => {
     if (document.body.style.visibility !== 'visible') {
-      console.warn('Safety fallback: Revealing body manually');
+      appLog.warn('Safety fallback: Revealing body manually');
       document.body.style.visibility = 'visible';
       document.body.style.opacity = '1';
     }

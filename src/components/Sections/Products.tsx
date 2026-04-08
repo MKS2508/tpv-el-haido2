@@ -18,9 +18,12 @@ import {
 import { Input } from '@/components/ui/input';
 import ProductCard from '@/components/ui/ProductCard';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { createContextLogger } from '@/lib/logger';
 import type Category from '@/models/Category';
 import type Product from '@/models/Product';
 import useStore from '@/store/store';
+
+const log = createContextLogger('Products');
 
 function Products() {
   const store = useStore();
@@ -50,7 +53,7 @@ function Products() {
       })) as Product[];
       store.setProducts(productsWithIcons);
     } else {
-      console.error('[Products] Error fetching products:', result.error.code);
+      log.resultError('fetchProducts', result.error);
     }
   };
 
@@ -59,7 +62,7 @@ function Products() {
     if (result.ok) {
       setCategories(result.value);
     } else {
-      console.error('[Products] Error fetching categories:', result.error.code);
+      log.resultError('fetchCategories', result.error);
     }
   };
 
@@ -73,7 +76,7 @@ function Products() {
     if (result.ok) {
       fetchProducts();
     } else {
-      console.error('[Products] Error creating product:', result.error.code);
+      log.resultError('createProduct', result.error);
     }
   };
 
@@ -82,7 +85,7 @@ function Products() {
     if (result.ok) {
       fetchProducts();
     } else {
-      console.error('[Products] Error updating product:', result.error.code);
+      log.resultError('updateProduct', result.error);
     }
   };
 
@@ -99,7 +102,7 @@ function Products() {
         if (result.ok) {
           fetchProducts();
         } else {
-          console.error('[Products] Error deleting product:', result.error.code);
+          log.resultError('deleteProduct', result.error);
         }
       }
       setDeleteConfirmation(null);
@@ -112,7 +115,7 @@ function Products() {
     if (result.ok) {
       fetchCategories();
     } else {
-      console.error('[Products] Error creating category:', result.error.code);
+      log.resultError('createCategory', result.error);
     }
   };
 
@@ -121,7 +124,7 @@ function Products() {
     if (result.ok) {
       fetchCategories();
     } else {
-      console.error('[Products] Error updating category:', result.error.code);
+      log.resultError('updateCategory', result.error);
     }
   };
 
@@ -138,7 +141,7 @@ function Products() {
         if (result.ok) {
           fetchCategories();
         } else {
-          console.error('[Products] Error deleting category:', result.error.code);
+          log.resultError('deleteCategory', result.error);
         }
       }
       setDeleteConfirmation(null);

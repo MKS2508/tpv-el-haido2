@@ -16,6 +16,9 @@ import {
 } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { createContextLogger } from '@/lib/logger';
+
+const log = createContextLogger('ErrorBoundary');
 
 const isDev = import.meta.env.DEV;
 
@@ -205,7 +208,7 @@ function TechnicalDetails(props: { errorDetails: ErrorDetails }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy to clipboard:', err);
+      log.error('Failed to copy to clipboard', err instanceof Error ? err : undefined);
     }
   };
 
@@ -333,7 +336,7 @@ function ErrorFallback(props: {
 }) {
   // Log error for debugging - use untrack to avoid reactivity warning
   untrack(() => {
-    console.error('[ErrorBoundary] Caught error:', props.error);
+    log.error('Caught error', props.error);
   });
 
   return (

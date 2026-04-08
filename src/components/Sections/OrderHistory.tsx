@@ -52,9 +52,12 @@ import { toast } from '@/components/ui/use-toast.ts';
 import { useAEAT } from '@/hooks/useAEAT';
 import { useEmitInvoice } from '@/hooks/useEmitInvoice';
 import { useResponsive } from '@/hooks/useResponsive';
+import { createContextLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import type Order from '@/models/Order.ts';
 import useStore from '@/store/store';
+
+const log = createContextLogger('OrderHistory');
 
 interface OrderHistoryProps {
   setActiveSection: (section: string) => void;
@@ -139,7 +142,7 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
   };
 
   const handlePrintTicket = () => {
-    console.log('Printing ticket for order:', props.selectedOrder?.id);
+    log.debug('Printing ticket for order', { orderId: props.selectedOrder?.id });
     setShowTicketDialog(true);
   };
 
@@ -178,11 +181,11 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
       }
       return acc;
     }, []);
-    console.log({
-      orderHistory: orderHistory(),
-      activeOrders: activeOrders(),
-      filteredOrders,
-      uniqueOrders,
+    log.debug('Order filter state', {
+      orderHistoryCount: orderHistory().length,
+      activeOrdersCount: activeOrders().length,
+      filteredOrdersCount: filteredOrders.length,
+      uniqueOrdersCount: uniqueOrders.length,
     });
     if (filterStatus() !== 'all') {
       filteredOrders = filteredOrders

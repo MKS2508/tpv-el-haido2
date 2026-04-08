@@ -1,7 +1,9 @@
+import { ok } from '@mks2508/no-throw';
 import { FileIcon, UploadIcon, XIcon } from 'lucide-solid';
-import { createSignal, Show } from 'solid-js';
+import { createMemo, createSignal, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { getImportDataCounts } from '@/lib/onboarding-utils';
+import { createOperationStateSignal } from '@/lib/state-helpers';
 import { cn } from '@/lib/utils';
 import type { ImportData } from '@/models/Onboarding';
 
@@ -14,9 +16,26 @@ interface FileImporterProps {
 
 export function FileImporter(props: FileImporterProps) {
   const [isDragging, setIsDragging] = createSignal(false);
-  const [isLoading, setIsLoading] = createSignal(false);
-  const [error, setError] = createSignal<string | null>(null);
+  const importOp = createOperationStateSignal<void>();
   let inputRef: HTMLInputElement | undefined;
+
+  const isLoading = createMemo(() => importOp.state().status === 'pending');
+  const importError = createMemo(() => {
+    const s = importOp.state();
+    return s.status === 'failed' ? s.error.message : null;
+  });
+
+  const processFile = (file: File) =>
+    importOp.execute(async () => {
+      if (!file.name.endsWith('.json')) {
+        throw new Error('Solo se permiten archivos JSON');
+      }
+      const success = await props.onFileSelect(file);
+      if (!success) {
+        throw new Error('Error al procesar el archivo. Verifica el formato.');
+      }
+      return ok(undefined);
+    });
 
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
@@ -34,46 +53,24 @@ export function FileImporter(props: FileImporterProps) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    setError(null);
 
     const files = e.dataTransfer?.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    if (!file.name.endsWith('.json')) {
-      setError('Solo se permiten archivos JSON');
-      return;
-    }
-
-    setIsLoading(true);
-    const success = await props.onFileSelect(file);
-    setIsLoading(false);
-
-    if (!success) {
-      setError('Error al procesar el archivo. Verifica el formato.');
-    }
+    await processFile(files[0]);
   };
 
   const handleFileInput = async (e: Event) => {
-    setError(null);
     const target = e.target as HTMLInputElement;
     const files = target.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    setIsLoading(true);
-    const success = await props.onFileSelect(file);
-    setIsLoading(false);
-
-    if (!success) {
-      setError('Error al procesar el archivo. Verifica el formato.');
-    }
-
+    await processFile(files[0]);
     target.value = '';
   };
 
   const handleClear = () => {
-    setError(null);
+    importOp.reset();
     props.onClear?.();
   };
 
@@ -118,8 +115,8 @@ export function FileImporter(props: FileImporterProps) {
               disabled={isLoading()}
             />
           </button>
-          <Show when={error()}>
-            <p class="text-sm text-destructive text-center">{error()}</p>
+          <Show when={importError()}>
+            <p class="text-sm text-destructive text-center">{importError()}</p>
           </Show>
         </div>
       }

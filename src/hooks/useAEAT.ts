@@ -1,12 +1,16 @@
 /**
  * useAEAT Hook
  *
- * Hook principal para integración con AEAT VERI*FACTU.
- * Combina la gestión del sidecar con el servicio HTTP.
+ * Principal hook para integración con AEAT VERI*FACTU.
+ * Combina la gestión del sidecar con operaciones HTTP.
+ * Usa TransactionState para conexión y OperationState para operaciones de escritura.
  */
 
-import { isErr } from '@mks2508/no-throw';
+import { isErr, ok, type Result, tryCatchAsync } from '@mks2508/no-throw';
 import { createEffect, createMemo, createSignal } from 'solid-js';
+import { AEATErrorCode } from '@/lib/error-codes';
+import { createContextLogger } from '@/lib/logger';
+import { createOperationStateSignal, createTransactionStateSignal } from '@/lib/state-helpers';
 import type {
   AEATConfig,
   AEATConnectionStatus,
@@ -22,13 +26,13 @@ import { useAEATSidecar } from './useAEATSidecar';
 
 // ==================== Types ====================
 
-interface UseAEATOptions {
+interface IUseAEATOptions {
   config?: AEATConfig;
   onConnectionChange?: (status: AEATConnectionStatus) => void;
   onError?: (error: string) => void;
 }
 
-interface UseAEATReturn {
+interface IUseAEATReturn {
   // Estado
   config: () => AEATConfig;
   connectionStatus: () => AEATConnectionStatus;
@@ -42,7 +46,7 @@ interface UseAEATReturn {
   testConnection: () => Promise<AEATResult<AEATConnectionStatus>>;
   refreshConnectionStatus: () => Promise<void>;
 
-  // Sidecar (solo en modo sidecar)
+  // Sidecar
   startSidecar: () => Promise<void>;
   stopSidecar: () => Promise<void>;
   restartSidecar: () => Promise<void>;
@@ -61,13 +65,17 @@ interface UseAEATReturn {
   isConnected: () => boolean;
 }
 
+// ==================== Logger ====================
+
+const log = createContextLogger('AEAT');
+
 // ==================== Constants ====================
 
 const CONNECTION_CHECK_INTERVAL = 30000; // 30 seconds
 
 // ==================== Hook ====================
 
-export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
+export function useAEAT(options: IUseAEATOptions = {}): IUseAEATReturn {
   const { onConnectionChange, onError } = options;
 
   // Config state - get initial value synchronously
@@ -91,12 +99,15 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
     lastCheck: null,
   });
 
-  const [isLoading, setIsLoading] = createSignal(false);
+  // Operations
+  const connectionOp = createTransactionStateSignal<AEATConnectionStatus>();
+  const registrarOp = createOperationStateSignal<RegistrarFacturaResponse>();
+  const consultarOp = createOperationStateSignal<ConsultarFacturasResponse>();
 
   let connectionCheckIntervalRef: ReturnType<typeof setInterval> | null = null;
   let previousConnectionStatus = false;
 
-  // Sidecar hook - wrap in createEffect to track reactive config
+  // Sidecar hook
   const sidecar = createMemo(() =>
     useAEATSidecar({
       port: config().sidecarPort,
@@ -109,6 +120,10 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
   // Derived state
   const isEnabled = () => config().mode !== 'disabled';
   const isConnected = () => connectionStatus().isConnected;
+  const isLoading = () =>
+    connectionOp.state().status === 'loading' ||
+    registrarOp.state().status === 'pending' ||
+    consultarOp.state().status === 'pending';
 
   /**
    * Actualiza la configuración
@@ -120,8 +135,9 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
       // Guardar en localStorage
       try {
         localStorage.setItem('tpv-aeat-config', JSON.stringify(newConfig));
+        log.debug('Config saved to localStorage');
       } catch {
-        console.warn('Failed to save AEAT config to localStorage');
+        log.warn('Failed to save AEAT config to localStorage');
       }
 
       // Reconfigurar el servicio
@@ -135,9 +151,8 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
    * Prueba la conexión con el servicio
    */
   const testConnection = async (): Promise<AEATResult<AEATConnectionStatus>> => {
-    setIsLoading(true);
-
-    try {
+    const result = await tryCatchAsync(async () => {
+      log.debug('Testing connection');
       const status = await aeatService.getConnectionStatus(config());
       setConnectionStatus(status);
 
@@ -145,11 +160,14 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
       if (status.isConnected !== previousConnectionStatus) {
         previousConnectionStatus = status.isConnected;
         onConnectionChange?.(status);
+        log.debug('Connection status changed', { isConnected: status.isConnected });
       }
 
-      return { ok: true, value: status };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return status;
+    }, AEATErrorCode.ConnectionFailed);
+
+    if (!result.ok) {
+      const errorMessage = result.error.message;
       onError?.(errorMessage);
 
       const status: AEATConnectionStatus = {
@@ -161,16 +179,12 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
       };
 
       setConnectionStatus(status);
-      return {
-        ok: false,
-        error: {
-          code: 'AEAT_CONNECTION_FAILED',
-          message: errorMessage,
-        },
-      };
-    } finally {
-      setIsLoading(false);
+      log.resultError('testConnection', result.error);
+
+      return { ok: false, error: result.error };
     }
+
+    return { ok: true, value: result.value };
   };
 
   /**
@@ -186,13 +200,14 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
    */
   const startSidecar = async () => {
     if (config().mode !== 'sidecar') {
-      console.warn('Sidecar can only be started in sidecar mode');
+      log.warn('Sidecar can only be started in sidecar mode');
       return;
     }
 
     const result = await sidecar().start();
     if (isErr(result)) {
-      onError?.((result.error as unknown as Error).message);
+      onError?.(result.error.message);
+      log.resultError('startSidecar', result.error);
     } else {
       // Esperar un poco y luego verificar conexión
       setTimeout(refreshConnectionStatus, 2000);
@@ -205,7 +220,8 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
   const stopSidecar = async () => {
     const result = await sidecar().stop();
     if (isErr(result)) {
-      onError?.((result.error as unknown as Error).message);
+      onError?.(result.error.message);
+      log.resultError('stopSidecar', result.error);
     }
     setConnectionStatus((prev) => ({ ...prev, isConnected: false }));
   };
@@ -216,7 +232,8 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
   const restartSidecar = async () => {
     const result = await sidecar().restart();
     if (isErr(result)) {
-      onError?.((result.error as unknown as Error).message);
+      onError?.(result.error.message);
+      log.resultError('restartSidecar', result.error);
     } else {
       setTimeout(refreshConnectionStatus, 2000);
     }
@@ -238,12 +255,8 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
       };
     }
 
-    setIsLoading(true);
-    try {
-      return await aeatService.registrarFactura(request);
-    } finally {
-      setIsLoading(false);
-    }
+    // Execute and return directly from aeatService
+    return aeatService.registrarFactura(request);
   };
 
   /**
@@ -262,12 +275,8 @@ export function useAEAT(options: UseAEATOptions = {}): UseAEATReturn {
       };
     }
 
-    setIsLoading(true);
-    try {
-      return await aeatService.consultarFacturas(filters);
-    } finally {
-      setIsLoading(false);
-    }
+    // Execute and return directly from aeatService
+    return aeatService.consultarFacturas(filters);
   };
 
   /**

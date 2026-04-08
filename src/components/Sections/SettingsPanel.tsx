@@ -68,6 +68,7 @@ import {
   setGlassEffectEnabled,
   setPerformanceMode,
 } from '@/hooks/usePerformanceConfig';
+import { createContextLogger } from '@/lib/logger';
 import { useAppTheme } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
@@ -79,6 +80,8 @@ import {
   runThermalPrinterCommand,
 } from '@/services/thermal-printer.service.ts';
 import useStore from '@/store/store';
+
+const log = createContextLogger('SettingsPanel');
 
 type SettingsPanelProps = {
   isSidebarOpen: boolean;
@@ -165,7 +168,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
       const status = await platform.checkLicense();
       setLicenseStatus(status);
     } catch (error) {
-      console.error('Error refreshing license status:', error);
+      log.error('Error refreshing license status', error instanceof Error ? error : undefined);
     }
   };
 
@@ -253,7 +256,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     let result = '';
     try {
       result = await runThermalPrinterCommand('isConnected,execute,raw(Hello World)');
-      console.log('Printer command result:', result);
+      log.debug('Printer command result', { result });
       if (result.indexOf('Error') !== -1 || result.indexOf('error') !== -1) {
         toast({
           title: 'Error al imprimir ticket',
@@ -269,15 +272,15 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
       }
       return result;
     } catch (error) {
-      console.error('Failed to print:', error);
+      log.error('Failed to print', error instanceof Error ? error : undefined);
       return result;
     }
   }
 
   const handleTestConnection = async () => {
-    console.log('Testing connection...');
+    log.debug('Testing printer connection');
     const result = await runThermalPrinterCommand('isConnected');
-    console.log('Printer command result:', result);
+    log.debug('Printer command result', { result });
     if (result.indexOf('true') !== -1) {
       toast({
         title: 'Conexion exitosa',
@@ -705,7 +708,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                     description: 'No se pudo eliminar la licencia',
                     variant: 'destructive',
                   });
-                  console.error('Error clearing license:', error);
+                  log.error('Error clearing license', error instanceof Error ? error : undefined);
                 }
               }}
             />

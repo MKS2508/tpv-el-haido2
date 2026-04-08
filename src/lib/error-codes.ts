@@ -114,6 +114,16 @@ export const AEATErrorCode = {
   ModeNotAvailable: 'AEAT_MODE_NOT_AVAILABLE',
 } as const;
 
+// ==================== Audit Errors ====================
+export const AuditErrorCode = {
+  CreateFailed: 'AUDIT_CREATE_FAILED',
+  ReadFailed: 'AUDIT_READ_FAILED',
+  ExportFailed: 'AUDIT_EXPORT_FAILED',
+  CleanupFailed: 'AUDIT_CLEANUP_FAILED',
+  InvalidFilter: 'AUDIT_INVALID_FILTER',
+  SerializationError: 'AUDIT_SERIALIZATION_ERROR',
+} as const;
+
 // ==================== Type Definitions ====================
 export type StorageErrorCode = ErrorCode<typeof StorageErrorCode>;
 export type PrinterErrorCode = ErrorCode<typeof PrinterErrorCode>;
@@ -125,6 +135,7 @@ export type AuthErrorCode = ErrorCode<typeof AuthErrorCode>;
 export type NetworkErrorCode = ErrorCode<typeof NetworkErrorCode>;
 export type LicenseErrorCode = ErrorCode<typeof LicenseErrorCode>;
 export type AEATErrorCode = ErrorCode<typeof AEATErrorCode>;
+export type AuditErrorCode = ErrorCode<typeof AuditErrorCode>;
 
 // All error codes union
 export type AppErrorCode =
@@ -137,12 +148,14 @@ export type AppErrorCode =
   | AuthErrorCode
   | NetworkErrorCode
   | LicenseErrorCode
-  | AEATErrorCode;
+  | AEATErrorCode
+  | AuditErrorCode;
 
 // Type alias for storage-related Result errors
 export type StorageResultError = ResultError<StorageErrorCode>;
 export type PrinterResultError = ResultError<PrinterErrorCode>;
 export type AEATResultError = ResultError<AEATErrorCode>;
+export type AuditResultError = ResultError<AuditErrorCode>;
 
 // Re-export from no-throw for convenience
 export type { ErrorCode, ResultError } from '@mks2508/no-throw';

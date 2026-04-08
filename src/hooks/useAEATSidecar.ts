@@ -13,6 +13,7 @@ import { type Child, Command } from '@tauri-apps/plugin-shell';
 import { createEffect, createSignal, onCleanup, onMount } from 'solid-js';
 import { config } from '@/lib/config';
 import { AEATErrorCode, type AEATResultError } from '@/lib/error-codes';
+import { createContextLogger } from '@/lib/logger';
 import type { AEATSidecarState } from '@/models/AEAT';
 import { isTauri } from '@/services/platform';
 
@@ -72,6 +73,10 @@ async function waitForServiceReady(
   return false;
 }
 
+// ==================== Logger ====================
+
+const log = createContextLogger('AEATSidecar');
+
 // ==================== Hook ====================
 
 export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSidecarReturn {
@@ -128,7 +133,7 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
 
       // Configurar listeners
       const handleClose = (data: { code: number | null }) => {
-        console.log(`[AEAT Sidecar] Process closed with code ${data.code}`);
+        log.debug(`Process closed with code ${data.code}`);
         childProcessRef = null;
 
         if (data.code !== null && data.code !== 0 && state().status === 'running') {
@@ -141,9 +146,7 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
           // Auto-restart si no hemos excedido el límite
           if (restartAttemptsCount < maxRestartAttempts) {
             restartAttemptsCount++;
-            console.log(
-              `[AEAT Sidecar] Attempting restart ${restartAttemptsCount}/${maxRestartAttempts}`
-            );
+            log.debug(`Attempting restart ${restartAttemptsCount}/${maxRestartAttempts}`);
             setTimeout(() => start(), 2000);
           }
         } else {
@@ -152,21 +155,22 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
       };
       command.on('close', handleClose);
 
-      command.on('error', (error) => {
-        console.error('[AEAT Sidecar] Process error:', error);
+      command.on('error', (error: any) => {
+        const err = error instanceof Error ? error : new Error(String(error));
+        log.error('Process error', err);
         setState((prev) => ({
           ...prev,
           status: 'error',
-          error: error,
+          error: err.message,
         }));
       });
 
       command.stdout.on('data', (line) => {
-        console.log(`[AEAT Sidecar stdout] ${line}`);
+        log.debug(`stdout: ${line}`);
       });
 
       command.stderr.on('data', (line) => {
-        console.error(`[AEAT Sidecar stderr] ${line}`);
+        log.error(`stderr: ${line}`);
       });
 
       // Spawn el proceso
@@ -280,10 +284,10 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
         });
 
         if (!response.ok) {
-          console.warn('[AEAT Sidecar] Health check failed, service may be unhealthy');
+          log.warn('Health check failed, service may be unhealthy');
         }
       } catch (error) {
-        console.error('[AEAT Sidecar] Health check error:', error);
+        log.error('Health check error', error instanceof Error ? error : undefined);
         // El proceso puede haber muerto, el listener de 'close' manejará esto
       }
     }, healthCheckInterval);
@@ -294,7 +298,9 @@ export function useAEATSidecar(options: UseAEATSidecarOptions = {}): UseAEATSide
    */
   onCleanup(() => {
     if (childProcessRef) {
-      childProcessRef.kill().catch(console.error);
+      childProcessRef.kill().catch((err) => {
+        log.error('Failed to kill process on cleanup', err instanceof Error ? err : undefined);
+      });
     }
     if (healthCheckIntervalRef) {
       clearInterval(healthCheckIntervalRef);

@@ -3,8 +3,8 @@ import { createSignal, For, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ASSET_PATHS } from '@/lib/paths';
 import { validatePin } from '@/lib/onboarding-utils';
+import { ASSET_PATHS } from '@/lib/paths';
 import type User from '@/models/User';
 
 interface UserFormProps {

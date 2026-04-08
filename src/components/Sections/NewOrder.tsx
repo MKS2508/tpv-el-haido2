@@ -20,6 +20,7 @@ import TableScroll from '@/components/ui/TableScroll';
 import { toast } from '@/components/ui/use-toast';
 import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
 import { useResponsive } from '@/hooks/useResponsive';
+import { createContextLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import type Order from '@/models/Order';
 import type { OrderItem } from '@/models/Order';
@@ -27,6 +28,8 @@ import type Product from '@/models/Product';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter';
 import useStore from '@/store/store';
 import '@/styles/neworder.css';
+
+const log = createContextLogger('NewOrder');
 
 function NewOrder() {
   const store = useStore();
@@ -103,7 +106,7 @@ function NewOrder() {
             duration: 3000,
           });
         } else {
-          console.error('Error al conectar la impresora.');
+          log.error('Error al conectar la impresora');
           toast({
             title: 'Error al imprimir ticket',
             description: 'No se pudo imprimir el ticket. Por favor, intentelo de nuevo.',
@@ -111,7 +114,7 @@ function NewOrder() {
           });
         }
       } catch (error) {
-        console.error('Error al imprimir ticket:', error);
+        log.error('Error al imprimir ticket', error instanceof Error ? error : undefined);
         toast({
           title: 'Error al imprimir ticket',
           description: 'No se pudo imprimir el ticket. Por favor, intentelo de nuevo.',
@@ -127,7 +130,7 @@ function NewOrder() {
 
   const handleCloseTab = (orderId: number) => {
     if (orderId == null || orderId === undefined) {
-      console.error('[NewOrder] Invalid order ID:', orderId);
+      log.warn('Invalid order ID', { orderId });
       return;
     }
     const orderToCloseItem = store.state.activeOrders.find((order) => order.id === orderId);

@@ -2,11 +2,16 @@
  * useEmitInvoice Hook
  *
  * Hook para emitir facturas a AEAT VERI*FACTU
+ * Usa OperationState para gestionar el proceso de emisión.
  */
 
-import { createSignal } from 'solid-js';
+import { ok, type Result, type ResultError } from '@mks2508/no-throw';
+import { createMemo } from 'solid-js';
 import { toast } from '@/components/ui/use-toast';
 import { useAEAT } from '@/hooks/useAEAT';
+import type { AppErrorCode } from '@/lib/error-codes';
+import { createContextLogger } from '@/lib/logger';
+import { createOperationStateSignal } from '@/lib/state-helpers';
 import type { RegistrarFacturaResponse } from '@/models/AEAT';
 import type Order from '@/models/Order';
 import type { OrderAEATInfo, TaxBreakdownItem } from '@/models/Order';
@@ -15,7 +20,7 @@ import useStore from '@/store/store';
 
 // ==================== Types ====================
 
-export interface EmitInvoiceResult {
+export interface IEmitInvoiceResult {
   success: boolean;
   order: Order;
   csv?: string;
@@ -23,14 +28,22 @@ export interface EmitInvoiceResult {
   error?: string;
 }
 
-export interface UseEmitInvoiceReturn {
+export interface IUseEmitInvoiceReturn {
   /** Emite una factura para un pedido */
-  emitInvoice: (order: Order) => Promise<EmitInvoiceResult>;
-  /** Indica si se está emitiendo una factura */
+  emitInvoice: (order: Order) => Promise<IEmitInvoiceResult>;
+  /** Indica si se está emitiendo una factura (backwards compat) */
   isEmitting: boolean;
-  /** Último error ocurrido */
+  /** Último error ocurrido (backwards compat) */
   lastError: string | null;
+  /** Full OperationState para consumidores avanzados */
+  operationState: () => any; // Accessor<OperationState<RegistrarFacturaResponse, Record<string, unknown>>>
+  /** Reset operation state */
+  reset: () => void;
 }
+
+// ==================== Logger ====================
+
+const log = createContextLogger('EmitInvoice');
 
 // ==================== Helper Functions ====================
 
@@ -74,12 +87,18 @@ function processAEATResponse(
 
 // ==================== Hook ====================
 
-export function useEmitInvoice(): UseEmitInvoiceReturn {
-  const [isEmitting, setIsEmitting] = createSignal(false);
-  const [lastError, setLastError] = createSignal<string | null>(null);
+export function useEmitInvoice(): IUseEmitInvoiceReturn {
+  const operation = createOperationStateSignal<RegistrarFacturaResponse>();
 
   const { config, isEnabled, isConnected, registrarFactura } = useAEAT();
   const { state, storageAdapter, setOrderHistory } = useStore();
+
+  // Backwards-compatible derived accessors
+  const isEmitting = createMemo(() => operation.state().status === 'pending');
+  const lastError = createMemo(() => {
+    const s = operation.state();
+    return s.status === 'failed' ? s.error.message : null;
+  });
 
   /**
    * Actualiza un pedido en el store y en storage
@@ -105,148 +124,149 @@ export function useEmitInvoice(): UseEmitInvoiceReturn {
   /**
    * Emite una factura para un pedido
    */
-  const emitInvoice = async (order: Order): Promise<EmitInvoiceResult> => {
-    setIsEmitting(true);
-    setLastError(null);
+  const emitInvoice = async (order: Order): Promise<IEmitInvoiceResult> => {
+    let finalInvoiceNumber = '';
 
-    try {
-      // 1. Verificar que AEAT está habilitado
-      if (!isEnabled()) {
-        const error = 'La facturación AEAT no está habilitada. Actívela en Ajustes.';
-        setLastError(error);
-        toast({
-          title: 'AEAT no habilitado',
-          description: error,
-          variant: 'destructive',
-        });
-        return { success: false, order, error };
-      }
+    await operation.execute(
+      async (): Promise<Result<RegistrarFacturaResponse, ResultError<AppErrorCode>>> => {
+        // 1. Verificar que AEAT está habilitado
+        if (!isEnabled()) {
+          const error = 'La facturación AEAT no está habilitada. Actívela en Ajustes.';
+          toast({
+            title: 'AEAT no habilitado',
+            description: error,
+            variant: 'destructive',
+          });
+          throw new Error(error);
+        }
 
-      // 2. Verificar conexión
-      if (!isConnected()) {
-        const error = 'No hay conexión con el servicio AEAT. Verifique la configuración.';
-        setLastError(error);
-        toast({
-          title: 'Sin conexión AEAT',
-          description: error,
-          variant: 'destructive',
-        });
-        return { success: false, order, error };
-      }
+        // 2. Verificar conexión
+        if (!isConnected()) {
+          const error = 'No hay conexión con el servicio AEAT. Verifique la configuración.';
+          toast({
+            title: 'Sin conexión AEAT',
+            description: error,
+            variant: 'destructive',
+          });
+          throw new Error(error);
+        }
 
-      // 3. Validar datos del negocio
-      const businessValidation = invoiceBuilderService.validateBusinessData(config().businessData);
-      if (!businessValidation.isValid) {
-        const error = `Datos fiscales incompletos: ${businessValidation.errors.join(', ')}`;
-        setLastError(error);
-        toast({
-          title: 'Datos fiscales incompletos',
-          description: businessValidation.errors[0],
-          variant: 'destructive',
-        });
-        return { success: false, order, error };
-      }
+        // 3. Validar datos del negocio
+        const businessValidation = invoiceBuilderService.validateBusinessData(
+          config().businessData
+        );
+        if (!businessValidation.isValid) {
+          const error = `Datos fiscales incompletos: ${businessValidation.errors.join(', ')}`;
+          toast({
+            title: 'Datos fiscales incompletos',
+            description: businessValidation.errors[0],
+            variant: 'destructive',
+          });
+          throw new Error(error);
+        }
 
-      // 4. Validar pedido
-      const orderValidation = invoiceBuilderService.validateOrder(order);
-      if (!orderValidation.isValid) {
-        const error = `Pedido no facturable: ${orderValidation.errors.join(', ')}`;
-        setLastError(error);
-        toast({
-          title: 'Pedido no facturable',
-          description: orderValidation.errors[0],
-          variant: 'destructive',
-        });
-        return { success: false, order, error };
-      }
+        // 4. Validar pedido
+        const orderValidation = invoiceBuilderService.validateOrder(order);
+        if (!orderValidation.isValid) {
+          const error = `Pedido no facturable: ${orderValidation.errors.join(', ')}`;
+          toast({
+            title: 'Pedido no facturable',
+            description: orderValidation.errors[0],
+            variant: 'destructive',
+          });
+          throw new Error(error);
+        }
 
-      // 5. Marcar como pendiente mientras se envía
-      const pendingAEATInfo: OrderAEATInfo = {
-        invoiceSent: false,
-        invoiceStatus: 'pending',
-        invoiceSentAt: new Date().toISOString(),
-      };
-      await updateOrderWithAEATInfo(order, pendingAEATInfo);
-
-      // 6. Construir petición
-      const { request, invoiceNumber, taxBreakdown } = invoiceBuilderService.buildInvoiceRequest(
-        order,
-        config().businessData,
-        state.taxRate
-      );
-
-      console.log('[useEmitInvoice] Sending invoice:', invoiceNumber, request);
-
-      // 7. Enviar a AEAT
-      const result = await registrarFactura(request);
-
-      if (!result.ok) {
-        const error = result.error.message || 'Error al enviar factura a AEAT';
-        setLastError(error);
-
-        // Actualizar con error
-        const errorAEATInfo: OrderAEATInfo = {
-          invoiceSent: true,
-          invoiceNumber,
-          numSerieFactura: invoiceNumber,
-          invoiceStatus: 'error',
-          invoiceError: error,
+        // 5. Marcar como pendiente mientras se envía
+        const pendingAEATInfo: OrderAEATInfo = {
+          invoiceSent: false,
+          invoiceStatus: 'pending',
           invoiceSentAt: new Date().toISOString(),
-          taxBreakdown,
         };
-        const updatedOrder = await updateOrderWithAEATInfo(order, errorAEATInfo);
+        await updateOrderWithAEATInfo(order, pendingAEATInfo);
 
-        toast({
-          title: 'Error al emitir factura',
-          description: error,
-          variant: 'destructive',
-        });
+        // 6. Construir petición
+        const { request, invoiceNumber, taxBreakdown } = invoiceBuilderService.buildInvoiceRequest(
+          order,
+          config().businessData,
+          state.taxRate
+        );
+        finalInvoiceNumber = invoiceNumber;
 
-        return { success: false, order: updatedOrder, invoiceNumber, error };
+        log.debug('Sending invoice', { invoiceNumber });
+
+        // 7. Enviar a AEAT
+        const result = await registrarFactura(request);
+
+        if (!result.ok) {
+          const error = result.error.message || 'Error al enviar factura a AEAT';
+
+          // Actualizar con error
+          const errorAEATInfo: OrderAEATInfo = {
+            invoiceSent: true,
+            invoiceNumber,
+            numSerieFactura: invoiceNumber,
+            invoiceStatus: 'error',
+            invoiceError: error,
+            invoiceSentAt: new Date().toISOString(),
+            taxBreakdown,
+          };
+          await updateOrderWithAEATInfo(order, errorAEATInfo);
+
+          toast({
+            title: 'Error al emitir factura',
+            description: error,
+            variant: 'destructive',
+          });
+
+          throw new Error(error);
+        }
+
+        // 8. Procesar respuesta exitosa
+        const aeatInfo = processAEATResponse(result.value, invoiceNumber, taxBreakdown);
+        await updateOrderWithAEATInfo(order, aeatInfo);
+
+        // 9. Mostrar resultado
+        if (aeatInfo.invoiceStatus === 'accepted') {
+          toast({
+            title: 'Factura emitida correctamente',
+            description: aeatInfo.csv
+              ? `CSV: ${aeatInfo.csv}`
+              : `Factura ${invoiceNumber} registrada en AEAT`,
+          });
+
+          log.success('Invoice registered', { invoiceNumber, csv: aeatInfo.csv });
+          return ok(result.value);
+        } else {
+          const error = aeatInfo.invoiceError || 'Factura rechazada por AEAT';
+          toast({
+            title: 'Factura rechazada',
+            description: error,
+            variant: 'destructive',
+          });
+
+          throw new Error(error);
+        }
       }
+    );
 
-      // 8. Procesar respuesta exitosa
-      const aeatInfo = processAEATResponse(result.value, invoiceNumber, taxBreakdown);
-      const updatedOrder = await updateOrderWithAEATInfo(order, aeatInfo);
-
-      // 9. Mostrar resultado
-      if (aeatInfo.invoiceStatus === 'accepted') {
-        toast({
-          title: 'Factura emitida correctamente',
-          description: aeatInfo.csv
-            ? `CSV: ${aeatInfo.csv}`
-            : `Factura ${invoiceNumber} registrada en AEAT`,
-        });
-
-        return {
-          success: true,
-          order: updatedOrder,
-          csv: aeatInfo.csv,
-          invoiceNumber,
-        };
-      } else {
-        const error = aeatInfo.invoiceError || 'Factura rechazada por AEAT';
-        toast({
-          title: 'Factura rechazada',
-          description: error,
-          variant: 'destructive',
-        });
-
-        return { success: false, order: updatedOrder, invoiceNumber, error };
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      setLastError(errorMessage);
-
-      toast({
-        title: 'Error inesperado',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-
-      return { success: false, order, error: errorMessage };
-    } finally {
-      setIsEmitting(false);
+    // Build result based on operation state
+    const opState = operation.state();
+    if (opState.status === 'success') {
+      const result = opState.result;
+      return {
+        success: true,
+        order,
+        csv: result?.RegistroFactura?.[0]?.CSV,
+        invoiceNumber: finalInvoiceNumber,
+      };
+    } else {
+      return {
+        success: false,
+        order,
+        invoiceNumber: finalInvoiceNumber || undefined,
+        error: opState.status === 'failed' ? opState.error.message : 'Unknown error',
+      };
     }
   };
 
@@ -258,7 +278,13 @@ export function useEmitInvoice(): UseEmitInvoiceReturn {
     get lastError() {
       return lastError();
     },
+    operationState: operation.state,
+    reset: operation.reset,
   };
 }
+
+// Re-export old interface names for backwards compat
+export type EmitInvoiceResult = IEmitInvoiceResult;
+export type UseEmitInvoiceReturn = IUseEmitInvoiceReturn;
 
 export default useEmitInvoice;

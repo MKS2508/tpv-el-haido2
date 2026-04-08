@@ -29,5 +29,5 @@ const Checkbox: Component<CheckboxProps> = (props) => {
   );
 };
 
-export { Checkbox };
 export type { CheckboxProps };
+export { Checkbox };

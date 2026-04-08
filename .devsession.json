@@ -1,0 +1,95 @@
+{
+  "$schema": "https://unpkg.com/@mks2508/mks-dev-session/schema.json",
+  "name": "tpv-haido",
+  "project": "TPV El Haido",
+  "type": "monorepo-fullstack",
+  "layout": "2x2",
+  "panes": [
+    {
+      "name": "tauri",
+      "title": "Tauri Desktop App",
+      "command": "bun run tauri:dev",
+      "icon": "󰍹",
+      "color": "cyan"
+    },
+    {
+      "name": "license",
+      "title": "License Server (Elysia)",
+      "cwd": "apps/license-server",
+      "command": "bun run src/index.ts",
+      "icon": "󰒍",
+      "color": "green",
+      "healthCheck": {
+        "url": "http://localhost:3002/api/license/health",
+        "interval": 5000,
+        "timeout": 2000
+      }
+    },
+    {
+      "name": "docs",
+      "title": "Documentation (Next.js)",
+      "cwd": "apps/haidodocs",
+      "command": "bun run dev",
+      "icon": "󰚺",
+      "color": "purple",
+      "healthCheck": {
+        "url": "http://localhost:3000",
+        "interval": 5000,
+        "timeout": 2000
+      }
+    },
+    {
+      "name": "shell",
+      "title": "Shell",
+      "command": null,
+      "icon": "",
+      "color": "yellow"
+    }
+  ],
+  "networking": {
+    "mode": "direct",
+    "direct": {
+      "license": 3002,
+      "docs": 3000,
+      "vite": 1420
+    }
+  },
+  "theme": "tokyo-night",
+  "commands": {
+    "seed": {
+      "description": "Seed database with demo data",
+      "pane": "shell",
+      "command": "bun run seed"
+    },
+    "seed:clear": {
+      "description": "Clear and reseed database",
+      "pane": "shell",
+      "command": "bun run seed:clear"
+    },
+    "typecheck": {
+      "description": "Run TypeScript type check",
+      "pane": "shell",
+      "command": "bun run typecheck"
+    },
+    "lint:fix": {
+      "description": "Fix linting issues",
+      "pane": "shell",
+      "command": "bun run lint:fix"
+    },
+    "build": {
+      "description": "Build frontend",
+      "pane": "shell",
+      "command": "bun run build"
+    },
+    "build:aeat": {
+      "description": "Build AEAT sidecar for current platform",
+      "pane": "shell",
+      "command": "bun run build:aeat-sidecar"
+    },
+    "build:pwa": {
+      "description": "Build PWA version",
+      "pane": "shell",
+      "command": "bun run build:pwa"
+    }
+  }
+}

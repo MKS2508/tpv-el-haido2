@@ -14,6 +14,7 @@ use serde_json::Value;
 use database::Database;
 use models::{Product, Category, Order, Table, User, ExportData, ImportData};
 use models::license::{LicenseKey, LicenseStatus};
+use models::audit::{AuditLog, AuditLogCreateRequest, AuditLogFilter, AuditLogExportOptions, AuditLogExportResult};
 use license::{generate_machine_fingerprint, hash_license_key, validate_license_online};
 use screenshot::{save_screenshot_from_base64, get_screenshots_dir};
 
@@ -378,6 +379,48 @@ async fn clear_license(state: State<'_, DbState>) -> Result<(), String> {
     db.clear_license().map_err(|e| e.to_string())
 }
 
+// ==================== Audit Logs ====================
+
+#[tauri::command]
+async fn create_audit_log(
+    state: State<'_, DbState>,
+    request: AuditLogCreateRequest,
+) -> Result<i64, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.create_audit_log(request).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_audit_logs(
+    state: State<'_, DbState>,
+    filter: Option<AuditLogFilter>,
+) -> Result<Vec<AuditLog>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.get_audit_logs(filter).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn export_audit_logs(
+    state: State<'_, DbState>,
+    options: AuditLogExportOptions,
+) -> Result<AuditLogExportResult, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.export_audit_logs(options).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn cleanup_audit_logs(
+    state: State<'_, DbState>,
+    cutoff_date: String,
+) -> Result<i64, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.cleanup_audit_logs(&cutoff_date).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -448,6 +491,11 @@ pub fn run() {
             // Screenshot
             save_screenshot_from_base64,
             get_screenshots_dir,
+            // Audit Logs
+            create_audit_log,
+            get_audit_logs,
+            export_audit_logs,
+            cleanup_audit_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

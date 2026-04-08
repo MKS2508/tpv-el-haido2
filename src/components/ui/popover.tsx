@@ -37,4 +37,4 @@ function PopoverContent(props: PopoverContentProps) {
 
 const PopoverClose = KobaltePopover.CloseButton;
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverClose, PopoverPortal };
+export { Popover, PopoverClose, PopoverContent, PopoverPortal, PopoverTrigger };

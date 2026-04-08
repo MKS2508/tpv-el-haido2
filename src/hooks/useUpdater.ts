@@ -1,15 +1,55 @@
-import { createSignal } from 'solid-js';
+/**
+ * useUpdater Hook
+ *
+ * Manages app updates using Tauri's plugin-updater.
+ * Uses OperationState for check and download operations.
+ *
+ * @returns Update check and installation utilities
+ */
+
+import { ok, type Result, type ResultError } from '@mks2508/no-throw';
+import { createMemo } from 'solid-js';
+import type { AppErrorCode } from '@/lib/error-codes';
+import { createContextLogger } from '@/lib/logger';
+import { createOperationStateSignal } from '@/lib/state-helpers';
 import { isTauri } from '@/services/platform';
 
-// Stub Update type for PWA
-interface UpdateStub {
+// ==================== Types ====================
+
+/** Progress data for update download */
+export interface IUpdateProgress {
+  contentLength: number | null;
+  downloaded: number;
+}
+
+/** Update information from Tauri */
+interface IUpdateData {
   version: string;
   body: string | null;
   downloaded: boolean;
   downloadAndInstall: (callback: (event: any) => void) => Promise<void>;
 }
 
-// Lazy load Tauri plugins only when needed
+/** Check operation result */
+interface ICheckResult {
+  available: boolean;
+  version: string | null;
+  notes: string | null;
+  update: IUpdateData | null;
+}
+
+/** Download operation result */
+interface IDownloadResult {
+  success: boolean;
+  version: string;
+}
+
+// ==================== Logger ====================
+
+const log = createContextLogger('Updater');
+
+// ==================== Tauri Plugins ====================
+
 let checkFn: (() => Promise<any>) | null = null;
 let relaunchFn: (() => Promise<void>) | null = null;
 
@@ -22,174 +62,212 @@ async function loadTauriPlugins() {
       ]);
       checkFn = plugins[0].check;
       relaunchFn = plugins[1].relaunch;
+      log.debug('Tauri plugins loaded');
     } catch (error) {
-      console.error('[useUpdater] Failed to load Tauri plugins:', error);
+      log.error('Failed to load Tauri plugins', error instanceof Error ? error : undefined);
     }
   }
 }
 
-export interface UpdateProgress {
-  contentLength: number | null;
-  downloaded: number;
-}
+// ==================== Hook ====================
 
-export interface UpdateState {
-  available: boolean;
-  checking: boolean;
-  downloading: boolean;
-  error: string | null;
-  progress: UpdateProgress | null;
-  version: string | null;
-  notes: string | null;
-}
-
+/**
+ * Hook for checking and installing app updates
+ *
+ * @example
+ * ```ts
+ * const updater = useUpdater();
+ * await updater.checkForUpdates();
+ * if (updater.available()) {
+ *   await updater.downloadAndInstall();
+ * }
+ * ```
+ */
 export function useUpdater() {
-  const [state, setState] = createSignal<UpdateState>({
-    available: false,
-    checking: false,
-    downloading: false,
-    error: null,
-    progress: null,
-    version: null,
-    notes: null,
+  // Check operation
+  const checkOp = createOperationStateSignal<ICheckResult>();
+  // Download operation
+  const downloadOp = createOperationStateSignal<IDownloadResult>();
+
+  // Backwards-compatible derived states
+  const available = createMemo(() => {
+    const s = checkOp.state();
+    return s.status === 'success' ? (s.result?.available ?? false) : false;
   });
 
-  const [update, setUpdate] = createSignal<UpdateStub | null>(null);
+  const checking = createMemo(() => checkOp.state().status === 'pending');
+  const downloading = createMemo(() => downloadOp.state().status === 'pending');
 
-  const checkForUpdates = async () => {
-    // Skip if not Tauri
+  const error = createMemo(() => {
+    const checkErr = checkOp.state();
+    if (checkErr.status === 'failed') return checkErr.error.message;
+    const dlErr = downloadOp.state();
+    if (dlErr.status === 'failed') return dlErr.error.message;
+    return null;
+  });
+
+  const progress = createMemo(() => {
+    const s = downloadOp.state();
+    if (s.status === 'pending' && s.message) {
+      const match = s.message.match(/(\d+)\/(\d+)/);
+      if (match) {
+        return {
+          contentLength: parseInt(match[2]),
+          downloaded: parseInt(match[1]),
+        };
+      }
+    }
+    return null;
+  });
+
+  const version = createMemo(() => {
+    const s = checkOp.state();
+    return s.status === 'success' ? (s.result?.version ?? null) : null;
+  });
+
+  const notes = createMemo(() => {
+    const s = checkOp.state();
+    return s.status === 'success' ? (s.result?.notes ?? null) : null;
+  });
+
+  /**
+   * Check for available updates
+   *
+   * @returns Whether an update is available
+   */
+  const checkForUpdates = async (): Promise<boolean> => {
     if (!isTauri()) {
-      setState((prev) => ({ ...prev, checking: false, available: false }));
+      log.debug('Skipping update check (not Tauri environment)');
       return false;
     }
 
-    setState((prev) => ({ ...prev, checking: true, error: null }));
+    return new Promise((resolve) => {
+      checkOp
+        .execute(async (): Promise<Result<ICheckResult, ResultError<AppErrorCode>>> => {
+          try {
+            await loadTauriPlugins();
+            if (!checkFn) {
+              throw new Error('Tauri updater plugin not available');
+            }
 
-    try {
-      await loadTauriPlugins();
-      if (!checkFn) {
-        throw new Error('Tauri updater plugin not available');
-      }
+            log.debug('Checking for updates');
+            const result = await checkFn();
 
-      const result = await checkFn();
-
-      if (result) {
-        setUpdate(result as any);
-        setState((prev) => ({
-          ...prev,
-          checking: false,
-          available: true,
-          version: result.version,
-          notes: result.body || null,
-        }));
-        return true;
-      } else {
-        setState((prev) => ({
-          ...prev,
-          checking: false,
-          available: false,
-        }));
-        return false;
-      }
-    } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        checking: false,
-        error: error instanceof Error ? error.message : 'Error checking for updates',
-      }));
-      return false;
-    }
+            if (result) {
+              log.success('Update available', { version: result.version });
+              return ok({
+                available: true,
+                version: result.version,
+                notes: result.body || null,
+                update: result,
+              });
+            } else {
+              log.debug('No updates available');
+              return ok({
+                available: false,
+                version: null,
+                notes: null,
+                update: null,
+              });
+            }
+          } catch (err) {
+            log.error('Failed to check for updates', err instanceof Error ? err : undefined);
+            throw err;
+          }
+        })
+        .then(() => {
+          resolve(available());
+        });
+    });
   };
 
-  const downloadAndInstall = async () => {
-    // Skip if not Tauri
+  /**
+   * Download and install the available update
+   *
+   * @returns Whether installation succeeded
+   */
+  const downloadAndInstall = async (): Promise<boolean> => {
     if (!isTauri()) {
-      setState((prev) => ({ ...prev, error: 'Updates not available in PWA mode' }));
+      log.error('Updates not available in PWA mode');
       return false;
     }
 
-    const currentUpdate = update();
-    if (!currentUpdate) {
-      setState((prev) => ({ ...prev, error: 'No update available' }));
+    const checkState = checkOp.state();
+    const updateData = checkState.status === 'success' ? checkState.result?.update : null;
+
+    if (!updateData) {
+      log.error('No update available to download');
       return false;
     }
 
-    setState((prev) => ({
-      ...prev,
-      downloading: true,
-      error: null,
-      progress: { contentLength: null, downloaded: 0 },
-    }));
+    let dlSuccess = false;
 
-    try {
-      let contentLength: number | null = null;
-      let downloaded = 0;
+    await downloadOp.execute(
+      async (): Promise<Result<IDownloadResult, ResultError<AppErrorCode>>> => {
+        try {
+          log.debug('Starting download', { version: updateData.version });
 
-      await (currentUpdate as any).downloadAndInstall((event: any) => {
-        switch (event.event) {
-          case 'Started':
-            contentLength = event.data.contentLength ?? null;
-            setState((prev) => ({
-              ...prev,
-              progress: { contentLength, downloaded: 0 },
-            }));
-            break;
-          case 'Progress':
-            downloaded += event.data.chunkLength;
-            setState((prev) => ({
-              ...prev,
-              progress: { contentLength, downloaded },
-            }));
-            break;
-          case 'Finished':
-            setState((prev) => ({
-              ...prev,
-              downloading: false,
-              progress: null,
-            }));
-            break;
+          await updateData.downloadAndInstall((event: any) => {
+            switch (event.event) {
+              case 'Started':
+                log.debug('Download started', {
+                  contentLength: event.data.contentLength,
+                });
+                break;
+              case 'Progress':
+                log.debug('Download progress', {
+                  chunkLength: event.data.chunkLength,
+                });
+                break;
+              case 'Finished':
+                log.success('Download finished');
+                break;
+            }
+          });
+
+          dlSuccess = true;
+
+          // Relaunch the app
+          if (relaunchFn) {
+            await relaunchFn();
+          }
+
+          return ok({ success: true, version: updateData.version });
+        } catch (err) {
+          log.error('Download and install failed', err instanceof Error ? err : undefined);
+          throw err;
         }
-      });
-
-      // Relaunch the app after install
-      if (relaunchFn) {
-        await relaunchFn();
       }
-      return true;
-    } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        downloading: false,
-        error: error instanceof Error ? error.message : 'Error installing update',
-      }));
-      return false;
-    }
+    );
+
+    return dlSuccess;
   };
 
+  /**
+   * Dismiss the available update
+   */
   const dismissUpdate = () => {
-    setUpdate(null);
-    setState((prev) => ({
-      ...prev,
-      available: false,
-      version: null,
-      notes: null,
-    }));
+    log.debug('Dismissing update');
+    checkOp.reset();
   };
 
-  // Return signal accessors and actions
   return {
-    // Signal accessors - call these as functions to get reactive values
-    available: () => state().available,
-    checking: () => state().checking,
-    downloading: () => state().downloading,
-    error: () => state().error,
-    progress: () => state().progress,
-    version: () => state().version,
-    notes: () => state().notes,
+    // Backwards-compatible accessors
+    available,
+    checking,
+    downloading,
+    error,
+    progress,
+    version,
+    notes,
 
     // Actions
     checkForUpdates,
     downloadAndInstall,
     dismissUpdate,
+
+    // Full operation states for advanced consumers
+    checkOperation: checkOp.state,
+    downloadOperation: downloadOp.state,
   };
 }

@@ -3,6 +3,7 @@ import { createMemo, createSignal, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useScreenshot } from '@/hooks/useScreenshot';
+import { createContextLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import {
   type ScreenshotContext,
@@ -16,6 +17,8 @@ import {
 interface ScreenshotOverlayProps {
   activeSection: string;
 }
+
+const log = createContextLogger('ScreenshotOverlay');
 
 function ScreenshotOverlay(props: ScreenshotOverlayProps) {
   const screenshot = useScreenshot();
@@ -185,8 +188,15 @@ function ScreenshotOverlay(props: ScreenshotOverlayProps) {
     setIsExpanded(true);
     // Re-detectar contexto cuando se abre el panel
     setTimeout(() => {
-      setContext(detectContext());
-      console.log('[Screenshot] Contexto detectado:', context());
+      const ctx = detectContext();
+      setContext(ctx);
+      if (ctx) {
+        log.debug('Contexto detectado', {
+          section: ctx.section,
+          sectionLabel: ctx.sectionLabel,
+          subSection: ctx.subSection,
+        });
+      }
     }, 50);
   };
 

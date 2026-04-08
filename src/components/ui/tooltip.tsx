@@ -32,4 +32,4 @@ function TooltipContent(props: TooltipContentProps) {
   );
 }
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };

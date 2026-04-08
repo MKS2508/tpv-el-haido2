@@ -54,4 +54,4 @@ function AvatarFallback(props: AvatarFallbackProps) {
   );
 }
 
-export { Avatar, AvatarImage, AvatarFallback };
+export { Avatar, AvatarFallback, AvatarImage };

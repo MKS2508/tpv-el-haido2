@@ -1,6 +1,7 @@
 import { batch, createRoot, createSignal } from 'solid-js';
 import { createStore, produce } from 'solid-js/store';
 import { config } from '@/lib/config';
+import { storeLog } from '@/lib/logger';
 import type Category from '@/models/Category';
 import type Customer from '@/models/Customer';
 import type Order from '@/models/Order';
@@ -9,12 +10,31 @@ import type Product from '@/models/Product';
 import type ITable from '@/models/Table';
 import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter';
 import type User from '@/models/User';
+import type { IAuditContext } from '@/services/audit.service';
+import * as audit from '@/services/audit.service';
 import { HttpStorageAdapter } from '@/services/http-storage-adapter';
 import { IndexedDbStorageAdapter } from '@/services/indexeddb-storage-adapter';
 import { isTauri } from '@/services/platform';
 import { SqliteStorageAdapter } from '@/services/sqlite-storage-adapter';
 import type { IStorageAdapter, StorageMode } from '@/services/storage-adapter.interface';
 import type { LicenseStatus } from '@/types/license';
+
+/**
+ * Obtiene el NIF del negocio desde la configuración AEAT en localStorage.
+ * @returns NIF string o cadena vacía si no está configurado
+ */
+const getBusinessNif = (): string => {
+  try {
+    const saved = localStorage.getItem('tpv-aeat-config');
+    if (saved) {
+      const aeatConfig = JSON.parse(saved);
+      return aeatConfig?.businessData?.nif ?? '';
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return '';
+};
 
 // Debounce utility for localStorage
 const debounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number): T => {
@@ -31,7 +51,7 @@ const debouncedLocalStorageSet = debounce((key: string, value: string) => {
   try {
     localStorage.setItem(key, value);
   } catch (error) {
-    console.warn(`Failed to save ${key} to localStorage:`, error);
+    storeLog.warn(`Failed to save ${key} to localStorage:`, error);
   }
 }, 300) as (key: string, value: string) => void;
 
@@ -169,6 +189,17 @@ function createAppStore() {
     getStorageAdapterForMode(initialStorageMode)
   );
 
+  /**
+   * Construye el contexto de auditoría a partir del estado actual del store.
+   * Retorna null si no hay usuario seleccionado o NIF configurado.
+   */
+  const getAuditContext = (): IAuditContext | null => {
+    const user = state.selectedUser;
+    const nif = getBusinessNif();
+    if (!user || !nif) return null;
+    return { userId: user.id, userName: user.name, businessNif: nif };
+  };
+
   // === SETTERS ===
 
   const setUsers = (users: User[]) => {
@@ -223,6 +254,8 @@ function createAppStore() {
             s.customers.push(customer);
           })
         );
+        const ctx = getAuditContext();
+        if (ctx) audit.logUserCreate(ctx, String(customer.id), customer);
       }
       return result;
     }
@@ -237,6 +270,7 @@ function createAppStore() {
   const updateCustomer = async (customer: Customer) => {
     const dataService = storageAdapter();
     if (dataService.updateCustomer) {
+      const oldCustomer = state.customers.find((c) => c.id === customer.id);
       const result = await dataService.updateCustomer(customer);
       if (result.ok) {
         setState(
@@ -247,6 +281,8 @@ function createAppStore() {
             }
           })
         );
+        const ctx = getAuditContext();
+        if (ctx) audit.logUserUpdate(ctx, String(customer.id), oldCustomer, customer);
       }
       return result;
     }
@@ -272,6 +308,8 @@ function createAppStore() {
             s.customers = s.customers.filter((c) => c.id !== customerId);
           })
         );
+        const ctx = getAuditContext();
+        if (ctx) audit.logUserDelete(ctx, String(customerId), customerToDelete);
       }
       return result;
     }
@@ -343,7 +381,7 @@ function createAppStore() {
 
   const handleTableChange = async (tableId: number) => {
     const dataService = storageAdapter();
-    console.log(`[handleTableChange] Changing to table ${tableId}`);
+    storeLog.debug('Changing to table', { tableId });
 
     // Only find existing orders with items (active orders)
     const existingOrder = state.activeOrders.find(
@@ -352,9 +390,7 @@ function createAppStore() {
     );
 
     if (existingOrder) {
-      console.log(
-        `[handleTableChange] Found existing active order ${existingOrder.id} for table ${tableId}`
-      );
+      storeLog.debug('Found existing active order', { orderId: existingOrder.id, tableId });
       batch(() => {
         setState('selectedOrderId', existingOrder.id);
         setState('selectedOrder', existingOrder);
@@ -367,9 +403,10 @@ function createAppStore() {
       );
 
       if (emptyOrdersWithoutTable.length > 0) {
-        console.log(
-          `[handleTableChange] Assigning empty order ${emptyOrdersWithoutTable[0].id} to table ${tableId}`
-        );
+        storeLog.debug('Assigning empty order to table', {
+          orderId: emptyOrdersWithoutTable[0].id,
+          tableId,
+        });
         const updatedOrder: Order = { ...emptyOrdersWithoutTable[0], tableNumber: tableId };
 
         try {
@@ -387,10 +424,10 @@ function createAppStore() {
             })
           );
         } catch (error) {
-          console.error('[handleTableChange] Error updating empty order:', error);
+          storeLog.error('Error updating empty order', error instanceof Error ? error : undefined);
         }
       } else {
-        console.log(`[handleTableChange] Creating new order for table ${tableId}`);
+        storeLog.debug('Creating new order for table', { tableId });
         const newId = Date.now() + Math.floor(Math.random() * 1000);
         const newOrder: Order = {
           id: newId,
@@ -418,7 +455,7 @@ function createAppStore() {
             setState('selectedOrder', newOrder);
           });
         } catch (error) {
-          console.error('[handleTableChange] Error creating new order:', error);
+          storeLog.error('Error creating new order', error instanceof Error ? error : undefined);
         }
       }
     }
@@ -444,6 +481,10 @@ function createAppStore() {
         s.selectedOrderId = null;
       })
     );
+    const ctx = getAuditContext();
+    if (ctx) {
+      audit.logOrderComplete(ctx, completedOrder.id, completedOrder, completedOrder.paymentMethod);
+    }
   };
 
   const closeOrder = async (orderId: number) => {
@@ -463,6 +504,8 @@ function createAppStore() {
         }
       })
     );
+    const ctx = getAuditContext();
+    if (ctx) audit.logOrderCancel(ctx, orderId, 'Order closed');
   };
 
   const addToOrder = async (orderId: number, item: Product | OrderItem) => {
@@ -496,7 +539,7 @@ function createAppStore() {
   };
 
   const removeFromOrder = async (orderId: number, productId: number) => {
-    console.log(`[removeFromOrder] Removing product ${productId} from order ${orderId}`);
+    storeLog.debug('Removing product from order', { orderId, productId });
 
     setState(
       produce((s) => {
@@ -507,9 +550,11 @@ function createAppStore() {
 
           if (existingItemIndex !== -1) {
             const item = order.items[existingItemIndex];
-            console.log(
-              `[removeFromOrder] Current item: ${item.name}, quantity: ${item.quantity}, price: ${item.price}`
-            );
+            storeLog.debug('Current item before removal', {
+              itemName: item.name,
+              quantity: item.quantity,
+              price: item.price,
+            });
 
             if (item.quantity > 1) {
               item.quantity -= 1;
@@ -528,9 +573,10 @@ function createAppStore() {
             );
             order.itemCount = order.items.reduce((sum, orderItem) => sum + orderItem.quantity, 0);
 
-            console.log(
-              `[removeFromOrder] New totals: total=${order.total}, itemCount=${order.itemCount}`
-            );
+            storeLog.debug('Order totals after removal', {
+              total: order.total,
+              itemCount: order.itemCount,
+            });
           }
         }
       })
@@ -542,7 +588,7 @@ function createAppStore() {
         const dataService = storageAdapter();
         await dataService.updateOrder(updatedOrder);
       } catch (error) {
-        console.error('[removeFromOrder] Error updating order:', error);
+        storeLog.error('Error updating order', error instanceof Error ? error : undefined);
       }
     }
   };
@@ -580,6 +626,8 @@ function createAppStore() {
     setStorageMode,
     setLicenseStatus,
     setShowLicenseDialog,
+    // Audit
+    getAuditContext,
     // Complex actions
     handleTableChange,
     handleCompleteOrder,

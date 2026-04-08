@@ -36,8 +36,8 @@ import UpdateChecker from '@/components/UpdateChecker';
 import { Card, CardContent } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/toaster';
 import { useAboutDialog } from '@/hooks/useAboutDialog';
-import { ASSET_PATHS } from '@/lib/paths';
 import { config } from '@/lib/config';
+import { ASSET_PATHS } from '@/lib/paths';
 import { setupNativeMenu } from '@/lib/setupNativeMenu';
 import { useAppTheme } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
@@ -48,9 +48,12 @@ import {
   PrinterTypes,
   type ThermalPrinterServiceOptions,
 } from '@/models/ThermalPrinter';
+import { createContextLogger } from '@/lib/logger';
 import { getPlatformService } from '@/services/platform';
 import useStore from '@/store/store';
 import type { LicenseStatus } from '@/types/license';
+
+const log = createContextLogger('App');
 
 function App() {
   const store = useStore();
@@ -107,18 +110,18 @@ function App() {
 
   // Helper function to get fallback products
   const getFallbackProducts = (): Product[] => {
-    console.log('[App] Loading fallback products from products.json');
+    log.debug('Loading fallback products from products.json');
     const productsWithIcons = fallbackProducts.map((product) => ({
       ...product,
       icon: iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
     })) as Product[];
-    console.log(`[App] Loaded ${productsWithIcons.length} fallback products`);
+    log.debug('Loaded fallback products', { count: productsWithIcons.length });
     return productsWithIcons;
   };
 
   // Helper function to get fallback categories
   const getFallbackCategories = () => {
-    console.log('[App] Extracting fallback categories from products.json');
+    log.debug('Extracting fallback categories from products.json');
     const uniqueCategories = [
       ...new Set(fallbackProducts.map((product) => product.category)),
     ].filter(Boolean);
@@ -134,7 +137,7 @@ function App() {
   const seedProductsIfNeeded = async () => {
     const result = await store.storageAdapter().getProducts();
     if (result.ok && result.value.length === 0) {
-      console.log('[App] Seeding products from fallback...');
+      log.info('Seeding products from fallback');
       const fallbackProds = getFallbackProducts();
       for (const product of fallbackProds) {
         await store.storageAdapter().createProduct(product);
@@ -144,7 +147,7 @@ function App() {
       if (reloaded.ok) {
         store.setProducts(reloaded.value);
         store.setBackendConnected(true);
-        console.log(`[App] Seeded ${reloaded.value.length} products to database`);
+        log.success('Seeded products to database', { count: reloaded.value.length });
       }
     }
   };
@@ -153,7 +156,7 @@ function App() {
   const seedCategoriesIfNeeded = async () => {
     const result = await store.storageAdapter().getCategories();
     if (result.ok && result.value.length === 0) {
-      console.log('[App] Seeding categories from fallback...');
+      log.info('Seeding categories from fallback');
       const fallbackCats = getFallbackCategories();
       for (const category of fallbackCats) {
         await store.storageAdapter().createCategory(category);
@@ -162,7 +165,7 @@ function App() {
       const reloaded = await store.storageAdapter().getCategories();
       if (reloaded.ok) {
         store.setCategories(reloaded.value);
-        console.log(`[App] Seeded ${reloaded.value.length} categories to database`);
+        log.success('Seeded categories to database', { count: reloaded.value.length });
       }
     }
   };
@@ -186,13 +189,13 @@ function App() {
       if (result.ok && result.value.length > 0) {
         store.setCategories(result.value);
         store.setBackendConnected(true);
-        console.log('[App] Categories loaded:', result.value.length);
+        log.info('Categories loaded', { count: result.value.length });
       } else {
         await seedCategoriesIfNeeded();
         if (store.state.categories.length === 0) {
           const fallbackCats = getFallbackCategories();
           store.setCategories(fallbackCats);
-          console.log('[App] Using fallback categories:', fallbackCats.length);
+          log.warn('Using fallback categories', { count: fallbackCats.length });
         }
       }
     }
@@ -208,7 +211,7 @@ function App() {
         })) as Product[];
         store.setProducts(productsWithIcons);
         store.setBackendConnected(true);
-        console.log('[App] Products loaded:', result.value.length);
+        log.info('Products loaded', { count: result.value.length });
       } else {
         await seedProductsIfNeeded();
         if (store.state.products.length === 0) {
@@ -218,7 +221,7 @@ function App() {
               iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
           })) as Product[];
           store.setProducts(productsWithIcons);
-          console.log('[App] Using fallback products');
+          log.warn('Using fallback products');
         }
       }
     }
@@ -228,7 +231,7 @@ function App() {
     if (ordersResult.ok) {
       const paidOrders = ordersResult.value.filter((order) => order.status === 'paid');
       store.setOrderHistory(paidOrders);
-      console.log('[App] Order history loaded:', paidOrders.length);
+      log.info('Order history loaded', { count: paidOrders.length });
     }
 
     // Initialize users from database
@@ -236,7 +239,7 @@ function App() {
       const usersResult = await store.storageAdapter().getUsers();
       if (usersResult.ok && usersResult.value.length > 0) {
         store.setUsers(usersResult.value);
-        console.log('[App] Users loaded from database:', usersResult.value.length);
+        log.info('Users loaded from database', { count: usersResult.value.length });
       } else {
         // Create default users if database is empty
         const defaultUsers = [
@@ -259,7 +262,7 @@ function App() {
           await store.storageAdapter().createUser(user);
         }
         store.setUsers(defaultUsers);
-        console.log('[App] Default users created and loaded:', defaultUsers.length);
+        log.info('Default users created and loaded', { count: defaultUsers.length });
       }
     }
 
@@ -299,7 +302,7 @@ function App() {
 
     // PWA MODE: Skip license validation entirely (no native fingerprinting)
     if (!platform.canUseLicenseSystem()) {
-      console.log('[License] PWA MODE - License system not available, skipping validation');
+      log.info('PWA MODE - License system not available, skipping validation');
       const pwaStatus: LicenseStatus = {
         is_activated: true,
         is_valid: true,
@@ -316,7 +319,7 @@ function App() {
 
     // DEBUG MODE: Skip license validation entirely
     if (config.debug.enabled) {
-      console.log('[License] DEBUG MODE - Skipping license validation');
+      log.info('DEBUG MODE - Skipping license validation');
       const debugStatus: LicenseStatus = {
         is_activated: true,
         is_valid: true,
@@ -333,7 +336,12 @@ function App() {
 
     try {
       const status = await platform.checkLicense();
-      console.log('[License] Status:', status);
+      log.debug('License status', {
+        isActivated: status.is_activated,
+        isValid: status.is_valid,
+        type: status.license_type,
+        daysRemaining: status.days_remaining,
+      });
 
       store.setLicenseStatus(status);
 
@@ -344,7 +352,7 @@ function App() {
 
       setShowLicenseSplash(false);
     } catch (error) {
-      console.error('[License] Error checking license:', error);
+      log.error('Error checking license', error instanceof Error ? error : undefined);
       setShowLicenseSplash(true);
     }
   };
@@ -362,7 +370,7 @@ function App() {
     setShowLicenseSplash(false);
 
     if (!status.is_valid) {
-      console.error('[License] Invalid license activated:', status);
+      log.warn('Invalid license activated', { email: status.email, type: status.license_type });
     }
   };
 
@@ -396,12 +404,7 @@ function App() {
   // Track section changes
   createEffect(() => {
     const current = activeSection();
-    console.log('🔄 SECTION CHANGE:', {
-      from: prevSection,
-      to: current,
-      isMobile: isMobile(),
-      timestamp: new Date().toLocaleTimeString(),
-    });
+    log.debug('Section change', { from: prevSection, to: current, isMobile: isMobile() });
     prevSection = current;
   });
 

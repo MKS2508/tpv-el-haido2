@@ -1,4 +1,5 @@
-import { createSignal, Show } from 'solid-js';
+import { ok } from '@mks2508/no-throw';
+import { createMemo, createSignal, Show } from 'solid-js';
 import { toast } from 'solid-sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,8 +12,12 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { createContextLogger } from '@/lib/logger';
+import { createOperationStateSignal } from '@/lib/state-helpers';
 import { getPlatformService } from '@/services/platform';
 import type { LicenseActivationRequest, LicenseStatus } from '@/types/license';
+
+const log = createContextLogger('LicenseDialog');
 
 interface LicenseDialogProps {
   isOpen: boolean;
@@ -26,7 +31,9 @@ export default function LicenseDialog(props: LicenseDialogProps) {
 
   const [email, setEmail] = createSignal('');
   const [key, setKey] = createSignal('');
-  const [isLoading, setIsLoading] = createSignal(false);
+  const activateOp = createOperationStateSignal<LicenseStatus>();
+
+  const isLoading = createMemo(() => activateOp.state().status === 'pending');
 
   const formatKey = (value: string) => {
     const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -56,33 +63,30 @@ export default function LicenseDialog(props: LicenseDialogProps) {
   };
 
   const handleActivate = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
-    setIsLoading(true);
+    const request: LicenseActivationRequest = { key: key(), email: email() };
 
-    try {
+    await activateOp.execute(async () => {
+      log.debug('Activating license', { email: request.email });
       const platform = getPlatformService();
-      const request: LicenseActivationRequest = {
-        key: key(),
-        email: email(),
-      };
-
       const status = await platform.validateLicense(request.key, request.email);
 
-      if (status.is_valid) {
-        toast.success('Licencia activada correctamente');
-        props.onSuccess(status);
-        props.onClose();
-      } else {
-        toast.error(status.error_message || 'Error al activar la licencia');
+      if (!status.is_valid) {
+        const msg = status.error_message || 'Error al activar la licencia';
+        toast.error(msg);
+        throw new Error(msg);
       }
-    } catch (error) {
-      console.error('Error activating license:', error);
-      toast.error('Error de conexión con el servidor de licencias');
-    } finally {
-      setIsLoading(false);
+
+      return ok(status);
+    });
+
+    const opState = activateOp.state();
+    if (opState.status === 'success' && opState.result) {
+      toast.success('Licencia activada correctamente');
+      log.success('License activated');
+      props.onSuccess(opState.result);
+      props.onClose();
     }
   };
 

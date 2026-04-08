@@ -1,4 +1,5 @@
 import { Motion, Presence } from '@motionone/solid';
+import { ok } from '@mks2508/no-throw';
 import { Loader2 } from 'lucide-solid';
 import {
   createEffect,
@@ -15,8 +16,9 @@ import { Button } from '@/components/ui/button';
 import { GlassContainer } from '@/components/ui/GlassContainer';
 import { usePerformanceConfig } from '@/hooks/usePerformanceConfig';
 import { useResponsive } from '@/hooks/useResponsive';
-import { ASSET_PATHS } from '@/lib/paths';
 import { config } from '@/lib/config';
+import { ASSET_PATHS } from '@/lib/paths';
+import { createOperationStateSignal } from '@/lib/state-helpers';
 import type User from '@/models/User';
 import { isTauri } from '@/services/platform';
 
@@ -42,7 +44,8 @@ const Login = (props: LoginProps) => {
   const [pin, setPin] = createSignal('');
   const [error, setError] = createSignal('');
   const [currentTime, setCurrentTime] = createSignal(new Date());
-  const [isLoading, setIsLoading] = createSignal(false);
+  const loginOp = createOperationStateSignal<User>();
+  const isLoading = () => loginOp.state().status === 'pending';
   const responsive = useResponsive();
   const _perfConfig = usePerformanceConfig();
 
@@ -73,11 +76,11 @@ const Login = (props: LoginProps) => {
   const handlePinSubmit = () => {
     const user = selectedUser();
     if (user && pin() === user.pin) {
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
+      void loginOp.execute(async () => {
+        await new Promise<void>((resolve) => setTimeout(resolve, 2000));
         props.onLogin(user);
-      }, 2000);
+        return ok(user);
+      });
     } else {
       setError('PIN incorrecto');
       setPin('');

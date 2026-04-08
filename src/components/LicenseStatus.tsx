@@ -4,8 +4,11 @@ import { toast } from 'solid-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { createContextLogger } from '@/lib/logger';
 import { getPlatformService } from '@/services/platform';
 import type { LicenseStatus } from '@/types/license';
+
+const log = createContextLogger('LicenseStatus');
 
 interface LicenseStatusCardProps {
   licenseStatus: LicenseStatus | null;
@@ -39,7 +42,7 @@ export default function LicenseStatusCard(props: LicenseStatusCardProps) {
       toast.success('Licencia eliminada correctamente');
       props.onRefresh();
     } catch (error) {
-      console.error('Error clearing license:', error);
+      log.error('Error clearing license', error instanceof Error ? error : undefined);
       toast.error('Error al eliminar la licencia');
     }
   };

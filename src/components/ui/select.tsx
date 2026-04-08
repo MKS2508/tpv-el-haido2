@@ -437,10 +437,10 @@ function SelectSeparator(props: SelectSeparatorProps) {
 
 export {
   Select,
-  SelectValue,
-  SelectTrigger,
   SelectContent,
-  SelectLabel,
   SelectItem,
+  SelectLabel,
   SelectSeparator,
+  SelectTrigger,
+  SelectValue,
 };

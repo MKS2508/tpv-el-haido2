@@ -1,4 +1,5 @@
 import { Motion } from '@motionone/solid';
+import { ok } from '@mks2508/no-throw';
 import { Loader2 } from 'lucide-solid';
 import { createSignal, onMount, Show } from 'solid-js';
 import { toast } from 'solid-sonner';
@@ -6,8 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { config } from '@/lib/config';
+import { createContextLogger } from '@/lib/logger';
+import { createOperationStateSignal, createTransactionStateSignal } from '@/lib/state-helpers';
 import { getPlatformService } from '@/services/platform';
 import type { LicenseActivationRequest, LicenseStatus } from '@/types/license';
+
+const log = createContextLogger('LicenseSplashScreen');
 
 interface LicenseSplashScreenProps {
   onComplete: (status: LicenseStatus) => void;
@@ -16,8 +21,15 @@ interface LicenseSplashScreenProps {
 export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
   const [email, setEmail] = createSignal('');
   const [key, setKey] = createSignal('');
-  const [isLoading, setIsLoading] = createSignal(false);
-  const [isChecking, setIsChecking] = createSignal(true);
+
+  const activateOp = createOperationStateSignal<LicenseStatus>();
+  const checkOp = createTransactionStateSignal<LicenseStatus | null>();
+
+  const isLoading = () => activateOp.state().status === 'pending';
+  const isChecking = () => {
+    const s = checkOp.state().status;
+    return s === 'initial' || s === 'loading';
+  };
 
   const formatKey = (value: string) => {
     const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -47,47 +59,41 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
   };
 
   const handleActivate = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
-    setIsLoading(true);
+    const platform = getPlatformService();
+    const request: LicenseActivationRequest = { key: key(), email: email() };
 
-    try {
-      const platform = getPlatformService();
-      const request: LicenseActivationRequest = {
-        key: key(),
-        email: email(),
-      };
-
+    await activateOp.execute(async () => {
       const status = await platform.validateLicense(request.key, request.email);
-
-      if (status.is_valid) {
-        toast.success('Licencia activada correctamente');
-        props.onComplete(status);
-      } else {
-        toast.error(status.error_message || 'Error al activar la licencia');
+      if (!status.is_valid) {
+        const msg = status.error_message || 'Error al activar la licencia';
+        toast.error(msg);
+        throw new Error(msg);
       }
-    } catch (error) {
-      console.error('Error activating license:', error);
-      toast.error('Error de conexión con el servidor de licencias');
-    } finally {
-      setIsLoading(false);
+      return ok(status);
+    });
+
+    const opState = activateOp.state();
+    if (opState.status === 'success' && opState.result) {
+      toast.success('Licencia activada correctamente');
+      props.onComplete(opState.result);
     }
   };
 
   onMount(async () => {
-    try {
+    await checkOp.execute(async () => {
       const platform = getPlatformService();
       const status = await platform.checkLicense();
-
       if (status.is_activated && status.is_valid) {
         props.onComplete(status);
       }
-    } catch (error) {
-      console.error('Error checking license status:', error);
-    } finally {
-      setIsChecking(false);
+      return ok(status);
+    });
+
+    const s = checkOp.state();
+    if (s.status === 'failed') {
+      log.error('Error checking license status', s.error);
     }
   });
 

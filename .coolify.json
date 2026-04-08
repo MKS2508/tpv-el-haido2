@@ -1,0 +1,20 @@
+{
+  "appUuid": "vsks88o4g8wc44c0oo8ckwcc",
+  "appName": "haidodocs",
+  "serverUuid": "awgcco0k48g4kgw8cckkc808",
+  "serverName": "lab1",
+  "projectUuid": "vg48wsk4808ocoggoco8444g",
+  "projectName": "haido",
+  "environmentUuid": "y44s4kok80wkccgockkgcww0",
+  "environmentName": "production",
+  "domain": "https://haido-docs.mks2508.systems",
+  "dockerComposePath": "docker-compose.yml",
+  "baseDirectory": "/",
+  "branch": "main",
+  "gitRepository": "https://github.com/MKS2508/tpv-el-haido2",
+  "sourceType": "App\\Models\\GithubApp",
+  "buildPack": "dockerfile",
+  "autoDeployEnabled": false,
+  "updatedAt": "2026-04-08T10:11:50.263Z",
+  "coolifyUrl": "http://77.42.25.248:8000/"
+}

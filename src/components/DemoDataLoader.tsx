@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-solid';
+import { ok } from '@mks2508/no-throw';
 import { createSignal, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,11 +28,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { getDemoStats } from '@/data/demo-seed';
+import { createOperationStateSignal } from '@/lib/state-helpers';
 import { clearDemoData, loadDemoData } from '@/services/demo-seed.service';
 
 export function DemoDataLoader() {
-  const [isLoading, setIsLoading] = createSignal(false);
-  const [isClearing, setIsClearing] = createSignal(false);
+  const loadOp = createOperationStateSignal<void>();
+  const clearOp = createOperationStateSignal<void>();
+  const isLoading = () => loadOp.state().status === 'pending';
+  const isClearing = () => clearOp.state().status === 'pending';
   const [showConfirmDialog, setShowConfirmDialog] = createSignal(false);
   const [dialogAction, setDialogAction] = createSignal<'load' | 'clear'>('load');
   const [result, setResult] = createSignal<{ success: boolean; message: string } | null>(null);
@@ -39,27 +43,23 @@ export function DemoDataLoader() {
   const stats = getDemoStats();
 
   const handleLoadDemo = async () => {
-    setIsLoading(true);
     setResult(null);
-    try {
+    await loadOp.execute(async () => {
       const res = await loadDemoData();
       setResult(res);
-    } finally {
-      setIsLoading(false);
-      setShowConfirmDialog(false);
-    }
+      return ok(undefined);
+    });
+    setShowConfirmDialog(false);
   };
 
   const handleClearDemo = async () => {
-    setIsClearing(true);
     setResult(null);
-    try {
+    await clearOp.execute(async () => {
       const res = await clearDemoData();
       setResult(res);
-    } finally {
-      setIsClearing(false);
-      setShowConfirmDialog(false);
-    }
+      return ok(undefined);
+    });
+    setShowConfirmDialog(false);
   };
 
   const openConfirmDialog = (action: 'load' | 'clear') => {

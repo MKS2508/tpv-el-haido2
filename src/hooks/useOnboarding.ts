@@ -1,8 +1,10 @@
+import { ok } from '@mks2508/no-throw';
 import { BeerIcon } from 'lucide-solid';
 import { createMemo, createSignal, onMount } from 'solid-js';
 import seedData from '@/assets/seed-data.json';
 import iconOptions from '@/assets/utils/icons/iconOptions';
 import { config } from '@/lib/config';
+import { createContextLogger } from '@/lib/logger';
 import {
   generateUserId,
   parseImportJson,
@@ -10,6 +12,7 @@ import {
   shouldShowOnboarding,
   validatePin,
 } from '@/lib/onboarding-utils';
+import { createOperationStateSignal } from '@/lib/state-helpers';
 import type Category from '@/models/Category';
 import {
   type ImportData,
@@ -23,6 +26,12 @@ import type Product from '@/models/Product';
 import type User from '@/models/User';
 import type { StorageMode } from '@/services/storage-adapter.interface';
 import useStore from '@/store/store';
+
+// ==================== Logger ====================
+
+const log = createContextLogger('Onboarding');
+
+// ==================== Types ====================
 
 interface UseOnboardingReturn {
   state: () => OnboardingState;
@@ -39,6 +48,8 @@ interface UseOnboardingReturn {
   importFromJson: (jsonString: string) => Promise<boolean>;
   loadSeedData: () => Promise<boolean>;
   applyImportedData: () => Promise<boolean>;
+  /** OperationState for applyImportedData — use for rich loading/error UI */
+  applyImportedDataState: ReturnType<typeof createOperationStateSignal<void>>['state'];
 
   // User actions
   createUser: (user: Omit<User, 'id'>) => void;
@@ -61,6 +72,7 @@ interface UseOnboardingReturn {
 
 export function useOnboarding(): UseOnboardingReturn {
   const [state, setState] = createSignal<OnboardingState>(INITIAL_ONBOARDING_STATE);
+  const applyDataOp = createOperationStateSignal<void>();
 
   const store = useStore();
 
@@ -165,7 +177,7 @@ export function useOnboarding(): UseOnboardingReturn {
   const importFromFile = async (file: File): Promise<boolean> => {
     const data = await readFileAsImportData(file);
     if (!data) {
-      console.error('[Onboarding] Failed to parse import file');
+      log.error('Failed to parse import file');
       return false;
     }
 
@@ -180,7 +192,7 @@ export function useOnboarding(): UseOnboardingReturn {
   const importFromJson = async (jsonString: string): Promise<boolean> => {
     const data = parseImportJson(jsonString);
     if (!data) {
-      console.error('[Onboarding] Failed to parse JSON');
+      log.error('Failed to parse JSON');
       return false;
     }
 
@@ -203,7 +215,7 @@ export function useOnboarding(): UseOnboardingReturn {
 
       return true;
     } catch (error) {
-      console.error('[Onboarding] Failed to load seed data:', error);
+      log.error('Failed to load seed data', error instanceof Error ? error : undefined);
       return false;
     }
   };
@@ -211,31 +223,26 @@ export function useOnboarding(): UseOnboardingReturn {
   const applyImportedData = async (): Promise<boolean> => {
     const importedData = state().importedData;
     if (!importedData) {
-      console.warn('[Onboarding] No imported data to apply');
+      log.warn('No imported data to apply');
       return false;
     }
 
-    try {
-      // Get the storage adapter (it's a signal, so call it)
+    await applyDataOp.execute(async () => {
       const adapter = store.storageAdapter();
 
-      // Convert products with icon component references (not React elements)
       const productsWithIcons: Product[] = importedData.products.map((product) => {
         const iconOption = iconOptions.find((option) => option.value === product.selectedIcon);
         return {
           ...product,
-          // Store the icon component reference, not a rendered element
           icon: iconOption?.icon || BeerIcon,
         };
       });
 
-      // Convert categories with icons
       const categoriesWithIcons: Category[] = importedData.categories.map((category) => ({
         ...category,
         icon: undefined,
       }));
 
-      // Save to storage
       for (const product of productsWithIcons) {
         await adapter.createProduct(product);
       }
@@ -244,16 +251,13 @@ export function useOnboarding(): UseOnboardingReturn {
         await adapter.createCategory(category);
       }
 
-      // Update store
       store.setProducts(productsWithIcons);
       store.setCategories(categoriesWithIcons);
 
-      // Handle tables if present
       if (importedData.tables && importedData.tables.length > 0) {
         store.setTables(importedData.tables);
       }
 
-      // Handle users if present and no users exist yet
       if (importedData.users && importedData.users.length > 0 && store.state.users.length === 0) {
         store.setUsers(importedData.users);
         setState((prev) => ({
@@ -262,18 +266,17 @@ export function useOnboarding(): UseOnboardingReturn {
         }));
       }
 
-      console.log('[Onboarding] Data imported successfully');
-      return true;
-    } catch (error) {
-      console.error('[Onboarding] Failed to apply imported data:', error);
-      return false;
-    }
+      log.success('Data imported');
+      return ok(undefined);
+    });
+
+    return applyDataOp.state().status === 'success';
   };
 
   // User actions
   const createUser = (userData: Omit<User, 'id'>) => {
     if (!validatePin(userData.pin)) {
-      console.error('[Onboarding] Invalid PIN');
+      log.error('Invalid PIN');
       return;
     }
 
@@ -361,6 +364,7 @@ export function useOnboarding(): UseOnboardingReturn {
     importFromJson,
     loadSeedData,
     applyImportedData,
+    applyImportedDataState: applyDataOp.state,
     createUser,
     updateUser,
     deleteUser,

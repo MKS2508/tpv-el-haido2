@@ -4,6 +4,7 @@ use std::sync::Mutex;
 
 use crate::models::{Product, Category, Order, OrderItem, Table, User, ExportData, ImportData};
 use crate::models::license::LicenseKey;
+use crate::models::audit::{AuditLog, AuditLogCreateRequest, AuditLogFilter, AuditLogExportOptions, AuditLogExportResult};
 
 pub struct Database {
     conn: Mutex<Connection>,
@@ -99,6 +100,46 @@ impl Database {
                 is_active BOOLEAN NOT NULL DEFAULT 1,
                 license_type TEXT NOT NULL
             );
+
+            -- Audit logs table
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp INTEGER NOT NULL,
+                date TEXT NOT NULL,
+                time TEXT NOT NULL,
+                user_id INTEGER NOT NULL,
+                user_name TEXT NOT NULL,
+                operation_type TEXT NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_id TEXT,
+                business_nif TEXT NOT NULL,
+                operation_details TEXT,
+                old_values TEXT,
+                new_values TEXT,
+                success BOOLEAN NOT NULL DEFAULT 1,
+                error_code TEXT,
+                error_message TEXT,
+                ip_address TEXT,
+                user_agent TEXT,
+                session_id TEXT,
+                table_number INTEGER,
+                order_id INTEGER,
+                payment_method TEXT,
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)
+            );
+
+            -- Índices para optimizar consultas de auditoría
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_operation_type ON audit_logs(operation_type);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_entity_type ON audit_logs(entity_type);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_business_nif ON audit_logs(business_nif);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_date ON audit_logs(date);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_success ON audit_logs(success);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_user_timestamp ON audit_logs(user_id, timestamp DESC);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_operation_timestamp ON audit_logs(operation_type, timestamp DESC);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_business_date ON audit_logs(business_nif, date DESC);
+            CREATE INDEX IF NOT EXISTS idx_audit_logs_business_operation ON audit_logs(business_nif, operation_type, timestamp DESC);
 
             -- Enable foreign keys
             PRAGMA foreign_keys = ON;
@@ -583,5 +624,246 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         conn.execute("DELETE FROM licenses", [])?;
         Ok(())
+    }
+
+    // ==================== Audit Logs ====================
+
+    /// Crea un nuevo log de auditoría
+    pub fn create_audit_log(&self, request: AuditLogCreateRequest) -> Result<i64> {
+        let conn = self.conn.lock().unwrap();
+
+        let now = chrono::Utc::now().timestamp_millis();
+        let datetime = chrono::Utc::now();
+        let date = datetime.format("%Y-%m-%d").to_string();
+        let time = datetime.format("%H:%M:%S").to_string();
+
+        conn.execute(
+            "INSERT INTO audit_logs (
+                timestamp, date, time, user_id, user_name, operation_type, entity_type,
+                entity_id, business_nif, operation_details, old_values, new_values,
+                success, error_code, error_message, session_id, table_number, order_id, payment_method
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+            params![
+                now,
+                date,
+                time,
+                request.user_id,
+                request.user_name,
+                request.operation_type,
+                request.entity_type,
+                request.entity_id,
+                request.business_nif,
+                request.operation_details,
+                request.old_values,
+                request.new_values,
+                request.success as i32,
+                request.error_code,
+                request.error_message,
+                request.session_id,
+                request.table_number,
+                request.order_id,
+                request.payment_method,
+            ],
+        )?;
+
+        Ok(conn.last_insert_rowid())
+    }
+
+    /// Obtiene logs de auditoría según filtros
+    pub fn get_audit_logs(&self, filter: Option<AuditLogFilter>) -> Result<Vec<AuditLog>> {
+        let conn = self.conn.lock().unwrap();
+
+        let filter = filter.unwrap_or_default();
+        let limit = filter.limit.unwrap_or(1000);
+        let offset = filter.offset.unwrap_or(0);
+
+        let mut query = String::from(
+            "SELECT id, timestamp, date, time, user_id, user_name, operation_type, entity_type,
+                    entity_id, business_nif, operation_details, old_values, new_values,
+                    success, error_code, error_message, ip_address, user_agent, session_id,
+                    table_number, order_id, payment_method, created_at
+             FROM audit_logs WHERE 1=1"
+        );
+
+        // Owned values must outlive params_vec which borrows them
+        let user_id_val = filter.user_id;
+        let success_val = filter.success.map(|b| b as i32);
+
+        let mut params_vec: Vec<&dyn rusqlite::ToSql> = Vec::new();
+
+        if let Some(ref start_date) = filter.start_date {
+            query.push_str(" AND date >= ?1");
+            params_vec.push(start_date);
+        }
+
+        if let Some(ref end_date) = filter.end_date {
+            let param_idx = params_vec.len() + 1;
+            query.push_str(&format!(" AND date <= ?{param_idx}"));
+            params_vec.push(end_date);
+        }
+
+        if let Some(ref uid) = user_id_val {
+            let param_idx = params_vec.len() + 1;
+            query.push_str(&format!(" AND user_id = ?{param_idx}"));
+            params_vec.push(uid);
+        }
+
+        if let Some(ref operation_type) = filter.operation_type {
+            let param_idx = params_vec.len() + 1;
+            query.push_str(&format!(" AND operation_type = ?{param_idx}"));
+            params_vec.push(operation_type);
+        }
+
+        if let Some(ref entity_type) = filter.entity_type {
+            let param_idx = params_vec.len() + 1;
+            query.push_str(&format!(" AND entity_type = ?{param_idx}"));
+            params_vec.push(entity_type);
+        }
+
+        if let Some(ref business_nif) = filter.business_nif {
+            let param_idx = params_vec.len() + 1;
+            query.push_str(&format!(" AND business_nif = ?{param_idx}"));
+            params_vec.push(business_nif);
+        }
+
+        if let Some(ref sval) = success_val {
+            let param_idx = params_vec.len() + 1;
+            query.push_str(&format!(" AND success = ?{param_idx}"));
+            params_vec.push(sval);
+        }
+
+        query.push_str(" ORDER BY timestamp DESC");
+        query.push_str(&format!(" LIMIT {limit} OFFSET {offset}"));
+
+        let mut stmt = conn.prepare(&query)?;
+
+        let logs = stmt.query_map(params_vec.as_slice(), |row| {
+            Ok(AuditLog {
+                id: row.get(0)?,
+                timestamp: row.get(1)?,
+                date: row.get(2)?,
+                time: row.get(3)?,
+                user_id: row.get(4)?,
+                user_name: row.get(5)?,
+                operation_type: row.get(6)?,
+                entity_type: row.get(7)?,
+                entity_id: row.get(8)?,
+                business_nif: row.get(9)?,
+                operation_details: row.get(10)?,
+                old_values: row.get(11)?,
+                new_values: row.get(12)?,
+                success: row.get::<_, i32>(13)? != 0,
+                error_code: row.get(14)?,
+                error_message: row.get(15)?,
+                ip_address: row.get(16)?,
+                user_agent: row.get(17)?,
+                session_id: row.get(18)?,
+                table_number: row.get(19)?,
+                order_id: row.get(20)?,
+                payment_method: row.get(21)?,
+                created_at: row.get(22)?,
+            })
+        })?.collect::<Result<Vec<_>>>()?;
+
+        Ok(logs)
+    }
+
+    /// Exporta logs de auditoría en el formato especificado (JSON o CSV)
+    pub fn export_audit_logs(&self, options: AuditLogExportOptions) -> Result<AuditLogExportResult> {
+        let logs = self.get_audit_logs(options.filter)?;
+        let record_count = logs.len() as i64;
+
+        let format_name = match options.format {
+            crate::models::audit::AuditExportFormat::Json => "json".to_string(),
+            crate::models::audit::AuditExportFormat::Csv => "csv".to_string(),
+        };
+
+        let content = match options.format {
+            crate::models::audit::AuditExportFormat::Json => {
+                serde_json::to_string_pretty(&logs).map_err(|e| {
+                    rusqlite::Error::ToSqlConversionFailure(Box::new(e))
+                })?
+            }
+            crate::models::audit::AuditExportFormat::Csv => {
+                self.logs_to_csv(&logs)?
+            }
+        };
+
+        Ok(AuditLogExportResult {
+            format: format_name,
+            record_count,
+            file_path: None,
+            content: Some(content),
+        })
+    }
+
+    /// Convierte logs a formato CSV
+    fn logs_to_csv(&self, logs: &[AuditLog]) -> Result<String> {
+        use std::fmt::Write;
+
+        let mut buffer = String::new();
+
+        // fmt::Write on String is infallible, map_err for type consistency
+        writeln!(
+            buffer,
+            "ID,Timestamp,Date,Time,UserID,UserName,OperationType,EntityType,EntityID,\
+            BusinessNIF,OperationDetails,OldValues,NewValues,Success,ErrorCode,\
+            ErrorMessage,IPAddress,UserAgent,SessionID,TableNumber,OrderID,\
+            PaymentMethod,CreatedAt"
+        ).map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(
+            std::io::Error::new(std::io::ErrorKind::Other, e.to_string())
+        )))?;
+
+        for log in logs {
+            writeln!(
+                buffer,
+                "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
+                log.id,
+                log.timestamp,
+                escape_csv_field(&log.date),
+                escape_csv_field(&log.time),
+                log.user_id,
+                escape_csv_field(&log.user_name),
+                escape_csv_field(&log.operation_type),
+                escape_csv_field(&log.entity_type),
+                log.entity_id.as_deref().map(escape_csv_field).unwrap_or_default(),
+                escape_csv_field(&log.business_nif),
+                log.operation_details.as_deref().map(escape_csv_field).unwrap_or_default(),
+                log.old_values.as_deref().map(escape_csv_field).unwrap_or_default(),
+                log.new_values.as_deref().map(escape_csv_field).unwrap_or_default(),
+                log.success,
+                log.error_code.as_deref().map(escape_csv_field).unwrap_or_default(),
+                log.error_message.as_deref().map(escape_csv_field).unwrap_or_default(),
+                log.ip_address.as_deref().map(escape_csv_field).unwrap_or_default(),
+                log.user_agent.as_deref().map(escape_csv_field).unwrap_or_default(),
+                log.session_id.as_deref().map(escape_csv_field).unwrap_or_default(),
+                log.table_number.map(|v| v.to_string()).unwrap_or_default(),
+                log.order_id.map(|v| v.to_string()).unwrap_or_default(),
+                log.payment_method.as_deref().map(escape_csv_field).unwrap_or_default(),
+                log.created_at
+            ).map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(
+                std::io::Error::new(std::io::ErrorKind::Other, e.to_string())
+            )))?;
+        }
+
+        Ok(buffer)
+    }
+
+    /// Limpia logs antiguos según la fecha de corte
+    pub fn cleanup_audit_logs(&self, cutoff_date: &str) -> Result<i64> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM audit_logs WHERE date < ?1",
+            params![cutoff_date],
+        ).map(|v| v as i64)
+    }
+}
+
+/// Función auxiliar para escapar valores CSV
+fn escape_csv_field(value: &str) -> String {
+    if value.contains(',') || value.contains('"') || value.contains('\n') {
+        format!("\"{}\"", value.replace("\"", "\"\""))
+    } else {
+        value.to_string()
     }
 }

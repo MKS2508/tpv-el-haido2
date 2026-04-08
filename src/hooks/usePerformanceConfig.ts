@@ -168,7 +168,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
 
   // If forced high performance via env var, return early with optimal config
   if (FORCE_HIGH_PERFORMANCE) {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log(
         'Performance Configuration: FORCED HIGH PERFORMANCE MODE (VITE_FORCE_HIGH_PERFORMANCE=true)'
       );
@@ -179,19 +179,19 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   // Check manual mode first (non-auto modes skip detection)
   const mode = performanceMode();
   if (mode === 'high') {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('Performance Configuration: HIGH MODE (user setting)');
     }
     return HIGH_PERFORMANCE_CONFIG;
   }
   if (mode === 'low') {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('Performance Configuration: LOW MODE (user setting)');
     }
     return LOW_PERFORMANCE_CONFIG;
   }
   if (mode === 'balanced') {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('Performance Configuration: BALANCED MODE (user setting)');
     }
     return BALANCED_PERFORMANCE_CONFIG;
@@ -223,7 +223,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     // Removed deviceMemory < 2 check as Chrome often misreports this
     const isLowPerformance = isVeryLowPerformance || isRaspberryPi;
 
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('Device Detection:', {
         hardwareConcurrency,
         deviceMemory: hasDeviceMemoryAPI ? deviceMemory : 'N/A',
@@ -345,7 +345,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
       throttleDelay: isVeryLowPerformance ? 100 : isLowPerformance ? 50 : 16,
     };
 
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('Performance Configuration:', {
         device: isRaspberryPi ? 'Raspberry Pi' : isMobile ? 'Mobile' : 'Desktop',
         performance: isVeryLowPerformance ? 'Very Low' : isLowPerformance ? 'Low' : 'Normal',
