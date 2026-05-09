@@ -624,3 +624,30 @@ bun run tauri build  # Build completo Tauri
 - **External Binaries**: sidecars/aeat-bridge
 - **Build Targets**: "all" (creates artifacts for all platforms)
 - **CSP**: null (no content security policy restriction)
+
+## Workflow
+
+Este proyecto usa **Axon** (meta-orchestrator para multi-session projects).
+
+**Configuración**: `.claude/axon.config.json`
+
+**Archivos clave**:
+- `roadmap.spec.yml` — SSOT del roadmap (semver-like: 0.X.Y)
+- `ROADMAP.md` — roadmap legible (generado desde spec)
+- `docs/task-requests/` — task-requests para @task-decomposer
+- `docs/progress-log.md` — log de progreso por fase
+- `docs/handoffs/` — handoffs entre sesiones
+
+**Comandos útiles**:
+```
+/setup-workflow              # Re-configurar workflow del proyecto
+/planning-roadmap "<brief>"  # Generar roadmap + task-requests
+@task-decomposer <TR>         # Descomponer task-request en plan
+@task-executor <plan>        # Ejecutar plan
+```
+
+**Milestone actual**: 0.4.0 + 0.5.0 (Production deployment at brother's bar)
+
+**Fases críticas**:
+- **0.4.0**: Auto-update system + Coolify migration (BLOCKER)
+- **0.5.0**: Thermal printer integration (BLOCKER)

@@ -1,0 +1,58 @@
+{
+  "project": "tpv-el-haido - Tauri 2 + SolidJS POS para restaurantes/bares",
+  "roadmap": "ROADMAP.md",
+  "roadmapSpec": "roadmap.spec.yml",
+  "progressLog": "docs/progress-log.md",
+  "decisionsDir": "docs/decisions/",
+  "handoffsDir": "docs/handoffs/",
+  "taskRequestsDir": "docs/task-requests/",
+  "vibe": "castellano-casual",
+  "sessionDiary": false,
+  "autoCommit": false,
+  "namingConventions": {
+    "decisions": "r{N}-{topic}-{date}.md",
+    "handoffs": "next-prompt-phase-{N}.md",
+    "phase": "semver-like",
+    "decisionsScheme": "r-numbered-dated"
+  },
+  "outputLanguage": "castellano",
+  "lexiconRules": null,
+  "stack": {
+    "runtime": "bun",
+    "language": "typescript",
+    "frontend": "solidjs",
+    "backend": "tauri-rust",
+    "database": "sqlite-embedded"
+  },
+  "commitConvention": {
+    "tool": "gemini-commit-wizard",
+    "noCoAuthor": true,
+    "format": "conventional"
+  },
+  "lockedDecisionDocs": [
+    "docs/modules/frontend-solidjs-DEV.md",
+    "docs/modules/backend-rust-DEV.md",
+    "docs/modules/services-DEV.md",
+    "docs/modules/apps-auxiliares-DEV.md",
+    "docs/modules/technical-debt.md",
+    "docs/EXPLORATION-SUMMARY-2026-05-09.md",
+    "docs/ARCHITECTURE-AUDIT-2026-05-09.md",
+    "docs/PROPOSALS-INTERVIEW.md",
+    "docs/INTERVIEW-QUESTIONS.md",
+    "docs/TICKETS-REVIEW.md"
+  ],
+  "metadata": {
+    "targetMilestone": "Production deployment at brother's bar (2026-05-09)",
+    "criticalPhases": ["0.4.0", "0.5.0"],
+    "workflow": "max-agent-orchestration",
+    "interviewScheduled": "2026-05-09 21:00",
+    "preparationComplete": true,
+    "pendingWork": [
+      "Interview con usuario para lock decisions 0.4.0 + 0.5.0",
+      "Reformular TKT-02 (printer) si se aprueba propuesta TCP",
+      "Ejecutar TKT-01.1 (hardcoded credentials) — BLOCKER",
+      "Ejecutar TKT-01 (updater audit)",
+      "Ejecutar TKT-04 (Windows setup)"
+    ]
+  }
+}

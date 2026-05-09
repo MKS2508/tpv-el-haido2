@@ -1,0 +1,164 @@
+version: "1"
+project: "tpv-el-haido"
+updatedAt: "2026-05-09"
+
+phases:
+  - id: "0.1.0"
+    goal: "Core TPV features + SolidJS migration + AEAT tax compliance"
+    status: "done"
+    source: "git-log-milestone-A + user-confirmation"
+    completedAt: "2026-05-09"
+    notes: "AEAT VerificaTu integration shipped, SolidJS migration complete"
+
+  - id: "0.2.0"
+    goal: "PWA support + platform abstraction consolidation"
+    status: "done"
+    source: "user-confirmation-stale-completed"
+    completedAt: "2026-05-09"
+    notes: "Platform abstraction layer consolidated, PWA build infrastructure ready"
+    sub-phases:
+      - id: "0.2.0.A"
+        goal: "Platform abstraction layer (consolidate 16+ invoke() calls, unify isTauri detection)"
+        status: "done"
+        effort: "4-6h"
+        completedAt: "2026-05-09"
+      - id: "0.2.0.B"
+        goal: "PWA Service Worker + caching strategy"
+        status: "done"
+        effort: "6-8h"
+        completedAt: "2026-05-09"
+      - id: "0.2.0.C"
+        goal: "PWA manifest + build integration with /tpv/ base path"
+        status: "done"
+        effort: "2-3h"
+        completedAt: "2026-05-09"
+
+  - id: "0.3.0"
+    goal: "Code signing + multiplatform builds (Raspberry Pi, macOS, Windows)"
+    status: "queued"
+    source: "git-log-feat-build-signing-1-commit-14d"
+    priority: "low"
+    notes: "Not critical for production milestone - defer post-deployment"
+
+  - id: "0.4.0"
+    goal: "CRITICAL: Auto-update system + Coolify migration for production deployment"
+    status: "next"
+    source: "user-requirement-production-milestone"
+    priority: "critical"
+    targetDate: "2026-05-09"
+    notes: |
+      BLOCKER for production deployment at brother's bar.
+      - Audit existing Tauri auto-updater (@tauri-apps/plugin-updater)
+      - Migrate license server + docs to Coolify (coolify-cli-mcp)
+      - Ensure update mechanism works with limited Windows machine access
+      - Test end-to-end update flow from GitHub releases
+      - SSH remote setup for deployment
+    sub-phases:
+      - id: "0.4.0.A"
+        goal: "Audit existing auto-updater implementation and test update flow"
+        status: "next"
+        effort: "2-3h"
+        priority: "critical"
+        criteria: "Auto-update flow tested and verified working"
+      - id: "0.4.0.B"
+        goal: "Migrate license server (Elysia.js) to Coolify with coolify-cli-mcp"
+        status: "queued"
+        effort: "2-3h"
+        priority: "critical"
+        criteria: "License server deployed on Coolify, accessible from TPV app"
+      - id: "0.4.0.C"
+        goal: "Migrate docs site (Next.js) to Coolify and unify infrastructure"
+        status: "queued"
+        effort: "1-2h"
+        priority: "high"
+        criteria: "Docs deployed on Coolify, single infrastructure for all services"
+      - id: "0.4.0.D"
+        goal: "Windows production machine setup: SSH, initial install, first release publish"
+        status: "queued"
+        effort: "2-3h"
+        priority: "critical"
+        criteria: "TPV running on production Windows machine, remote access ready"
+
+  - id: "0.5.0"
+    goal: "CRITICAL: Thermal printer integration (USB + network via Raspberry Pi)"
+    status: "next"
+    source: "user-requirement-production-milestone"
+    priority: "critical"
+    targetDate: "2026-05-09"
+    notes: |
+      BLOCKER for production deployment at brother's bar.
+      - Debug existing thermal printer service (ESC/POS)
+      - Test USB connection on Windows
+      - Test network/Raspberry Pi connection
+      - Implement print ticket flow end-to-end
+      - Multiple PoCs available but not working correctly
+    sub-phases:
+      - id: "0.5.0.A"
+        goal: "Audit existing thermal printer service and PoCs"
+        status: "next"
+        effort: "1-2h"
+        priority: "critical"
+        criteria: "Current state documented, available PoCs tested"
+      - id: "0.5.0.B"
+        goal: "Debug USB thermal printer on Windows (drivers, connection)"
+        status: "queued"
+        effort: "2-3h"
+        priority: "critical"
+        criteria: "Printer detected and responding from Windows"
+      - id: "0.5.0.C"
+        goal: "Debug network printer via Raspberry Pi (if USB fails)"
+        status: "queued"
+        effort: "2-3h"
+        priority: "high"
+        criteria: "Raspberry Pi connected to printer, network accessible"
+      - id: "0.5.0.D"
+        goal: "Implement print ticket flow: click → print → thermal output"
+        status: "queued"
+        effort: "2-4h"
+        priority: "critical"
+        criteria: "End-to-end print flow working in production"
+
+  - id: "0.6.0"
+    goal: "Production polish: AEAT testing, multi-device testing, bug fixes"
+    status: "queued"
+    source: "user-requirement-post-production"
+    priority: "medium"
+    notes: "Post-deployment polish and testing"
+
+  - id: "0.7.0"
+    goal: "Testing infrastructure (unit + integration tests)"
+    status: "queued"
+    source: "claude-md-pending"
+    priority: "low"
+    notes: "Deferred post-production"
+
+decisions:
+  - label: "Production milestone priority"
+    date: "2026-05-09"
+    summary: "Auto-updates + thermal printers are critical blockers for production deployment"
+    rationale: "Limited access to Windows machine at brother's bar requires robust update mechanism"
+    lockedBy: "user-requirement"
+
+  - label: "Coolify migration"
+    date: "2026-05-09"
+    summary: "Migrate license server + docs to Coolify for unified infrastructure"
+    rationale: "Better control of updates, releases, and remote management"
+    lockedBy: "user-requirement"
+
+deferred:
+  - item: "Code signing + multiplatform builds (0.3.0)"
+    reason: "Not critical for initial production deployment - defer post-deployment"
+    source: "user-prioritization"
+  - item: "Testing infrastructure (0.7.0)"
+    reason: "Deferred post-production - focus on production blockers first"
+    source: "user-prioritization"
+  - item: "Tauri Mobile support (iOS/Android)"
+    reason: "Blocked by production milestone completion - future consideration"
+    source: "pwa-architecture-plan.json"
+
+metadata:
+  plannedBy: "setup-workflow v1"
+  namingScheme: "semver-like"
+  detectedFrom: "git-log + CLAUDE.md + user-interview"
+  targetMilestone: "Production deployment at brother's bar (2026-05-09 night)"
+  workflow: "Max agent orchestration + parallelization"
