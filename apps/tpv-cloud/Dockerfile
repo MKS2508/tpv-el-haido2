@@ -1,25 +1,24 @@
-FROM oven/bun:1.1.43-alpine AS deps
+FROM oven/bun:1.2-alpine AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-FROM oven/bun:1.1.43-alpine AS builder
+FROM oven/bun:1.2-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-FROM oven/bun:1.1.43-alpine AS runtime
+FROM oven/bun:1.2-alpine AS runtime
 WORKDIR /app
 
-# Non-root user (Coolify best practice)
-RUN addgroup -g 1001 -S nodejs && adduser -S bun -u 1001
+# Non-root user: bun (uid 1000) ya existe en oven/bun:alpine base image
 USER bun
 
-COPY --from=builder --chown=bun:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=bun:nodejs /app/src ./src
-COPY --from=builder --chown=bun:nodejs /app/drizzle ./drizzle
-COPY --from=builder --chown=bun:nodejs /app/package.json ./
-COPY --from=builder --chown=bun:nodejs /app/tsconfig.json ./
+COPY --from=builder --chown=bun:bun /app/node_modules ./node_modules
+COPY --from=builder --chown=bun:bun /app/src ./src
+COPY --from=builder --chown=bun:bun /app/drizzle ./drizzle
+COPY --from=builder --chown=bun:bun /app/package.json ./
+COPY --from=builder --chown=bun:bun /app/tsconfig.json ./
 
 # Volume for release binaries
 VOLUME ["/srv/binaries"]
