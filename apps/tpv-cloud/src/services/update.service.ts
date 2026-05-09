@@ -49,13 +49,18 @@ export class UpdateService {
 
       if (!hasUpdate) return null
 
-      const url = `https://updates.mks2508.systems/dl/${latest.version}/TPV-El-Haido_${latest.version}_x64-setup.exe`
+      // Multiplatform-safe: la URL viene de releases.url (lockeada al INSERT por target+arch).
+      // NO construir hardcoded — Tauri 2 OTA artifacts varían por plataforma:
+      //   windows → .nsis.zip / .msi.zip
+      //   darwin  → .app.tar.gz
+      //   linux   → .AppImage.tar.gz / .deb
+      // Ver: docs/decisions/r1-deployment-architecture-2026-05-09.md addendum A1
 
       const response: IUpdateResponse = {
         version: latest.version,
         notes: latest.notes ?? '',
         pub_date: latest.pubDate.toISOString(),
-        url,
+        url: latest.url,
         signature: latest.signature
       }
 
