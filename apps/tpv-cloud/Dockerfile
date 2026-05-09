@@ -20,8 +20,8 @@ COPY --from=builder --chown=bun:bun /app/drizzle ./drizzle
 COPY --from=builder --chown=bun:bun /app/package.json ./
 COPY --from=builder --chown=bun:bun /app/tsconfig.json ./
 
-# Volume for release binaries
-VOLUME ["/srv/binaries"]
+# /srv/binaries → bind mount gestionado por Coolify Persistent Storage
+# (NO declarar VOLUME aquí: bloquea el bind mount con anonymous volume override)
 
 EXPOSE 3003
 
