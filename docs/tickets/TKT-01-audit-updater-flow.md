@@ -1,11 +1,24 @@
 # TKT-01 - Audit Existing Auto-updater Implementation
 
+> **⚠️ SUPERSEDED por r1 (2026-05-09)** — replaced by [TKT-08](./TKT-08-update-tauri-conf.md).
+>
+> Este ticket asumía mantener el endpoint GitHub. R1 D1 lockeó "sin GitHub" → endpoint cambia a `updates.mks2508.systems` (servido por tpv-cloud TKT-07).
+>
+> El "audit" ya se hizo en r1 prep (sesión anterior). Findings:
+> - `useUpdater.ts` real, no stub
+> - Endpoint actual GitHub (a reemplazar por TKT-08)
+> - Minisign pubkey configurada
+> - Bundle config OK (`createUpdaterArtifacts: true`)
+>
+> **Acción**: NO ejecutar este ticket, ir directo a TKT-08.
+
 **Milestone**: 0.4.0.A
 **Priority**: 🔥 CRITICAL
-**Status**: proposed
+**Status**: 🚫 superseded (by TKT-08)
 **Created**: 2026-05-09
+**Superseded**: 2026-05-09 (r1)
 **Assigned**: -
-**Estimated**: 2-3h
+**Estimated**: 2-3h (NO LONGER NEEDED)
 
 ## Context
 

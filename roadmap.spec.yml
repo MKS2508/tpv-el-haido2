@@ -41,89 +41,103 @@ phases:
     notes: "Not critical for production milestone - defer post-deployment"
 
   - id: "0.4.0"
-    goal: "CRITICAL: Auto-update system + Coolify migration for production deployment"
+    goal: "CRITICAL: Production deployment - tpv-cloud unified service + Windows NSIS installer + auto-update OTA (sin GitHub)"
     status: "next"
-    source: "user-requirement-production-milestone"
+    source: "user-requirement-production-milestone + r1-decision-2026-05-09"
     priority: "critical"
     targetDate: "2026-05-09"
     notes: |
-      BLOCKER for production deployment at brother's bar.
-      - Audit existing Tauri auto-updater (@tauri-apps/plugin-updater)
-      - Migrate license server + docs to Coolify (coolify-cli-mcp)
-      - Ensure update mechanism works with limited Windows machine access
-      - Test end-to-end update flow from GitHub releases
-      - SSH remote setup for deployment
+      Decisiones lockeadas en r1-deployment-architecture-2026-05-09.md:
+      D1 - Sin GitHub: distribución 100% via Coolify
+      D2 - tpv-cloud unified (Bun + Elysia + Drizzle) consolida updates + license
+      D3 - DB nueva tpv-cloud-db (Postgres) en project haido
+      D4 - Build Windows: directo en máquina del bar (1 vez)
+      D5 - tauri.conf.json endpoints → updates.mks2508.systems
+      D6 - License-server old: replace, no revivir
+      D7 - HaidoDocs: ya done, no tocar
+      D8 - Printer (0.5.0): postponed
+      D9 - Orden: paralelo donde se pueda
     sub-phases:
       - id: "0.4.0.A"
-        goal: "Audit existing auto-updater implementation and test update flow"
+        goal: "Master license fallback hardening (env var required in production, no const fallback)"
         status: "next"
-        effort: "2-3h"
+        effort: "30m"
         priority: "critical"
-        criteria: "Auto-update flow tested and verified working"
+        ticket: "TKT-01.1-master-license-prod-hardening"
+        criteria: "MASTER_LICENSE_KEY/EMAIL son required en build prod (panic si faltan), nunca usar fallback hardcoded fuera de dev"
       - id: "0.4.0.B"
-        goal: "Migrate license server (Elysia.js) to Coolify with coolify-cli-mcp"
-        status: "queued"
-        effort: "2-3h"
+        goal: "Build tpv-cloud unified service (Bun + Elysia + Drizzle + PostgreSQL en Coolify)"
+        status: "next"
+        effort: "3-4h"
         priority: "critical"
-        criteria: "License server deployed on Coolify, accessible from TPV app"
+        ticket: "TKT-07-build-tpv-cloud"
+        criteria: "tpv-cloud running:healthy en Coolify, endpoint /health responde 200, /updates/:target/:arch/:version semver-compare funciona, /license/validate y /license/activate funcionan"
+        depends_on: []
       - id: "0.4.0.C"
-        goal: "Migrate docs site (Next.js) to Coolify and unify infrastructure"
-        status: "queued"
-        effort: "1-2h"
-        priority: "high"
-        criteria: "Docs deployed on Coolify, single infrastructure for all services"
-      - id: "0.4.0.D"
-        goal: "Windows production machine setup: SSH, initial install, first release publish"
-        status: "queued"
-        effort: "2-3h"
+        goal: "Update tauri.conf.json updater endpoints + verificar minisign key"
+        status: "next"
+        effort: "30m"
         priority: "critical"
-        criteria: "TPV running on production Windows machine, remote access ready"
+        ticket: "TKT-08-update-tauri-conf"
+        criteria: "tauri.conf.json apunta a updates.mks2508.systems con schema dinámico {{target}}/{{arch}}/{{current_version}}, GitHub URL eliminada, minisign pubkey verificada"
+        depends_on: ["0.4.0.B"]
+      - id: "0.4.0.D"
+        goal: "Build Windows NSIS installer en máquina del bar + first install"
+        status: "next"
+        effort: "1-2h"
+        priority: "critical"
+        ticket: "TKT-04-build-bar-machine"
+        criteria: "Setup.exe instalado y arrancando en Windows del bar, app apunta a updates.mks2508.systems, license validation funciona"
+        depends_on: ["0.4.0.A", "0.4.0.B", "0.4.0.C"]
+      - id: "0.4.0.E"
+        goal: "Smoke test OTA end-to-end (bump version, publish, verify cliente actualiza)"
+        status: "next"
+        effort: "30m"
+        priority: "critical"
+        ticket: "TKT-10-smoke-test-ota"
+        criteria: "Bump version 0.4.0 → 0.4.1, upload nuevo setup + sig, TPV en bar detecta update, descarga, instala, verifica firma, restart app correcto"
+        depends_on: ["0.4.0.D"]
+      - id: "0.4.0.F"
+        goal: "Cleanup license-server old (delete app + subdomain liberado)"
+        status: "queued"
+        effort: "15m"
+        priority: "low"
+        ticket: "TKT-11-cleanup-old-license-server"
+        criteria: "license-server app eliminada de Coolify, subdomain haidolicense.mks2508.systems liberado o reapuntado, tpv-pwa cleanup también si confirma waxin"
+        depends_on: ["0.4.0.E"]
 
   - id: "0.5.0"
-    goal: "CRITICAL: Thermal printer integration (USB + network via Raspberry Pi)"
-    status: "next"
-    source: "user-requirement-production-milestone"
-    priority: "critical"
-    targetDate: "2026-05-09"
+    goal: "Thermal printer integration (USB + network via Raspberry Pi + CUPS)"
+    status: "deferred"
+    source: "user-requirement-postponed-r1-decision"
+    priority: "high"
     notes: |
-      BLOCKER for production deployment at brother's bar.
-      - Debug existing thermal printer service (ESC/POS)
-      - Test USB connection on Windows
-      - Test network/Raspberry Pi connection
-      - Implement print ticket flow end-to-end
-      - Multiple PoCs available but not working correctly
+      Postponed de tonight (r1 decision D8). Razones:
+      - Necesita research adicional sobre limitaciones de la printer
+      - Posible CUPS via RPi (network printer) requiere setup separado
+      - Decisión arquitectónica (TCP / USB / RPi) depende de hardware testing
+      - Critical path tonight = update + instalador
+      Re-evaluar arquitectura cuando waxin pueda debuggear printer (probablemente in situ en bar).
     sub-phases:
       - id: "0.5.0.A"
-        goal: "Audit existing thermal printer service and PoCs"
-        status: "next"
-        effort: "1-2h"
-        priority: "critical"
-        criteria: "Current state documented, available PoCs tested"
+        goal: "Hardware testing: identificar printer model + protocolo soportado"
+        status: "deferred"
+        effort: "TBD"
       - id: "0.5.0.B"
-        goal: "Debug USB thermal printer on Windows (drivers, connection)"
-        status: "queued"
-        effort: "2-3h"
-        priority: "critical"
-        criteria: "Printer detected and responding from Windows"
+        goal: "Architecture decision: TCP / USB / RPi-CUPS según hardware findings"
+        status: "deferred"
+        effort: "TBD"
       - id: "0.5.0.C"
-        goal: "Debug network printer via Raspberry Pi (if USB fails)"
-        status: "queued"
-        effort: "2-3h"
-        priority: "high"
-        criteria: "Raspberry Pi connected to printer, network accessible"
-      - id: "0.5.0.D"
-        goal: "Implement print ticket flow: click → print → thermal output"
-        status: "queued"
-        effort: "2-4h"
-        priority: "critical"
-        criteria: "End-to-end print flow working in production"
+        goal: "Implementation print ticket flow"
+        status: "deferred"
+        effort: "TBD"
 
   - id: "0.6.0"
-    goal: "Production polish: AEAT testing, multi-device testing, bug fixes"
+    goal: "Production polish (post-deployment): hardening, monitoring, AEAT testing real"
     status: "queued"
     source: "user-requirement-post-production"
     priority: "medium"
-    notes: "Post-deployment polish and testing"
+    notes: "Post-deployment polish, observability, AEAT real testing en producción"
 
   - id: "0.7.0"
     goal: "Testing infrastructure (unit + integration tests)"
@@ -132,11 +146,23 @@ phases:
     priority: "low"
     notes: "Deferred post-production"
 
+  - id: "0.8.0"
+    goal: "Infrastructure research: Hetzner upgrade evaluation (nested virt para builds reproducibles cloud)"
+    status: "queued"
+    source: "r1-decision-reminder"
+    priority: "low"
+    ticket: "TKT-09-research-hetzner-upgrade"
+    notes: |
+      Reminder lockeado en r1: investigar coste y opciones para upgrade a server con KVM nested.
+      Útil para builds Windows reproducibles cloud (dockur/windows o equivalente).
+      Opciones: Hetzner Robot/Dedicated (AX/EX series), AWS EC2 *.metal, OVH dedicated, etc.
+      No urgente tonight pero waxin lo quiere trackeado.
+
 decisions:
   - label: "Production milestone priority"
     date: "2026-05-09"
-    summary: "Auto-updates + thermal printers are critical blockers for production deployment"
-    rationale: "Limited access to Windows machine at brother's bar requires robust update mechanism"
+    summary: "Auto-updates + thermal printers eran críticos. Printer postponed a 0.5.0 deferred."
+    rationale: "Limited access to Windows machine at brother's bar"
     lockedBy: "user-requirement"
 
   - label: "Coolify migration"
@@ -144,6 +170,40 @@ decisions:
     summary: "Migrate license server + docs to Coolify for unified infrastructure"
     rationale: "Better control of updates, releases, and remote management"
     lockedBy: "user-requirement"
+
+  - label: "Sin GitHub - distribución 100% propia"
+    date: "2026-05-09"
+    summary: "Auto-updater Tauri y binarios servidos desde Coolify (updates.mks2508.systems), no GitHub Releases ni Actions"
+    rationale: "Eliminar SPOF, control release process, stack unificado"
+    lockedBy: "user-requirement"
+    docRef: "docs/decisions/r1-deployment-architecture-2026-05-09.md"
+
+  - label: "Arquitectura tpv-cloud unified"
+    date: "2026-05-09"
+    summary: "Un servicio Bun + Elysia + Drizzle consolida updates + license validation"
+    rationale: "Mismo stack, una app a mantener, replace license-server roto"
+    lockedBy: "user-interview-r1"
+    docRef: "docs/decisions/r1-deployment-architecture-2026-05-09.md"
+
+  - label: "DB nueva tpv-cloud-db en project haido"
+    date: "2026-05-09"
+    summary: "PostgreSQL dedicada via coolify-cli db create, no reusar mks-postgres cross-project"
+    rationale: "Project haido tiene 0 DBs, isolation correcta, pattern Coolify estándar"
+    lockedBy: "user-interview-r1"
+    docRef: "docs/decisions/r1-deployment-architecture-2026-05-09.md"
+
+  - label: "Build Windows en bar (1 vez)"
+    date: "2026-05-09"
+    summary: "Build NSIS directo en PC del bar via SSH/AnyDesk. dockur/windows descartado (Hetzner Cloud sin KVM nested)"
+    rationale: "Cero risk cross-compile, garantizado, después todo via OTA"
+    lockedBy: "user-interview-r1"
+    docRef: "docs/decisions/r1-deployment-architecture-2026-05-09.md"
+
+  - label: "Printer (0.5.0) postpone"
+    date: "2026-05-09"
+    summary: "Postpone scope tonight, re-evaluar arquitectura cuando waxin pueda testear hardware"
+    rationale: "Critical path tonight es update + instalador, printer requiere research hardware"
+    lockedBy: "user-interview-r1"
 
 deferred:
   - item: "Code signing + multiplatform builds (0.3.0)"
@@ -155,10 +215,25 @@ deferred:
   - item: "Tauri Mobile support (iOS/Android)"
     reason: "Blocked by production milestone completion - future consideration"
     source: "pwa-architecture-plan.json"
+  - item: "Thermal printer integration (0.5.0)"
+    reason: "Postpone, requires hardware testing in situ + RPi/CUPS setup decisions"
+    source: "r1-decision-2026-05-09"
+
+remindersPostProd:
+  - label: "Hetzner upgrade evaluation"
+    summary: "Investigar coste y opciones server con KVM nested para builds cloud reproducibles"
+    ticket: "TKT-09-research-hetzner-upgrade"
+    priority: "low"
+    locked: "2026-05-09 r1"
 
 metadata:
-  plannedBy: "setup-workflow v1"
+  plannedBy: "setup-workflow v1 + r1-decision-lock"
   namingScheme: "semver-like"
-  detectedFrom: "git-log + CLAUDE.md + user-interview"
+  detectedFrom: "git-log + CLAUDE.md + user-interview-3-rounds"
   targetMilestone: "Production deployment at brother's bar (2026-05-09 night)"
   workflow: "Max agent orchestration + parallelization"
+  lastInterview: "2026-05-09 (3 rounds, 4+3+3 questions, AskUserQuestion + previews + diagrama)"
+  diagrams:
+    - "/tmp/tpv-cloud-architecture.html"
+    - "/tmp/0.4.0-deployment.html"
+    - "/tmp/0.5.0-printer.html"

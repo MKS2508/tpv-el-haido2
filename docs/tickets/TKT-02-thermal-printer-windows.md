@@ -1,11 +1,20 @@
 # TKT-02 - Thermal Printer Integration (Windows + RPi)
 
-**Milestone**: 0.5.0
-**Priority**: 🔥 CRITICAL
-**Status**: proposed
+> **⏸️ DEFERRED por r1 (2026-05-09)** — postpone scope tonight.
+>
+> R1 D8 lockeó: printer (0.5.0) sale del scope tonight. Necesita research adicional sobre limitaciones de la impresora + posible CUPS via Raspberry Pi (network printer) requiere setup separado. Decisión arquitectónica (TCP / USB / RPi-CUPS) depende de hardware testing que waxin debe hacer in situ en bar.
+>
+> **Status nuevo**: blocked by hardware testing. Re-evaluar arquitectura post-prod cuando waxin debugue printer.
+>
+> **Critical path tonight**: 0.4.0 (update + instalador). Sin printer, app instalable y operable manualmente.
+
+**Milestone**: 0.5.0 (deferred)
+**Priority**: high (post-prod)
+**Status**: ⏸️ deferred (blocked by hardware research)
 **Created**: 2026-05-09
+**Deferred**: 2026-05-09 (r1)
 **Assigned**: -
-**Estimated**: 4-6h (debug pesado)
+**Estimated**: TBD (reformular post-research)
 
 ## Context
 

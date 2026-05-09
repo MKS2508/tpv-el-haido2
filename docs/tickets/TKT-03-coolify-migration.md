@@ -1,11 +1,22 @@
 # TKT-03 - Coolify Migration (License Server + Docs)
 
-**Milestone**: 0.4.0.B + 0.4.0.C
-**Priority**: 🔥 HIGH
-**Status**: proposed
+> **🚫 SUPERSEDED por r1 (2026-05-09)** — split en sub-resoluciones.
+>
+> **HaidoDocs (era 0.4.0.C)**: ✅ DONE. Verificación r1 prep mostró que `haidodocs` ya está en Coolify lab1 con status `running:healthy` (subdomain `haido-docs.mks2508.systems`). NO hace falta migrar.
+>
+> **License-server (era 0.4.0.B)**: ❌ replaced. R1 D2 + D6 lockearon **reemplazar** (no revivir) el license-server actual (`exited:unhealthy`) por **tpv-cloud unified** ([TKT-07](./TKT-07-build-tpv-cloud.md)) que consolida updates + license en un solo servicio Bun + Elysia + Drizzle.
+>
+> **Cleanup del license-server old**: tracked en [TKT-11](./TKT-11-cleanup-old-license-server.md) post-smoke-test.
+>
+> **Acción**: NO ejecutar este ticket, las sub-tareas se cumplen vía TKT-07 + TKT-11.
+
+**Milestone**: 0.4.0.B (replaced) + 0.4.0.C (done)
+**Priority**: high (was)
+**Status**: 🚫 superseded (split: HaidoDocs done, license-server → TKT-07)
 **Created**: 2026-05-09
+**Superseded**: 2026-05-09 (r1)
 **Assigned**: -
-**Estimated**: 3-4h
+**Estimated**: 3-4h (NO LONGER NEEDED — work split into TKT-07 + TKT-11)
 
 ## Context
 

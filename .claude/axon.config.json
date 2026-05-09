@@ -13,7 +13,9 @@
     "decisions": "r{N}-{topic}-{date}.md",
     "handoffs": "next-prompt-phase-{N}.md",
     "phase": "semver-like",
-    "decisionsScheme": "r-numbered-dated"
+    "decisionsScheme": "r-numbered-dated",
+    "tickets": "TKT-{NN}-{slug}.md",
+    "taskRequests": "TR-{NN}-{slug}.md"
   },
   "outputLanguage": "castellano",
   "lexiconRules": null,
@@ -22,7 +24,23 @@
     "language": "typescript",
     "frontend": "solidjs",
     "backend": "tauri-rust",
-    "database": "sqlite-embedded"
+    "database": "sqlite-embedded",
+    "cloudService": "tpv-cloud (Bun + Elysia + Drizzle + PostgreSQL en Coolify)"
+  },
+  "infrastructure": {
+    "coolifyServer": {
+      "name": "lab1",
+      "uuid": "awgcco0k48g4kgw8cckkc808",
+      "ip": "77.42.25.248",
+      "provider": "Hetzner Cloud",
+      "cpu": "AMD EPYC-Genoa",
+      "limitations": "no KVM nested (Hetzner Cloud policy)"
+    },
+    "coolifyProject": {
+      "name": "haido",
+      "uuid": "vg48wsk4808ocoggoco8444g",
+      "environment": "production"
+    }
   },
   "commitConvention": {
     "tool": "gemini-commit-wizard",
@@ -37,22 +55,35 @@
     "docs/modules/technical-debt.md",
     "docs/EXPLORATION-SUMMARY-2026-05-09.md",
     "docs/ARCHITECTURE-AUDIT-2026-05-09.md",
+    "docs/decisions/r1-deployment-architecture-2026-05-09.md"
+  ],
+  "supersededDocs": [
     "docs/PROPOSALS-INTERVIEW.md",
+    "docs/INTERVIEW-PROPOSALS.md",
     "docs/INTERVIEW-QUESTIONS.md",
     "docs/TICKETS-REVIEW.md"
   ],
+  "diagrams": [
+    "/tmp/tpv-cloud-architecture.html",
+    "/tmp/0.4.0-deployment.html",
+    "/tmp/0.5.0-printer.html"
+  ],
   "metadata": {
     "targetMilestone": "Production deployment at brother's bar (2026-05-09)",
-    "criticalPhases": ["0.4.0", "0.5.0"],
+    "criticalPhases": ["0.4.0"],
+    "deferredPhases": ["0.5.0"],
     "workflow": "max-agent-orchestration",
-    "interviewScheduled": "2026-05-09 21:00",
+    "interviewCompleted": "2026-05-09 (3 rounds, locked r1)",
     "preparationComplete": true,
+    "lastDecisionLock": "r1-deployment-architecture-2026-05-09",
     "pendingWork": [
-      "Interview con usuario para lock decisions 0.4.0 + 0.5.0",
-      "Reformular TKT-02 (printer) si se aprueba propuesta TCP",
-      "Ejecutar TKT-01.1 (hardcoded credentials) — BLOCKER",
-      "Ejecutar TKT-01 (updater audit)",
-      "Ejecutar TKT-04 (Windows setup)"
-    ]
+      "Lanzar @task-decomposer TR-01 y TR-02 en paralelo (agentes distintos)",
+      "@task-decomposer TR-03 cuando TR-02 healthy",
+      "@task-decomposer TR-04 cuando TR-01+TR-02+TR-03 done",
+      "@task-decomposer TR-05 cuando TR-04 done",
+      "@task-decomposer TR-06 cuando TR-05 done (cleanup)",
+      "Post-prod: TKT-09 Hetzner upgrade research"
+    ],
+    "executionOrder": "TR-01 || TR-02 -> TR-03 -> TR-04 -> TR-05 -> TR-06"
   }
 }
