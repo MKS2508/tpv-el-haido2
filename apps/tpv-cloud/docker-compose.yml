@@ -1,0 +1,35 @@
+services:
+  tpv-cloud:
+    build: .
+    ports:
+      - "3003:3003"
+    environment:
+      DATABASE_URL: postgresql://tpv:tpv@postgres:5432/tpv-cloud-db
+      MASTER_LICENSE_EMAIL: admin@haido.local
+      MASTER_LICENSE_KEY: HAI-MASTER-DEV-KEY-2026
+      PORT: 3003
+      LOG_LEVEL: info
+      NODE_ENV: development
+    volumes:
+      - binaries:/srv/binaries
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tpv
+      POSTGRES_PASSWORD: tpv
+      POSTGRES_DB: tpv-cloud-db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tpv -d tpv-cloud-db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  binaries:
+  pgdata:
