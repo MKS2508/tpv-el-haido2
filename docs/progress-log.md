@@ -288,3 +288,94 @@ GET (subdomain con tenant inválido) → 404 PROJECT_NOT_FOUND (middleware OK)
 - Tauri SDK soporta ambos modos según schema de respuesta.
 - Cuando se rote la signing key (futuro), actualizar fila `projects` con nuevo `public_pubkey` antes de publicar release con la nueva key.
 
+
+---
+
+## 2026-05-10 — 0.4.0.D done: Windows production build + publish
+
+### Contexto
+waxin tiró SSH al PC del bar (`elhaido@100.64.0.4` Tailscale). Total autonomía durante la noche para build + publish del primer release Windows.
+
+### Pre-checks ejecutados
+- gh status → token invalid (sin auth en Win, irrelevante para build)
+- BW vault → unlocked con pass `Pancho362917@`, cached session 88-char en `%TEMP%\bw_session.txt`
+- `tauri-keys/tpv-el-haido.key` → solo `.pub` en Win, scp del private desde Mac (262 bytes, sha256 match)
+- AEAT sidecar repo → no presente, `tar -czf` del `tpv-soap-aeat` Mac → scp + extract en Win → bun install (85 pkgs)
+
+### Bloqueadores resueltos durante la noche
+
+| # | Síntoma | Causa | Fix |
+|---|---|---|---|
+| 1 | `npm` no en PATH | fnm-managed node sin npm en PATH | commit `e3b732d` — cambiar `tauri.conf.json` `beforeBuildCommand`: `npm run build` → `bun run build`. Aligned con stack (Bun) |
+| 2 | `tsgo` TS2741 en `logger-init.ts` | tsgo strict en Win infiere `ConsoleTransport` directo como `TransportTarget` | commit `27b8e05` — `as TransportTarget` cast explícito en 3 callsites |
+| 3 | `Couldn't find a .ico icon` (MSI bundler) | `icon.ico` existe pero no en lista | commit `10145d8` — añadido `icons/icon.ico` a `bundle.icon[]` |
+| 4 | `Wrong password for that key` | passphrase BW item HAIDO contiene `·` (U+00B7), pwsh codepage Windows-1252 lo rompía → 23 chars con · vs 25 chars erróneos | `run-build.ps1` fuerza `[Console]::OutputEncoding = UTF8` antes de leer bw stdout. Verificado hex `5F-46-45-41-5F-52-45-C2-B7-44-22-51-52-5F-46-45-C2-B7-57-45-52-73-66-69-6A` matches Mac |
+| 5 | SSH disconnect al apagarse Mac → cargo build muerto | parent SSH process kill propaga a child | `Start-Process pwsh -PassThru -RedirectStandardOutput -WindowStyle Hidden` deja el build detached del SSH. PID en `%USERPROFILE%\tauri-build.pid` |
+
+### Resultado: 4 artefactos firmados
+
+```
+src-tauri/target/release/bundle/
+├── nsis/
+│   ├── TPV El Haido_0.1.0_x64-setup.exe        50,550,961 bytes (48 MB)
+│   └── TPV El Haido_0.1.0_x64-setup.exe.sig    424 bytes
+└── msi/
+    ├── TPV El Haido_0.1.0_x64_en-US.msi        67,297,280 bytes (64 MB)
+    └── TPV El Haido_0.1.0_x64_en-US.msi.sig    424 bytes
+```
+
+Build duration: 2.08 min (segunda corrida con cargo cache + rebuild bundles).
+
+### Publish a release-hub
+
+- Pull artifacts a Mac via `scp` → `/tmp/haido-win-release/`
+- Renombrados a canonical: `tpv-haido-0.1.0-windows-x64-setup.exe` + `.sig`
+- `release.ts auth status` → token cached expired → refresh silent OK
+- Multipart curl directo al admin endpoint (bypass del CLI por mismatch de extension `.nsis.zip` esperada vs `.exe` actual de Tauri 2):
+
+```
+POST https://admin.releases.mks2508.systems/api/admin/projects/haido/releases
+Authorization: Bearer <pkce-jwt>
+Content-Type: multipart/form-data
+  version=0.1.0
+  target=windows
+  arch=x86_64
+  signature=<minisign-content>
+  notes=Initial Windows production release (NSIS installer + OTA)
+  binary=@tpv-haido-0.1.0-windows-x64-setup.exe (51MB)
+→ 201 {"release":{"id":"b2517a43-96ec-4cd6-96e4-a7feb9edbb24",...}}
+```
+
+### Smoke OTA Windows verde
+
+```
+HEAD https://haido.releases.mks2508.systems/api/dl/0.1.0/windows/x86_64/tpv-haido-0.1.0-windows-x64-setup.exe → 200
+GET  https://haido.releases.mks2508.systems/api/updates/windows/x86_64/0.0.0 → 200
+{
+  "version": "0.1.0",
+  "notes": "Initial Windows production release (NSIS installer + OTA)",
+  "pub_date": "2026-05-10T16:09:19.896Z",
+  "url": "/api/dl/0.1.0/windows/x86_64/tpv-haido-0.1.0-windows-x64-setup.exe",
+  "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkK..."
+}
+```
+
+### Trade-offs aceptados
+
+- MSI subido NO a release-hub. NSIS-setup.exe es suficiente como installer + OTA single-binary (Tauri 2 con `installMode: "passive"` reinstala in-place desde el setup.exe). MSI queda como artefacto local en Win pero sin distribución.
+- `release.ts publish` no usado para Windows porque busca `.nsis.zip` (legacy convention Tauri); `createUpdaterArtifacts: true` en Tauri 2.10 genera `-setup.exe.sig` directamente. Refactor de release.ts queda post-prod.
+
+### 0.4.0.D veredicto: ✅ done
+
+Pipeline completo verde:
+- Build firmado en máquina Windows del bar ✅
+- Subido a release-hub multi-tenant ✅
+- Endpoint Tauri updater responde correctamente ✅
+- Download URL público accesible ✅
+- Pendiente: TKT-10 (smoke OTA real — instalar el `.exe` en Windows y verificar que la app boota + el updater poll funciona). Es paso de waxin manual con `cmd.exe` en máquina del bar ya que tiene context UI.
+
+### Commits del turno
+
+- `e3b732d` fix(tauri): use bun run instead of npm in beforeBuildCommand
+- `27b8e05` fix(logger): cast TransportTarget for tsgo strict inference
+- `10145d8` fix(tauri): include icon.ico in bundle icons for Windows MSI/NSIS
