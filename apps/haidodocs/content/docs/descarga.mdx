@@ -7,10 +7,10 @@ import { Monitor, Apple, Laptop, Server, Globe, Download, ExternalLink, Cpu } fr
 
 # Descargar TPV El Haido
 
-Elige la versión para tu sistema operativo o prueba directamente en el navegador.
+Versión actual: **v0.1.0**. Elige la opción que mejor encaje con tu sistema.
 
 <Callout type="info">
-  Todas las descargas están disponibles en [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases).
+  Las descargas se sirven desde nuestro propio hub: `haido.releases.mks2508.systems`. Las actualizaciones automáticas dentro de la app ya están enchufadas a este endpoint — instalas una vez y a partir de ahí TPV se actualiza solo.
 </Callout>
 
 ## Prueba sin Instalar
@@ -26,7 +26,7 @@ Elige la versión para tu sistema operativo o prueba directamente en el navegado
       </div>
       <div>
         <div className="text-xl font-bold text-[var(--text-primary)]">App Web (PWA)</div>
-        <div className="text-sm text-[var(--text-muted)]">Sin instalacion - Funciona offline - Instalable como app</div>
+        <div className="text-sm text-[var(--text-muted)]">Sin instalación · Funciona offline · Instalable como app</div>
       </div>
     </div>
     <ExternalLink className="w-5 h-5 text-[var(--accent-green)] group-hover:translate-x-1 transition-transform" />
@@ -39,52 +39,9 @@ Elige la versión para tu sistema operativo o prueba directamente en el navegado
 
 <div className="not-prose grid gap-4 my-8">
 
-{/* Windows */}
+{/* macOS Apple Silicon — DISPONIBLE */}
 <a
-  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
-  target="_blank"
-  className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
->
-  <div className="flex items-center gap-4">
-    <div className="w-12 h-12 rounded-lg bg-[#0078D4]/10 border border-[#0078D4]/20 flex items-center justify-center">
-      <Monitor className="w-6 h-6 text-[#0078D4]" />
-    </div>
-    <div>
-      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-        Windows
-        <span className="text-xs px-2 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)]">x64</span>
-      </div>
-      <div className="text-sm text-[var(--text-muted)]">Windows 10/11 • .msi o .exe</div>
-    </div>
-  </div>
-  <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
-</a>
-
-{/* macOS Intel */}
-<a
-  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
-  target="_blank"
-  className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
->
-  <div className="flex items-center gap-4">
-    <div className="w-12 h-12 rounded-lg bg-[#A2AAAD]/10 border border-[#A2AAAD]/20 flex items-center justify-center">
-      <Apple className="w-6 h-6 text-[#A2AAAD]" />
-    </div>
-    <div>
-      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-        macOS Intel
-        <span className="text-xs px-2 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)]">x64</span>
-      </div>
-      <div className="text-sm text-[var(--text-muted)]">macOS 11+ • .dmg</div>
-    </div>
-  </div>
-  <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
-</a>
-
-{/* macOS Apple Silicon */}
-<a
-  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
-  target="_blank"
+  href="https://haido.releases.mks2508.systems/api/dl/0.1.0/darwin/aarch64/tpv-haido-0.1.0-macos-arm64.dmg"
   className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
 >
   <div className="flex items-center gap-4">
@@ -94,19 +51,55 @@ Elige la versión para tu sistema operativo o prueba directamente en el navegado
     <div>
       <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
         macOS Apple Silicon
-        <span className="text-xs px-2 py-0.5 rounded bg-[var(--accent-green)]/10 text-[var(--accent-green)]">ARM64</span>
+        <span className="text-xs px-2 py-0.5 rounded bg-[var(--accent-green)]/10 text-[var(--accent-green)]">ARM64 · 51 MB</span>
       </div>
-      <div className="text-sm text-[var(--text-muted)]">M1/M2/M3/M4 • .dmg</div>
+      <div className="text-sm text-[var(--text-muted)]">M1 / M2 / M3 / M4 · macOS 11+ · `.dmg`</div>
     </div>
   </div>
   <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
 </a>
 
-{/* Linux */}
-<a
-  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
-  target="_blank"
-  className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
+{/* Windows — pendiente de build en máquina del bar */}
+<div
+  className="flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] opacity-60"
+>
+  <div className="flex items-center gap-4">
+    <div className="w-12 h-12 rounded-lg bg-[#0078D4]/10 border border-[#0078D4]/20 flex items-center justify-center">
+      <Monitor className="w-6 h-6 text-[#0078D4]" />
+    </div>
+    <div>
+      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        Windows
+        <span className="text-xs px-2 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)]">x64 · próximamente</span>
+      </div>
+      <div className="text-sm text-[var(--text-muted)]">Windows 10 / 11 · `.exe` (instalador NSIS)</div>
+    </div>
+  </div>
+  <span className="text-xs text-[var(--text-muted)]">Build pendiente</span>
+</div>
+
+{/* macOS Intel — pendiente */}
+<div
+  className="flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] opacity-60"
+>
+  <div className="flex items-center gap-4">
+    <div className="w-12 h-12 rounded-lg bg-[#A2AAAD]/10 border border-[#A2AAAD]/20 flex items-center justify-center">
+      <Apple className="w-6 h-6 text-[#A2AAAD]" />
+    </div>
+    <div>
+      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        macOS Intel
+        <span className="text-xs px-2 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)]">x64 · próximamente</span>
+      </div>
+      <div className="text-sm text-[var(--text-muted)]">macOS 11+ · `.dmg`</div>
+    </div>
+  </div>
+  <span className="text-xs text-[var(--text-muted)]">Build pendiente</span>
+</div>
+
+{/* Linux / RPi — diferido */}
+<div
+  className="flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] opacity-50"
 >
   <div className="flex items-center gap-4">
     <div className="w-12 h-12 rounded-lg bg-[#FCC624]/10 border border-[#FCC624]/20 flex items-center justify-center">
@@ -114,136 +107,94 @@ Elige la versión para tu sistema operativo o prueba directamente en el navegado
     </div>
     <div>
       <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-        Linux
-        <span className="text-xs px-2 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)]">x64</span>
+        Linux / Raspberry Pi
+        <span className="text-xs px-2 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)]">x64 · ARM64 · diferido</span>
       </div>
-      <div className="text-sm text-[var(--text-muted)]">Ubuntu, Debian, Fedora • .deb o .AppImage</div>
+      <div className="text-sm text-[var(--text-muted)]">`.deb` / `.AppImage` (post-producción inicial)</div>
     </div>
   </div>
-  <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
-</a>
-
-{/* Raspberry Pi */}
-<a
-  href="https://github.com/MKS2508/tpv-el-haido2/releases/latest"
-  target="_blank"
-  className="group flex items-center justify-between p-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--accent-green-dim)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all duration-300"
->
-  <div className="flex items-center gap-4">
-    <div className="w-12 h-12 rounded-lg bg-[#C51A4A]/10 border border-[#C51A4A]/20 flex items-center justify-center">
-      <Server className="w-6 h-6 text-[#C51A4A]" />
-    </div>
-    <div>
-      <div className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-        Raspberry Pi
-        <span className="text-xs px-2 py-0.5 rounded bg-[var(--accent-green)]/10 text-[var(--accent-green)]">ARM64</span>
-      </div>
-      <div className="text-sm text-[var(--text-muted)]">Pi 4/5 (64-bit) • .deb</div>
-    </div>
-  </div>
-  <Download className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-[var(--accent-green)] transition-colors" />
-</a>
+  <span className="text-xs text-[var(--text-muted)]">Roadmap futuro</span>
+</div>
 
 </div>
 
 ---
 
-## Instalacion Rapida
+## Instalación
 
-<Tabs items={['Windows', 'macOS', 'Linux', 'Raspberry Pi']}>
-<Tab value="Windows">
-
-```bash title="Opcion 1: Instalador MSI"
-# Descarga y ejecuta TPV.El.Haido_x.x.x_x64-setup.msi
-```
-
-```bash title="Opcion 2: Ejecutable portable"
-# Descarga y ejecuta TPV.El.Haido_x.x.x_x64.exe
-```
-
-<Callout type="warning">
-  **Windows SmartScreen**: Haz clic en "Mas informacion" → "Ejecutar de todas formas"
-</Callout>
-
-</Tab>
+<Tabs items={['macOS', 'Windows', 'Linux']}>
 <Tab value="macOS">
 
-```bash title="Intel Mac"
-# Descarga TPV.El.Haido_x64.dmg
-# Arrastra a Aplicaciones
-```
+### Apple Silicon (M1 / M2 / M3 / M4)
 
-```bash title="Apple Silicon (M1/M2/M3/M4)"
-# Descarga TPV.El.Haido_aarch64.dmg
-# Arrastra a Aplicaciones
+1. Descarga `tpv-haido-0.1.0-macos-arm64.dmg` con el botón de arriba.
+2. Abre el `.dmg` haciendo doble clic.
+3. Arrastra `TPV El Haido.app` a la carpeta `Applications`.
+4. La primera vez: clic derecho sobre la app → **Abrir** (esto es para saltarse Gatekeeper, ya que la firma es propia, no de Apple).
+
+```bash title="Verificar checksum (opcional)"
+# El binario está firmado con minisign. La verificación la hace
+# automáticamente Tauri al recibir actualizaciones.
+shasum -a 256 ~/Downloads/tpv-haido-0.1.0-macos-arm64.dmg
 ```
 
 <Callout type="info">
-  Primera vez: Clic derecho → Abrir para evitar Gatekeeper
+  A partir de la primera versión, las actualizaciones llegan solas sin descargar nada manualmente. La app comprueba `https://haido.releases.mks2508.systems/api/updates/...` al iniciar.
 </Callout>
+
+</Tab>
+<Tab value="Windows">
+
+### Windows 10 / 11 (x64)
+
+> **Pendiente** — el primer build de Windows se está preparando ahora mismo en la máquina del bar. En cuanto esté disponible se publicará en este mismo endpoint:
+>
+> `https://haido.releases.mks2508.systems/api/dl/0.1.0/windows/x86_64/tpv-haido-0.1.0-windows-x64-setup.exe`
+>
+> Tras la instalación inicial, las siguientes versiones llegarán automáticamente.
 
 </Tab>
 <Tab value="Linux">
 
-```bash title="Ubuntu/Debian (.deb)"
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_amd64.deb
-sudo dpkg -i tpv-el-haido_amd64.deb
-sudo apt-get install -f
-```
+### Linux (cualquier distro)
 
-```bash title="Cualquier distro (AppImage)"
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido.AppImage
-chmod +x tpv-el-haido.AppImage
-./tpv-el-haido.AppImage
-```
-
-</Tab>
-<Tab value="Raspberry Pi">
-
-```bash title="Raspberry Pi OS 64-bit"
-# Verificar arquitectura (debe ser aarch64)
-uname -m
-
-# Instalar
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_arm64.deb
-sudo dpkg -i tpv-el-haido_arm64.deb
-sudo apt-get install -f
-```
-
-<Callout type="tip">
-  Usa el tema High Contrast para mejor rendimiento en Pi
-</Callout>
+> **Diferido** — Linux no es objetivo de la primera fase de producción. La app es 100% PWA-compatible, así que mientras tanto puedes usar la [versión web](/tpv/index.html) en cualquier navegador moderno (Chrome, Firefox, Edge), incluido en una Raspberry Pi.
 
 </Tab>
 </Tabs>
 
 ---
 
+## Auto-actualización
+
+TPV El Haido usa el sistema de actualizaciones nativo de Tauri:
+
+1. Al arrancar, la app pregunta a `haido.releases.mks2508.systems` si hay versión nueva.
+2. Si la hay, se descarga el bundle firmado en background.
+3. Una notificación te pide reiniciar para aplicar la actualización.
+4. La firma minisign garantiza que el binario no ha sido alterado durante la descarga.
+
+No hace falta reinstalar manualmente nunca más después de la primera vez.
+
+---
+
 ## Requisitos del Sistema
 
-| Requisito | Minimo | Recomendado |
+| Requisito | Mínimo | Recomendado |
 |-----------|--------|-------------|
-| **RAM** | 512 MB | 1 GB+ |
+| **RAM** | 512 MB | 1 GB |
 | **Almacenamiento** | 100 MB | 500 MB |
-| **Pantalla** | 800×600 | 1024×768+ |
-| **Internet** | Opcional | Para VERI*FACTU |
+| **Pantalla** | 800×600 | 1024×768 o superior |
+| **Internet** | Opcional (solo necesario para validación AEAT y actualizaciones) | — |
 
 ---
 
-## Verificar Instalacion
+## Verificar instalación
 
-1. Abre TPV El Haido
-2. Deberas ver la pantalla de login o el asistente de configuracion
-3. Sigue los [Primeros Pasos](/docs/guia-usuario/primeros-pasos)
+1. Abre TPV El Haido.
+2. Verás la pantalla de login PIN o el asistente de configuración inicial.
+3. Sigue los [primeros pasos](/docs/guia-usuario/primeros-pasos).
 
 ---
 
-## Actualizaciones Automaticas
-
-TPV El Haido incluye actualizaciones automaticas:
-
-1. La app comprueba nuevas versiones al iniciar
-2. Recibiras una notificacion cuando haya actualizacion
-3. Un clic para actualizar desde **Ajustes → Acerca de**
-
-Historial de cambios: [Changelog](/docs/changelog)
+Historial de cambios: [Changelog](/docs/changelog).
