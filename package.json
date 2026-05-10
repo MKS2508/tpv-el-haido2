@@ -45,7 +45,10 @@
     "apps:license": "bun run license-server",
     "apps:docs": "bun run docs",
     "build:pwa": "bun run scripts/build-pwa.ts",
-    "deploy:pwa": "bun run build:pwa && bun run --cwd apps/haidodocs build"
+    "deploy:pwa": "bun run build:pwa && bun run --cwd apps/haidodocs build",
+    "release:macos": "bun run scripts/build-release.ts --target macos-arm64",
+    "release:windows": "bun run scripts/build-release.ts --target windows-x64",
+    "release:all": "bun run scripts/build-release.ts --target all"
   },
   "dependencies": {
     "@amad3v/solid-chart": "^1.0.4",
