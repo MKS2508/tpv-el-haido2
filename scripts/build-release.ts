@@ -9,18 +9,28 @@
  *   bun run scripts/build-release.ts --target <macos-arm64|macos-x64|windows-x64|all>
  *                                    [--no-sign] [--output <dir>] [--help]
  *
- * Environment variables:
- *   TAURI_SIGNING_PRIVATE_KEY          — Base64-encoded minisign private key
- *   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — Password for the private key
- *   BW_TAURI_KEY_ITEM                  — Bitwarden item ID/name for the private key
- *                                        (defaults to "tauri-signing-key")
- *   RELEASE_HUB_BASE_URL              — Base URL for artifact download links in latest.json
- *                                        (defaults to "https://updates.mks2508.systems/tpv")
+ * Environment variables (all optional — script falls back to file/Bitwarden):
+ *   TAURI_SIGNING_PRIVATE_KEY          — Base64 private key contents (skips file lookup)
+ *   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — Passphrase (skips Bitwarden lookup)
+ *   TAURI_KEY_NAME                     — Key file basename, default "tpv-el-haido"
+ *                                        (looked up at ~/.tauri/<name>.key, then <repo>/tauri-keys/<name>.key)
+ *   BW_TAURI_KEY_ITEM                  — Bitwarden item name/ID, default "HAIDO"
+ *   BW_TAURI_KEY_FIELD                 — BW custom field name, default "PASSPHRASE"
+ *   BW_SESSION                         — Pre-set BW session token (skips interactive unlock prompt)
+ *   RELEASE_HUB_BASE_URL               — Base URL for artifact download links in latest.json,
+ *                                        default "https://updates.mks2508.systems/tpv"
  *                                        TODO(0.4.1.G): wire to real upload hub
+ *
+ * Bitwarden interactive flow:
+ *   - If `bw status` returns "locked", the script invokes `bw unlock --raw` with
+ *     stdin/stderr inherited from the TTY, prompting for the master password.
+ *   - The captured BW_SESSION is exported into process.env for subsequent `bw` calls.
+ *   - If `bw status` returns "unauthenticated", the script errors out — run `bw login` first.
  */
 
 import { existsSync, mkdirSync, cpSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve, basename } from 'node:path';
+import { homedir } from 'node:os';
 import logger from '@mks2508/better-logger';
 import {
   ok,
@@ -143,10 +153,29 @@ const ALL_TARGETS: ReleaseTarget[] = ['macos-arm64', 'macos-x64', 'windows-x64']
 const DEFAULT_OUTPUT_DIR = resolve(PROJECT_ROOT, 'releases');
 
 /**
- * Default Bitwarden item name for the Tauri signing key.
+ * Default Bitwarden item name where the Tauri signing key passphrase is stored.
  * Override with `BW_TAURI_KEY_ITEM` env var.
+ *
+ * Project convention: BW item "HAIDO" (full name "haido sign passphrase") with
+ * a custom field named "PASSPHRASE" containing the minisign key passphrase.
  */
-const DEFAULT_BW_ITEM = 'tauri-signing-key';
+const DEFAULT_BW_ITEM = 'HAIDO';
+
+/**
+ * Default custom field name inside the BW item that holds the passphrase.
+ * Override with `BW_TAURI_KEY_FIELD` env var.
+ */
+const DEFAULT_BW_FIELD = 'PASSPHRASE';
+
+/**
+ * Default Tauri signing key file name (without extension).
+ * Override with `TAURI_KEY_NAME` env var.
+ *
+ * Resolution order (cross-platform via `os.homedir()` + project root fallback):
+ *   1. `<homedir>/.tauri/<name>.key`           (canonical Tauri location, macOS / Linux / Windows)
+ *   2. `<project-root>/tauri-keys/<name>.key`  (in-repo fallback, NOT committed)
+ */
+const DEFAULT_TAURI_KEY_NAME = 'tpv-el-haido';
 
 /**
  * Base URL for artifact download links in `latest.json`.
@@ -179,11 +208,20 @@ Options:
   --output <dir>  Output directory for releases/ tree (default: <project>/releases)
   --help          Show this message
 
-Environment variables:
-  TAURI_SIGNING_PRIVATE_KEY          Base64-encoded minisign private key
-  TAURI_SIGNING_PRIVATE_KEY_PASSWORD Key password
-  BW_TAURI_KEY_ITEM                  Bitwarden item ID for signing key (default: "${DEFAULT_BW_ITEM}")
+Environment variables (all optional):
+  TAURI_SIGNING_PRIVATE_KEY          Base64 private key contents (overrides file lookup)
+  TAURI_SIGNING_PRIVATE_KEY_PASSWORD Passphrase (overrides Bitwarden lookup)
+  TAURI_KEY_NAME                     Key file basename (default: "${DEFAULT_TAURI_KEY_NAME}")
+                                     Looked up at ~/.tauri/<name>.key, then <repo>/tauri-keys/<name>.key
+  BW_TAURI_KEY_ITEM                  Bitwarden item name/ID (default: "${DEFAULT_BW_ITEM}")
+  BW_TAURI_KEY_FIELD                 BW custom field name (default: "${DEFAULT_BW_FIELD}")
+  BW_SESSION                         Pre-set BW session (skips interactive unlock prompt)
   RELEASE_HUB_BASE_URL               Download URL base for latest.json (default: "${RELEASE_HUB_BASE_URL}")
+
+Bitwarden behaviour:
+  - Locked vault       → interactive prompt for master password (bw unlock --raw on TTY)
+  - Unauthenticated    → error, run "bw login" first
+  - Already unlocked   → reads BW_SESSION from env automatically
 `);
 }
 
@@ -239,157 +277,318 @@ export function parseCliOptions(): Result<ICliOptions, ResultError> {
 // ─────────────────────────────── Signing Keys ────────────────────────────────
 
 /**
- * Attempts to read the Tauri signing key from Bitwarden CLI.
+ * Locates the Tauri signing private key file on disk, cross-platform.
  *
- * Requires `bw` CLI to be installed and the vault to be unlocked
- * (BW_SESSION env var set or `bw unlock` run beforehand).
+ * Resolution order:
+ *   1. `<homedir>/.tauri/<keyName>.key` — canonical Tauri location.
+ *      Works on macOS (`~/.tauri/`), Linux (`~/.tauri/`), and Windows (`%USERPROFILE%\.tauri\`).
+ *   2. `<projectRoot>/tauri-keys/<keyName>.key` — in-repo fallback (must be gitignored).
  *
- * @param itemId - Bitwarden item ID or name to retrieve
- * @returns The password stored in Bitwarden, or an error
+ * @param keyName - Key file name without extension (e.g. "tpv-el-haido").
+ * @returns Path to the key file or an error if not found in any known location.
  */
-async function loadKeyFromBitwarden(
-  itemId: string,
-): Promise<Result<string, ResultError>> {
-  log.info(`Trying Bitwarden CLI for item: "${itemId}"`);
+export function locatePrivateKeyFile(keyName: string): Result<string, ResultError> {
+  const candidates = [
+    join(homedir(), '.tauri', `${keyName}.key`),
+    join(PROJECT_ROOT, 'tauri-keys', `${keyName}.key`),
+  ];
 
-  // Check if bw is available
-  const statusResult = await tryCatchAsync(async () => {
-    const proc = Bun.spawn(['bw', 'status'], {
-      stdout: 'pipe',
-      stderr: 'pipe',
-    });
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      log.info(`Private key file found at: ${candidate}`);
+      return ok(candidate);
+    }
+  }
+
+  return err(
+    resultError(
+      'PRIVATE_KEY_FILE_NOT_FOUND',
+      [
+        `Tauri signing private key "${keyName}.key" not found in any known location.`,
+        'Searched:',
+        ...candidates.map((c) => `  - ${c}`),
+        '',
+        'Either:',
+        `  - Generate it with: bun run tauri signer generate -w ~/.tauri/${keyName}.key`,
+        `  - Copy from another machine to ~/.tauri/${keyName}.key`,
+        `  - Set TAURI_KEY_NAME env var to override the default key name ("${DEFAULT_TAURI_KEY_NAME}").`,
+      ].join('\n'),
+    ),
+  );
+}
+
+/**
+ * Reads the contents of a Tauri private key file.
+ *
+ * @param path - Absolute path to the key file.
+ * @returns Trimmed key contents (single base64 line) or an error.
+ */
+function readPrivateKeyFile(path: string): Result<string, ResultError> {
+  return tryCatch(() => {
+    const raw = readFileSync(path, 'utf-8').trim();
+    if (!raw) {
+      throw new Error(`Key file "${path}" is empty.`);
+    }
+    return raw;
+  }, 'PRIVATE_KEY_READ_FAILED');
+}
+
+/**
+ * Runs `bw status` and returns the parsed status object.
+ *
+ * @returns Status payload (`{status: 'unlocked'|'locked'|'unauthenticated'|...}`) or an error.
+ */
+async function getBitwardenStatus(): Promise<Result<{ status: string }, ResultError>> {
+  const result = await tryCatchAsync(async () => {
+    const proc = Bun.spawn(['bw', 'status'], { stdout: 'pipe', stderr: 'pipe' });
     await proc.exited;
     const text = await new Response(proc.stdout).text();
     return text.trim();
   }, 'BW_STATUS_FAILED');
 
-  if (isErr(statusResult)) {
+  if (isErr(result)) {
     return err(
       resultError(
         'BW_NOT_AVAILABLE',
         'Bitwarden CLI (bw) is not installed or not in PATH.',
-        statusResult.error.cause,
+        result.error.cause,
       ),
     );
   }
 
-  let statusData: { status: string };
-  try {
-    statusData = JSON.parse(statusResult.value);
-  } catch {
-    return err(
-      resultError('BW_PARSE_ERROR', 'Could not parse bw status output.'),
-    );
-  }
+  return tryCatch(() => JSON.parse(result.value) as { status: string }, 'BW_PARSE_ERROR');
+}
 
-  if (statusData.status !== 'unlocked') {
+/**
+ * Unlocks the Bitwarden vault interactively by prompting for the master password
+ * on the inherited TTY, then captures the resulting `BW_SESSION` and exports it
+ * to `process.env` for the rest of this process.
+ *
+ * Uses `bw unlock --raw` which writes ONLY the session token to stdout,
+ * making it easy to capture programmatically while the password prompt
+ * stays on stderr/TTY.
+ *
+ * @returns `ok(undefined)` on success, `err(...)` if the unlock failed or was cancelled.
+ */
+async function unlockBitwardenInteractive(): Promise<Result<void, ResultError>> {
+  log.warn('Bitwarden vault is locked — prompting for master password.');
+  log.info('(If you cancel with Ctrl+C, use --no-sign or set BW_SESSION manually.)');
+
+  const result = await tryCatchAsync(async () => {
+    // `bw unlock --raw` prints the session token to stdout, prompts on stderr/TTY.
+    // We pipe stdout to capture, but inherit stdin/stderr so the password prompt works.
+    const proc = Bun.spawn(['bw', 'unlock', '--raw'], {
+      stdin: 'inherit',
+      stdout: 'pipe',
+      stderr: 'inherit',
+    });
+    const exitCode = await proc.exited;
+    if (exitCode !== 0) {
+      throw new Error(`bw unlock exited with code ${exitCode}`);
+    }
+    const session = (await new Response(proc.stdout).text()).trim();
+    if (!session) {
+      throw new Error('bw unlock returned an empty session token.');
+    }
+    return session;
+  }, 'BW_UNLOCK_FAILED');
+
+  if (isErr(result)) {
     return err(
       resultError(
-        'BW_LOCKED',
-        `Bitwarden vault is ${statusData.status}. Run "bw unlock" and set BW_SESSION, then retry.`,
+        'BW_UNLOCK_FAILED',
+        `Could not unlock Bitwarden vault: ${result.error.message}`,
+        result.error.cause,
       ),
     );
   }
 
-  // Retrieve the password field
-  const passwordResult = await tryCatchAsync(async () => {
-    const proc = Bun.spawn(['bw', 'get', 'password', itemId], {
+  // Export session for any subsequent `bw` calls in this process.
+  process.env.BW_SESSION = result.value;
+  log.success('Bitwarden vault unlocked. BW_SESSION set for this process.');
+  return ok(undefined);
+}
+
+/**
+ * Reads a custom field value from a Bitwarden item.
+ *
+ * Uses `bw get item <id> --raw` (full JSON) and extracts `fields[name=fieldName].value`
+ * because `bw get password <id>` only returns the `login.password` field, which is
+ * not where the Tauri signing passphrase is stored in this project.
+ *
+ * @param itemId   - BW item ID or search name (e.g. "HAIDO").
+ * @param fieldName - Custom field name to read (e.g. "PASSPHRASE"). Case-sensitive.
+ * @returns The field value, or an error.
+ */
+async function getBitwardenCustomField(
+  itemId: string,
+  fieldName: string,
+): Promise<Result<string, ResultError>> {
+  const result = await tryCatchAsync(async () => {
+    const proc = Bun.spawn(['bw', 'get', 'item', itemId, '--raw'], {
       stdout: 'pipe',
       stderr: 'pipe',
     });
     await proc.exited;
     const text = await new Response(proc.stdout).text();
     return text.trim();
-  }, 'BW_GET_FAILED');
+  }, 'BW_GET_ITEM_FAILED');
 
-  if (isErr(passwordResult)) {
+  if (isErr(result)) {
     return err(
       resultError(
-        'BW_GET_FAILED',
-        `Failed to retrieve "${itemId}" from Bitwarden.`,
-        passwordResult.error.cause,
+        'BW_GET_ITEM_FAILED',
+        `Failed to retrieve item "${itemId}" from Bitwarden.`,
+        result.error.cause,
       ),
     );
   }
 
-  if (!passwordResult.value) {
+  const parseResult = tryCatch(
+    () => JSON.parse(result.value) as { fields?: Array<{ name: string; value: string }> },
+    'BW_ITEM_PARSE_ERROR',
+  );
+  if (isErr(parseResult)) {
+    return err(
+      resultError('BW_ITEM_PARSE_ERROR', `Could not parse item "${itemId}" JSON.`, parseResult.error.cause),
+    );
+  }
+
+  const field = parseResult.value.fields?.find((f) => f.name === fieldName);
+  if (!field || !field.value) {
     return err(
       resultError(
-        'BW_EMPTY_VALUE',
-        `Bitwarden item "${itemId}" returned an empty password.`,
+        'BW_FIELD_NOT_FOUND',
+        `Item "${itemId}" has no custom field "${fieldName}" (or it is empty).`,
       ),
     );
   }
 
-  return ok(passwordResult.value);
+  return ok(field.value);
 }
 
 /**
- * Loads Tauri signing keys.
+ * Resolves the signing key passphrase via env var first, then Bitwarden.
  *
- * Resolution order:
- * 1. `TAURI_SIGNING_PRIVATE_KEY` + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` env vars
- * 2. Bitwarden CLI (item ID from `BW_TAURI_KEY_ITEM` env var, default: "tauri-signing-key")
- * 3. Returns `Err` with a clear message if neither source works
+ * Bitwarden flow:
+ *   1. Check `bw status`. If `unauthenticated` → error (user must `bw login` first).
+ *   2. If `locked` → prompt master password interactively and capture `BW_SESSION`.
+ *   3. Read custom field `<BW_TAURI_KEY_FIELD>` from item `<BW_TAURI_KEY_ITEM>`.
  *
- * @returns Resolved signing keys or an error.
+ * @returns Passphrase string or an error.
  */
-export async function loadSigningKeys(): Promise<Result<ISigningKeys, ResultError>> {
-  const envKey = process.env.TAURI_SIGNING_PRIVATE_KEY;
+async function resolvePassphrase(): Promise<Result<string, ResultError>> {
   const envPwd = process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD;
-
-  if (envKey && envPwd) {
-    log.success('Signing keys loaded from environment variables.');
-    return ok({ privateKey: envKey, privateKeyPassword: envPwd });
+  if (envPwd) {
+    log.success('Passphrase loaded from TAURI_SIGNING_PRIVATE_KEY_PASSWORD env var.');
+    return ok(envPwd);
   }
 
-  if (envKey && !envPwd) {
-    log.warn(
-      'TAURI_SIGNING_PRIVATE_KEY found but TAURI_SIGNING_PRIVATE_KEY_PASSWORD is missing.',
+  log.info('Passphrase not in env vars — trying Bitwarden CLI.');
+
+  const statusResult = await getBitwardenStatus();
+  if (isErr(statusResult)) {
+    return err(statusResult.error);
+  }
+
+  const status = statusResult.value.status;
+  if (status === 'unauthenticated') {
+    return err(
+      resultError(
+        'BW_UNAUTHENTICATED',
+        'Bitwarden vault is unauthenticated. Run "bw login" first, then retry.',
+      ),
     );
   }
 
-  log.info(
-    'Signing keys not found in env vars — trying Bitwarden CLI fallback.',
-  );
+  if (status === 'locked') {
+    const unlockResult = await unlockBitwardenInteractive();
+    if (isErr(unlockResult)) {
+      return err(unlockResult.error);
+    }
+  }
 
-  const bwItem = process.env.BW_TAURI_KEY_ITEM ?? DEFAULT_BW_ITEM;
-  const bwResult = await loadKeyFromBitwarden(bwItem);
+  const itemId = process.env.BW_TAURI_KEY_ITEM ?? DEFAULT_BW_ITEM;
+  const fieldName = process.env.BW_TAURI_KEY_FIELD ?? DEFAULT_BW_FIELD;
 
-  if (isErr(bwResult)) {
-    log.warn(`Bitwarden fallback failed: ${bwResult.error.message}`);
+  log.info(`Reading custom field "${fieldName}" from BW item "${itemId}"…`);
+  const fieldResult = await getBitwardenCustomField(itemId, fieldName);
+  if (isErr(fieldResult)) {
+    return err(fieldResult.error);
+  }
+
+  log.success(`Passphrase loaded from Bitwarden item "${itemId}".`);
+  return ok(fieldResult.value);
+}
+
+/**
+ * Loads Tauri signing keys (private key + passphrase).
+ *
+ * Resolution strategy (independent for each piece):
+ *
+ * **Private key**:
+ *   1. `TAURI_SIGNING_PRIVATE_KEY` env var (used as-is, expected base64 contents).
+ *   2. File at `<homedir>/.tauri/<TAURI_KEY_NAME>.key` (default name: "tpv-el-haido").
+ *   3. File at `<projectRoot>/tauri-keys/<TAURI_KEY_NAME>.key`.
+ *
+ * **Passphrase**:
+ *   1. `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` env var.
+ *   2. Bitwarden CLI: custom field `<BW_TAURI_KEY_FIELD>` (default "PASSPHRASE") of
+ *      item `<BW_TAURI_KEY_ITEM>` (default "HAIDO"). If the vault is locked, the
+ *      master password is requested interactively on the TTY and `BW_SESSION` is
+ *      auto-set for the rest of the process.
+ *
+ * Cross-platform: paths use `os.homedir()` and `node:path.join`, working on
+ * macOS, Linux, and Windows.
+ *
+ * @returns Resolved signing keys or an aggregated error.
+ */
+export async function loadSigningKeys(): Promise<Result<ISigningKeys, ResultError>> {
+  // ─── Private key ───
+  let privateKey: string;
+  const envKey = process.env.TAURI_SIGNING_PRIVATE_KEY;
+
+  if (envKey) {
+    log.success('Private key loaded from TAURI_SIGNING_PRIVATE_KEY env var.');
+    privateKey = envKey;
+  } else {
+    const keyName = process.env.TAURI_KEY_NAME ?? DEFAULT_TAURI_KEY_NAME;
+    log.info(`Private key not in env — locating key file "${keyName}.key"…`);
+
+    const fileResult = locatePrivateKeyFile(keyName);
+    if (isErr(fileResult)) {
+      return err(fileResult.error);
+    }
+
+    const readResult = readPrivateKeyFile(fileResult.value);
+    if (isErr(readResult)) {
+      return err(readResult.error);
+    }
+    privateKey = readResult.value;
+    log.success('Private key loaded from disk.');
+  }
+
+  // ─── Passphrase ───
+  const pwdResult = await resolvePassphrase();
+  if (isErr(pwdResult)) {
     return err(
       resultError(
         'SIGNING_KEYS_UNAVAILABLE',
         [
-          'Could not load Tauri signing keys from any source.',
+          'Private key was loaded but the passphrase could not be resolved.',
           '',
           'To fix, set one of:',
-          '  1. TAURI_SIGNING_PRIVATE_KEY + TAURI_SIGNING_PRIVATE_KEY_PASSWORD env vars',
-          `  2. BW_TAURI_KEY_ITEM env var pointing to a Bitwarden item, with vault unlocked`,
+          '  1. TAURI_SIGNING_PRIVATE_KEY_PASSWORD env var',
+          `  2. Bitwarden item "${process.env.BW_TAURI_KEY_ITEM ?? DEFAULT_BW_ITEM}" with custom field "${process.env.BW_TAURI_KEY_FIELD ?? DEFAULT_BW_FIELD}"`,
+          '     (vault must be logged in; will prompt master password if locked)',
           '',
-          `Last error: ${bwResult.error.message}`,
+          `Last error: ${pwdResult.error.message}`,
         ].join('\n'),
       ),
     );
   }
 
-  // When loading from Bitwarden, we expect the password field to contain
-  // the private key value, and the key password to be stored in a separate
-  // custom field named "password". For simplicity, we accept key-only from BW
-  // and look for the password in TAURI_SIGNING_PRIVATE_KEY_PASSWORD still.
-  const keyFromBw = bwResult.value;
-  const pwdFromEnv = process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD ?? '';
-
-  if (!pwdFromEnv) {
-    log.warn(
-      'Loaded private key from Bitwarden but TAURI_SIGNING_PRIVATE_KEY_PASSWORD is still unset. ' +
-        'The build will proceed but signing may fail if the key has a password.',
-    );
-  }
-
-  log.success('Signing key loaded from Bitwarden CLI.');
-  return ok({ privateKey: keyFromBw, privateKeyPassword: pwdFromEnv });
+  return ok({ privateKey, privateKeyPassword: pwdResult.value });
 }
 
 // ─────────────────────────────── Version ─────────────────────────────────────
@@ -903,7 +1102,12 @@ async function main(): Promise<void> {
   log.success('All targets built successfully.');
 }
 
-main().catch((e: unknown) => {
-  log.critical('Unhandled error in release builder:', e);
-  process.exit(1);
-});
+// Only run main() when executed directly via `bun run scripts/build-release.ts`.
+// This guard prevents accidental execution when the file is imported (e.g. for unit
+// tests that exercise loadSigningKeys / locatePrivateKeyFile in isolation).
+if (import.meta.main) {
+  main().catch((e: unknown) => {
+    log.critical('Unhandled error in release builder:', e);
+    process.exit(1);
+  });
+}
