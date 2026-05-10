@@ -18,7 +18,7 @@
  * - HttpTransport: Sends logs to remote server (requires VITE_LOG_HTTP_URL)
  */
 
-import logger, { ConsoleTransport, FileTransport, HttpTransport, type LogLevel } from '@mks2508/better-logger';
+import logger, { ConsoleTransport, FileTransport, HttpTransport, type LogLevel, type TransportTarget } from '@mks2508/better-logger';
 import { isTauri } from '@/services/platform';
 
 /**
@@ -60,13 +60,13 @@ export function initializeLogger(): void {
 
   // Console transport
   if (enableConsole) {
-    logger.addTransport(new ConsoleTransport({ level: logLevel }));
+    logger.addTransport({ target: new ConsoleTransport({ level: logLevel }), level: logLevel } as TransportTarget);
   }
 
   // File transport (Tauri desktop only, not in PWA)
   if (enableFile && inTauri) {
     try {
-      logger.addTransport(new FileTransport({ level: logLevel, destination: filePath }));
+      logger.addTransport({ target: new FileTransport({ level: logLevel, destination: filePath }), level: logLevel } as TransportTarget);
     } catch (error) {
       // Silently fail if file transport unavailable
       // This can happen in web/PWA mode
@@ -78,7 +78,7 @@ export function initializeLogger(): void {
   // HTTP transport (requires VITE_LOG_HTTP_URL)
   if (enableHttp && httpUrl) {
     try {
-      logger.addTransport(new HttpTransport({ level: logLevel, url: httpUrl }));
+      logger.addTransport({ target: new HttpTransport({ level: logLevel, url: httpUrl }), level: logLevel } as TransportTarget);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       console.warn(`[Logger] HTTP transport unavailable: ${msg}`);
