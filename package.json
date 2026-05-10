@@ -48,7 +48,10 @@
     "deploy:pwa": "bun run build:pwa && bun run --cwd apps/haidodocs build",
     "release:macos": "bun run scripts/build-release.ts --target macos-arm64",
     "release:windows": "bun run scripts/build-release.ts --target windows-x64",
-    "release:all": "bun run scripts/build-release.ts --target all"
+    "release:all": "bun run scripts/build-release.ts --target all",
+    "release:auth-login": "bun run scripts/release.ts auth login",
+    "release:auth-status": "bun run scripts/release.ts auth status",
+    "release:publish": "bun run scripts/release.ts publish"
   },
   "dependencies": {
     "@amad3v/solid-chart": "^1.0.4",
@@ -71,6 +74,7 @@
     "date-fns": "^4.1.0",
     "lucide-solid": "^1.7.0",
     "modern-screenshot": "^4.6.8",
+    "oauth4webapi": "^3.8.6",
     "solid-js": "^1.9.12",
     "solid-sonner": "^0.3.1",
     "tailwind-merge": "^3.5.0",
