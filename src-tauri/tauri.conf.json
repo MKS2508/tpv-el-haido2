@@ -22,7 +22,9 @@
       "capabilities": [
         {
           "identifier": "default",
-          "windows": ["*"],
+          "windows": [
+            "*"
+          ],
           "permissions": [
             "core:default",
             "shell:default",
@@ -56,7 +58,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXkgM0JERjQyQzRCMjM2MjNEMgpSV1RTSXpheXhFTGZPNVZVM2JwVW5qaXljeHFodmRUM0M5NUtVcWtYS2hvZ1J0TEt3dVhnTFpndAo=",
       "endpoints": [
-        "https://updates.mks2508.systems/updates/{{target}}/{{arch}}/{{current_version}}"
+        "https://haido.releases.mks2508.systems/api/updates/{{target}}/{{arch}}/{{current_version}}"
       ],
       "windows": {
         "installMode": "passive"
