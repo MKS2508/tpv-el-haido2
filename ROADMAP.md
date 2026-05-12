@@ -1,12 +1,14 @@
 # Roadmap — TPV El Haido
 
 > Source of truth: [`roadmap.spec.yml`](./roadmap.spec.yml). Este doc se regenera desde la spec.
-> Última actualización: 2026-05-09 (post r1 decision lock)
+> Última actualización: 2026-05-10 (post r2 decision lock — release-hub multi-tenant)
 
-**Target milestone**: Production deployment at brother's bar (2026-05-09 night)
+**Target milestone**: Production deployment at brother's bar (build local + smoke OTA verde 2026-05-10 night, build en bar = post-smoke)
 **Workflow**: Max agent orchestration + parallelization
 **Naming scheme**: semver-like (0.X.Y)
-**Decision doc**: [`docs/decisions/r1-deployment-architecture-2026-05-09.md`](./docs/decisions/r1-deployment-architecture-2026-05-09.md)
+**Decision docs**:
+- [`r1-deployment-architecture-2026-05-09.md`](./docs/decisions/r1-deployment-architecture-2026-05-09.md) — sin GitHub + tpv-cloud + Coolify
+- [`r2-release-hub-architecture-2026-05-10.md`](./docs/decisions/r2-release-hub-architecture-2026-05-10.md) — desktop-release-hub multi-tenant + auth-oidc-elysia
 
 ---
 
@@ -17,13 +19,22 @@
 | 0.1.0 | Core TPV + SolidJS migration + AEAT compliance | ✅ done | — | — |
 | 0.2.0 | PWA + platform abstraction consolidation | ✅ done | — | — |
 | 0.3.0 | Code signing + multiplatform builds | ⏳ queued | low | — |
-| **0.4.0** | **Production deploy: tpv-cloud + NSIS + OTA (sin GitHub)** | 🔥 **next** | **critical** | **~6-8h** |
+| **0.4.0** | **Production deploy: tpv-cloud + NSIS + OTA (sin GitHub)** | 🟡 **partial done** | **critical** | **~6-8h** |
 | 0.4.0.A | Master license fallback hardening | next | critical | 30m |
-| 0.4.0.B | Build tpv-cloud unified (Bun + Elysia + Drizzle) | next | critical | 3-4h |
-| 0.4.0.C | Update tauri.conf.json endpoints | next | critical | 30m |
-| 0.4.0.D | Build NSIS en máquina del bar + first install | next | critical | 1-2h |
-| 0.4.0.E | Smoke test OTA end-to-end | next | critical | 30m |
-| 0.4.0.F | Cleanup license-server old | queued | low | 15m |
+| 0.4.0.B | Build tpv-cloud unified (Bun + Elysia + Drizzle) | ✅ done | critical | 3-4h |
+| 0.4.0.C | Update tauri.conf.json endpoints | ✅ done | critical | 30m |
+| 0.4.0.D | Build NSIS en máquina del bar | ⛔ superseded → 0.4.1.F+H | critical | — |
+| 0.4.0.E | Smoke test OTA end-to-end | ⛔ superseded → 0.4.1.H | critical | — |
+| 0.4.0.F | Cleanup license-server old | ⏸️ deferred post-prod | low | 15m |
+| **0.4.1** | **desktop-release-hub multi-tenant + auth-oidc-elysia** | 🔥 **next** | **critical** | **~10h tonight** |
+| 0.4.1.A | auth-oidc-elysia package (npm) | next | critical | 2h |
+| 0.4.1.B | release-hub scaffold + schema multi-tenant | next | critical | 2h |
+| 0.4.1.C | Server admin endpoints + tenant read | next | critical | 2h |
+| 0.4.1.E | Pocket ID app + Coolify deploy + DNS wildcard | next | critical | 1h |
+| 0.4.1.G | scripts/release.ts CLI (PKCE loopback) | next | critical | 1.5h |
+| 0.4.1.F | Migrate haido tpv-cloud → release-hub | next | high | 1h |
+| 0.4.1.H | Smoke OTA macOS end-to-end | next | critical | 30m |
+| 0.4.1.D-postprod | Admin UI React + TanStack + mks-ui | ⏸️ deferred post-prod | medium | 4h |
 | 0.5.0 | Thermal printer integration | ⏸️ **deferred** | high | TBD |
 | 0.6.0 | Production polish (post-deploy) | ⏳ queued | medium | — |
 | 0.7.0 | Testing infrastructure | ⏳ queued | low | — |
@@ -72,6 +83,49 @@
 
 - ~~TKT-01 (audit GitHub updater)~~ → reemplazado por TKT-08 (update endpoints sin GitHub)
 - ~~TKT-03 (Coolify migration monolítico)~~ → split: HaidoDocs done, license-server reemplazado por TKT-07 (tpv-cloud)
+
+---
+
+## Fase 0.4.1 — desktop-release-hub multi-tenant (CRITICAL — tonight)
+
+**Decisiones lockeadas** en [r2](./docs/decisions/r2-release-hub-architecture-2026-05-10.md):
+
+- **D10** Multi-repo: `mks2508/auth-oidc-elysia` (publish npm) + `mks2508/desktop-release-hub` (deploy)
+- **D11** Tenant via subdomain — `<slug>.releases.mks2508.systems` (read public) + `admin.releases.mks2508.systems` (admin único)
+- **D12** CLI auth Pocket ID OIDC PKCE loopback (`http://127.0.0.1:54321/callback`)
+- **D13** Endpoints públicos sin token, integridad por minisign
+- **D14** Path pragmático: hub MVP + smoke esta noche, admin UI react = post-prod
+
+### Sub-fases (con dependency map)
+
+```
+0.4.1.A (auth-oidc-elysia npm)  ─────┐
+                                      ├──> 0.4.1.C (admin endpoints)
+0.4.1.B (hub scaffold + schema) ─────┤        │
+        │                              │        │
+        └─> 0.4.1.E (Pocket ID + Coolify + DNS)
+                          │
+                          ├──> 0.4.1.G (release.ts CLI)
+                          │           │
+                          └──> 0.4.1.F (migrate haido) ──┐
+                                                           │
+                                              0.4.1.H (smoke OTA macOS)
+```
+
+**Paralelizable**: 0.4.1.A + 0.4.1.B (executors distintos, repos diferentes). Después secuencial.
+
+### Tickets
+
+| Ticket | Sub-phase | Effort | Status |
+|---|---|---|---|
+| TKT-12-auth-oidc-elysia | 0.4.1.A | 2h | proposed |
+| TKT-13-release-hub-scaffold | 0.4.1.B | 2h | proposed |
+| TKT-14-server-endpoints | 0.4.1.C | 2h | proposed |
+| TKT-15-pocketid-coolify-dns | 0.4.1.E | 1h | proposed (axon) |
+| TKT-16-release-cli | 0.4.1.G | 1.5h | proposed |
+| TKT-17-migrate-haido | 0.4.1.F | 1h | proposed |
+| TKT-18-smoke-ota-macos | 0.4.1.H | 30m | proposed |
+| TKT-19-admin-ui-react | 0.4.1.D-postprod | 4h | deferred post-prod |
 
 ---
 

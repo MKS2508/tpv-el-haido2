@@ -541,6 +541,28 @@ async function authLogin(): Promise<Result<ITokenCache, ResultError>> {
 
   const callbackResult = await tryCatchAsync(async (): Promise<{ code: string; callbackUrl: URL }> => {
     return new Promise((resolve, reject) => {
+      // After the first successful callback we keep the server alive for a
+      // short grace period (10s) so any second browser tab / refresh that
+      // hits /callback gets a friendly "Already logged in" page instead of
+      // ERR_CONNECTION_REFUSED. Using `stop(true)` immediately after the
+      // first hit was the cause of the connection-refused UX bug.
+      let loginCompleted = false;
+      const SHUTDOWN_GRACE_MS = 10_000;
+
+      const successHtml =
+        '<html><body style="font-family:sans-serif;max-width:480px;margin:40px auto;padding:20px">' +
+        '<h2 style="color:#22c55e">Login successful</h2>' +
+        '<p>You are now logged in to release-hub.</p>' +
+        '<p style="color:#6b7280">You can close this window. This page will auto-close in a few seconds.</p>' +
+        '<script>setTimeout(()=>window.close(),3000)</script>' +
+        '</body></html>';
+      const alreadyHtml =
+        '<html><body style="font-family:sans-serif;max-width:480px;margin:40px auto;padding:20px">' +
+        '<h2 style="color:#22c55e">Already logged in</h2>' +
+        '<p>You can close this tab — your CLI session is already active.</p>' +
+        '<script>setTimeout(()=>window.close(),2000)</script>' +
+        '</body></html>';
+
       const server = Bun.serve({
         hostname: '127.0.0.1',
         port: PKCE_LOOPBACK_PORT,
@@ -549,6 +571,12 @@ async function authLogin(): Promise<Result<ITokenCache, ResultError>> {
 
           if (url.pathname !== '/callback') {
             return new Response('Not found', { status: 404 });
+          }
+
+          // Grace-period hits: someone refreshed the success tab or opened
+          // the URL in a second tab after the CLI already completed login.
+          if (loginCompleted) {
+            return new Response(alreadyHtml, { headers: { 'content-type': 'text/html' } });
           }
 
           const code = url.searchParams.get('code');
@@ -582,18 +610,12 @@ async function authLogin(): Promise<Result<ITokenCache, ResultError>> {
             );
           }
 
-          // Success — stop server, resolve promise.
-          server.stop(true);
+          // Success — flag completed, resolve, and schedule graceful shutdown.
+          loginCompleted = true;
           resolve({ code, callbackUrl: url });
+          setTimeout(() => server.stop(true), SHUTDOWN_GRACE_MS);
 
-          return new Response(
-            '<html><body style="font-family:sans-serif;max-width:400px;margin:40px auto;padding:20px">' +
-              '<h2 style="color:#22c55e">Login successful</h2>' +
-              '<p>You are now logged in to release-hub.</p>' +
-              '<p style="color:#6b7280">You can close this window.</p>' +
-              '</body></html>',
-            { headers: { 'content-type': 'text/html' } },
-          );
+          return new Response(successHtml, { headers: { 'content-type': 'text/html' } });
         },
         error(err) {
           reject(err);
@@ -627,10 +649,11 @@ async function authLogin(): Promise<Result<ITokenCache, ResultError>> {
   };
 
   const tokenResult = await tryCatchAsync(async () => {
+    // oauth4webapi v3.x: validateAuthResponse THROWS on OAuth2 errors instead
+    // of returning them. The legacy `oauth.isOAuth2Error(...)` API was removed
+    // in v3 — wrap the call in try/catch (handled by tryCatchAsync wrapper)
+    // and let any OAuth2Error bubble up naturally.
     const params = oauth.validateAuthResponse(serverMetadata, clientIdentity, callbackUrl, state);
-    if (oauth.isOAuth2Error(params)) {
-      throw new Error(`OAuth2 error: ${params.error} — ${params.error_description ?? ''}`);
-    }
 
     const tokenResponse = await oauth.authorizationCodeGrantRequest(
       serverMetadata,

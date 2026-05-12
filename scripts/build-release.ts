@@ -65,13 +65,20 @@ export interface IBuildTarget {
   readonly triple: string;
   /**
    * Glob-like subdirectory under `src-tauri/target/<triple>/release/bundle/`
-   * where Tauri drops the signed artifacts.
+   * where Tauri drops the OTA bundle (used by the auto-updater).
    */
   readonly bundleSubdir: string;
-  /** File extension of the primary artifact (e.g. ".app.tar.gz", ".nsis.zip") */
+  /** File extension of the primary OTA artifact (".app.tar.gz" or ".nsis.zip") */
   readonly artifactExt: string;
   /** `platforms` key used in the Tauri updater `latest.json` */
   readonly updaterPlatformKey: string;
+  /**
+   * Subdirectory and extension where Tauri places the human-friendly installer
+   * (DMG on macOS, NSIS .exe on Windows). Used to build a stable download link
+   * for the docs site / website.
+   */
+  readonly installerSubdir: string;
+  readonly installerExt: string;
 }
 
 /**
@@ -97,14 +104,27 @@ export interface ICliOptions {
  */
 export interface IBuildResult {
   readonly target: IBuildTarget;
-  /** Resolved path to the primary artifact (.app.tar.gz / .nsis.zip) */
+  /** Resolved path to the primary OTA bundle artifact (.app.tar.gz / .nsis.zip) */
   readonly artifactPath: string;
   /** Resolved path to the .sig file */
   readonly sigPath: string;
   /** Content of the .sig file (used when generating latest.json) */
   readonly sigContent: string;
-  /** Destination path inside releases/<version>/<target>/ */
+  /**
+   * Destination path inside releases/<version>/<target>/ for the OTA bundle
+   * (after canonical rename — e.g. tpv-haido-0.1.0-macos-arm64.app.tar.gz).
+   */
   readonly destPath: string;
+  /**
+   * Destination path of the human-friendly installer (DMG / setup.exe) inside
+   * releases/<version>/<target>/, after canonical rename.
+   * `null` if no installer was produced (e.g. installer subdir missing).
+   */
+  readonly installerDestPath: string | null;
+  /** Canonical filename (basename) of the OTA bundle for URL templates. */
+  readonly canonicalArtifactName: string;
+  /** Canonical filename (basename) of the installer, or null. */
+  readonly canonicalInstallerName: string | null;
 }
 
 /**
@@ -131,6 +151,8 @@ const BUILD_TARGETS: Readonly<Record<ReleaseTarget, IBuildTarget>> = {
     bundleSubdir: 'macos',
     artifactExt: '.app.tar.gz',
     updaterPlatformKey: 'darwin-aarch64',
+    installerSubdir: 'dmg',
+    installerExt: '.dmg',
   },
   'macos-x64': {
     label: 'macos-x64',
@@ -138,6 +160,8 @@ const BUILD_TARGETS: Readonly<Record<ReleaseTarget, IBuildTarget>> = {
     bundleSubdir: 'macos',
     artifactExt: '.app.tar.gz',
     updaterPlatformKey: 'darwin-x86_64',
+    installerSubdir: 'dmg',
+    installerExt: '.dmg',
   },
   'windows-x64': {
     label: 'windows-x64',
@@ -145,8 +169,32 @@ const BUILD_TARGETS: Readonly<Record<ReleaseTarget, IBuildTarget>> = {
     bundleSubdir: 'nsis',
     artifactExt: '.nsis.zip',
     updaterPlatformKey: 'windows-x86_64',
+    installerSubdir: 'nsis',
+    // NSIS installer extension — Tauri produces *_<version>_x64-setup.exe in the same nsis/ dir
+    installerExt: '-setup.exe',
   },
 } as const;
+
+/**
+ * Canonical artifact basename used in `releases/<version>/<target>/` and in
+ * download URLs published by haidodocs / latest.json.
+ *
+ * Format: `tpv-haido-<version>-<target><ext>`
+ *
+ * Examples:
+ *   - `tpv-haido-0.1.0-macos-arm64.app.tar.gz`
+ *   - `tpv-haido-0.1.0-macos-arm64.app.tar.gz.sig`
+ *   - `tpv-haido-0.1.0-macos-arm64.dmg`
+ *   - `tpv-haido-0.1.0-windows-x64.nsis.zip`
+ *   - `tpv-haido-0.1.0-windows-x64-setup.exe`
+ *
+ * @param version - App semver string from tauri.conf.json
+ * @param target  - Release target label (e.g. "macos-arm64")
+ * @param ext     - Extension including leading dot (e.g. ".app.tar.gz")
+ */
+export function canonicalName(version: string, target: ReleaseTarget, ext: string): string {
+  return `tpv-haido-${version}-${target}${ext}`;
+}
 
 const ALL_TARGETS: ReleaseTarget[] = ['macos-arm64', 'macos-x64', 'windows-x64'];
 
@@ -179,11 +227,17 @@ const DEFAULT_TAURI_KEY_NAME = 'tpv-el-haido';
 
 /**
  * Base URL for artifact download links in `latest.json`.
- * Override with `RELEASE_HUB_BASE_URL` env var.
- * TODO(0.4.1.G): wire to the real upload hub once 0.4.1.G is deployed.
+ *
+ * IMPORTANT: do NOT include the tenant slug in this URL — the
+ * `desktop-release-hub` server resolves the tenant from the subdomain
+ * (`<slug>.releases.mks2508.systems`) and injects it server-side when serving
+ * `/api/dl/*`. The client only needs to know `/api/dl/<version>/<target>/<file>`.
+ *
+ * Default: `https://haido.releases.mks2508.systems/api/dl` (haido tenant prod).
+ * Override with `RELEASE_HUB_BASE_URL` env var when publishing for another tenant.
  */
 const RELEASE_HUB_BASE_URL =
-  process.env.RELEASE_HUB_BASE_URL ?? 'https://updates.mks2508.systems/tpv';
+  process.env.RELEASE_HUB_BASE_URL ?? 'https://haido.releases.mks2508.systems/api/dl';
 
 // ─────────────────────────────── CLI Parsing ─────────────────────────────────
 
@@ -279,18 +333,25 @@ export function parseCliOptions(): Result<ICliOptions, ResultError> {
 /**
  * Locates the Tauri signing private key file on disk, cross-platform.
  *
- * Resolution order:
- *   1. `<homedir>/.tauri/<keyName>.key` — canonical Tauri location.
+ * Resolution order — **project-local first** because the repo-pinned key is
+ * the source of truth for this project. The `~/.tauri/` location is canonical
+ * Tauri convention but may contain an older/different key from past projects
+ * (e.g. an `rsign`-format file that won't decrypt with the project passphrase).
+ *
+ *   1. `<projectRoot>/tauri-keys/<keyName>.key` — project-pinned (gitignored, real key here).
+ *   2. `<homedir>/.tauri/<keyName>.key`         — Tauri convention fallback.
  *      Works on macOS (`~/.tauri/`), Linux (`~/.tauri/`), and Windows (`%USERPROFILE%\.tauri\`).
- *   2. `<projectRoot>/tauri-keys/<keyName>.key` — in-repo fallback (must be gitignored).
+ *
+ * Override the lookup with the env var `TAURI_KEY_PATH=/abs/path/to/<name>.key`
+ * (handled by the caller — see `loadSigningKeys`).
  *
  * @param keyName - Key file name without extension (e.g. "tpv-el-haido").
  * @returns Path to the key file or an error if not found in any known location.
  */
 export function locatePrivateKeyFile(keyName: string): Result<string, ResultError> {
   const candidates = [
-    join(homedir(), '.tauri', `${keyName}.key`),
     join(PROJECT_ROOT, 'tauri-keys', `${keyName}.key`),
+    join(homedir(), '.tauri', `${keyName}.key`),
   ];
 
   for (const candidate of candidates) {
@@ -318,18 +379,42 @@ export function locatePrivateKeyFile(keyName: string): Result<string, ResultErro
 }
 
 /**
- * Reads the contents of a Tauri private key file.
+ * Reads the contents of a Tauri private key file and normalises it for the
+ * `TAURI_SIGNING_PRIVATE_KEY` env var consumed by `tauri build`.
+ *
+ * Tauri (via `minisign-rs`) expects the env var to contain the **base64
+ * encoding of the entire key file** (header comment + body line + trailing
+ * newline), not the raw file content with comment header.
+ *
+ * Two formats found in the wild:
+ *   - Plain text minisign file:
+ *       `untrusted comment: minisign encrypted secret key\nRWRTY...\n`
+ *     → base64-encode the whole thing before passing.
+ *   - Already base64-encoded blob (one long line):
+ *       `dW50cnVzdGVkIGNvbW1lbnQ6IH...`
+ *     → pass through unchanged.
+ *
+ * Detection is heuristic: if the file starts with `untrusted comment:` we
+ * base64-encode it; otherwise we assume it's already encoded.
  *
  * @param path - Absolute path to the key file.
- * @returns Trimmed key contents (single base64 line) or an error.
+ * @returns Base64-encoded key string ready to inject into `TAURI_SIGNING_PRIVATE_KEY`,
+ *   or an error.
  */
 function readPrivateKeyFile(path: string): Result<string, ResultError> {
   return tryCatch(() => {
-    const raw = readFileSync(path, 'utf-8').trim();
-    if (!raw) {
+    const raw = readFileSync(path, 'utf-8');
+    if (!raw.trim()) {
       throw new Error(`Key file "${path}" is empty.`);
     }
-    return raw;
+
+    // Plain-text minisign file → base64-encode the whole thing.
+    if (raw.startsWith('untrusted comment:')) {
+      return Buffer.from(raw, 'utf-8').toString('base64');
+    }
+
+    // Otherwise assume already base64-encoded — return as a single trimmed line.
+    return raw.trim();
   }, 'PRIVATE_KEY_READ_FAILED');
 }
 
@@ -547,10 +632,19 @@ export async function loadSigningKeys(): Promise<Result<ISigningKeys, ResultErro
   // ─── Private key ───
   let privateKey: string;
   const envKey = process.env.TAURI_SIGNING_PRIVATE_KEY;
+  const envKeyPath = process.env.TAURI_KEY_PATH;
 
   if (envKey) {
     log.success('Private key loaded from TAURI_SIGNING_PRIVATE_KEY env var.');
     privateKey = envKey;
+  } else if (envKeyPath) {
+    log.info(`Reading private key from TAURI_KEY_PATH: ${envKeyPath}`);
+    const readResult = readPrivateKeyFile(envKeyPath);
+    if (isErr(readResult)) {
+      return err(readResult.error);
+    }
+    privateKey = readResult.value;
+    log.success('Private key loaded from TAURI_KEY_PATH.');
   } else {
     const keyName = process.env.TAURI_KEY_NAME ?? DEFAULT_TAURI_KEY_NAME;
     log.info(`Private key not in env — locating key file "${keyName}.key"…`);
@@ -731,6 +825,42 @@ export function resolveArtifacts(
   });
 }
 
+/**
+ * Resolves the human-friendly installer (DMG / setup.exe) from the Tauri
+ * bundle output, if it exists.
+ *
+ * macOS: Tauri produces `<productName>_<version>_<arch>.dmg` under `bundle/dmg/`.
+ * Windows NSIS: produces `<productName>_<version>_x64-setup.exe` under `bundle/nsis/`.
+ *
+ * Returns `null` (not an error) when the installer subdir doesn't exist or
+ * no matching file is found — e.g. older Tauri configs that disable DMG.
+ *
+ * @param target - Build target descriptor.
+ * @returns Path to the installer or `null`.
+ */
+export function resolveInstaller(target: IBuildTarget): string | null {
+  const installerDir = resolve(
+    PROJECT_ROOT,
+    'src-tauri',
+    'target',
+    target.triple,
+    'release',
+    'bundle',
+    target.installerSubdir,
+  );
+
+  if (!existsSync(installerDir)) return null;
+
+  const entries = readdirSync(installerDir);
+  // For NSIS we want the `*-setup.exe`, not the `*-setup.nsis.zip` (which is the
+  // OTA bundle resolved by resolveArtifacts). For DMG, plain `*.dmg` works.
+  const found = entries.find(
+    (f) => f.endsWith(target.installerExt) && !f.endsWith('.sig') && !f.endsWith('.zip'),
+  );
+
+  return found ? join(installerDir, found) : null;
+}
+
 // ─────────────────────────────── Build orchestration ─────────────────────────
 
 /**
@@ -821,22 +951,45 @@ async function runTauriBuild(
 }
 
 /**
- * Copies build artifacts into the structured output directory.
+ * Copies + canonicalises build artifacts into the structured output directory.
  *
- * Target layout: `<outputDir>/<version>/<target-label>/<filename>`
+ * Layout: `<outputDir>/<version>/<target-label>/<canonical-name>`
  *
- * @param target      - Build target.
+ * Renames Tauri's verbose default filenames (e.g. `TPV El Haido_0.1.0_aarch64.app.tar.gz`,
+ * with spaces and arch instead of label) to a stable, URL-friendly canonical
+ * naming (`tpv-haido-0.1.0-macos-arm64.app.tar.gz`) so haidodocs can hardcode
+ * predictable download links per version.
+ *
+ * Always copies:
+ *   - OTA bundle (`.app.tar.gz` / `.nsis.zip`) → for the Tauri auto-updater
+ *   - Bundle `.sig`                             → minisign signature
+ *
+ * Optionally copies (if Tauri produced it):
+ *   - Installer (`.dmg` macOS / `-setup.exe` Windows) → for human-friendly first install
+ *
+ * @param target      - Build target descriptor.
  * @param version     - App version string.
- * @param artifacts   - Resolved artifact paths.
+ * @param artifacts   - Resolved OTA bundle paths.
+ * @param installerSrc - Resolved installer path or null if not produced.
  * @param outputDir   - Root output directory.
- * @returns Destination paths or an error.
+ * @returns Destination paths and canonical names, or an error.
  */
 export function copyArtifacts(
   target: IBuildTarget,
   version: string,
   artifacts: { artifactPath: string; sigPath: string },
+  installerSrc: string | null,
   outputDir: string,
-): Result<{ destArtifact: string; destSig: string }, ResultError> {
+): Result<
+  {
+    destArtifact: string;
+    destSig: string;
+    destInstaller: string | null;
+    canonicalArtifactName: string;
+    canonicalInstallerName: string | null;
+  },
+  ResultError
+> {
   const destDir = join(outputDir, version, target.label);
 
   const mkResult = tryCatch(() => {
@@ -853,14 +1006,26 @@ export function copyArtifacts(
     );
   }
 
-  const artifactFilename = basename(artifacts.artifactPath);
-  const sigFilename = basename(artifacts.sigPath);
-  const destArtifact = join(destDir, artifactFilename);
-  const destSig = join(destDir, sigFilename);
+  // Canonical names:
+  //   - bundle:    tpv-haido-<v>-<target>.app.tar.gz | .nsis.zip
+  //   - sig:       <bundle>.sig
+  //   - installer: tpv-haido-<v>-<target>.dmg | -setup.exe
+  const canonicalArtifactName = canonicalName(version, target.label, target.artifactExt);
+  const canonicalSigName = `${canonicalArtifactName}.sig`;
+  const canonicalInstallerName = installerSrc
+    ? canonicalName(version, target.label, target.installerExt)
+    : null;
+
+  const destArtifact = join(destDir, canonicalArtifactName);
+  const destSig = join(destDir, canonicalSigName);
+  const destInstaller = canonicalInstallerName ? join(destDir, canonicalInstallerName) : null;
 
   const copyResult = tryCatch(() => {
     cpSync(artifacts.artifactPath, destArtifact);
     cpSync(artifacts.sigPath, destSig);
+    if (installerSrc && destInstaller) {
+      cpSync(installerSrc, destInstaller);
+    }
   }, 'COPY_FAILED');
 
   if (isErr(copyResult)) {
@@ -873,8 +1038,21 @@ export function copyArtifacts(
     );
   }
 
-  log.success(`Artifacts copied to: ${destDir}`);
-  return ok({ destArtifact, destSig });
+  log.success(`OTA bundle copied: ${destArtifact}`);
+  log.success(`Sig copied:        ${destSig}`);
+  if (destInstaller) {
+    log.success(`Installer copied:  ${destInstaller}`);
+  } else {
+    log.warn(`No installer produced for ${target.label} (skipped — Tauri config may have it disabled).`);
+  }
+
+  return ok({
+    destArtifact,
+    destSig,
+    destInstaller,
+    canonicalArtifactName,
+    canonicalInstallerName,
+  });
 }
 
 /**
@@ -922,11 +1100,19 @@ export async function buildTarget(
   }
 
   const { artifactPath, sigPath } = artifactResult.value;
-  log.info(`Artifact: ${artifactPath}`);
-  log.info(`Sig:      ${sigPath}`);
+  log.info(`OTA bundle src: ${artifactPath}`);
+  log.info(`Sig src:        ${sigPath}`);
 
-  // Copy to output
-  const copyResult = copyArtifacts(target, version, { artifactPath, sigPath }, outputDir);
+  // Resolve human-friendly installer (DMG / setup.exe) — non-fatal if absent
+  const installerSrc = resolveInstaller(target);
+  if (installerSrc) {
+    log.info(`Installer src:  ${installerSrc}`);
+  } else {
+    log.warn(`Installer src:  not found (Tauri config may have it disabled).`);
+  }
+
+  // Copy + canonicalise to releases/<version>/<target>/
+  const copyResult = copyArtifacts(target, version, { artifactPath, sigPath }, installerSrc, outputDir);
   if (isErr(copyResult)) {
     return err(copyResult.error);
   }
@@ -940,6 +1126,9 @@ export async function buildTarget(
     sigPath,
     sigContent,
     destPath: copyResult.value.destArtifact,
+    installerDestPath: copyResult.value.destInstaller,
+    canonicalArtifactName: copyResult.value.canonicalArtifactName,
+    canonicalInstallerName: copyResult.value.canonicalInstallerName,
   });
 }
 
@@ -975,8 +1164,9 @@ export async function generateLatestJson(
   const platforms: Record<string, { signature: string; url: string }> = {};
 
   for (const result of results) {
-    const filename = basename(result.artifactPath);
-    const url = `${RELEASE_HUB_BASE_URL}/${result.target.label}/${filename}`;
+    // Canonical filename used in the canonical destination directory.
+    // Hub URL convention: <RELEASE_HUB_BASE_URL>/<version>/<target>/<canonical-filename>
+    const url = `${RELEASE_HUB_BASE_URL}/${version}/${result.target.label}/${result.canonicalArtifactName}`;
     platforms[result.target.updaterPlatformKey] = {
       signature: result.sigContent,
       url,

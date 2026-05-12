@@ -168,4 +168,3 @@ Entregar todo **lockeado y documentado** para que la siguiente sesión pueda eje
 
 ---
 
-*(P.D.: Todo el trabajo previo ya pasó guidelines audit (9/10 y 8.5/10). Solo falta tu verificación final y ajustes si hacen falta antes del interview.)*
