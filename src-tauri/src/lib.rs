@@ -2,6 +2,7 @@
 
 mod database;
 mod models;
+mod ota;
 mod license;
 mod screenshot;
 
@@ -451,6 +452,7 @@ async fn cleanup_audit_logs(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .register_asynchronous_uri_scheme_protocol(ota::SCHEME, ota::protocol::handle)
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_shell::init())
@@ -458,6 +460,28 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            // Antes de servir nada: un slot instalado por un binario anterior no
+            // puede sobrevivir a una actualización nativa.
+            if let Ok(data_dir) = app.path().app_data_dir() {
+                ota::slots::invalidate_if_native_changed(&data_dir, app.package_info().version.to_string().as_str());
+            }
+
+            // En dev la ventana sigue apuntando al dev server de Vite (HMR): el
+            // esquema OTA sirve del frontend embebido, que en dev no existe.
+            let window_url = if tauri::is_dev() {
+                tauri::WebviewUrl::default()
+            } else {
+                let url = ota::protocol::window_url();
+                let parsed = url
+                    .parse()
+                    .map_err(|e| format!("URL de ventana inválida ({url}): {e}"))?;
+                tauri::WebviewUrl::CustomProtocol(parsed)
+            };
+            tauri::WebviewWindowBuilder::new(app, "main", window_url)
+                .title("TPV: El Haido")
+                .inner_size(1200.0, 800.0)
+                .build()?;
+
             // Tauri v2: use app.path() instead of app.path_resolver()
             let app_dir = app.path().app_data_dir().expect("Failed to get app directory");
             fs::create_dir_all(&app_dir).expect("Failed to create app directory");
