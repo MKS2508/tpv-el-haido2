@@ -484,6 +484,15 @@ pub fn run() {
             // En dev la ventana sigue apuntando al dev server de Vite (HMR): el
             // esquema OTA sirve del frontend embebido, que en dev no existe.
             let window_url = if tauri::is_dev() {
+                // El cfg `dev` es `!feature("custom-protocol")`, no el perfil de
+                // cargo: un `cargo build --release` a secas cae aquí y manda la
+                // ventana al dev server. Sin Vite detrás eso es una pantalla en
+                // blanco sin causa visible, así que se dice en voz alta.
+                eprintln!(
+                    "[ota] build dev: la ventana carga del dev server (:1420), no del esquema {}. \
+                     Para probar el canal OTA: cargo build --release --features tauri/custom-protocol",
+                    ota::SCHEME
+                );
                 tauri::WebviewUrl::default()
             } else {
                 let url = ota::protocol::window_url();
