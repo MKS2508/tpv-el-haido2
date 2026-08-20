@@ -1,166 +1,126 @@
 # Release Process — TPV El Haido
 
-> Proceso completo para publicar una nueva versión del TPV.
-> Requiere acceso a: `tauri-keys/tpv-el-haido.key` + passphrase + SSH/scp a Coolify volume.
+> Proceso real (post release-hub, r2). Reemplaza el flujo viejo SSH+scp+psql contra
+> `tpv-cloud` — ese servidor ya no es el destino de las releases, ver
+> `docs/decisions/r2-release-hub-architecture-2026-05-10.md`.
+>
+> Hub: `desktop-release-hub` (multi-tenant, repo separado `mks2508/desktop-release-hub`).
+> Tenant de este proyecto: `haido`. Endpoints públicos en `haido.releases.mks2508.systems`,
+> endpoints admin en `admin.releases.mks2508.systems`.
 
 ## Prerequisitos
 
-- `bun` instalado (>= 1.1.43)
+- `bun` instalado (>= 1.2)
 - `cargo` + Tauri CLI instalados
-- `minisign` instalado (`brew install minisign`)
-- Acceso SSH al servidor Coolify (para subir binarios al volume)
-- `psql` o acceso al Coolify dashboard para insertar row en releases table
-- **TAURI_SIGNING_PRIVATE_KEY**: contenido base64 de `tauri-keys/tpv-el-haido.key`
-- **TAURI_SIGNING_PRIVATE_KEY_PASSWORD**: passphrase del private key (guardada en password manager)
+- `minisign`/clave de firma configurada (ver `scripts/build-release.ts --help` para las 3
+  formas de resolverla: env var, archivo `~/.tauri/<name>.key`, o Bitwarden)
+- Cuenta Pocket ID con acceso admin al hub (`OIDC_ADMIN_SUBS` en el server)
+- Para targets `linux-x64`/`linux-arm64`: build **nativo**, no hay cross-compile — correr en
+  un host Linux real (physical, VM, o CI runner del arch correspondiente)
 
-## Keys de firma
+## Paso 0 — Login (una vez por máquina, cachea token en `~/.config/release-hub/token.json`)
 
-- **Public key fingerprint**: 3BDF42C4B23623D2
-- **Private key**: `tauri-keys/tpv-el-haido.key` (encriptado con passphrase)
-- **Public key file**: `tauri-keys/tpv-el-haido.key.pub`
-- **NUNCA commitear el private key ni la passphrase**
+```bash
+bun run scripts/release.ts auth login   # abre navegador, flujo PKCE contra Pocket ID
+bun run scripts/release.ts auth status  # verifica sesión (auto-refresh si expiró)
+```
+
+El token se auto-refresca en `publish` si expiró (usa `refresh_token`). Solo hace falta
+re-loguear si el refresh token también expiró o si se corre `auth logout`.
 
 ## Paso 1 — Bump version
 
-Editar `src-tauri/tauri.conf.json` y `src-tauri/Cargo.toml`:
+Editar `src-tauri/tauri.conf.json` (campo `"version"`) y `src-tauri/Cargo.toml`
+(`[package].version`). `scripts/release.ts` lee la versión directamente de
+`tauri.conf.json` — es la fuente de verdad para el publish.
 
-```json
-// tauri.conf.json
-{
-  "version": "0.X.Y"  // nueva version
-}
-```
-
-```toml
-# Cargo.toml
-[package]
-version = "0.X.Y"
-```
-
-Commit el bump:
 ```bash
 git add src-tauri/tauri.conf.json src-tauri/Cargo.toml
 git commit -m "chore: bump version to 0.X.Y"
 git push
 ```
 
-## Paso 2 — Build del installer con firma
+## Paso 2 — Build + publish
+
+Un solo comando hace build (firmado) + upload al hub:
 
 ```bash
-# Exportar env vars para signing
-export TAURI_SIGNING_PRIVATE_KEY=$(cat tauri-keys/tpv-el-haido.key)
-export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="<passphrase>"
+# Un target
+bun run scripts/release.ts publish --target macos-arm64 --slug haido
 
-# Build con firma automática
-bun run tauri build
+# Todos los targets buildables desde la máquina actual
+bun run scripts/release.ts publish --target all --slug haido
 
-# Output esperado:
-# src-tauri/target/release/bundle/nsis/TPV-El-Haido_0.X.Y_x64-setup.exe
-# src-tauri/target/release/bundle/nsis/TPV-El-Haido_0.X.Y_x64-setup.exe.sig
-# src-tauri/target/release/bundle/nsis/TPV-El-Haido_0.X.Y_x64-setup.nsis.zip
-# src-tauri/target/release/bundle/nsis/TPV-El-Haido_0.X.Y_x64-setup.nsis.zip.sig
+# Si el build ya se corrió antes (p.ej. build manual en un host remoto) y solo
+# falta subir el artefacto ya presente en releases/<version>/<target>/:
+bun run scripts/release.ts publish --target linux-x64 --slug haido --skip-build
+
+# Dry-run — valida artefacto+sig+auth sin subir nada
+bun run scripts/release.ts publish --target linux-x64 --slug haido --skip-build --dry-run
 ```
 
-**Nota**: Tauri genera automáticamente `.sig` cuando `TAURI_SIGNING_PRIVATE_KEY` está configurado y `createUpdaterArtifacts: true`.
+Targets soportados: `macos-arm64` · `macos-x64` · `windows-x64` · `linux-x64` ·
+`linux-arm64` · `all`.
 
-## Paso 3 — Subir binarios al volume de tpv-cloud
+**`linux-x64`/`linux-arm64` solo pueden buildearse desde un host Linux del arch
+correspondiente** (`validateTargetForCurrentPlatform` en `build-release.ts` corta el build
+con un mensaje claro si se intenta cross-compilar). Workflow real usado en TR-07: SSH a la
+máquina Linux, `git pull`, `bun run scripts/release.ts publish --target linux-x64 --slug
+haido` ahí directamente (o build local + `--skip-build` desde el Mac si el artefacto ya se
+copió).
+
+Desde `0.65cb616` los 3 bloqueadores encontrados haciendo el primer build Linux nativo
+(`PATH` sin `bun`/`cargo` en sesión SSH no interactiva, `strip` de `linuxdeploy` roto contra
+secciones `.relr.dyn` del toolchain actual, `patchelf` de `linuxdeploy` corrompiendo el
+sidecar AEAT compilado con `bun --compile`) se aplican **automáticamente** — no hace falta
+ningún setup manual en la máquina de build. Ver `resolveLinuxBuildEnv()` en
+`scripts/build-release.ts` y `scripts/linux/patchelf-aeat-shim.sh`.
+
+Qué hace `publish` internamente:
+1. Verifica auth (refresca token si hace falta).
+2. Lee versión de `tauri.conf.json`.
+3. Si no hay `--skip-build`, invoca `bun run scripts/build-release.ts --target <target>`
+   (build + firma + coloca artefacto en `releases/<version>/<target>/`).
+4. Busca artefacto + `.sig` en `releases/<version>/<target>/`.
+5. Sube ambos via `multipart/form-data` a
+   `POST {hub}/api/admin/projects/{slug}/releases` con `Authorization: Bearer <token>`.
+
+## Paso 3 — Verificar
 
 ```bash
-VERSION="0.X.Y"
-BINARY_DIR="src-tauri/target/release/bundle/nsis"
-SERVER="<usuario>@lab1-helsinki.mks2508.systems"  # o IP directa
+VERSION_ACTUAL="0.0.9"   # version que "tiene" el cliente que pregunta
+TARGET="linux"           # windows | darwin | linux (taxonomía del server, no el label del CLI)
+ARCH="x86_64"            # x86_64 | aarch64
 
-# Crear directorio en server (via Coolify volume mount)
-# El volume tpv-cloud-binaries se monta en /data/coolify/volumes/
-ssh "$SERVER" "mkdir -p /data/coolify/volumes/tpv-cloud-binaries/dl/${VERSION}"
+curl -s "https://haido.releases.mks2508.systems/api/updates/${TARGET}/${ARCH}/${VERSION_ACTUAL}" | python3 -m json.tool
+# 200 + JSON {version, notes, pub_date, url, signature} si hay una release más nueva
+# 204 si el cliente ya está al día
+# 404 si el slug/tenant no resuelve
 
-# Subir archivos
-scp "${BINARY_DIR}/TPV-El-Haido_${VERSION}_x64-setup.exe" \
-    "${SERVER}:/data/coolify/volumes/tpv-cloud-binaries/dl/${VERSION}/"
-scp "${BINARY_DIR}/TPV-El-Haido_${VERSION}_x64-setup.exe.sig" \
-    "${SERVER}:/data/coolify/volumes/tpv-cloud-binaries/dl/${VERSION}/"
-scp "${BINARY_DIR}/TPV-El-Haido_${VERSION}_x64-setup.nsis.zip" \
-    "${SERVER}:/data/coolify/volumes/tpv-cloud-binaries/dl/${VERSION}/"
-scp "${BINARY_DIR}/TPV-El-Haido_${VERSION}_x64-setup.nsis.zip.sig" \
-    "${SERVER}:/data/coolify/volumes/tpv-cloud-binaries/dl/${VERSION}/"
-
-# Verificar upload
-ssh "$SERVER" "ls -lh /data/coolify/volumes/tpv-cloud-binaries/dl/${VERSION}/"
-# Esperado: 4 archivos (.exe, .exe.sig, .nsis.zip, .nsis.zip.sig)
+# El campo "url" es relativo (p.ej. "/api/dl/0.1.0/linux/x86_64/archivo.AppImage") — el
+# servidor lo resuelve así a propósito porque el tenant se infiere del subdominio, no del
+# path. Se resuelve contra el mismo origin (haido.releases.mks2508.systems).
+curl -sI "https://haido.releases.mks2508.systems/api/dl/${VERSION}/${TARGET}/${ARCH}/<archivo>" | grep -i "HTTP\|content-length"
 ```
 
-## Paso 4 — Insertar row en releases table
+## Troubleshooting conocido
+
+| Síntoma | Causa | Fix |
+|---|---|---|
+| `413` al subir (`Server returned 413`) | `Bun.serve` rechaza bodies >128MB por defecto, antes de que Elysia vea el request | Ya fijado en el server (`maxRequestBodySize: 512MB`, commit `92f2cd1` en `desktop-release-hub`). Si un instalador futuro supera 512MB, subir el límite ahí. |
+| `401 Unauthorized` en publish | Token cacheado expiró y el refresh también falló | `bun run scripts/release.ts auth login` de nuevo |
+| `409` al publicar | Ya existe una release con esa versión+target+arch en el hub | Bump de versión, o borrarla desde el admin API si fue un publish erróneo |
+| Build linux falla con `Target "linux-x64" ... requires running on a Linux host` | Intentaste correr un target linux desde macOS/Windows | Correr el build (o `publish` sin `--skip-build`) directamente en un host Linux del arch correcto |
+| `failed to run linuxdeploy` en CI (GitHub Actions) | Sin diagnosticar todavía — mismo síntoma que en supermicro-pcbar pero contexto de runner limpio (Ubuntu) distinto al de Arch con toolchain skew. Puede que necesite el mismo `NO_STRIP`/shim de patchelf, puede que sea otra causa. | Pendiente — ver `docs/task-requests/TR-12-rebuild-ci-pipelines-release-hub.md` |
+
+## Deploy del hub en sí (server, no la app)
+
+El código del server vive en `mks2508/desktop-release-hub` (repo separado). Deploy via
+Coolify — reads `apps/server/.coolify.json`:
 
 ```bash
-VERSION="0.X.Y"
-TARGET="windows"
-ARCH="x86_64"
-PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-URL="https://updates.mks2508.systems/dl/${VERSION}/TPV-El-Haido_${VERSION}_x64-setup.nsis.zip"
-
-# Leer signature del archivo .sig
-SIGNATURE=$(cat "src-tauri/target/release/bundle/nsis/TPV-El-Haido_${VERSION}_x64-setup.nsis.zip.sig")
-
-# Obtener DATABASE_URL desde Coolify
-DATABASE_URL=$(coolify-cli env tpv-cloud | grep DATABASE_URL | cut -d= -f2-)
-
-psql "$DATABASE_URL" -c "
-INSERT INTO releases (version, target, arch, url, signature, pub_date, notes, created_at)
-VALUES (
-  '\${VERSION}',
-  '\${TARGET}',
-  '\${ARCH}',
-  '\${URL}',
-  '\${SIGNATURE}',
-  '\${PUB_DATE}',
-  'Release \${VERSION}',
-  NOW()
-) ON CONFLICT (version, target, arch) DO UPDATE SET
-  url = EXCLUDED.url,
-  signature = EXCLUDED.signature,
-  pub_date = EXCLUDED.pub_date,
-  notes = EXCLUDED.notes;
-"
-# Esperado: INSERT 0 1
+cd <checkout-de-desktop-release-hub>/apps/server
+coolify-cli deploy <app_uuid>   # app_uuid en .coolify.json → _provisioned.app_uuid
 ```
 
-**Alternativa via Coolify dashboard**: Apps → tpv-cloud → Databases → Open in Adminer → ejecutar SQL manualmente.
-
-## Paso 5 — Verify endpoint
-
-```bash
-VERSION_ACTUAL="0.1.0"  # version que tiene el cliente instalado
-NEW_VERSION="0.X.Y"     # version nueva subida
-
-# Verificar que el endpoint devuelve update disponible
-curl -s "https://updates.mks2508.systems/updates/windows/x86_64/${VERSION_ACTUAL}" | python3 -m json.tool
-# Esperado (204 si no hay release en DB):
-# [vacío] HTTP 204 No Content
-
-# Verificar que endpoint devuelve 200 con JSON si release existe
-curl -s -o /dev/null -w "%{http_code}" \
-  "https://updates.mks2508.systems/updates/windows/x86_64/${VERSION_ACTUAL}"
-# Esperado: 200 o 204
-
-# Test completo con release en DB
-curl -s "https://updates.mks2508.systems/updates/windows/x86_64/${VERSION_ACTUAL}"
-# Esperado:
-# {
-#   "version": "0.X.Y",
-#   "notes": "Release 0.X.Y",
-#   "pub_date": "...",
-#   "url": "https://updates.mks2508.systems/dl/0.X.Y/TPV-El-Haido_0.X.Y_x64-setup.nsis.zip",
-#   "signature": "..."
-# }
-```
-
-## Tabla resumen de archivos de release
-
-| Archivo | Uso |
-|---------|-----|
-| `TPV-El-Haido_X.Y.Z_x64-setup.exe` | Installer NSIS completo (primera instalación manual) |
-| `TPV-El-Haido_X.Y.Z_x64-setup.exe.sig` | Firma minisign del installer |
-| `TPV-El-Haido_X.Y.Z_x64-setup.nsis.zip` | Artifact OTA (compresado, usado por el updater) |
-| `TPV-El-Haido_X.Y.Z_x64-setup.nsis.zip.sig` | Firma minisign del artifact OTA |
-
-**El updater Tauri usa el `.nsis.zip` + `.nsis.zip.sig` para OTA. El `.exe` es para instalación manual inicial.**
+Ver skill `coolify-mks-cli-mcp` para el resto de comandos (`logs`, `status`, `env`, etc).
