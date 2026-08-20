@@ -4,6 +4,7 @@
 //! artefacto, distinta clave de firma y distinta cadencia. Ver
 //! `docs/ota/canal-parcial.md`.
 
+pub mod apply;
 pub mod manifest;
 pub mod protocol;
 pub mod slots;
