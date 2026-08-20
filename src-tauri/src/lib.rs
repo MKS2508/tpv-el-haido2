@@ -278,10 +278,20 @@ async fn validate_and_activate_license(
     let machine_fingerprint = generate_machine_fingerprint()?;
 
     // Check if these are master credentials (local validation, no server required)
-    let master_email = std::env::var("MASTER_LICENSE_EMAIL")
-        .unwrap_or_else(|_| "admin@haido.local".to_string());
-    let master_key = std::env::var("MASTER_LICENSE_KEY")
-        .unwrap_or_else(|_| "HAI-MASTER-DEV-KEY-2026".to_string());
+    let master_email = std::env::var("MASTER_LICENSE_EMAIL").unwrap_or_else(|_| {
+        if cfg!(debug_assertions) {
+            "admin@haido.local".to_string()
+        } else {
+            panic!("MASTER_LICENSE_EMAIL no seteada en build de producción — requerida para validar licencia master (ver CLAUDE.md § License System)")
+        }
+    });
+    let master_key = std::env::var("MASTER_LICENSE_KEY").unwrap_or_else(|_| {
+        if cfg!(debug_assertions) {
+            "HAI-MASTER-DEV-KEY-2026".to_string()
+        } else {
+            panic!("MASTER_LICENSE_KEY no seteada en build de producción — requerida para validar licencia master (ver CLAUDE.md § License System)")
+        }
+    });
 
     if email == master_email && key == master_key {
         // Master license is valid - no online connection required
