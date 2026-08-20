@@ -1,5 +1,8 @@
 import { emit } from '@tauri-apps/api/event';
 import { Menu, MenuItem, Submenu } from '@tauri-apps/api/menu';
+import { createContextLogger } from '@/lib/logger';
+
+const log = createContextLogger('NativeMenu');
 
 export async function setupNativeMenu() {
   try {
@@ -39,8 +42,8 @@ export async function setupNativeMenu() {
     // Establecer como menú de la aplicación
     await menu.setAsAppMenu();
 
-    console.log('✅ Native menu setup complete');
+    log.info('✅ Native menu setup complete');
   } catch (error) {
-    console.error('❌ Failed to setup native menu:', error);
+    log.error('❌ Failed to setup native menu:', error instanceof Error ? error : undefined);
   }
 }

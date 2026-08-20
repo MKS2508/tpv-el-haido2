@@ -1,9 +1,12 @@
 import { isErr, tryCatchAsync } from '@mks2508/no-throw';
+import { createContextLogger } from '@/lib/logger';
 import type Category from '@/models/Category';
 import type { ImportData } from '@/models/Onboarding';
 import type Product from '@/models/Product';
 import type ITable from '@/models/Table';
 import type User from '@/models/User';
+
+const log = createContextLogger('Onboarding');
 
 /**
  * Error codes specific to onboarding operations
@@ -116,7 +119,7 @@ export async function readFileAsImportData(file: File): Promise<ImportData | nul
   }, OnboardingErrorCode.FileReadFailed);
 
   if (isErr(result)) {
-    console.error('[Onboarding] Failed to read file:', result.error);
+    log.error('Failed to read file:', result.error);
     return null;
   }
 

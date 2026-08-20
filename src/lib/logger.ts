@@ -35,7 +35,7 @@ export function logResultError(
   operation: string,
   error: ResultError<string>
 ): void {
-  logger.error(context, `${operation} failed`, {
+  logger.scope(context).error(`${operation} failed`, {
     code: error.code,
     message: error.message,
     ...(error.cause && { cause: error.cause }),
@@ -54,7 +54,7 @@ export function logSuccess(
   operation: string,
   meta?: Record<string, unknown>
 ): void {
-  logger.info(context, `${operation} succeeded`, meta);
+  logger.scope(context).info(`${operation} succeeded`, meta);
 }
 
 /**
@@ -65,7 +65,7 @@ export function logSuccess(
  * @param meta - Optional metadata
  */
 export function logDebug(context: string, message: string, meta?: Record<string, unknown>): void {
-  logger.debug(context, message, meta);
+  logger.scope(context).debug(message, meta);
 }
 
 /**
@@ -76,7 +76,7 @@ export function logDebug(context: string, message: string, meta?: Record<string,
  * @param meta - Optional metadata
  */
 export function logWarn(context: string, message: string, meta?: Record<string, unknown>): void {
-  logger.warn(context, message, meta);
+  logger.scope(context).warn(message, meta);
 }
 
 /**
@@ -92,12 +92,12 @@ export function logWarn(context: string, message: string, meta?: Record<string, 
  * @returns Logger object with info, warn, error, debug methods
  */
 export function createContextLogger(context: string) {
+  const scoped = logger.scope(context);
   return {
-    info: (message: string, meta?: Record<string, unknown>) => logger.info(context, message, meta),
-    warn: (message: string, meta?: Record<string, unknown>) => logWarn(context, message, meta),
-    error: (message: string, error?: Error | ResultError<string>) =>
-      logger.error(context, message, error),
-    debug: (message: string, meta?: Record<string, unknown>) => logDebug(context, message, meta),
+    info: (message: string, meta?: Record<string, unknown>) => scoped.info(message, meta),
+    warn: (message: string, meta?: Record<string, unknown>) => scoped.warn(message, meta),
+    error: (message: string, error?: Error | ResultError<string>) => scoped.error(message, error),
+    debug: (message: string, meta?: Record<string, unknown>) => scoped.debug(message, meta),
     success: (operation: string, meta?: Record<string, unknown>) =>
       logSuccess(context, operation, meta),
     resultError: (operation: string, error: ResultError<string>) =>

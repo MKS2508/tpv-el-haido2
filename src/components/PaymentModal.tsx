@@ -15,8 +15,11 @@ import { toast } from '@/components/ui/use-toast.ts';
 import { useAEAT } from '@/hooks/useAEAT';
 import { useEmitInvoice } from '@/hooks/useEmitInvoice';
 import { useResponsive } from '@/hooks/useResponsive';
+import { createContextLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import type Order from '@/models/Order.ts';
+
+const log = createContextLogger('PaymentModal');
 
 interface PaymentModalProps {
   isPaymentModalOpen: boolean;
@@ -70,7 +73,7 @@ function PaymentModal(props: PaymentModalProps) {
 
   const handleConfirmPayment = () => {
     props.setShowTicketDialog(true);
-    console.log('handleConfirmPayment');
+    log.debug('handleConfirmPayment');
     const paymentMethod = localPaymentMethod();
     toast({
       title: paymentMethod === 'pagar_luego' ? 'Pago Pendiente' : 'Pago Confirmado!',
@@ -127,7 +130,7 @@ function PaymentModal(props: PaymentModalProps) {
     ) {
       // Pequeno delay para asegurar que el pedido se ha guardado
       setTimeout(async () => {
-        console.log('[PaymentModal] Auto-sending invoice to AEAT...');
+        log.info('Auto-sending invoice to AEAT...');
         const result = await emitInvoice(updatedOrder);
         if (result.success) {
           toast({
@@ -236,22 +239,22 @@ function PaymentModal(props: PaymentModalProps) {
                         Cantidad en Efectivo
                       </Label>
                       <div class={cn('grid grid-cols-3', isMobile() ? 'gap-2' : 'gap-3')}>
-                          <For each={numpadButtons}>
-                            {(key) => (
-                                <Button
-                                  variant="outline"
-                                  onClick={() => handleLocalCashInput(key)}
-                                  class={cn(
-                                    'w-full bg-input border border-foreground/10 font-bold hover:bg-foreground/10 transition-all duration-150 touch-manipulation',
-                                    isMobile()
-                                      ? 'h-16 text-2xl active:scale-95'
-                                      : 'h-20 text-3xl hover:scale-102 active:scale-95'
-                                  )}
-                                >
-                                  {key}
-                                </Button>
-                            )}
-                          </For>
+                        <For each={numpadButtons}>
+                          {(key) => (
+                            <Button
+                              variant="outline"
+                              onClick={() => handleLocalCashInput(key)}
+                              class={cn(
+                                'w-full bg-input border border-foreground/10 font-bold hover:bg-foreground/10 transition-all duration-150 touch-manipulation',
+                                isMobile()
+                                  ? 'h-16 text-2xl active:scale-95'
+                                  : 'h-20 text-3xl hover:scale-102 active:scale-95'
+                              )}
+                            >
+                              {key}
+                            </Button>
+                          )}
+                        </For>
                       </div>
                     </div>
 

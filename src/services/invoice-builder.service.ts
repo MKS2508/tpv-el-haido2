@@ -4,6 +4,7 @@
  * Servicio para construir y validar facturas AEAT VERI*FACTU
  */
 
+import { createContextLogger } from '@/lib/logger';
 import type {
   AEATBusinessData,
   AEATCabecera,
@@ -14,6 +15,8 @@ import type {
 } from '@/models/AEAT';
 import type Order from '@/models/Order';
 import type { TaxBreakdownItem } from '@/models/Order';
+
+const log = createContextLogger('InvoiceBuilder');
 
 // ==================== Constants ====================
 
@@ -55,7 +58,9 @@ function getInvoiceCounter(serie: string): InvoiceCounterData {
       }
     }
   } catch (error) {
-    console.warn('[InvoiceBuilder] Error reading invoice counter:', error);
+    log.warn('Error reading invoice counter:', {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   // Devolver contador inicial si no existe o es de otro año
@@ -76,7 +81,7 @@ function saveInvoiceCounter(counter: InvoiceCounterData): void {
     counters[counter.serie] = counter;
     localStorage.setItem(INVOICE_COUNTER_KEY, JSON.stringify(counters));
   } catch (error) {
-    console.error('[InvoiceBuilder] Error saving invoice counter:', error);
+    log.error('Error saving invoice counter:', error instanceof Error ? error : undefined);
   }
 }
 

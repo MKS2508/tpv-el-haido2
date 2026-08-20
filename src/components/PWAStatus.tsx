@@ -1,12 +1,15 @@
 import { CloudOff, Download, RefreshCw, Wifi, X } from 'lucide-solid';
 import { createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
+import { createContextLogger } from '@/lib/logger';
 import { getPlatformService } from '@/services/platform';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
+
+const log = createContextLogger('PWAStatus');
 
 export default function PWAStatus() {
   const [isOnline, setIsOnline] = createSignal(navigator.onLine);
@@ -59,7 +62,7 @@ export default function PWAStatus() {
     const result = await prompt.userChoice;
 
     if (result.outcome === 'accepted') {
-      console.log('[PWA] App installed');
+      log.info('App installed');
     }
 
     setInstallPrompt(null);

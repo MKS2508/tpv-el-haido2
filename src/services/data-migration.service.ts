@@ -1,5 +1,8 @@
+import { createContextLogger } from '@/lib/logger';
 import { HttpStorageAdapter } from './http-storage-adapter';
 import { IndexedDbStorageAdapter } from './indexeddb-storage-adapter';
+
+const log = createContextLogger('DataMigration');
 
 export class DataMigrationService {
   private httpAdapter = new HttpStorageAdapter();
@@ -13,7 +16,7 @@ export class DataMigrationService {
     message: string;
     counts: { products: number; categories: number; orders: number };
   }> {
-    console.log('[DataMigration] Starting HTTP to IndexedDB migration...');
+    log.info('Starting HTTP to IndexedDB migration...');
 
     // Exportar datos del HTTP adapter
     const dataResult = await this.httpAdapter.exportData();
@@ -49,7 +52,7 @@ export class DataMigrationService {
       };
     }
 
-    console.log('[DataMigration] HTTP to IndexedDB migration completed successfully');
+    log.info('HTTP to IndexedDB migration completed successfully');
     return {
       success: true,
       message: `Migración completada: ${data.products.length} productos, ${data.categories.length} categorías, ${data.orders.length} órdenes`,
@@ -69,7 +72,7 @@ export class DataMigrationService {
     message: string;
     counts: { products: number; categories: number; orders: number };
   }> {
-    console.log('[DataMigration] Starting IndexedDB to HTTP migration...');
+    log.info('Starting IndexedDB to HTTP migration...');
 
     // Exportar datos del IndexedDB adapter
     const dataResult = await this.indexedDbAdapter.exportData();
@@ -98,7 +101,7 @@ export class DataMigrationService {
     for (const category of data.categories) {
       const result = await this.httpAdapter.createCategory(category);
       if (!result.ok) {
-        console.warn(`[DataMigration] Failed to create category: ${result.error.message}`);
+        log.warn(`Failed to create category: ${result.error.message}`);
       }
     }
 
@@ -106,7 +109,7 @@ export class DataMigrationService {
     for (const product of data.products) {
       const result = await this.httpAdapter.createProduct(product);
       if (!result.ok) {
-        console.warn(`[DataMigration] Failed to create product: ${result.error.message}`);
+        log.warn(`Failed to create product: ${result.error.message}`);
       }
     }
 
@@ -114,11 +117,11 @@ export class DataMigrationService {
     for (const order of data.orders) {
       const result = await this.httpAdapter.createOrder(order);
       if (!result.ok) {
-        console.warn(`[DataMigration] Failed to create order: ${result.error.message}`);
+        log.warn(`Failed to create order: ${result.error.message}`);
       }
     }
 
-    console.log('[DataMigration] IndexedDB to HTTP migration completed successfully');
+    log.info('IndexedDB to HTTP migration completed successfully');
     return {
       success: true,
       message: `Migración completada: ${data.products.length} productos, ${data.categories.length} categorías, ${data.orders.length} órdenes`,

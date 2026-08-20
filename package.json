@@ -56,7 +56,7 @@
   "dependencies": {
     "@amad3v/solid-chart": "^1.0.4",
     "@kobalte/core": "^0.13.9",
-    "@mks2508/better-logger": "^5.0.2",
+    "@mks2508/better-logger": "0.18.3",
     "@mks2508/no-throw": "^0.2.0",
     "@mks2508/shadcn-basecoat-theme-manager": "^4.3.2",
     "@motionone/solid": "^10.13.2",

@@ -15,10 +15,13 @@ export * from './WebPlatformService';
 // PLATFORM DETECTION FACTORY
 // ================================
 
+import { createContextLogger } from '@/lib/logger';
 import { isTauri } from './PlatformDetector';
 import type { PlatformService } from './PlatformService';
 import { TauriPlatformService } from './TauriPlatformService';
 import { WebPlatformService } from './WebPlatformService';
+
+const log = createContextLogger('PlatformFactory');
 
 /**
  * Get the appropriate PlatformService implementation
@@ -31,14 +34,14 @@ import { WebPlatformService } from './WebPlatformService';
 export function getPlatformService(): PlatformService {
   const isTauriEnv = isTauri();
 
-  console.log(`[Platform Index] Detected environment: ${isTauriEnv ? 'Tauri' : 'PWA (Web)'}`);
+  log.debug(`Detected environment: ${isTauriEnv ? 'Tauri' : 'PWA (Web)'}`);
 
   // Return the appropriate service based on environment
   if (isTauriEnv) {
-    console.log('[Platform Index] Returning TauriPlatformService');
+    log.debug('Returning TauriPlatformService');
     return new TauriPlatformService();
   } else {
-    console.log('[Platform Index] Returning WebPlatformService');
+    log.debug('Returning WebPlatformService');
     return new WebPlatformService();
   }
 }

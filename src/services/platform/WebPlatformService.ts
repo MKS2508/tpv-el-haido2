@@ -1,6 +1,9 @@
+import { createContextLogger } from '@/lib/logger';
 import type Order from '@/models/Order';
 import type { LicenseStatus } from '@/types/license';
 import type { PlatformService } from './PlatformService';
+
+const log = createContextLogger('WebPlatformService');
 
 /**
  * PlatformService implementation for PWA (Web Standalone)
@@ -17,19 +20,19 @@ export class WebPlatformService implements PlatformService {
     // This is a browser-based "printing" solution
     const ticketUrl = `/ticket/${order.id}_${new Date().toISOString().split('T')[0]}.pdf`;
 
-    console.log(`[WebPlatformService] Opening ticket URL: ${ticketUrl}`);
+    log.debug(`Opening ticket URL: ${ticketUrl}`);
 
     try {
       window.open(ticketUrl, '_blank');
     } catch (error) {
-      console.error('[WebPlatformService] Failed to open ticket URL:', error);
+      log.error('Failed to open ticket URL:', error instanceof Error ? error : undefined);
       alert('No se pudo abrir el ticket. Por favor, inténtalo de nuevo.');
     }
   }
 
   async printReceipt(_order: Order): Promise<void> {
     // Receipt printing not available in PWA version
-    console.warn('[WebPlatformService] Receipt printing not available in PWA version');
+    log.warn('Receipt printing not available in PWA version');
     alert(
       'Impresión de recibo no disponible en la versión web.\n' +
         'Usa el ticket completo en su lugar.'
@@ -42,7 +45,7 @@ export class WebPlatformService implements PlatformService {
   async openFileDialog(): Promise<string | null> {
     // In PWA, use browser prompt for file path
     // This is a simple implementation - can be improved with File System Access API
-    console.log('[WebPlatformService] Opening file dialog (prompt)');
+    log.debug('Opening file dialog (prompt)');
 
     try {
       const filePath = prompt(
@@ -51,13 +54,13 @@ export class WebPlatformService implements PlatformService {
       );
 
       if (!filePath || filePath.trim() === '') {
-        console.log('[WebPlatformService] File dialog cancelled');
+        log.debug('File dialog cancelled');
         return null;
       }
 
       return filePath;
     } catch (error) {
-      console.error('[WebPlatformService] File dialog failed:', error);
+      log.error('File dialog failed:', error instanceof Error ? error : undefined);
       return null;
     }
   }
@@ -65,7 +68,7 @@ export class WebPlatformService implements PlatformService {
   async saveFileDialog(): Promise<string | null> {
     // In PWA, use browser prompt for filename
     // File can then be downloaded via browser download mechanism
-    console.log('[WebPlatformService] Opening save dialog (prompt)');
+    log.debug('Opening save dialog (prompt)');
 
     try {
       const filename = prompt(
@@ -74,13 +77,13 @@ export class WebPlatformService implements PlatformService {
       );
 
       if (!filename || filename.trim() === '') {
-        console.log('[WebPlatformService] Save dialog cancelled');
+        log.debug('Save dialog cancelled');
         return null;
       }
 
       return filename;
     } catch (error) {
-      console.error('[WebPlatformService] Save dialog failed:', error);
+      log.error('Save dialog failed:', error instanceof Error ? error : undefined);
       return null;
     }
   }
@@ -97,8 +100,8 @@ export class WebPlatformService implements PlatformService {
    * This stub returns immediately.
    */
   async checkForUpdates(): Promise<void> {
-    console.log('[WebPlatformService] Update check not applicable in PWA');
-    console.log('[WebPlatformService] Service worker manages PWA updates');
+    log.debug('Update check not applicable in PWA');
+    log.debug('Service worker manages PWA updates');
     // Update check happens via service worker
     // New service worker version is installed on page reload
     // User is prompted to reload when update is ready
@@ -112,12 +115,12 @@ export class WebPlatformService implements PlatformService {
    * When service worker has a new version installed, page needs to reload.
    */
   async downloadAndInstall(): Promise<void> {
-    console.log('[WebPlatformService] Reloading page for service worker update');
+    log.debug('Reloading page for service worker update');
 
     try {
       window.location.reload();
     } catch (error) {
-      console.error('[WebPlatformService] Failed to reload page:', error);
+      log.error('Failed to reload page:', error instanceof Error ? error : undefined);
       alert('No se pudo recargar la página. Por favor, recárgala manualmente.');
     }
   }
@@ -142,11 +145,11 @@ export class WebPlatformService implements PlatformService {
     const version = import.meta.env.VITE_APP_VERSION;
 
     if (version) {
-      console.log(`[WebPlatformService] App version: ${version}`);
+      log.debug(`App version: ${version}`);
       return version;
     }
 
-    console.warn('[WebPlatformService] No version found, using default');
+    log.warn('No version found, using default');
 
     return '1.0.0';
   }
@@ -160,7 +163,7 @@ export class WebPlatformService implements PlatformService {
   }
 
   async checkLicense(): Promise<LicenseStatus> {
-    console.log('[WebPlatformService] License system not available in PWA');
+    log.debug('License system not available in PWA');
     return {
       isActivated: true,
       isValid: true,
@@ -172,7 +175,7 @@ export class WebPlatformService implements PlatformService {
   }
 
   async validateLicense(_key: string, _email: string): Promise<LicenseStatus> {
-    console.log('[WebPlatformService] License validation skipped in PWA');
+    log.debug('License validation skipped in PWA');
     return {
       isActivated: true,
       isValid: true,
@@ -184,11 +187,11 @@ export class WebPlatformService implements PlatformService {
   }
 
   async clearLicense(): Promise<void> {
-    console.log('[WebPlatformService] License clear not applicable in PWA');
+    log.debug('License clear not applicable in PWA');
   }
 
   async getMachineFingerprint(): Promise<string> {
-    console.log('[WebPlatformService] Machine fingerprint not available in PWA');
+    log.debug('Machine fingerprint not available in PWA');
     return '';
   }
 }

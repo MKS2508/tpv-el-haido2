@@ -1,4 +1,7 @@
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js';
+import { createContextLogger } from '@/lib/logger';
+
+const perfLog = createContextLogger('PerformanceConfig');
 
 // Performance mode types
 export type PerformanceMode = 'auto' | 'high' | 'balanced' | 'low';
@@ -169,7 +172,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   // If forced high performance via env var, return early with optimal config
   if (FORCE_HIGH_PERFORMANCE) {
     if (import.meta.env.DEV) {
-      console.log(
+      perfLog.debug(
         'Performance Configuration: FORCED HIGH PERFORMANCE MODE (VITE_FORCE_HIGH_PERFORMANCE=true)'
       );
     }
@@ -180,19 +183,19 @@ export const usePerformanceConfig = (): PerformanceConfig => {
   const mode = performanceMode();
   if (mode === 'high') {
     if (import.meta.env.DEV) {
-      console.log('Performance Configuration: HIGH MODE (user setting)');
+      perfLog.debug('Performance Configuration: HIGH MODE (user setting)');
     }
     return HIGH_PERFORMANCE_CONFIG;
   }
   if (mode === 'low') {
     if (import.meta.env.DEV) {
-      console.log('Performance Configuration: LOW MODE (user setting)');
+      perfLog.debug('Performance Configuration: LOW MODE (user setting)');
     }
     return LOW_PERFORMANCE_CONFIG;
   }
   if (mode === 'balanced') {
     if (import.meta.env.DEV) {
-      console.log('Performance Configuration: BALANCED MODE (user setting)');
+      perfLog.debug('Performance Configuration: BALANCED MODE (user setting)');
     }
     return BALANCED_PERFORMANCE_CONFIG;
   }
@@ -224,7 +227,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     const isLowPerformance = isVeryLowPerformance || isRaspberryPi;
 
     if (import.meta.env.DEV) {
-      console.log('Device Detection:', {
+      perfLog.debug('Device Detection:', {
         hardwareConcurrency,
         deviceMemory: hasDeviceMemoryAPI ? deviceMemory : 'N/A',
         hasDeviceMemoryAPI,
@@ -346,7 +349,7 @@ export const usePerformanceConfig = (): PerformanceConfig => {
     };
 
     if (import.meta.env.DEV) {
-      console.log('Performance Configuration:', {
+      perfLog.debug('Performance Configuration:', {
         device: isRaspberryPi ? 'Raspberry Pi' : isMobile ? 'Mobile' : 'Desktop',
         performance: isVeryLowPerformance ? 'Very Low' : isLowPerformance ? 'Low' : 'Normal',
         memory: memoryPressure(),

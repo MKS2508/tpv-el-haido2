@@ -1,5 +1,6 @@
 import { err, ok, tryCatchAsync } from '@mks2508/no-throw';
 import { StorageErrorCode } from '@/lib/error-codes';
+import { storageLog } from '@/lib/logger';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
@@ -30,13 +31,13 @@ export class IndexedDbStorageAdapter implements IStorageAdapter {
 
   private setupOnlineListener(): void {
     window.addEventListener('online', () => {
-      console.log('[IndexedDB] Back online, triggering sync...');
+      storageLog.info('Back online, triggering sync...');
       this.isOnline = true;
       this.processSyncQueue();
     });
 
     window.addEventListener('offline', () => {
-      console.log('[IndexedDB] Gone offline, operations will be queued');
+      storageLog.info('Gone offline, operations will be queued');
       this.isOnline = false;
     });
   }
@@ -60,12 +61,12 @@ export class IndexedDbStorageAdapter implements IStorageAdapter {
     const queue = this.getSyncQueue();
     if (queue.length === 0) return;
 
-    console.log(`[IndexedDB] Processing ${queue.length} queued operations...`);
+    storageLog.info(`Processing ${queue.length} queued operations...`);
 
     // For now, just clear the queue since we don't have a remote server
     // In a real implementation, this would sync with an HTTP API
     this.saveSyncQueue([]);
-    console.log('[IndexedDB] Sync queue cleared');
+    storageLog.info('Sync queue cleared');
 
     window.dispatchEvent(new CustomEvent('sync-complete', { detail: { count: queue.length } }));
   }
@@ -83,7 +84,7 @@ export class IndexedDbStorageAdapter implements IStorageAdapter {
       const request = indexedDB.open(this.dbName, this.dbVersion);
 
       request.onerror = () => {
-        console.error('Error opening IndexedDB:', request.error);
+        storageLog.error('Error opening IndexedDB:', request.error);
         reject(request.error);
       };
 

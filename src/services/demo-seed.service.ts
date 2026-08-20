@@ -6,7 +6,10 @@
  */
 
 import { getDemoSeedData, getDemoStats } from '@/data/demo-seed';
+import { createContextLogger } from '@/lib/logger';
 import useStore from '@/store/store';
+
+const log = createContextLogger('DemoSeed');
 
 export interface LoadDemoDataResult {
   success: boolean;
@@ -42,7 +45,7 @@ export async function loadDemoData(): Promise<LoadDemoDataResult> {
       stats,
     };
   } catch (error) {
-    console.error('[DemoSeed] Error loading demo data:', error);
+    log.error('Error loading demo data:', error instanceof Error ? error : undefined);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error desconocido',
@@ -68,7 +71,7 @@ export async function clearDemoData(): Promise<LoadDemoDataResult> {
       message: 'Datos de demostración eliminados',
     };
   } catch (error) {
-    console.error('[DemoSeed] Error clearing demo data:', error);
+    log.error('Error clearing demo data:', error instanceof Error ? error : undefined);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error desconocido',
