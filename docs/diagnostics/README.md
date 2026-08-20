@@ -69,17 +69,28 @@ Medido en `supermicro-pcbar` (ver `host-report-supermicro-pcbar-20260821-004851.
 | AppImage tal cual | 9-10 MiB | 2 |
 | AppImage + `GDK_BACKEND=wayland` por fuera | 9 MiB | 2 |
 | Binario nativo (sin AppRun) en Wayland | 167 MiB | 0 |
-| AppImage con hook parcheado + `GDK_BACKEND=wayland` | 167-173 MiB | 0 |
+| AppImage con hook parcheado (autodetect Wayland) | 167-173 MiB | 0 |
 
-Parche mínimo del hook — respeta al que lanza y deja `x11` como default, así que
-ningún otro host cambia de comportamiento:
+### Arreglo aplicado
+
+`scripts/build-release.ts` lo hace solo en cada build de `linux-x64` / `linux-arm64`
+(`patchAppImageGtkHook`): parchea el hook en el AppDir, re-empaqueta el AppImage con el
+packer que Tauri ya tiene cacheado y lo **re-firma** — si no, el `.sig` del build previo
+deja de cuadrar y el updater rechaza la descarga en el cliente.
+
+El hook pasa a autodetectar, de modo que no hace falta lanzador ni variable por fuera:
 
 ```sh
-export GDK_BACKEND="${GDK_BACKEND:-x11}"
+if [ -n "${WAYLAND_DISPLAY:-}" ]; then
+  export GDK_BACKEND="${GDK_BACKEND:-wayland}"
+else
+  export GDK_BACKEND="${GDK_BACKEND:-x11}"
+fi
 ```
 
-El default sigue dando 9 MiB: el arreglo son **las dos piezas juntas**, parche +
-lanzar con `GDK_BACKEND=wayland`.
+Verificado re-empaquetando in-place sobre el artefacto real: 173 MiB, 0 errores GBM,
+`GDK_BACKEND=wayland`. Forzar `GDK_BACKEND=x11` sigue devolviendo el comportamiento
+antiguo (9 MiB), así que el escape hatch se conserva.
 
 > El hook existe por un crash real de Tauri en Wayland (tauri#8541). Aquí no
 > reproduce (binario nativo en Wayland, estable en todas las pruebas), pero por eso

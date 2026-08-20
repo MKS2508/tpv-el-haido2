@@ -28,7 +28,7 @@
  *   - If `bw status` returns "unauthenticated", the script errors out — run `bw login` first.
  */
 
-import { existsSync, mkdirSync, cpSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, cpSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, basename } from 'node:path';
 import { homedir } from 'node:os';
 import logger from '@mks2508/better-logger';
@@ -1075,6 +1075,175 @@ async function runTauriBuild(
 }
 
 /**
+ * Reemplaza el `GDK_BACKEND=x11` que `linuxdeploy-plugin-gtk` clava en el AppRun
+ * del AppImage, y vuelve a empaquetar y firmar el resultado.
+ *
+ * El plugin escribe esta línea en el hook de TODO AppImage que genera:
+ *
+ *   export GDK_BACKEND=x11 # Crash with Wayland backend on Wayland - ... tauri#8541
+ *
+ * Fuerza Xwayland aunque la sesión sea Wayland. Sobre NVIDIA, el renderer DMABUF
+ * de WebKitGTK falla ahí al reservar el buffer ("Failed to create GBM buffer of
+ * size WxH: Invalid argument") y cae a compositing por software: la app arranca y
+ * pinta bien, sólo va lenta. Medido en `supermicro-pcbar` (2026-08-21): 9 MiB de
+ * memoria de GPU en el WebKitWebProcess frente a 173 MiB con la ruta Wayland, 2
+ * repeticiones por variante. Ver `docs/diagnostics/README.md`.
+ *
+ * La línea del plugin PISA el valor de quien lanza, así que exportar
+ * `GDK_BACKEND=wayland` por fuera no surte efecto — hay que tocar el hook.
+ *
+ * La sustitución conserva `x11` como default fuera de Wayland y sigue respetando
+ * un valor explícito, así que ningún host cambia de comportamiento salvo el caso
+ * roto. El crash de tauri#8541 no reproduce aquí (binario nativo en Wayland,
+ * estable en todas las pruebas), pero eso no basta para hablar por el resto de
+ * hosts: por eso se conserva el default en vez de borrar la línea.
+ *
+ * Se parchea el AppDir y se re-empaqueta porque el hook lo escribe el plugin
+ * durante el propio `tauri build`: no hay hueco para adelantarse. El AppDir queda
+ * en disco tras el build, y `linuxdeploy-plugin-appimage` (ya cacheado por Tauri)
+ * es justo lo que Tauri usa para el squash final.
+ *
+ * @param target - Build target (sólo se actúa en linux-x64 / linux-arm64).
+ * @param keys   - Claves de firma, para re-firmar el AppImage re-empaquetado.
+ * @param noSign - Si es true, se salta la re-firma.
+ * @returns `ok(undefined)` también cuando no hay nada que parchear (no es un error).
+ */
+async function patchAppImageGtkHook(
+  target: IBuildTarget,
+  keys: ISigningKeys | null,
+  noSign: boolean,
+): Promise<Result<void, ResultError>> {
+  const bundleDir = resolve(
+    PROJECT_ROOT, 'src-tauri', 'target', target.triple, 'release', 'bundle', 'appimage',
+  );
+  if (!existsSync(bundleDir)) {
+    return err(resultError('BUNDLE_DIR_NOT_FOUND', `AppImage bundle dir not found: ${bundleDir}`));
+  }
+
+  const appDirName = readdirSync(bundleDir).find((f) => f.endsWith('.AppDir'));
+  if (!appDirName) {
+    log.warn('No se encontró el .AppDir tras el build — se omite el parche de GDK_BACKEND.');
+    return ok(undefined);
+  }
+  const appDirPath = join(bundleDir, appDirName);
+  const hookPath = join(appDirPath, 'apprun-hooks', 'linuxdeploy-plugin-gtk.sh');
+
+  if (!existsSync(hookPath)) {
+    log.warn(`Hook gtk no encontrado (${hookPath}) — se omite el parche de GDK_BACKEND.`);
+    return ok(undefined);
+  }
+
+  const hook = readFileSync(hookPath, 'utf-8');
+  const gdkLine = /^export GDK_BACKEND=x11.*$/m;
+
+  if (!gdkLine.test(hook)) {
+    // Si upstream cambia la línea, avisar en vez de re-empaquetar sin motivo:
+    // el AppImage que produjo Tauri ya está firmado y es válido.
+    log.warn(
+      'El hook gtk no contiene "export GDK_BACKEND=x11" — linuxdeploy pudo cambiar. ' +
+        'Se deja el AppImage tal cual; verificar aceleración con scripts/diagnose-host.sh --probe.',
+    );
+    return ok(undefined);
+  }
+
+  writeFileSync(
+    hookPath,
+    hook.replace(
+      gdkLine,
+      'if [ -n "${WAYLAND_DISPLAY:-}" ]; then\n' +
+        '  export GDK_BACKEND="${GDK_BACKEND:-wayland}"\n' +
+        'else\n' +
+        '  export GDK_BACKEND="${GDK_BACKEND:-x11}"\n' +
+        'fi',
+    ),
+  );
+  log.info('AppRun parcheado: GDK_BACKEND se autodetecta (wayland en sesión Wayland).');
+
+  const appImageName = readdirSync(bundleDir).find(
+    (f) => f.endsWith('.AppImage') && !f.endsWith('.sig'),
+  );
+  if (!appImageName) {
+    return err(resultError('ARTIFACT_NOT_FOUND', `No .AppImage found in ${bundleDir} to repack.`));
+  }
+
+  const packer = join(homedir(), '.cache', 'tauri', 'linuxdeploy-plugin-appimage.AppImage');
+  if (!existsSync(packer)) {
+    return err(
+      resultError(
+        'APPIMAGE_PACKER_NOT_FOUND',
+        `Expected Tauri's cached AppImage packer at ${packer}. It is downloaded during the ` +
+          'first linux bundle — re-run the build, or delete ~/.cache/tauri to force a refetch.',
+      ),
+    );
+  }
+
+  const repack = await tryCatchAsync(async () => {
+    const proc = Bun.spawn([packer, '--appdir', appDirPath], {
+      cwd: bundleDir,
+      stdout: 'inherit',
+      stderr: 'inherit',
+      env: {
+        ...process.env,
+        // Mismo escape hatch que en resolveLinuxBuildEnv: el strip que trae
+        // linuxdeploy no entiende las secciones .relr.dyn actuales.
+        NO_STRIP: '1',
+        OUTPUT: appImageName,
+        ARCH: target.triple.startsWith('aarch64') ? 'aarch64' : 'x86_64',
+      } as Record<string, string>,
+    });
+    const exitCode = await proc.exited;
+    if (exitCode !== 0) throw new Error(`linuxdeploy-plugin-appimage exited with code ${exitCode}`);
+  }, 'APPIMAGE_REPACK_FAILED');
+
+  if (isErr(repack)) {
+    return err(
+      resultError(
+        'APPIMAGE_REPACK_FAILED',
+        `Failed to repack the patched AppImage: ${repack.error.message}`,
+        repack.error.cause,
+      ),
+    );
+  }
+  log.success('AppImage re-empaquetado con el AppRun parcheado.');
+
+  if (noSign || !keys) {
+    log.warn('Sin firma (--no-sign): el .sig del build previo ya no corresponde al AppImage.');
+    return ok(undefined);
+  }
+
+  // El .sig que generó Tauri corresponde al AppImage anterior: re-firmar o el
+  // updater rechazará la descarga en el cliente.
+  const sign = await tryCatchAsync(async () => {
+    const proc = Bun.spawn(['bun', 'run', 'tauri', 'signer', 'sign', join(bundleDir, appImageName)], {
+      cwd: PROJECT_ROOT,
+      stdout: 'inherit',
+      stderr: 'inherit',
+      env: {
+        ...process.env,
+        TAURI_SIGNING_PRIVATE_KEY: keys.privateKey,
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD: keys.privateKeyPassword,
+      } as Record<string, string>,
+    });
+    const exitCode = await proc.exited;
+    if (exitCode !== 0) throw new Error(`tauri signer sign exited with code ${exitCode}`);
+  }, 'APPIMAGE_RESIGN_FAILED');
+
+  if (isErr(sign)) {
+    return err(
+      resultError(
+        'APPIMAGE_RESIGN_FAILED',
+        `Repacked the AppImage but failed to re-sign it: ${sign.error.message}. The .sig on disk ` +
+          'no longer matches the artifact — do not publish this build.',
+        sign.error.cause,
+      ),
+    );
+  }
+
+  log.success('AppImage re-firmado.');
+  return ok(undefined);
+}
+
+/**
  * Copies + canonicalises build artifacts into the structured output directory.
  *
  * Layout: `<outputDir>/<version>/<target-label>/<canonical-name>`
@@ -1215,6 +1384,15 @@ export async function buildTarget(
   const buildResult = await runTauriBuild(target, keys, noSign);
   if (isErr(buildResult)) {
     return err(buildResult.error);
+  }
+
+  // Los AppImage salen del build con GDK_BACKEND=x11 clavado en el AppRun, lo que
+  // deja el webview compositando por software sobre NVIDIA (ver la función).
+  if (target.label === 'linux-x64' || target.label === 'linux-arm64') {
+    const hookResult = await patchAppImageGtkHook(target, keys, noSign);
+    if (isErr(hookResult)) {
+      return err(hookResult.error);
+    }
   }
 
   // Verify artifacts
