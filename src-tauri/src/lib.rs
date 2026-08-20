@@ -24,6 +24,16 @@ struct DbState {
     db: Mutex<Option<Database>>,
 }
 
+/// El frontend confirma que ha montado sin romperse.
+///
+/// Sin esta llamada, el bundle activo no se da nunca por bueno y el watchdog
+/// acaba revirtiéndolo: es el handshake que cierra el ciclo de rollback.
+#[tauri::command]
+fn ota_app_ready(app: tauri::AppHandle) -> Result<(), String> {
+    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    ota::watchdog::mark_ready(&data_dir)
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -463,7 +473,12 @@ pub fn run() {
             // Antes de servir nada: un slot instalado por un binario anterior no
             // puede sobrevivir a una actualización nativa.
             if let Ok(data_dir) = app.path().app_data_dir() {
-                ota::slots::invalidate_if_native_changed(&data_dir, app.package_info().version.to_string().as_str());
+                let native_version = app.package_info().version.to_string();
+                ota::slots::invalidate_if_native_changed(&data_dir, &native_version);
+                // Consume un intento de arranque y revierte si el bundle activo
+                // lleva demasiados sin confirmar. Va antes de crear la ventana:
+                // si revierte, el protocolo ya tiene que servir el slot anterior.
+                println!("[ota] arranque: {:?}", ota::watchdog::reconcile_boot(&data_dir));
             }
 
             // En dev la ventana sigue apuntando al dev server de Vite (HMR): el
@@ -504,6 +519,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             init_database,
+            ota_app_ready,
             // Products
             get_products,
             create_product,

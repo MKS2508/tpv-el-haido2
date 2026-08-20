@@ -3,6 +3,7 @@ import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { render } from 'solid-js/web';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ErrorBoundary';
 import { initializeLogger } from '@/lib/logger-init';
+import { signalAppReady } from '@/lib/ota-ready';
 import { ASSET_PATHS, getSwPath, getSwScope } from '@/lib/paths';
 import { ThemeProvider } from '@/lib/theme-context';
 import { isTauri } from '@/services/platform/PlatformDetector';
@@ -142,6 +143,9 @@ async function initializeApp() {
   );
 
   registerServiceWorker();
+
+  // Cierra el ciclo del watchdog OTA: sin esto el bundle activo se revierte.
+  signalAppReady();
 }
 
 initializeApp();

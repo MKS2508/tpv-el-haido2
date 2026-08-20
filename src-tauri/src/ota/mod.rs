@@ -5,6 +5,7 @@
 //! `docs/ota/canal-parcial.md`.
 
 pub mod apply;
+pub mod watchdog;
 pub mod manifest;
 pub mod protocol;
 pub mod slots;

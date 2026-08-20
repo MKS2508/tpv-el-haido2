@@ -7,7 +7,7 @@
 
 use std::fs;
 use std::io::Cursor;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Component, Path};
 
 use super::manifest::{BundleManifest, ManifestError};
 use super::slots::{self, SlotState};
@@ -210,6 +210,7 @@ mod tests {
     use ed25519_dalek::{Signer, SigningKey};
     use sha2::{Digest, Sha256};
     use std::io::Write;
+    use std::path::PathBuf;
 
     fn tmpdir(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("tpv-ota-apply-{name}"));
