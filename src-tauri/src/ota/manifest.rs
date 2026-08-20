@@ -58,14 +58,36 @@ impl std::fmt::Display for ManifestError {
     }
 }
 
-/// Convierte un límite del manifest en un `VersionReq`.
+/// Interpreta `maxNativeVersion`, que el contrato define como cota superior
+/// inclusive pero admitiendo también rangos.
 ///
-/// El contrato admite comodín de patch (`"1.5.x"`), que no es semver válido:
-/// `semver::VersionReq` sí entiende `1.5.*`.
-fn parse_bound(op: &str, raw: &str) -> Result<semver::VersionReq, ManifestError> {
-    let normalised = raw.replace(".x", ".*").replace(".X", ".*");
-    semver::VersionReq::parse(&format!("{op}{normalised}"))
-        .map_err(|_| ManifestError::BadVersion(raw.to_string()))
+/// Una versión pelada (`"1.6.0"`) se lee como `<=1.6.0`, que es lo que dice el
+/// nombre del campo: todo lo anterior entra. Cualquier otra cosa (`"1.5.x"`,
+/// `"^1.5.0"`, `">=1 <2"`) se lee como rango tal cual.
+///
+/// Tratar la versión pelada como rango, que es lo que hace hoy el hub con
+/// `semver.satisfies`, convierte `[1.4.0, 1.6.0]` en "sólo 1.6.0 exacta" — ver
+/// `la_cota_superior_pelada_es_inclusiva`.
+fn parse_max(raw: &str) -> Result<semver::VersionReq, ManifestError> {
+    let cleaned = raw.trim().replace(".x", ".*").replace(".X", ".*");
+
+    // El hub valida con node-semver, que separa los comparadores de un rango con
+    // espacios (">=1.0.0 <2.0.0"); el crate de Rust los quiere con comas. Un
+    // rango que el hub da por bueno tiene que parsear también aquí.
+    let cleaned = cleaned.split_whitespace().collect::<Vec<_>>().join(", ");
+
+    // node-semver admite alternativas con `||`, que este crate no soporta. Se
+    // rechaza explícitamente en vez de dejar que falle el parseo con un mensaje
+    // que no dice nada.
+    if cleaned.contains("||") {
+        return Err(ManifestError::BadVersion(format!(
+            "{raw}: los rangos con `||` no están soportados en el cliente"
+        )));
+    }
+
+    let is_plain_version = semver::Version::parse(&cleaned).is_ok();
+    let expr = if is_plain_version { format!("<={cleaned}") } else { cleaned };
+    semver::VersionReq::parse(&expr).map_err(|_| ManifestError::BadVersion(raw.to_string()))
 }
 
 impl BundleManifest {
@@ -74,14 +96,18 @@ impl BundleManifest {
     /// Es la guardia que impide que un bundle nuevo aterrice sobre un binario que
     /// no tiene los comandos que ese bundle llama. Se valida también aquí y no
     /// sólo en el hub: el cliente no se fía del servidor.
+    ///
+    /// `min` es una versión concreta comparada con `>=`; `max` es cota superior
+    /// inclusive, y además admite rangos (ver `parse_max`).
     pub fn check_native_compatible(&self, native_version: &str) -> Result<(), ManifestError> {
         let native = semver::Version::parse(native_version)
             .map_err(|_| ManifestError::BadVersion(native_version.to_string()))?;
 
-        let min = parse_bound(">=", &self.min_native_version)?;
-        let max = parse_bound("<=", &self.max_native_version)?;
+        let min = semver::Version::parse(self.min_native_version.trim())
+            .map_err(|_| ManifestError::BadVersion(self.min_native_version.clone()))?;
+        let max = parse_max(&self.max_native_version)?;
 
-        if min.matches(&native) && max.matches(&native) {
+        if native >= min && max.matches(&native) {
             Ok(())
         } else {
             Err(ManifestError::Incompatible {
@@ -149,7 +175,7 @@ mod tests {
             hash: format!("sha256:{}", hex::encode(Sha256::digest(bytes))),
             url: "https://example.invalid/b.zip".into(),
             min_native_version: "0.1.0".into(),
-            max_native_version: "0.2.x".into(),
+            max_native_version: "0.2.0".into(),
             signature: engine.encode(signing.sign(bytes).to_bytes()),
             released_at: None,
         }
@@ -208,6 +234,42 @@ mod tests {
         assert!(m.check_native_compatible("1.5.9").is_ok());
         assert!(m.check_native_compatible("1.3.9").is_err(), "por debajo no");
         assert!(m.check_native_compatible("1.6.1").is_err(), "por encima no");
+    }
+
+    #[test]
+    fn la_cota_superior_pelada_es_inclusiva() {
+        // DIVERGENCIA CONOCIDA con desktop-release-hub (BundleService.withinWindow,
+        // commit d27461e): allí `max` se evalúa siempre con semver.satisfies, así
+        // que "1.6.0" se lee como "exactamente 1.6.0" y la ventana [1.4.0, 1.6.0]
+        // sólo alcanza a los binarios 1.6.0. Los 1.5.x nunca reciben el bundle, sin
+        // error visible. Aquí se implementa lo que dice el nombre del campo.
+        let (signing, _) = keypair();
+        let mut m = manifest_for(b"x", &signing);
+        m.min_native_version = "1.4.0".into();
+        m.max_native_version = "1.6.0".into();
+
+        assert!(m.check_native_compatible("1.4.0").is_ok(), "el mínimo entra");
+        assert!(m.check_native_compatible("1.5.9").is_ok(), "el medio entra");
+        assert!(m.check_native_compatible("1.6.0").is_ok(), "el máximo entra");
+        assert!(m.check_native_compatible("1.3.9").is_err());
+        assert!(m.check_native_compatible("1.6.1").is_err());
+    }
+
+    #[test]
+    fn se_aceptan_los_rangos_que_el_hub_admite() {
+        // El hub valida max con semver.validRange, que acepta cualquier rango.
+        // El cliente tiene que entender los mismos, o rechazaría bundles válidos.
+        let (signing, _) = keypair();
+        let mut m = manifest_for(b"x", &signing);
+        m.min_native_version = "1.0.0".into();
+
+        m.max_native_version = "^1.5.0".into();
+        assert!(m.check_native_compatible("1.5.3").is_ok());
+        assert!(m.check_native_compatible("2.0.0").is_err());
+
+        m.max_native_version = ">=1.0.0 <2.0.0".into();
+        assert!(m.check_native_compatible("1.9.9").is_ok());
+        assert!(m.check_native_compatible("2.0.1").is_err());
     }
 
     #[test]

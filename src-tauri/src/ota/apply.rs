@@ -242,7 +242,7 @@ mod tests {
             hash: format!("sha256:{}", hex::encode(Sha256::digest(bytes))),
             url: "https://example.invalid/b.zip".into(),
             min_native_version: "0.1.0".into(),
-            max_native_version: "0.9.x".into(),
+            max_native_version: "0.9.0".into(),
             signature: engine.encode(signing.sign(bytes).to_bytes()),
             released_at: None,
         };
