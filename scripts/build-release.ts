@@ -949,6 +949,70 @@ async function runPrebuild(): Promise<Result<void, ResultError>> {
 }
 
 /**
+ * Resolves the extra environment variables needed to build a `linux-x64` /
+ * `linux-arm64` target without hitting the 3 blockers found building
+ * natively on `supermicro-pcbar` (TR-07, 2026-08-20):
+ *
+ * 1. Non-interactive SSH sessions don't source `~/.bashrc` / `~/.profile`,
+ *    so `bun`/`cargo` can be missing from `$PATH` even though they're
+ *    installed — prepend the standard install dirs defensively.
+ * 2. linuxdeploy's bundled `strip` (pinned build, 2024-07-26) doesn't
+ *    understand the `.relr.dyn` ELF sections emitted by current toolchains
+ *    — `NO_STRIP=1` is linuxdeploy's own documented escape hatch.
+ * 3. linuxdeploy's bundled `patchelf` silently corrupts the AEAT sidecar
+ *    (`bun build --compile` output — payload appended after the ELF) when
+ *    rewriting its rpath — route `$PATCHELF` through a shim that skips
+ *    that one binary (see `scripts/linux/patchelf-aeat-shim.sh`).
+ *
+ * @returns Extra env vars to merge into the `tauri build` subprocess, or an
+ *   error if `patchelf` isn't installed (build will fail regardless).
+ */
+async function resolveLinuxBuildEnv(): Promise<Result<Record<string, string>, ResultError>> {
+  const shimPath = resolve(PROJECT_ROOT, 'scripts', 'linux', 'patchelf-aeat-shim.sh');
+  if (!existsSync(shimPath)) {
+    return err(
+      resultError(
+        'PATCHELF_SHIM_NOT_FOUND',
+        `Expected patchelf shim at ${shimPath} — did scripts/linux/ get deleted?`,
+      ),
+    );
+  }
+
+  const whichResult = await tryCatchAsync(async () => {
+    const proc = Bun.spawn(['which', 'patchelf'], { stdout: 'pipe', stderr: 'ignore' });
+    const out = await new Response(proc.stdout).text();
+    const exitCode = await proc.exited;
+    if (exitCode !== 0 || !out.trim()) {
+      throw new Error('patchelf not found on $PATH');
+    }
+    return out.trim();
+  }, 'PATCHELF_NOT_FOUND');
+
+  if (isErr(whichResult)) {
+    return err(
+      resultError(
+        'PATCHELF_NOT_FOUND',
+        'patchelf is required to build linux targets (linuxdeploy dependency) but was not ' +
+          'found on $PATH. Install it (e.g. "pacman -S patchelf" / "apt install patchelf").',
+      ),
+    );
+  }
+
+  const homeBinDirs = `${join(homedir(), '.bun', 'bin')}:${join(homedir(), '.cargo', 'bin')}`;
+  const currentPath = process.env.PATH ?? '';
+  const augmentedPath = currentPath.includes(homeBinDirs)
+    ? currentPath
+    : `${homeBinDirs}:${currentPath}`;
+
+  return ok({
+    PATH: augmentedPath,
+    NO_STRIP: '1',
+    PATCHELF: shimPath,
+    REAL_PATCHELF: whichResult.value,
+  });
+}
+
+/**
  * Runs `tauri build --target <triple>` with signing env vars injected.
  *
  * @param target   - The build target.
@@ -967,6 +1031,14 @@ async function runTauriBuild(
   if (!noSign && keys) {
     extraEnv.TAURI_SIGNING_PRIVATE_KEY = keys.privateKey;
     extraEnv.TAURI_SIGNING_PRIVATE_KEY_PASSWORD = keys.privateKeyPassword;
+  }
+
+  if (target.label === 'linux-x64' || target.label === 'linux-arm64') {
+    const linuxEnvResult = await resolveLinuxBuildEnv();
+    if (isErr(linuxEnvResult)) {
+      return err(linuxEnvResult.error);
+    }
+    Object.assign(extraEnv, linuxEnvResult.value);
   }
 
   const result = await tryCatchAsync(async () => {
