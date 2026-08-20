@@ -1,0 +1,110 @@
+
+=== Host ===
+supermicro-pcbar
+Linux 7.1.8-1-cachyos x86_64
+lib32-mesa 3:26.2.1-1
+lib32-nvidia-580xx-utils 580.173.02-1
+lib32-opencl-nvidia-580xx 580.173.02-1
+lib32-vulkan-mesa-implicit-layers 3:26.2.1-1
+libva-nvidia-driver 0.0.17-1.1
+linux-firmware-nvidia 1:20260810-2
+mesa 3:26.2.1-1
+mesa-utils 9.0.0-7.1
+nvidia-580xx-dkms 580.173.02-1
+nvidia-580xx-settings 580.159.03-1
+
+=== CPU / RAM ===
+CPU(s):                                  8
+Model name:                              Intel(R) Core(TM) i7-9700 CPU @ 3.00GHz
+CPU(s) scaling MHz:                      96%
+CPU max MHz:                             4700.0000
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       2.9Gi       6.9Gi       908Mi       7.1Gi        12Gi
+
+=== GPUs físicas ===
+00:02.0 Display controller [0380]: Intel Corporation CoffeeLake-S GT2 [UHD Graphics 630] [8086:3e98] (rev 02)
+00:1c.5 PCI bridge [0604]: Intel Corporation 300/C240 Series Chipset Family PCIe Root Port #6 [8086:a33d] (rev f0)
+01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GP108 [GeForce GT 1030] [10de:1d01] (rev a1)
+
+=== Driver en uso por GPU ===
+00:02.0 Display controller: Intel Corporation CoffeeLake-S GT2 [UHD Graphics 630] (rev 02)
+	Kernel driver in use: i915
+01:00.0 VGA compatible controller: NVIDIA Corporation GP108 [GeForce GT 1030] (rev a1)
+	Kernel driver in use: nvidia
+
+=== Conectores DRM (dónde está el monitor) ===
+/sys/class/drm/card1-HDMI-A-1/status:connected
+-- todos --
+/sys/class/drm/card0-DP-2/status:disconnected
+/sys/class/drm/card0-DP-3/status:disconnected
+/sys/class/drm/card0-DP-4/status:disconnected
+/sys/class/drm/card0-DP-5/status:disconnected
+/sys/class/drm/card0-HDMI-A-2/status:disconnected
+/sys/class/drm/card0-HDMI-A-3/status:disconnected
+/sys/class/drm/card0-HDMI-A-4/status:disconnected
+/sys/class/drm/card1-DP-1/status:disconnected
+/sys/class/drm/card1-HDMI-A-1/status:connected
+
+=== Mapa card/render node -> driver -> PCI ===
+card0 -> driver=i915
+card1 -> driver=nvidia
+renderD128 -> DEVPATH=/devices/pci0000:00/0000:00:01.0/0000:01:00.0/drm/renderD128
+renderD129 -> DEVPATH=/devices/pci0000:00/0000:00:02.0/drm/renderD129
+
+=== nvidia_drm (modeset debe ser Y para que GBM funcione) ===
+fbdev=<sin permiso: reintentar como root>
+modeset=<sin permiso: reintentar como root>
+NVRM version: NVIDIA UNIX x86_64 Kernel Module  580.173.02  Tue Jun 23 08:38:17 UTC 2026
+
+=== Sesión gráfica ===
+ 1 1000 mks -     679   manager -    no -
+25 1000 mks -     18960 user    -    no -
+ 4 1000 mks seat0 834   user    tty1 no -
+Id=1 Type=unspecified Class=manager Active=yes 
+Id=25 Type=tty Class=user Active=yes 
+Id=4 Type=wayland Class=user Active=yes 
+1056 cosmic-comp
+1086 Xwayland :1 -verbose -rootless -terminate -wm 92 -displayfd 99 -listenfd 96 -listenfd 97 -enable-ei-portal
+entorno tomado de: cosmic-panel(pid 1109)
+entorno usado -> WAYLAND_DISPLAY=wayland-1 DISPLAY=:1 XDG_RUNTIME_DIR=/run/user/1000
+
+=== OpenGL (ruta GLX / Xwayland) ===
+direct rendering: Yes
+OpenGL vendor string: NVIDIA Corporation
+OpenGL renderer string: NVIDIA GeForce GT 1030/PCIe/SSE2
+OpenGL version string: 4.6.0 NVIDIA 580.173.02
+
+=== EGL ===
+EGL vendor string: Mesa Project
+OpenGL core profile renderer: Mesa Intel(R) UHD Graphics 630 (CFL GT2)
+OpenGL compatibility profile renderer: Mesa Intel(R) UHD Graphics 630 (CFL GT2)
+OpenGL ES profile renderer: Mesa Intel(R) UHD Graphics 630 (CFL GT2)
+EGL vendor string: NVIDIA
+OpenGL core profile renderer: NVIDIA GeForce GT 1030/PCIe/SSE2
+OpenGL compatibility profile renderer: NVIDIA GeForce GT 1030/PCIe/SSE2
+OpenGL ES profile renderer: NVIDIA GeForce GT 1030/PCIe/SSE2
+
+=== Vulkan ===
+
+=== Env vars WEBKIT/GL persistentes ===
+(vacío = ninguna variable persistente)
+
+=== Lanzadores instalados de la app ===
+(vacío = se lanza a mano; comprobar el history del usuario)
+
+=== Sonda en vivo: /home/mks/tpv-el-haido2/releases/0.1.0/linux-x64/tpv-haido-0.1.0-linux-x64.AppImage ===
+app_pid=19114 webkit_web_process=19148
+render nodes abiertos: renderD128 
+-- nvidia-smi --
+|    0   N/A  N/A           19148      G   ...bkit2gtk-4.1/WebKitWebProcess          9MiB |
+-- env efectivo --
+GDK_PIXBUF_MODULE_FILE=/tmp/.mount_tpv-hacPoaNP//usr/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
+WAYLAND_DISPLAY=wayland-1
+DISPLAY=:1
+GDK_BACKEND=x11
+-- errores GBM/DMABUF en stderr --
+ocurrencias: 2
+Failed to create GBM buffer of size 1200x800: Invalid argument
+
+=== Informe guardado ===
+host-report-supermicro-pcbar-20260821-004851.txt
