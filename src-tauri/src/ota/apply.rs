@@ -37,7 +37,7 @@ impl std::fmt::Display for ApplyError {
 
 /// Identificador de directorio derivado del hash. Se rechaza cualquier cosa que no
 /// sea hex: el id viene del hub y termina siendo un nombre de directorio.
-fn slot_id(manifest: &BundleManifest) -> Result<String, ApplyError> {
+pub fn slot_id(manifest: &BundleManifest) -> Result<String, ApplyError> {
     let hex = manifest.hash.strip_prefix("sha256:").unwrap_or(&manifest.hash);
     let clean: String = hex.chars().take(32).collect();
     if clean.len() < 16 || !clean.chars().all(|c| c.is_ascii_hexdigit()) {

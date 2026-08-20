@@ -24,6 +24,29 @@ struct DbState {
     db: Mutex<Option<Database>>,
 }
 
+/// Activa el bundle preparado. Lo llama el frontend, no el poller.
+///
+/// Quién decide CUÁNDO es el frontend a propósito: es el único que sabe si hay
+/// un ticket a medias o una impresión en curso. El backend prepara; la caja
+/// elige el hueco. Tras esto el frontend debe recargar la webview.
+#[tauri::command]
+fn ota_apply_staged(app: tauri::AppHandle) -> Result<String, String> {
+    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let version = app.package_info().version.to_string();
+    let activated = ota::apply::activate_staged(&data_dir, &version).map_err(|e| e.to_string())?;
+    // Los slots viejos dejan de hacer falta en cuanto hay uno nuevo activo.
+    let _ = ota::apply::prune(&data_dir);
+    Ok(activated)
+}
+
+/// Estado del canal parcial, para que la UI pueda mostrarlo.
+#[tauri::command]
+fn ota_status(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let state = ota::slots::load_state(&data_dir);
+    serde_json::to_value(state).map_err(|e| e.to_string())
+}
+
 /// El frontend confirma que ha montado sin romperse.
 ///
 /// Sin esta llamada, el bundle activo no se da nunca por bueno y el watchdog
@@ -479,6 +502,15 @@ pub fn run() {
                 // lleva demasiados sin confirmar. Va antes de crear la ventana:
                 // si revierte, el protocolo ya tiene que servir el slot anterior.
                 println!("[ota] arranque: {:?}", ota::watchdog::reconcile_boot(&data_dir));
+
+                // El canal parcial no debe poder impedir que el TPV arranque: si
+                // no hay fingerprint, simplemente no se consulta al hub.
+                match license::generate_machine_fingerprint() {
+                    Ok(device_id) => {
+                        ota::poller::spawn(app.handle().clone(), native_version, device_id)
+                    }
+                    Err(err) => eprintln!("[ota] sin fingerprint, canal parcial desactivado: {err}"),
+                }
             }
 
             // En dev la ventana sigue apuntando al dev server de Vite (HMR): el
@@ -529,6 +561,8 @@ pub fn run() {
             greet,
             init_database,
             ota_app_ready,
+            ota_apply_staged,
+            ota_status,
             // Products
             get_products,
             create_product,

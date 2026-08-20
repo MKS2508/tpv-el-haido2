@@ -7,6 +7,7 @@
 pub mod apply;
 pub mod watchdog;
 pub mod manifest;
+pub mod poller;
 pub mod protocol;
 pub mod slots;
 
