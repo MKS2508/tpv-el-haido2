@@ -386,3 +386,67 @@ mod tests {
         assert!(!root.join("basura1").exists());
     }
 }
+
+/// Tests de contrato cruzado con `scripts/build-bundle.ts`.
+///
+/// Los fixtures los produjo el empaquetador de verdad, no este código: es el
+/// único sitio donde se comprueba que TypeScript y Rust coinciden en el formato
+/// exacto — base64 de la firma, prefijo del hash, y que se firma sobre los bytes
+/// crudos del zip y no sobre otra cosa. Un desacuerdo ahí no lo detecta ningún
+/// test que genere sus propios datos.
+#[cfg(test)]
+mod contrato_con_el_empaquetador {
+    use super::*;
+    use crate::ota::manifest::BundleManifest;
+    use std::path::PathBuf;
+
+    fn fixture(name: &str) -> Vec<u8> {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(name);
+        fs::read(&path).unwrap_or_else(|e| panic!("falta el fixture {}: {e}", path.display()))
+    }
+
+    fn cargar() -> (BundleManifest, Vec<u8>, String) {
+        let manifest: BundleManifest =
+            serde_json::from_slice(&fixture("manifest.json")).expect("manifest del empaquetador");
+        let zip = fixture("bundle.zip");
+        let pubkey = String::from_utf8(fixture("pubkey.txt")).unwrap().trim().to_string();
+        (manifest, zip, pubkey)
+    }
+
+    #[test]
+    fn el_bundle_del_empaquetador_verifica() {
+        let (manifest, zip, pubkey) = cargar();
+        manifest
+            .verify_bytes(&zip, &pubkey)
+            .expect("hash y firma producidos por build-bundle.ts deben validar en Rust");
+    }
+
+    #[test]
+    fn el_bundle_del_empaquetador_se_instala() {
+        let dir = std::env::temp_dir().join("tpv-ota-contrato");
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+
+        let (manifest, zip, pubkey) = cargar();
+        let id = stage(&dir, &manifest, &pubkey, "0.1.0", &zip).expect("stage del bundle real");
+
+        // El zip se crea desde dentro de dist/, así que index.html tiene que
+        // quedar en la raíz del slot y no bajo un directorio intermedio.
+        let slot = slots::bundles_root(&dir).join(&id);
+        assert!(slot.join("index.html").is_file(), "index.html en la raíz del slot");
+        assert!(slot.join("assets/app.js").is_file(), "se conserva la jerarquía");
+
+        activate_staged(&dir, "0.1.0").unwrap();
+        assert_eq!(slots::load_state(&dir).active.as_deref(), Some(id.as_str()));
+    }
+
+    #[test]
+    fn un_zip_manipulado_tras_firmarlo_no_pasa() {
+        let (manifest, mut zip, pubkey) = cargar();
+        let last = zip.len() - 1;
+        zip[last] ^= 0xff;
+        assert!(manifest.verify_bytes(&zip, &pubkey).is_err());
+    }
+}

@@ -1,0 +1,9 @@
+{
+  "bundleVersion": "2026.08.21-fixture",
+  "hash": "sha256:3f00cd1835dadc6f6846c692266bf237de2a2af3ca6ec3735f5032792ec68742",
+  "url": "/api/bundles/fixture/download",
+  "minNativeVersion": "0.1.0",
+  "maxNativeVersion": "0.9.0",
+  "signature": "y9t5fWrovO1U9E+stiA1aLMpDhUvDggj7hcFh9B3rFfe1N9f4vRS5JpAVBo8RDvQho0Xk4zKJx33mpnYBlLwBg==",
+  "releasedAt": "2026-08-21T00:00:00.000Z"
+}
