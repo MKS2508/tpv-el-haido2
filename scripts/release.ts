@@ -68,7 +68,7 @@ const DEFAULT_HUB_URL = 'https://admin.releases.mks2508.systems';
 const PROJECT_ROOT = resolve(import.meta.dir, '..');
 
 /** Supported release targets. */
-const ALL_RELEASE_TARGETS = ['macos-arm64', 'macos-x64', 'windows-x64'] as const;
+const ALL_RELEASE_TARGETS = ['macos-arm64', 'macos-x64', 'windows-x64', 'linux-x64', 'linux-arm64'] as const;
 type ReleaseTarget = (typeof ALL_RELEASE_TARGETS)[number];
 
 // ─────────────────────────────── Interfaces ──────────────────────────────────
@@ -133,6 +133,8 @@ export function mapTargetToServer(target: ReleaseTarget): Result<ITargetMapping,
     'macos-arm64': { serverTarget: 'darwin', serverArch: 'aarch64' },
     'macos-x64': { serverTarget: 'darwin', serverArch: 'x86_64' },
     'windows-x64': { serverTarget: 'windows', serverArch: 'x86_64' },
+    'linux-x64': { serverTarget: 'linux', serverArch: 'x86_64' },
+    'linux-arm64': { serverTarget: 'linux', serverArch: 'aarch64' },
   };
   const mapped = table[target];
   if (!mapped) {
@@ -161,7 +163,7 @@ Commands:
   publish --target <target> --slug <slug> [options]
     Upload release artifact(s) to desktop-release-hub admin API.
 
-    --target   macos-arm64 | macos-x64 | windows-x64 | all   (required)
+    --target   macos-arm64 | macos-x64 | windows-x64 | linux-x64 | linux-arm64 | all   (required)
     --slug     Project slug in release-hub (e.g. "haido")     (required)
     --hub      Admin API base URL (default: ${DEFAULT_HUB_URL})
     --notes    Release notes / changelog text
@@ -824,6 +826,8 @@ export function discoverArtifacts(
     'macos-arm64': '.app.tar.gz',
     'macos-x64': '.app.tar.gz',
     'windows-x64': '.nsis.zip',
+    'linux-x64': '.AppImage',
+    'linux-arm64': '.AppImage',
   };
 
   const ext = extensions[target];

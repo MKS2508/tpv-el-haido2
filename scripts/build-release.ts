@@ -53,7 +53,7 @@ const log = logger.component('BuildRelease');
 /**
  * Supported release target identifiers (user-facing flags).
  */
-export type ReleaseTarget = 'macos-arm64' | 'macos-x64' | 'windows-x64';
+export type ReleaseTarget = 'macos-arm64' | 'macos-x64' | 'windows-x64' | 'linux-x64' | 'linux-arm64';
 
 /**
  * Full build target descriptor with all the paths derived from it.
@@ -173,6 +173,33 @@ const BUILD_TARGETS: Readonly<Record<ReleaseTarget, IBuildTarget>> = {
     // NSIS installer extension — Tauri produces *_<version>_x64-setup.exe in the same nsis/ dir
     installerExt: '-setup.exe',
   },
+  'linux-x64': {
+    label: 'linux-x64',
+    triple: 'x86_64-unknown-linux-gnu',
+    bundleSubdir: 'appimage',
+    // HIPÓTESIS a confirmar en M4 con un build real: Tauri 2.10 con
+    // createUpdaterArtifacts=true generó -setup.exe SIN wrapper .zip para Windows
+    // (ver 0.4.0.D). Se asume que hace lo mismo con AppImage: .AppImage crudo +
+    // .AppImage.sig, sin el wrapper .AppImage.tar.gz de versiones anteriores de Tauri.
+    // Si el build real produce .AppImage.tar.gz, corregir este valor Y replicar el
+    // fix en el checkout local (ver M4 paso de verificación de bundle real).
+    artifactExt: '.AppImage',
+    updaterPlatformKey: 'linux-x86_64',
+    installerSubdir: 'appimage',
+    installerExt: '.AppImage',
+  },
+  'linux-arm64': {
+    label: 'linux-arm64',
+    triple: 'aarch64-unknown-linux-gnu',
+    bundleSubdir: 'appimage',
+    // Misma hipótesis sin confirmar que linux-x64 (ver comentario arriba,
+    // build-release.ts:180-185) — mismo artifactExt hasta que un build real
+    // en runner ubuntu-24.04-arm lo confirme (M4/M5 lo verifican).
+    artifactExt: '.AppImage',
+    updaterPlatformKey: 'linux-aarch64',
+    installerSubdir: 'appimage',
+    installerExt: '.AppImage',
+  },
 } as const;
 
 /**
@@ -196,7 +223,7 @@ export function canonicalName(version: string, target: ReleaseTarget, ext: strin
   return `tpv-haido-${version}-${target}${ext}`;
 }
 
-const ALL_TARGETS: ReleaseTarget[] = ['macos-arm64', 'macos-x64', 'windows-x64'];
+const ALL_TARGETS: ReleaseTarget[] = ['macos-arm64', 'macos-x64', 'windows-x64', 'linux-x64', 'linux-arm64'];
 
 const DEFAULT_OUTPUT_DIR = resolve(PROJECT_ROOT, 'releases');
 
@@ -255,6 +282,8 @@ Targets:
   macos-arm64   Apple Silicon (aarch64-apple-darwin)
   macos-x64     Intel Mac (x86_64-apple-darwin)
   windows-x64   Windows x64 (x86_64-pc-windows-msvc)
+  linux-x64     Linux x64 (x86_64-unknown-linux-gnu)
+  linux-arm64   Linux ARM64 / RPi (aarch64-unknown-linux-gnu)
   all           Build all targets
 
 Options:
@@ -733,6 +762,7 @@ export function validateTargetForCurrentPlatform(
 ): Result<void, ResultError> {
   const isWindows = process.platform === 'win32';
   const isDarwin = process.platform === 'darwin';
+  const isLinux = process.platform === 'linux';
 
   if (target.label === 'windows-x64' && isDarwin) {
     return err(
@@ -744,6 +774,28 @@ export function validateTargetForCurrentPlatform(
           'This script does NOT set up the toolchain automatically.',
           'Run "bun run release:windows" on the Windows machine directly.',
         ].join(' '),
+      ),
+    );
+  }
+
+  if (target.label === 'linux-x64' && !isLinux) {
+    return err(
+      resultError(
+        'CROSS_COMPILE_NOT_SUPPORTED',
+        [
+          `Target "${target.label}" (${target.triple}) requires running on a Linux host.`,
+          'This script does NOT set up a cross-compile toolchain automatically.',
+          'Run this on the target Linux machine directly (e.g. supermicro-pcbar via SSH).',
+        ].join(' '),
+      ),
+    );
+  }
+
+  if (target.label === 'linux-arm64' && !isLinux) {
+    return err(
+      resultError(
+        'CROSS_COMPILE_NOT_SUPPORTED',
+        `Target "${target.label}" (${target.triple}) requires running on a Linux ARM64 host (e.g. GitHub Actions ubuntu-24.04-arm runner).`,
       ),
     );
   }

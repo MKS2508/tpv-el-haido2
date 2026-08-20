@@ -1,4 +1,4 @@
-name: 🐧 Linux x64 Build
+name: 🐧 Linux ARM64 Build
 
 on:
   push:
@@ -11,9 +11,9 @@ env:
   APPIMAGE_EXTRACT_AND_RUN: '1'
 
 jobs:
-  build-linux-x64:
-    name: Build Linux x64
-    runs-on: ubuntu-latest
+  build-linux-arm64:
+    name: Build Linux ARM64
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -50,18 +50,18 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build + sign (linux-x64)
+      - name: Build + sign (linux-arm64)
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: bun run scripts/build-release.ts --target linux-x64
+        run: bun run scripts/build-release.ts --target linux-arm64
 
       - name: List bundle output (confirma artifactExt real)
-        run: find src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -maxdepth 2 -type f
+        run: find src-tauri/target/aarch64-unknown-linux-gnu/release/bundle -maxdepth 2 -type f
 
       - name: Verify signature against embedded pubkey
         run: |
-          ARTIFACT=$(find releases -path "*/linux-x64/*" -name "*.AppImage" -not -name "*.sig" | head -1)
+          ARTIFACT=$(find releases -path "*/linux-arm64/*" -name "*.AppImage" -not -name "*.sig" | head -1)
           if [ -z "$ARTIFACT" ]; then echo "::error::No .AppImage artifact found under releases/"; exit 1; fi
           base64 -d "${ARTIFACT}.sig" > /tmp/artifact.minisig
           minisign -Vm "$ARTIFACT" -x /tmp/artifact.minisig \
@@ -71,8 +71,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v7
         with:
-          name: linux-x64-release
-          path: releases/*/linux-x64/**
+          name: linux-arm64-release
+          path: releases/*/linux-arm64/**
           if-no-files-found: error
           retention-days: 30
 
@@ -82,8 +82,8 @@ jobs:
           {
             echo "## Publish al release-hub (manual, interim — TR-12 opción 3)"
             echo ""
-            echo "1. Descargar el artifact \`linux-x64-release\` de este run."
-            echo "2. Colocarlo en \`releases/<version>/linux-x64/\` en tu checkout local."
+            echo "1. Descargar el artifact \`linux-arm64-release\` de este run."
+            echo "2. Colocarlo en \`releases/<version>/linux-arm64/\` en tu checkout local."
             echo "3. \`bun run scripts/release.ts auth login\` (si no hay sesión activa)."
-            echo "4. \`bun run scripts/release.ts publish --target linux-x64 --slug haido --skip-build\`"
+            echo "4. \`bun run scripts/release.ts publish --target linux-arm64 --slug haido --skip-build\`"
           } >> "$GITHUB_STEP_SUMMARY"
