@@ -8,7 +8,7 @@ import type Order from '@/models/Order';
 import type { OrderItem } from '@/models/Order';
 import type Product from '@/models/Product';
 import type ITable from '@/models/Table';
-import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter';
+import type { TickmasterPrinterConfig } from '@/models/ThermalPrinter';
 import type User from '@/models/User';
 import type { IAuditContext } from '@/services/audit.service';
 import * as audit from '@/services/audit.service';
@@ -63,7 +63,7 @@ export interface AppState {
   selectedUser: User | null;
   selectedOrder: Order | null;
   selectedOrderId: number | null;
-  thermalPrinterOptions: ThermalPrinterServiceOptions | null;
+  thermalPrinterOptions: TickmasterPrinterConfig | null;
   tables: ITable[];
   categories: Category[];
   products: Product[];
@@ -233,7 +233,7 @@ function createAppStore() {
     });
   };
 
-  const setThermalPrinterOptions = (options: ThermalPrinterServiceOptions | null) =>
+  const setThermalPrinterOptions = (options: TickmasterPrinterConfig | null) =>
     setState('thermalPrinterOptions', options);
 
   const setTables = (tables: ITable[]) => {
@@ -371,7 +371,8 @@ function createAppStore() {
 
   const setAutoOpenCashDrawer = (enabled: boolean) => {
     const ctx = getAuditContext();
-    if (ctx) void audit.logSettingsChange(ctx, 'autoOpenCashDrawer', state.autoOpenCashDrawer, enabled);
+    if (ctx)
+      void audit.logSettingsChange(ctx, 'autoOpenCashDrawer', state.autoOpenCashDrawer, enabled);
     setState('autoOpenCashDrawer', enabled);
     debouncedLocalStorageSet('tpv-auto-open-cash-drawer', enabled.toString());
   };
@@ -570,7 +571,12 @@ function createAppStore() {
     );
     const ctx = getAuditContext();
     if (ctx) {
-      void audit.logOrderComplete(ctx, completedOrder.id, completedOrder, completedOrder.paymentMethod);
+      void audit.logOrderComplete(
+        ctx,
+        completedOrder.id,
+        completedOrder,
+        completedOrder.paymentMethod
+      );
       if (completedOrder.paymentMethod) {
         void audit.logPayment(ctx, completedOrder.id, completedOrder.paymentMethod, {
           total: completedOrder.total,

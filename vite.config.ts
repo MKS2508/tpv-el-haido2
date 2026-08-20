@@ -1,7 +1,7 @@
-import { defineConfig } from "vite";
-import solid from "vite-plugin-solid";
-import tailwindcss from "@tailwindcss/vite";
-import path from "path";
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
+import solid from 'vite-plugin-solid';
+import { defineConfig } from 'vitest/config';
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -15,7 +15,7 @@ export default defineConfig(async () => ({
 
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': path.resolve(__dirname, './src'),
     },
   },
 
@@ -34,7 +34,7 @@ export default defineConfig(async () => ({
     global: 'globalThis',
     'process.env': {},
     'import.meta.env.PWA_BUILD': JSON.stringify(process.env.PWA_BUILD || 'false'),
-    '__PWA_BASE__': JSON.stringify(process.env.PWA_BUILD === 'true' ? '/tpv' : ''),
+    __PWA_BASE__: JSON.stringify(process.env.PWA_BUILD === 'true' ? '/tpv' : ''),
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
@@ -48,14 +48,33 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host
       ? {
-          protocol: "ws",
+          protocol: 'ws',
           host,
           port: 1421,
         }
       : undefined,
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+      ignored: ['**/src-tauri/**'],
+    },
+  },
+
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
+    passWithNoTests: true,
+    include: ['src/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.d.ts',
+        'src/components/**',
+        'src/main.tsx',
+        'src/App.tsx',
+      ],
     },
   },
 }));

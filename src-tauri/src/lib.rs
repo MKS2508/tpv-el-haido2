@@ -229,6 +229,23 @@ async fn write_json_config(app: tauri::AppHandle, config: Value) -> Result<Strin
     Ok(format!("Configuration saved to: {}", config_path.display()))
 }
 
+#[tauri::command]
+async fn read_json_config(app: tauri::AppHandle) -> Result<Option<Value>, String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| format!("Failed to get app directory: {}", e))?;
+    let config_path = app_dir.join("printerSettings.json");
+
+    if !config_path.exists() {
+        return Ok(None);
+    }
+
+    let content = fs::read_to_string(&config_path)
+        .map_err(|e| format!("Failed to read config: {}", e))?;
+    let value: Value = serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse config: {}", e))?;
+
+    Ok(Some(value))
+}
+
 // ==================== License Commands ====================
 
 #[tauri::command]
@@ -493,6 +510,7 @@ pub fn run() {
             import_data,
             clear_all_data,
             write_json_config,
+            read_json_config,
             // License
             check_license_status,
             validate_and_activate_license,

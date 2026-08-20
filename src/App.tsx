@@ -1,4 +1,5 @@
 import './App.css';
+import { isErr } from '@mks2508/no-throw';
 import { Motion, Presence } from '@motionone/solid';
 import {
   BeerIcon,
@@ -36,19 +37,15 @@ import UpdateChecker from '@/components/UpdateChecker';
 import { Toaster } from '@/components/ui/toaster';
 import { useAboutDialog } from '@/hooks/useAboutDialog';
 import { config } from '@/lib/config';
+import { createContextLogger } from '@/lib/logger';
 import { ASSET_PATHS } from '@/lib/paths';
 import { setupNativeMenu } from '@/lib/setupNativeMenu';
 import { useAppTheme } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
 import type Product from '@/models/Product';
-import {
-  BreakLine,
-  CharacterSet,
-  PrinterTypes,
-  type ThermalPrinterServiceOptions,
-} from '@/models/ThermalPrinter';
-import { createContextLogger } from '@/lib/logger';
+import type { TickmasterPrinterConfig } from '@/models/ThermalPrinter';
 import { getPlatformService } from '@/services/platform';
+import { loadPrinterConfig } from '@/services/thermal-printer.service';
 import useStore from '@/store/store';
 import type { LicenseStatus } from '@/types/license';
 
@@ -103,7 +100,7 @@ function App() {
     document.title = titles[section] || 'TPV El Haido';
   });
 
-  const handleThermalPrinterOptionsChange = (options: ThermalPrinterServiceOptions | null) => {
+  const handleThermalPrinterOptionsChange = (options: TickmasterPrinterConfig | null) => {
     store.setThermalPrinterOptions(options);
   };
 
@@ -281,17 +278,14 @@ function App() {
       ]);
     }
 
-    // Initialize thermal printer options
+    // Initialize thermal printer options: load persisted config from disk, if any.
     if (!store.state.thermalPrinterOptions) {
-      store.setThermalPrinterOptions({
-        type: PrinterTypes.EPSON,
-        interface: '//COM3',
-        characterSet: CharacterSet.PC852_LATIN2,
-        removeSpecialCharacters: false,
-        lineCharacter: '-',
-        breakLine: BreakLine.WORD,
-        options: { timeout: 3000 },
-      });
+      const configResult = await loadPrinterConfig();
+      if (!isErr(configResult) && configResult.value) {
+        store.setThermalPrinterOptions(configResult.value);
+      }
+      // si es null (primera vez, sin configurar aún): queda `null`, la UI de Settings debe
+      // mostrar los campos vacíos, no un objeto inventado.
     }
   };
 
@@ -478,144 +472,119 @@ function App() {
               'h-full w-full overflow-hidden flex flex-col text-card-foreground',
               isMobile() ? 'bg-card' : 'rounded-2xl border border-foreground/8'
             )}
-            style={!isMobile() ? { background: 'color-mix(in oklch, var(--card) 90%, var(--foreground) 10%)' } : {}}
+            style={
+              !isMobile()
+                ? { background: 'color-mix(in oklch, var(--card) 90%, var(--foreground) 10%)' }
+                : {}
+            }
           >
-              <div
-                class={cn('flex-shrink-0', isMobile() ? 'px-3 pt-3' : 'px-4 pt-4')}
-              >
-                <SectionHeader menuItems={menuItems} activeSection={activeSection()} />
-              </div>
+            <div class={cn('flex-shrink-0', isMobile() ? 'px-3 pt-3' : 'px-4 pt-4')}>
+              <SectionHeader menuItems={menuItems} activeSection={activeSection()} />
+            </div>
 
-              <div class="flex-1 overflow-hidden">
-                <Switch>
-                  <Match when={activeSection() === 'home'}>
-                    <div
-                      class={cn(
-                        'h-full overflow-y-auto',
-                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
-                      )}
+            <div class="flex-1 overflow-hidden">
+              <Switch>
+                <Match when={activeSection() === 'home'}>
+                  <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-3 pb-3' : 'px-4 pb-4')}>
+                    <ErrorBoundary
+                      level="section"
+                      fallbackTitle="Error en Inicio"
+                      fallbackMessage="No se ha podido cargar la pantalla de inicio."
                     >
-                      <ErrorBoundary
-                        level="section"
-                        fallbackTitle="Error en Inicio"
-                        fallbackMessage="No se ha podido cargar la pantalla de inicio."
-                      >
-                        <Home userName={store.state.selectedUser?.name || 'Usuario desconocido'} />
-                      </ErrorBoundary>
-                    </div>
-                  </Match>
+                      <Home userName={store.state.selectedUser?.name || 'Usuario desconocido'} />
+                    </ErrorBoundary>
+                  </div>
+                </Match>
 
-                  <Match when={activeSection() === 'products'}>
-                    <div
-                      class={cn(
-                        'h-full overflow-y-auto',
-                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
-                      )}
+                <Match when={activeSection() === 'products'}>
+                  <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-3 pb-3' : 'px-4 pb-4')}>
+                    <ErrorBoundary
+                      level="section"
+                      fallbackTitle="Error en Productos"
+                      fallbackMessage="No se ha podido cargar la pantalla de productos."
                     >
-                      <ErrorBoundary
-                        level="section"
-                        fallbackTitle="Error en Productos"
-                        fallbackMessage="No se ha podido cargar la pantalla de productos."
-                      >
-                        <Products />
-                      </ErrorBoundary>
-                    </div>
-                  </Match>
+                      <Products />
+                    </ErrorBoundary>
+                  </div>
+                </Match>
 
-                  <Match when={activeSection() === 'newOrder'}>
-                    <div class="h-full overflow-hidden">
-                      <ErrorBoundary
-                        level="section"
-                        fallbackTitle="Error en Nueva Comanda"
-                        fallbackMessage="No se ha podido cargar la pantalla de nuevas comandas."
-                      >
-                        <NewOrder />
-                      </ErrorBoundary>
-                    </div>
-                  </Match>
-
-                  <Match when={activeSection() === 'orderHistory'}>
-                    <div
-                      class={cn(
-                        'h-full overflow-y-auto',
-                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
-                      )}
+                <Match when={activeSection() === 'newOrder'}>
+                  <div class="h-full overflow-hidden">
+                    <ErrorBoundary
+                      level="section"
+                      fallbackTitle="Error en Nueva Comanda"
+                      fallbackMessage="No se ha podido cargar la pantalla de nuevas comandas."
                     >
-                      <ErrorBoundary
-                        level="section"
-                        fallbackTitle="Error en Historial"
-                        fallbackMessage="No se ha podido cargar el historial de pedidos."
-                      >
-                        <OrderHistory
-                          setSelectedOrderId={store.setSelectedOrderId}
-                          setActiveSection={setActiveSection}
-                          selectedOrder={store.state.selectedOrder}
-                          setSelectedOrder={store.setSelectedOrder}
+                      <NewOrder />
+                    </ErrorBoundary>
+                  </div>
+                </Match>
+
+                <Match when={activeSection() === 'orderHistory'}>
+                  <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-3 pb-3' : 'px-4 pb-4')}>
+                    <ErrorBoundary
+                      level="section"
+                      fallbackTitle="Error en Historial"
+                      fallbackMessage="No se ha podido cargar el historial de pedidos."
+                    >
+                      <OrderHistory
+                        setSelectedOrderId={store.setSelectedOrderId}
+                        setActiveSection={setActiveSection}
+                        selectedOrder={store.state.selectedOrder}
+                        setSelectedOrder={store.setSelectedOrder}
+                      />
+                    </ErrorBoundary>
+                  </div>
+                </Match>
+
+                <Match when={activeSection() === 'customers'}>
+                  <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-3 pb-3' : 'px-4 pb-4')}>
+                    <ErrorBoundary
+                      level="section"
+                      fallbackTitle="Error en Clientes"
+                      fallbackMessage="No se ha podido cargar la pantalla de clientes."
+                    >
+                      <Customers />
+                    </ErrorBoundary>
+                  </div>
+                </Match>
+
+                <Match when={activeSection() === 'aeatInvoices'}>
+                  <div class={cn('h-full overflow-y-auto', isMobile() ? 'px-3 pb-3' : 'px-4 pb-4')}>
+                    <ErrorBoundary
+                      level="section"
+                      fallbackTitle="Error en Facturas AEAT"
+                      fallbackMessage="No se ha podido cargar la pantalla de facturación."
+                    >
+                      <AEATInvoices />
+                    </ErrorBoundary>
+                  </div>
+                </Match>
+
+                <Match when={activeSection() === 'settings' && store.state.selectedUser}>
+                  <div class="h-full overflow-hidden">
+                    <ErrorBoundary
+                      level="section"
+                      fallbackTitle="Error en Ajustes"
+                      fallbackMessage="No se ha podido cargar la pantalla de ajustes."
+                    >
+                      <OnboardingProvider>
+                        <SettingsPanel
+                          users={store.state.users}
+                          selectedUser={store.state.selectedUser!}
+                          handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
+                          thermalPrinterOptions={store.state.thermalPrinterOptions}
+                          isSidebarOpen={isSidebarOpen()}
+                          setSelectedUser={store.setSelectedUser}
+                          setUsers={store.setUsers}
+                          forceAboutTab={forceAboutTab()}
                         />
-                      </ErrorBoundary>
-                    </div>
-                  </Match>
-
-                  <Match when={activeSection() === 'customers'}>
-                    <div
-                      class={cn(
-                        'h-full overflow-y-auto',
-                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
-                      )}
-                    >
-                      <ErrorBoundary
-                        level="section"
-                        fallbackTitle="Error en Clientes"
-                        fallbackMessage="No se ha podido cargar la pantalla de clientes."
-                      >
-                        <Customers />
-                      </ErrorBoundary>
-                    </div>
-                  </Match>
-
-                  <Match when={activeSection() === 'aeatInvoices'}>
-                    <div
-                      class={cn(
-                        'h-full overflow-y-auto',
-                        isMobile() ? 'px-3 pb-3' : 'px-4 pb-4'
-                      )}
-                    >
-                      <ErrorBoundary
-                        level="section"
-                        fallbackTitle="Error en Facturas AEAT"
-                        fallbackMessage="No se ha podido cargar la pantalla de facturación."
-                      >
-                        <AEATInvoices />
-                      </ErrorBoundary>
-                    </div>
-                  </Match>
-
-                  <Match when={activeSection() === 'settings' && store.state.selectedUser}>
-                    <div class="h-full overflow-hidden">
-                      <ErrorBoundary
-                        level="section"
-                        fallbackTitle="Error en Ajustes"
-                        fallbackMessage="No se ha podido cargar la pantalla de ajustes."
-                      >
-                        <OnboardingProvider>
-                          <SettingsPanel
-                            users={store.state.users}
-                            selectedUser={store.state.selectedUser!}
-                            handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
-                            thermalPrinterOptions={
-                              store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
-                            }
-                            isSidebarOpen={isSidebarOpen()}
-                            setSelectedUser={store.setSelectedUser}
-                            setUsers={store.setUsers}
-                            forceAboutTab={forceAboutTab()}
-                          />
-                        </OnboardingProvider>
-                      </ErrorBoundary>
-                    </div>
-                  </Match>
-                </Switch>
-              </div>
+                      </OnboardingProvider>
+                    </ErrorBoundary>
+                  </div>
+                </Match>
+              </Switch>
+            </div>
           </div>
         </main>
 

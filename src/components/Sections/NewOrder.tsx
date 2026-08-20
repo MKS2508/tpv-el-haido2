@@ -1,6 +1,6 @@
+import { isErr } from '@mks2508/no-throw';
 import { Package } from 'lucide-solid';
 import { createEffect, createMemo, createSignal, For, Show } from 'solid-js';
-import { connectToThermalPrinter } from '@/assets/utils/utils';
 import CategorySidebar from '@/components/CategorySidebar';
 import ConfirmPaymentDialog from '@/components/ConfirmPaymentDialog';
 import OrderPanel from '@/components/OrderPanel';
@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import type Order from '@/models/Order';
 import type { OrderItem } from '@/models/Order';
 import type Product from '@/models/Product';
-import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter';
+import { printOrder } from '@/services/thermal-printer.service';
 import useStore from '@/store/store';
 import '@/styles/neworder.css';
 
@@ -93,33 +93,29 @@ function NewOrder() {
 
   const handleTicketPrintingComplete = async (shouldPrintTicket: boolean) => {
     if (shouldPrintTicket) {
-      try {
-        const printer = await connectToThermalPrinter(
-          store.state.thermalPrinterOptions as ThermalPrinterServiceOptions
-        );
-        if (printer && store.state.selectedOrder) {
-          await printer.printOrder(store.state.selectedOrder);
-          await printer.disconnect();
+      const config = store.state.thermalPrinterOptions;
+      if (!config || !store.state.selectedOrder) {
+        toast({
+          title: 'Impresora no configurada',
+          description: 'Configura la impresora en Ajustes antes de imprimir.',
+          duration: 3000,
+        });
+      } else {
+        const result = await printOrder(store.state.selectedOrder, config, store.state.taxRate);
+        if (isErr(result)) {
+          log.error('Error al imprimir ticket', new Error(result.error.message));
+          toast({
+            title: 'Error al imprimir ticket',
+            description: result.error.message,
+            duration: 3000,
+          });
+        } else {
           toast({
             title: 'Ticket impreso',
             description: 'Ticket impreso con exito.',
             duration: 3000,
           });
-        } else {
-          log.error('Error al conectar la impresora');
-          toast({
-            title: 'Error al imprimir ticket',
-            description: 'No se pudo imprimir el ticket. Por favor, intentelo de nuevo.',
-            duration: 3000,
-          });
         }
-      } catch (error) {
-        log.error('Error al imprimir ticket', error instanceof Error ? error : undefined);
-        toast({
-          title: 'Error al imprimir ticket',
-          description: 'No se pudo imprimir el ticket. Por favor, intentelo de nuevo.',
-          duration: 3000,
-        });
       }
     }
     store.setShowTicketDialog(false);

@@ -1,3 +1,4 @@
+import { isErr } from '@mks2508/no-throw';
 import {
   Activity,
   Bell,
@@ -36,6 +37,7 @@ import AEATSettings from '@/components/AEATSettings';
 import DemoDataLoader from '@/components/DemoDataLoader';
 import LicenseStatusCard from '@/components/LicenseStatus';
 import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
+import AuditLog from '@/components/Sections/AuditLog';
 import { ThemeDebugger } from '@/components/ThemeDebugger';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import ThermalPrinterSettings from '@/components/ThermalPrinterSettings.tsx';
@@ -71,15 +73,16 @@ import {
 import { createContextLogger } from '@/lib/logger';
 import { useAppTheme } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
-import type { ThermalPrinterServiceOptions } from '@/models/ThermalPrinter.ts';
+import type { TickmasterPrinterConfig } from '@/models/ThermalPrinter.ts';
 import type User from '@/models/User.ts';
 import { logLicenseDeactivate } from '@/services/audit.service';
 import { getPlatformService } from '@/services/platform';
-import AuditLog from '@/components/Sections/AuditLog';
 import type { StorageMode } from '@/services/storage-adapter.interface';
 import {
-  openCashDrawerOnly,
-  runThermalPrinterCommand,
+  openDrawer,
+  printTestTicket,
+  savePrinterConfig,
+  testConnection,
 } from '@/services/thermal-printer.service.ts';
 import useStore, { getBusinessNif } from '@/store/store';
 
@@ -91,8 +94,8 @@ type SettingsPanelProps = {
   setSelectedUser: (user: User) => void;
   users: User[];
   setUsers: (users: User[]) => void;
-  thermalPrinterOptions: ThermalPrinterServiceOptions;
-  handleThermalPrinterOptionsChange: (options: ThermalPrinterServiceOptions) => void;
+  thermalPrinterOptions: TickmasterPrinterConfig | null;
+  handleThermalPrinterOptionsChange: (options: TickmasterPrinterConfig | null) => void;
   forceAboutTab?: boolean;
 };
 
@@ -255,50 +258,50 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     }
   };
 
-  async function handlePrintTestTicket() {
-    let result = '';
-    try {
-      result = await runThermalPrinterCommand('isConnected,execute,raw(Hello World)');
-      log.debug('Printer command result', { result });
-      if (result.indexOf('Error') !== -1 || result.indexOf('error') !== -1) {
-        toast({
-          title: 'Error al imprimir ticket',
-          description: 'No se pudo imprimir el ticket. Por favor, intentelo de nuevo.',
-          duration: 3000,
-        });
-      } else {
-        toast({
-          title: 'Ticket impreso',
-          description: 'Ticket impreso con exito.',
-          duration: 3000,
-        });
-      }
-      return result;
-    } catch (error) {
-      log.error('Failed to print', error instanceof Error ? error : undefined);
-      return result;
+  async function handlePrintTestTicket(): Promise<{ ok: boolean; message: string }> {
+    if (!props.thermalPrinterOptions) {
+      return { ok: false, message: 'Impresora no configurada.' };
     }
+    const result = await printTestTicket(props.thermalPrinterOptions);
+    log.debug('Printer test ticket result', { result });
+    if (isErr(result)) {
+      return { ok: false, message: result.error.message };
+    }
+    return { ok: true, message: 'Ticket de prueba impreso con éxito.' };
   }
 
-  const handleTestConnection = async () => {
+  const handleTestConnection = async (): Promise<{ ok: boolean; message: string }> => {
     log.debug('Testing printer connection');
-    const result = await runThermalPrinterCommand('isConnected');
-    log.debug('Printer command result', { result });
-    if (result.indexOf('true') !== -1) {
+    if (!props.thermalPrinterOptions) {
+      return { ok: false, message: 'Impresora no configurada.' };
+    }
+    const result = await testConnection(props.thermalPrinterOptions);
+    log.debug('Printer connection result', { result });
+    if (isErr(result)) {
+      return { ok: false, message: result.error.message };
+    }
+    if (result.value.paperOut) {
+      return { ok: false, message: 'Conexión establecida, pero sin papel.' };
+    }
+    return { ok: true, message: 'La conexión se ha establecido con éxito.' };
+  };
+
+  const handleSavePrinterConfig = async (config: TickmasterPrinterConfig): Promise<void> => {
+    props.handleThermalPrinterOptionsChange(config);
+    const result = await savePrinterConfig(config);
+    if (isErr(result)) {
       toast({
-        title: 'Conexion exitosa',
-        description: 'La conexion se ha establecido con exito.',
+        title: 'Error al guardar la configuración',
+        description: result.error.message,
         duration: 3000,
       });
     } else {
       toast({
-        title: 'Error de conexion',
-        description:
-          'No se ha podido establecer la conexion. Por favor, revise los ajustes de la impresora.',
+        title: 'Configuración guardada',
+        description: 'La configuración de la impresora se ha guardado correctamente.',
         duration: 3000,
       });
     }
-    return result;
   };
 
   const handleStorageModeToggle = (newMode: StorageMode) => {
@@ -390,15 +393,15 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
       {/* Right content area — relative+absolute guarantees height for scroll containers */}
       <div class="flex-1 min-w-0 relative">
         <div class="absolute inset-0 overflow-hidden">
-        <Switch>
-          <Match when={activeTab() === 'general'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
-                  <SlidersHorizontal class="h-5 w-5 text-primary" />
-                  Configuración General
-                </h2>
-                <div class="space-y-6">
+          <Switch>
+            <Match when={activeTab() === 'general'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
+                    <SlidersHorizontal class="h-5 w-5 text-primary" />
+                    Configuración General
+                  </h2>
+                  <div class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div class="space-y-4">
                         <div class="flex items-center justify-between p-4 bg-foreground/5 rounded-xl ring-1 ring-foreground/10">
@@ -481,7 +484,9 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                         </div>
                         <Select<string>
                           value={state.storageMode}
-                          onChange={(value) => value && handleStorageModeToggle(value as StorageMode)}
+                          onChange={(value) =>
+                            value && handleStorageModeToggle(value as StorageMode)
+                          }
                           options={['sqlite', 'http', 'indexeddb']}
                           itemComponent={(itemProps) => (
                             <SelectItem value={itemProps.item.rawValue}>
@@ -555,8 +560,8 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                         <span>Ejecutar Asistente de Configuración</span>
                       </Button>
                       <p class="text-xs text-muted-foreground px-1">
-                        Reinicia el asistente para volver a configurar el almacenamiento, importar datos
-                        o crear usuarios iniciales.
+                        Reinicia el asistente para volver a configurar el almacenamiento, importar
+                        datos o crear usuarios iniciales.
                       </p>
                     </div>
 
@@ -565,24 +570,25 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                         <DemoDataLoader />
                       </div>
                     </Show>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Match>
+            </Match>
 
-          <Match when={activeTab() === 'appearance'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
-                  <Palette class="h-5 w-5 text-primary" />
-                  Configuración de Apariencia
-                </h2>
-                <div class="space-y-6">
+            <Match when={activeTab() === 'appearance'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
+                    <Palette class="h-5 w-5 text-primary" />
+                    Configuración de Apariencia
+                  </h2>
+                  <div class="space-y-6">
                     <div class="space-y-4">
                       <div class="space-y-2">
                         <Label class="text-sm font-medium">Control de Tema</Label>
                         <p class="text-xs text-muted-foreground">
-                          Personaliza la apariencia con diferentes temas de color y modo claro/oscuro.
+                          Personaliza la apariencia con diferentes temas de color y modo
+                          claro/oscuro.
                         </p>
                       </div>
                       <div class="p-5 bg-foreground/5 rounded-xl ring-1 ring-foreground/10">
@@ -594,7 +600,8 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                       <div class="space-y-2">
                         <Label class="text-sm font-medium">Imágenes de Productos</Label>
                         <p class="text-xs text-muted-foreground">
-                          Configura como se muestran las imágenes de productos sin imagen personalizada.
+                          Configura como se muestran las imágenes de productos sin imagen
+                          personalizada.
                         </p>
                       </div>
                       <div class="flex items-center justify-between p-4 bg-foreground/5 rounded-xl ring-1 ring-foreground/10">
@@ -633,7 +640,8 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                           Rendimiento Visual
                         </Label>
                         <p class="text-xs text-muted-foreground">
-                          Ajusta el nivel de efectos visuales según el rendimiento de tu dispositivo.
+                          Ajusta el nivel de efectos visuales según el rendimiento de tu
+                          dispositivo.
                         </p>
                       </div>
 
@@ -650,9 +658,13 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                               <SelectValue placeholder="Seleccionar modo" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="auto">Automático (detectar dispositivo)</SelectItem>
+                              <SelectItem value="auto">
+                                Automático (detectar dispositivo)
+                              </SelectItem>
                               <SelectItem value="high">Alto (todos los efectos)</SelectItem>
-                              <SelectItem value="balanced">Equilibrado (efectos reducidos)</SelectItem>
+                              <SelectItem value="balanced">
+                                Equilibrado (efectos reducidos)
+                              </SelectItem>
                               <SelectItem value="low">Bajo (sin animaciones)</SelectItem>
                             </SelectContent>
                           </Select>
@@ -689,124 +701,127 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                         </div>
                       </div>
                     </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Match>
+            </Match>
 
-          <Match when={activeTab() === 'users'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card class="border-foreground/10">
-                    <CardHeader class="border-b border-foreground/10">
-                      <CardTitle class="flex items-center gap-2 text-lg">
-                        <Users class="h-5 w-5 text-primary" />
-                        Usuario Actual
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent class="p-6 space-y-4">
-                      <div class="flex items-center gap-4 p-4 bg-foreground/5 rounded-xl">
-                        <Avatar class="h-16 w-16">
-                          <AvatarImage
-                            src={props.selectedUser.profilePicture}
-                            alt={props.selectedUser.name}
-                          />
-                          <AvatarFallback class="text-lg">
-                            {props.selectedUser.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div class="space-y-1">
-                          <p class="text-base font-semibold">{props.selectedUser.name}</p>
-                          <p class="text-xs text-muted-foreground">Usuario actual</p>
+            <Match when={activeTab() === 'users'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card class="border-foreground/10">
+                      <CardHeader class="border-b border-foreground/10">
+                        <CardTitle class="flex items-center gap-2 text-lg">
+                          <Users class="h-5 w-5 text-primary" />
+                          Usuario Actual
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent class="p-6 space-y-4">
+                        <div class="flex items-center gap-4 p-4 bg-foreground/5 rounded-xl">
+                          <Avatar class="h-16 w-16">
+                            <AvatarImage
+                              src={props.selectedUser.profilePicture}
+                              alt={props.selectedUser.name}
+                            />
+                            <AvatarFallback class="text-lg">
+                              {props.selectedUser.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div class="space-y-1">
+                            <p class="text-base font-semibold">{props.selectedUser.name}</p>
+                            <p class="text-xs text-muted-foreground">Usuario actual</p>
+                          </div>
                         </div>
-                      </div>
-                      <Button onClick={() => handleEditUser(props.selectedUser)} class="w-full gap-2">
-                        <Pencil class="h-4 w-4" />
-                        Editar Usuario
-                      </Button>
-                    </CardContent>
-                  </Card>
+                        <Button
+                          onClick={() => handleEditUser(props.selectedUser)}
+                          class="w-full gap-2"
+                        >
+                          <Pencil class="h-4 w-4" />
+                          Editar Usuario
+                        </Button>
+                      </CardContent>
+                    </Card>
 
-                  <Card class="border-foreground/10">
-                    <CardHeader class="border-b border-foreground/10">
-                      <CardTitle class="flex items-center gap-2 text-lg">
-                        <Users class="h-5 w-5 text-primary" />
-                        Lista de Usuarios
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent class="p-6 space-y-4">
-                      <div class="space-y-2 max-h-[300px] overflow-y-auto">
-                        <For each={props.users}>
-                          {(user) => (
-                            <div class="flex items-center justify-between p-3 bg-foreground/[0.03] rounded-xl ring-1 ring-foreground/8 hover:bg-foreground/5 transition-colors">
-                              <div class="flex items-center gap-3">
-                                <Avatar class="h-10 w-10">
-                                  <AvatarImage src={user.profilePicture} alt={user.name} />
-                                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <span class="text-sm font-medium">{user.name}</span>
+                    <Card class="border-foreground/10">
+                      <CardHeader class="border-b border-foreground/10">
+                        <CardTitle class="flex items-center gap-2 text-lg">
+                          <Users class="h-5 w-5 text-primary" />
+                          Lista de Usuarios
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent class="p-6 space-y-4">
+                        <div class="space-y-2 max-h-[300px] overflow-y-auto">
+                          <For each={props.users}>
+                            {(user) => (
+                              <div class="flex items-center justify-between p-3 bg-foreground/[0.03] rounded-xl ring-1 ring-foreground/8 hover:bg-foreground/5 transition-colors">
+                                <div class="flex items-center gap-3">
+                                  <Avatar class="h-10 w-10">
+                                    <AvatarImage src={user.profilePicture} alt={user.name} />
+                                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  <span class="text-sm font-medium">{user.name}</span>
+                                </div>
+                                <div class="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="h-8 w-8"
+                                    onClick={() => handleEditUser(user)}
+                                  >
+                                    <Pencil class="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="h-8 w-8 hover:text-destructive"
+                                    onClick={() => handleDeleteUser(user.id)}
+                                  >
+                                    <Trash2 class="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                </div>
                               </div>
-                              <div class="flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  class="h-8 w-8"
-                                  onClick={() => handleEditUser(user)}
-                                >
-                                  <Pencil class="h-4 w-4 text-muted-foreground" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  class="h-8 w-8 hover:text-destructive"
-                                  onClick={() => handleDeleteUser(user.id)}
-                                >
-                                  <Trash2 class="h-4 w-4 text-muted-foreground" />
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </For>
-                      </div>
-                      <Button onClick={handleCreateUser} class="w-full gap-2">
-                        <PlusCircle class="h-4 w-4" />
-                        Crear Nuevo Usuario
-                      </Button>
-                    </CardContent>
-                  </Card>
+                            )}
+                          </For>
+                        </div>
+                        <Button onClick={handleCreateUser} class="w-full gap-2">
+                          <PlusCircle class="h-4 w-4" />
+                          Crear Nuevo Usuario
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Match>
+            </Match>
 
-          <Match when={activeTab() === 'printing'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
-                  <Printer class="h-5 w-5 text-primary" />
-                  Configuración de Impresión
-                </h2>
-                <div class="space-y-4">
+            <Match when={activeTab() === 'printing'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
+                    <Printer class="h-5 w-5 text-primary" />
+                    Configuración de Impresión
+                  </h2>
+                  <div class="space-y-4">
                     <ThermalPrinterSettings
                       options={props.thermalPrinterOptions}
-                      onOptionsChange={props.handleThermalPrinterOptionsChange}
+                      onSave={handleSavePrinterConfig}
                       onPrintTestTicket={handlePrintTestTicket}
                       onTestConnection={handleTestConnection}
                     />
+                  </div>
                 </div>
               </div>
-            </div>
-          </Match>
+            </Match>
 
-          <Match when={activeTab() === 'pos'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
-                  <DollarSign class="h-5 w-5 text-primary" />
-                  Configuración del Punto de Venta
-                </h2>
-                <div class="space-y-6">
+            <Match when={activeTab() === 'pos'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
+                    <DollarSign class="h-5 w-5 text-primary" />
+                    Configuración del Punto de Venta
+                  </h2>
+                  <div class="space-y-6">
                     <div class="space-y-4">
                       <div class="flex items-center justify-between p-4 bg-foreground/5 rounded-xl ring-1 ring-foreground/10">
                         <div class="space-y-0.5">
@@ -850,18 +865,25 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                         class="w-full gap-2"
                         onClick={() => {
                           const openCashDrawer = async () => {
-                            try {
-                              await openCashDrawerOnly();
+                            if (!props.thermalPrinterOptions) {
+                              toast({
+                                title: 'Impresora no configurada',
+                                description: 'Configura la impresora antes de abrir la caja.',
+                                duration: 3000,
+                              });
+                              return;
+                            }
+                            const result = await openDrawer(props.thermalPrinterOptions);
+                            if (isErr(result)) {
+                              toast({
+                                title: 'Error al abrir caja',
+                                description: result.error.message,
+                                duration: 3000,
+                              });
+                            } else {
                               toast({
                                 title: 'Caja abierta',
                                 description: 'El cajón de efectivo se ha abierto correctamente.',
-                                duration: 3000,
-                              });
-                            } catch (_error) {
-                              toast({
-                                title: 'Error al abrir caja',
-                                description:
-                                  'No se pudo abrir el cajón. Verifica la conexión de la impresora.',
                                 duration: 3000,
                               });
                             }
@@ -873,64 +895,71 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                         Abrir Caja Manualmente
                       </Button>
                     </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Match>
+            </Match>
 
-          <Match when={activeTab() === 'verifactu'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <AEATSettings />
+            <Match when={activeTab() === 'verifactu'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <AEATSettings />
+                </div>
               </div>
-            </div>
-          </Match>
+            </Match>
 
-          <Match when={activeTab() === 'license'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <LicenseStatusCard
-                  licenseStatus={state.licenseStatus}
-                  onRefresh={refreshLicenseStatus}
-                  onClearLicense={async () => {
-                    try {
-                      const platform = getPlatformService();
-                      const ctx = store.getAuditContext() ?? { userId: 0, userName: 'system', businessNif: getBusinessNif() };
-                      await platform.clearLicense();
-                      void logLicenseDeactivate(ctx);
-                      toast({
-                        title: 'Licencia eliminada',
-                        description: 'La licencia ha sido eliminada correctamente',
-                      });
-                      refreshLicenseStatus();
-                    } catch (error) {
-                      toast({
-                        title: 'Error',
-                        description: 'No se pudo eliminar la licencia',
-                        variant: 'destructive',
-                      });
-                      log.error('Error clearing license', error instanceof Error ? error : undefined);
-                    }
-                  }}
-                />
+            <Match when={activeTab() === 'license'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <LicenseStatusCard
+                    licenseStatus={state.licenseStatus}
+                    onRefresh={refreshLicenseStatus}
+                    onClearLicense={async () => {
+                      try {
+                        const platform = getPlatformService();
+                        const ctx = store.getAuditContext() ?? {
+                          userId: 0,
+                          userName: 'system',
+                          businessNif: getBusinessNif(),
+                        };
+                        await platform.clearLicense();
+                        void logLicenseDeactivate(ctx);
+                        toast({
+                          title: 'Licencia eliminada',
+                          description: 'La licencia ha sido eliminada correctamente',
+                        });
+                        refreshLicenseStatus();
+                      } catch (error) {
+                        toast({
+                          title: 'Error',
+                          description: 'No se pudo eliminar la licencia',
+                          variant: 'destructive',
+                        });
+                        log.error(
+                          'Error clearing license',
+                          error instanceof Error ? error : undefined
+                        );
+                      }
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          </Match>
+            </Match>
 
-          <Match when={activeTab() === 'audit'}>
-            <div class="absolute inset-0 overflow-hidden">
-              <AuditLog />
-            </div>
-          </Match>
+            <Match when={activeTab() === 'audit'}>
+              <div class="absolute inset-0 overflow-hidden">
+                <AuditLog />
+              </div>
+            </Match>
 
-          <Match when={activeTab() === 'security'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
-                  <ShieldCheck class="h-5 w-5 text-primary" />
-                  Configuración de Seguridad
-                </h2>
-                <div class="space-y-6">
+            <Match when={activeTab() === 'security'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
+                    <ShieldCheck class="h-5 w-5 text-primary" />
+                    Configuración de Seguridad
+                  </h2>
+                  <div class="space-y-6">
                     <div class="space-y-4">
                       <div class="flex items-center justify-between p-4 bg-foreground/5 rounded-xl ring-1 ring-foreground/10">
                         <div class="space-y-0.5">
@@ -961,19 +990,19 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                         Cambiar Contraseña
                       </Button>
                     </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Match>
+            </Match>
 
-          <Match when={activeTab() === 'notifications'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
-                  <Bell class="h-5 w-5 text-primary" />
-                  Configuración de Notificaciones
-                </h2>
-                <div class="space-y-4">
+            <Match when={activeTab() === 'notifications'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
+                    <Bell class="h-5 w-5 text-primary" />
+                    Configuración de Notificaciones
+                  </h2>
+                  <div class="space-y-4">
                     <div class="space-y-3">
                       <div class="flex items-center justify-between p-4 bg-foreground/5 rounded-xl ring-1 ring-foreground/10">
                         <div class="space-y-0.5">
@@ -1011,25 +1040,25 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                         <SwitchUI id="lowStockAlert" />
                       </div>
                     </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Match>
+            </Match>
 
-          <Match when={activeTab() === 'about'}>
-            <div class="absolute inset-0 overflow-y-auto">
-              <div class="px-6 py-5 space-y-5">
-                <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
-                  <Info class="h-5 w-5 text-primary" />
-                  Acerca de TPV El Haido
-                </h2>
-                <div>
+            <Match when={activeTab() === 'about'}>
+              <div class="absolute inset-0 overflow-y-auto">
+                <div class="px-6 py-5 space-y-5">
+                  <h2 class="text-lg font-semibold flex items-center gap-2 text-foreground mb-4">
+                    <Info class="h-5 w-5 text-primary" />
+                    Acerca de TPV El Haido
+                  </h2>
+                  <div>
                     <VersionInfo />
+                  </div>
                 </div>
               </div>
-            </div>
-          </Match>
-        </Switch>
+            </Match>
+          </Switch>
         </div>
       </div>
 

@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+coverage
 *.local
 
 # Local environment overrides (secrets, tokens)
@@ -60,3 +61,4 @@ docker-compose.override.yml
 # Release artifacts (binaries built locally — upload to release-hub via release.ts publish)
 # Keep folder structure, ignore binary content. .sig and latest.json are small but generated.
 releases/
+/.claude/agent-memory

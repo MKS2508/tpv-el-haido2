@@ -1,9 +1,10 @@
+import { isErr } from '@mks2508/no-throw';
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import type Order from '@/models/Order';
-import { runThermalPrinterCommand } from '@/services/thermal-printer.service';
+import { loadPrinterConfig, printOrder } from '@/services/thermal-printer.service';
 import type { LicenseStatus } from '@/types/license';
 import type { PlatformService } from './PlatformService';
 
@@ -19,66 +20,20 @@ export class TauriPlatformService implements PlatformService {
   // THERMAL PRINTER
   // ================================
 
-  /**
-   * Format order items into ESC/POS print sequence
-   */
-  private formatOrderForPrint(order: Order): string {
-    const lines: string[] = [];
-
-    // Header
-    lines.push('[ALIGN:CENTER]');
-    lines.push('[BOLD:ON]TPV EL HAIDO[BOLD:OFF]');
-    lines.push(`Ticket #${order.id}`);
-    lines.push(`Mesa: ${order.tableNumber || 'Barra'}`);
-    lines.push(`Fecha: ${order.date}`);
-    lines.push('[ALIGN:LEFT]');
-    lines.push('--------------------------------');
-
-    // Items
-    for (const item of order.items) {
-      const qty = item.quantity.toString().padStart(2, ' ');
-      const name = item.name.substring(0, 18).padEnd(18, ' ');
-      const price = (item.price * item.quantity).toFixed(2).padStart(7, ' ');
-      lines.push(`${qty} ${name} ${price}€`);
-    }
-
-    // Total
-    lines.push('--------------------------------');
-    lines.push('[BOLD:ON]');
-    lines.push(`TOTAL: ${order.total.toFixed(2)}€`.padStart(32, ' '));
-    lines.push('[BOLD:OFF]');
-
-    // Payment info
-    if (order.paymentMethod) {
-      lines.push(`Pago: ${order.paymentMethod}`);
-    }
-    if (order.totalPaid && order.totalPaid > order.total) {
-      lines.push(`Entregado: ${order.totalPaid.toFixed(2)}€`);
-      lines.push(`Cambio: ${order.change?.toFixed(2) || '0.00'}€`);
-    }
-
-    // Footer
-    lines.push('');
-    lines.push('[ALIGN:CENTER]');
-    lines.push('¡Gracias por su visita!');
-    lines.push('[CUT]');
-
-    return lines.join('\n');
-  }
-
   async printTicket(order: Order): Promise<void> {
-    try {
-      const printSequence = this.formatOrderForPrint(order);
-      await runThermalPrinterCommand(printSequence);
-      console.log('[TauriPlatformService] Ticket printed successfully');
-    } catch (error) {
-      console.error('[TauriPlatformService] Error printing ticket:', error);
-      throw error;
+    // Sin callers hoy (verificado: cero referencias a platformService.printTicket en
+    // components — el path real de impresión vive en NewOrder.tsx, que sí tiene acceso a
+    // store.state.taxRate). Se mantiene por conformidad de interfaz; ivaRate=0 (sin
+    // desglose) al no tener acceso al store desde esta capa.
+    const configResult = await loadPrinterConfig();
+    if (isErr(configResult) || configResult.value === null) {
+      throw new Error('Impresora no configurada. Ve a Ajustes > Impresión.');
     }
+    const result = await printOrder(order, configResult.value, 0);
+    if (isErr(result)) throw new Error(result.error.message);
   }
 
   async printReceipt(order: Order): Promise<void> {
-    // Receipt is same as ticket for now
     return this.printTicket(order);
   }
 

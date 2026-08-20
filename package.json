@@ -31,6 +31,8 @@
     "check": "biome check --write src && eslint src --config eslint.config.js",
     "typecheck": "tsgo --noEmit",
     "typecheck:tsc": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "build:aeat-sidecar": "bun run scripts/build-aeat-sidecar.ts",
     "build:aeat-sidecar:all": "bun run scripts/build-aeat-sidecar.ts --target all",
     "seed": "bun run scripts/seed.ts",
@@ -57,8 +59,10 @@
     "@amad3v/solid-chart": "^1.0.4",
     "@kobalte/core": "^0.13.9",
     "@mks2508/better-logger": "0.18.3",
-    "@mks2508/no-throw": "^0.2.0",
+    "@mks2508/no-throw": "^0.3.7",
     "@mks2508/shadcn-basecoat-theme-manager": "^4.3.2",
+    "@mks2508/tickmaster-core": "^0.3.0",
+    "@mks2508/tickmaster-sdk": "^0.2.0",
     "@motionone/solid": "^10.13.2",
     "@tanstack/solid-virtual": "^3.13.23",
     "@tauri-apps/api": "^2.10.1",
@@ -82,7 +86,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.10",
-    "concurrently": "^9.1.2",
     "@mks2508/mks-dev-session": "latest",
     "@tailwindcss/vite": "^4.2.2",
     "@tauri-apps/cli": "^2.10.1",
@@ -91,13 +94,18 @@
     "@types/node": "^25.5.2",
     "@typescript-eslint/parser": "^8.58.1",
     "@typescript/native-preview": "^7.0.0-dev.20260408.1",
+    "@vitest/coverage-v8": "^4.1.11",
+    "concurrently": "^9.1.2",
     "eslint": "^10.2.0",
     "eslint-plugin-solid": "^0.14.5",
+    "fake-indexeddb": "^6.2.5",
     "jscodeshift": "^17.3.0",
+    "jsdom": "^30.0.1",
     "oxlint": "^1.59.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
     "vite": "^8.0.7",
-    "vite-plugin-solid": "^2.11.12"
+    "vite-plugin-solid": "^2.11.12",
+    "vitest": "^4.1.11"
   }
 }

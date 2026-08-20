@@ -84,7 +84,17 @@
       "Bash(bun:*)",
       "Bash(node:*)",
       "Bash(COOLIFY_URL=\"http://77.42.25.248:8000\" COOLIFY_TOKEN=\"pat_v2_WqJYQQxJwOxiEKi4KQeCGLGxSFq8OJjqH5RwYPdSKM\" curl:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(claude --version)",
+      "Bash(env)",
+      "Bash(sed 's/=.\\\\{20,\\\\}/=<REDACTED>/')",
+      "Read(//Users/mks/.claude/**)",
+      "Bash(jq '.env' ~/.claude/settings.json)",
+      "Bash(mkdir -p /private/tmp/claude-501/-Volumes-KODAK1TB-REPOS-y-PROYECTOS-tauri-tpv-el-haido2/525479e8-6f84-4f5b-b874-537eecfbb437/scratchpad/bun-filetest)",
+      "Bash(rm -rf * .*)"
+    ],
+    "additionalDirectories": [
+      "/Users/mks/tickmaster"
     ]
   }
 }

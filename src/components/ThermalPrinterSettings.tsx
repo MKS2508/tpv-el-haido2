@@ -1,181 +1,83 @@
 import { Printer, Wifi } from 'lucide-solid';
-import { createSignal, For } from 'solid-js';
+import { createSignal } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import {
-  BreakLine,
-  CharacterSet,
-  PrinterTypes,
-  type ThermalPrinterServiceOptions,
-} from '@/models/ThermalPrinter.ts';
+import type { TickmasterPrinterConfig } from '@/models/ThermalPrinter.ts';
 
 interface ThermalPrinterSettingsProps {
-  options: ThermalPrinterServiceOptions;
-  onOptionsChange: (newOptions: ThermalPrinterServiceOptions) => void;
-  onPrintTestTicket: () => Promise<string>;
-  onTestConnection: () => Promise<string>;
+  options: TickmasterPrinterConfig | null;
+  onSave: (config: TickmasterPrinterConfig) => Promise<void>;
+  onPrintTestTicket: () => Promise<{ ok: boolean; message: string }>;
+  onTestConnection: () => Promise<{ ok: boolean; message: string }>;
 }
 
-const _defaultOptions: ThermalPrinterServiceOptions = {
-  type: PrinterTypes.EPSON,
-  interface: '192.168.1.100',
-  characterSet: CharacterSet.PC852_LATIN2,
-  removeSpecialCharacters: false,
-  lineCharacter: '-',
-  breakLine: BreakLine.WORD,
-  options: { timeout: 3000 },
-};
-
 export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProps) {
+  const [baseUrl, setBaseUrl] = createSignal(props.options?.baseUrl ?? '');
+  const [token, setToken] = createSignal(props.options?.token ?? '');
   const [isDialogOpen, setIsDialogOpen] = createSignal(false);
   const [testTicketDialogOpen, setTestTicketDialogOpen] = createSignal(false);
-  const [connectionStatus, setConnectionStatus] = createSignal<boolean | null>(null);
-  const [testTicketResult, setTestTicketResult] = createSignal('');
+  const [connectionResult, setConnectionResult] = createSignal<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
+  const [testTicketResult, setTestTicketResult] = createSignal<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
 
-  const handleChange = (field: keyof ThermalPrinterServiceOptions, value: unknown): void => {
-    props.onOptionsChange({ ...props.options, [field]: value });
+  const handleSave = async () => {
+    await props.onSave({ baseUrl: baseUrl(), token: token() });
   };
 
   const handleTestTicket = async () => {
     setTestTicketDialogOpen(true);
+    setTestTicketResult(null);
     const result = await props.onPrintTestTicket();
     setTestTicketResult(result);
   };
+
   const handleTestConnection = async () => {
     setIsDialogOpen(true);
+    setConnectionResult(null);
     const result = await props.onTestConnection();
-    setConnectionStatus(result.toLowerCase().indexOf('true') !== -1);
+    setConnectionResult(result);
   };
 
   return (
     <div class="space-y-4 mt-4 pb-4">
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-2">
-          <Label for="printerType">Tipo de Impresora</Label>
-          <Select
-            value={props.options.type}
-            onValueChange={(value) => handleChange('type', value as PrinterTypes)}
-          >
-            <SelectTrigger id="printerType">
-              <SelectValue placeholder="Seleccionar tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <For each={Object.values(PrinterTypes)}>
-                {(type: PrinterTypes) => <SelectItem value={type}>{type}</SelectItem>}
-              </For>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div class="space-y-2">
-          <Label for="interface">Interfaz de Conexión</Label>
+          <Label for="baseUrl">URL del daemon</Label>
           <Input
-            id="interface"
-            value={(props.options as ThermalPrinterServiceOptions).interface}
-            onInput={(e) =>
-              handleChange('interface' as keyof ThermalPrinterServiceOptions, e.currentTarget.value)
-            }
-            placeholder="tcp://xxx.xxx.xxx.xxx"
+            id="baseUrl"
+            value={baseUrl()}
+            onInput={(e) => setBaseUrl(e.currentTarget.value)}
+            placeholder="http://rpi-bar.vpn.mks2508.local:9100"
+          />
+        </div>
+        <div class="space-y-2">
+          <Label for="token">Token</Label>
+          <Input
+            id="token"
+            type="password"
+            value={token()}
+            onInput={(e) => setToken(e.currentTarget.value)}
+            placeholder="••••••••"
           />
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div class="space-y-2">
-          <Label for="characterSet">Conjunto de Caracteres</Label>
-          <Select
-            value={props.options.characterSet}
-            onValueChange={(value) => handleChange('characterSet', value as CharacterSet)}
-          >
-            <SelectTrigger id="characterSet">
-              <SelectValue placeholder="Seleccionar conjunto" />
-            </SelectTrigger>
-            <SelectContent>
-              <For each={Object.values(CharacterSet)}>
-                {(set: CharacterSet) => <SelectItem value={set}>{set}</SelectItem>}
-              </For>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div class="space-y-2">
-          <Label for="breakLine">Modo de Corte de Línea</Label>
-          <Select
-            value={props.options.breakLine}
-            onValueChange={(value) => handleChange('breakLine', value as BreakLine)}
-          >
-            <SelectTrigger id="breakLine">
-              <SelectValue placeholder="Seleccionar modo" />
-            </SelectTrigger>
-            <SelectContent>
-              <For each={Object.values(BreakLine)}>
-                {(mode: BreakLine) => <SelectItem value={mode}>{mode}</SelectItem>}
-              </For>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div class="grid grid-cols-3 gap-4 items-center">
-        <div class="space-y-2">
-          <Label for="lineCharacter">Caracter de Línea</Label>
-          <Select
-            value={props.options.lineCharacter}
-            onValueChange={(value) => handleChange('lineCharacter', value)}
-          >
-            <SelectTrigger id="lineCharacter">
-              <SelectValue placeholder="Seleccionar" />
-            </SelectTrigger>
-            <SelectContent>
-              <For each={['-', '_', '=', '*']}>
-                {(char: string) => <SelectItem value={char}>{char}</SelectItem>}
-              </For>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div class="space-y-2 col-span-2">
-          <Label for="timeout">
-            Tiempo de Espera: {(props.options.options as { timeout: number }).timeout}ms
-          </Label>
-          <input
-            type="range"
-            id="timeout"
-            min={1000}
-            max={10000}
-            step={100}
-            value={(props.options.options as { timeout: number }).timeout}
-            onInput={(e: InputEvent) =>
-              handleChange('options', {
-                ...props.options.options,
-                timeout: Number((e.currentTarget as HTMLInputElement).value),
-              })
-            }
-            class="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-          />
-        </div>
-      </div>
-      <div class="flex items-center space-x-2">
-        <Switch
-          id="removeSpecialCharacters"
-          checked={props.options.removeSpecialCharacters}
-          onChange={(checked: boolean) => handleChange('removeSpecialCharacters', checked)}
-        />
-        <Label for="removeSpecialCharacters">Eliminar Caracteres Especiales</Label>
+      <div class="pt-2">
+        <Button onClick={() => void handleSave()} class="w-full" variant="secondary">
+          Guardar
+        </Button>
       </div>
       <div class="grid grid-cols-2 gap-4 pt-4">
-        <Button onClick={handleTestTicket} class="w-full">
+        <Button onClick={() => void handleTestTicket()} class="w-full">
           <Printer class="mr-2 h-4 w-4" /> Imprimir Ticket de Prueba
         </Button>
-        <Button onClick={handleTestConnection} class="w-full">
+        <Button onClick={() => void handleTestConnection()} class="w-full">
           <Wifi class="mr-2 h-4 w-4" /> Probar Conexión
         </Button>
       </div>
@@ -185,12 +87,12 @@ export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProp
             <DialogTitle>Estado de la Conexión</DialogTitle>
           </DialogHeader>
           <div class="py-4">
-            {connectionStatus() === null ? (
+            {connectionResult() === null ? (
               <p>Probando conexión...</p>
-            ) : connectionStatus() ? (
-              <p class="text-primary">Conexión exitosa</p>
+            ) : connectionResult()?.ok ? (
+              <p class="text-primary">{connectionResult()?.message}</p>
             ) : (
-              <p class="text-destructive">Error de conexión</p>
+              <p class="text-destructive">{connectionResult()?.message}</p>
             )}
           </div>
         </DialogContent>
@@ -201,12 +103,12 @@ export default function ThermalPrinterSettings(props: ThermalPrinterSettingsProp
             <DialogTitle>Estado de la Impresión</DialogTitle>
           </DialogHeader>
           <div class="py-4">
-            {testTicketResult() === '' ? (
+            {testTicketResult() === null ? (
               <p>Intentando imprimir...</p>
-            ) : testTicketResult().indexOf('Error') !== -1 ? (
-              <p class="text-destructive">Error al imprimir ticket: {testTicketResult()}</p>
+            ) : testTicketResult()?.ok ? (
+              <p class="text-primary">{testTicketResult()?.message}</p>
             ) : (
-              <p class="text-primary">Ticket impreso con éxito</p>
+              <p class="text-destructive">{testTicketResult()?.message}</p>
             )}
           </div>
         </DialogContent>
