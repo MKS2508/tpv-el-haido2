@@ -1,0 +1,6 @@
+[lanes.tr15-cc]
+globs   = ["scripts/release.ts"]
+copy    = [".env.local"]
+install = true
+model   = "minimax"
+base    = "main"

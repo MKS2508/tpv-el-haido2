@@ -5,6 +5,38 @@
 **Priority**: medium (mejora de dev workflow, no bloquea producción de esta noche)
 **Estimated**: 2-3h (incluye investigación de auth CI→hub, no es solo YAML)
 
+## Estado (2026-08-21, re-check tras merge de TR-08/TR-10 en `949981a`)
+
+Los workflows nuevos (`linux-x64-deploy.yml`, `linux-arm64-deploy.yml`) ya existen y corren,
+pero siguen **rotos al 100%, con 2 blockers apilados** — ninguno de los dos resuelto todavía:
+
+1. **`bun install --frozen-lockfile` 404 en `@mks2508/tickmaster-{core,sdk}`** (run
+   `32420104820`, 55s, desde que TR-08 metió esas deps en `package.json` sin publicarlas nunca).
+   Root cause + fix → `TR-13-tickmaster-packaging-unification.md` + decisión
+   `docs/decisions/r3-tickmaster-packaging-2026-08-21.md`.
+2. **`linuxdeploy` falla en bundling AppImage** (run `32417966021`, ~11min in, previo a que
+   tickmaster entrara en el install):
+   `failed to decode secret key: ... Invalid symbol 32, offset 9` — el GitHub Secret
+   `TAURI_SIGNING_PRIVATE_KEY` tiene un espacio embebido rompiendo el base64. Acción directa de
+   waxin (tiene la key real, anti-leak rule) — resetear el secret limpio, re-run.
+
+Resolver blocker 1 destapa el 2 (no CI verde todavía tras TR-13 solo). El resto de este TR
+(objetivo original: auth CI→hub para publish automático) sigue sin arrancar — no hay evidencia
+de que se haya investigado la parte de auth PKCE-en-headless-runner descrita más abajo.
+
+## Estado (2026-08-21, cierre de blockers 1+2 + investigación del gap de auth)
+
+Ambos blockers de arriba **resueltos** — CI verde real (firma minisign verificada, no solo "job
+success") en Linux x64 y ARM64 tras TR-13 (tickmaster) + 4 blockers adicionales descubiertos en
+la propia verificación de CI (passphrase incorrecta, pubkey duplicada hardcodeada en los
+workflows, `xdg-utils` faltante en ARM64 — ver `docs/progress-log.md` para la cadena completa).
+
+El gap de auth CI→hub (objetivo original de este TR) **investigado con evidencia real** (código
+fuente de `desktop-release-hub`/`auth-oidc-elysia`, no solo lectura de docs) y decidido: ver
+`docs/decisions/r4-auth-ci-hub-client-credentials-2026-08-21.md` (OAuth2 `client_credentials`
+contra Pocket ID, cero cambios en `desktop-release-hub`). Ejecución →
+`docs/task-requests/TR-15-auth-ci-release-hub-client-credentials.md`.
+
 ## Contexto — por qué se borran las actuales
 
 Diagnosticado hoy (axon + `gh run view --log-failed`): `.github/workflows/linux-x64-deploy.yml` y

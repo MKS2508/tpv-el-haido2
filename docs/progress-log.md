@@ -379,3 +379,416 @@ Pipeline completo verde:
 - `e3b732d` fix(tauri): use bun run instead of npm in beforeBuildCommand
 - `27b8e05` fix(logger): cast TransportTarget for tsgo strict inference
 - `10145d8` fix(tauri): include icon.ico in bundle icons for Windows MSI/NSIS
+
+---
+
+## 2026-08-21 — Re-bootstrap tras mini-pivot al hub: drift detectado + TR-12 blockers documentados
+
+### Contexto
+
+Sesión previa hizo un pivot no planeado al repo `desktop-release-hub` (publish del release
+Linux 0.1.0 + build admin UI + fix de un bug de producción SPA-routing, todo fuera de
+`tpv-el-haido2` — ver ese repo para detalle, no duplicado aquí). Al volver a este repo tras
+compact, re-bootstrap completo (SSOT → progress-log → git log → CI) para reconstruir estado
+real en vez de confiar en memoria de sesión.
+
+### Drift detectado (vs. el estado asumido antes del pivot)
+
+- `roadmap.spec.yml` (SSOT) está parado en `updatedAt: 2026-05-10` — no conoce TR-07..TR-12,
+  sigue marcando `0.4.1.D-postprod` (admin UI) como `deferred` cuando ya se shippeó y deployó.
+  **No se toca en este turno** (mutación de SSOT requiere tooling — ver nota de tooling abajo).
+- Commit `949981a` ("Add Vitest tests, tickmaster printer & CI updates", HEAD) mergeó **TR-08
+  (printer Tickmaster) + TR-10 (test baseline Vitest)** fuera de la visibilidad de la sesión
+  anterior — ambos quedaban registrados como "aún sin commitear" en el resumen previo. Ya no es
+  cierto: 37 files changed, 6557 insertions, tests + printer service + config plumbing todo en
+  main.
+- Nota de tooling: la CLI `axon` instalada (`bunx @mks2508/axon` 0.2.2) espera un
+  `roadmapModel` (schema de nodos U3d) que este repo no tiene — `.claude/axon.config.json` usa
+  el schema viejo (`roadmapSpec`, phases/sub-phases). Migración pendiente, no se hace en este
+  turno (fuera de scope de lo pedido, se flaggea para decidir prioridad después).
+
+### TR-12 (CI pipelines Linux x64/ARM64) — el lane real antes del pivot, sigue roto
+
+Los workflows nuevos (`linux-x64-deploy.yml`, `linux-arm64-deploy.yml`) corren pero fallan al
+100%, **2 blockers apilados**:
+
+1. `bun install --frozen-lockfile` → 404 en `@mks2508/tickmaster-{core,sdk}` (npm nunca tuvo
+   esos paquetes publicados; local funcionaba solo por symlinks manuales a
+   `/Users/mks/tickmaster/packages/*`, sin entrada en `bun.lock`).
+2. `linuxdeploy` falla el bundling AppImage — `TAURI_SIGNING_PRIVATE_KEY` (GitHub Secret) tiene
+   un espacio embebido rompiendo el base64.
+
+### Decisión lockeada: r3 — unificar tickmaster en un paquete con subpath exports
+
+AskUserQuestion (1 ronda, 3 opciones con preview) + confirmación de waxin in-chat (la
+unificación ya se había acordado verbalmente, nunca quedó escrita — ahora lockeada
+formalmente). Ver `docs/decisions/r3-tickmaster-packaging-2026-08-21.md` para el detalle
+completo (contexto, opciones descartadas, trade-offs, qué queda sin decidir).
+
+**Trade-off explícito**: resolver blocker 1 (TR-13) no deja CI verde — destapa blocker 2
+(GH secret, acción directa de waxin, fuera del alcance de un agente por el valor real de la
+key).
+
+### Artefactos creados este turno
+
+- `docs/decisions/r3-tickmaster-packaging-2026-08-21.md`
+- `docs/task-requests/TR-13-tickmaster-packaging-unification.md`
+- `docs/task-requests/TR-12-rebuild-ci-pipelines-release-hub.md` — sección "Estado" añadida
+  (blockers 1+2, sin tocar el contenido original del TR)
+
+### Pendiente (no ejecutado, espera dirección de waxin)
+
+- Dispatch de TR-13 (task-decomposer → executor/sibling, toca `tickmaster/` + `tpv-el-haido2`).
+- Fix manual del GH Secret `TAURI_SIGNING_PRIVATE_KEY` (waxin).
+- Sync completo de `roadmap.spec.yml` — diferido, requiere decidir si se migra a la CLI `axon`
+  nueva o se sigue manteniendo el schema legacy manualmente.
+
+---
+
+## 2026-08-21 (cont.) — TR-13 ejecutado y cerrado + TAURI_SIGNING_PRIVATE_KEY reseteado
+
+### GH Secret `TAURI_SIGNING_PRIVATE_KEY`
+
+Reseteado directo (`gh secret set TAURI_SIGNING_PRIVATE_KEY < ~/.tauri/tpv-el-haido.key`, pipeado
+desde fichero para evitar la corrupción de espacio/CRLF que tenía el secret viejo de
+2026-01-27). `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` quedó intacto (no probado roto, no tocado —
+regla de cambios quirúrgicos). Blocker #2 de TR-12 resuelto en el lado del secret; falta re-run
+de CI para confirmarlo en la práctica (ver Pendiente).
+
+### TR-13 — cerrado, 5 milestones, 3 rondas de bugs reales encontrados y resueltos
+
+Dispatch en cadena (`task-decomposer` → 4 rondas de `task-executor`, cada una verificada
+independientemente antes de la siguiente). Ningún agente forzó un gate ni improvisó fuera de
+scope — cada bloqueo real paró la ejecución y esperó decisión explícita.
+
+1. **M1 (restructure)** — corrección con evidencia empírica al snippet de la decisión r3: Bun no
+   permite que un workspace hijo dependa del root vía `workspace:*` (spike aislado, reproducido).
+   El paquete unificado vive en `packages/tickmaster/` (nuevo workspace member), no en el root.
+2. **M2 (consumers internos)** — `apps/daemon` + `tui` migrados, incluidos 5 imports bypass por
+   ruta relativa en `tui` que el TR original no había detectado (`../packages/core/src/index.ts`
+   directo, sin declarar la dependency).
+3. **Bug #1 — FFI typing** (`apps/daemon/src/driver/printer.ts:95`, preexistente, ajeno a
+   TR-13): `bun-types` tipa el retorno FFI `ptr` como `bigint | Pointer`, `handle: Pointer | null`
+   no lo admitía. Fix: widen a 4 sitios (`handle` + `clearHalt`/`drain`/`query`). Verificado en
+   verde, AskUserQuestion antes de aplicar (excedía el scope literal del primer dispatch).
+4. **M3 (verify+commit)** — 153/153 tests, `check:declarations` OK, commit `afb3eac` en
+   `tickmaster` (LOCAL, sin push — ese repo sigue con commits previos sin pushear, decisión de
+   waxin).
+5. **M4 (publish)** — `@mks2508/tickmaster@0.1.0` publicado (OTP humano, no delegable a agente —
+   se corrió directo en la sesión, no por dispatch, para no perder la ventana de 30s del código).
+6. **Bug #2 — cross-runtime typing** (descubierto por el propio smoke de M5, no por CI): el SDK
+   se publica como `.ts` crudo (`files: ["src"]`, sin build) — cada consumer typechequea el mismo
+   fuente bajo su propio ambient lib. `fetch.preconnect` (extensión de Bun, no existe en DOM lib)
+   y `Uint8Array` vs `BlobPart` (Bun más laxo con `ArrayBuffer`/`SharedArrayBuffer`) rompían bajo
+   el `lib: DOM` de `tpv-el-haido2`. Fix: cast acotado en el fetcher + `new Uint8Array(bytes)`
+   antes de `new File()`. Verificado en AMBOS regímenes (tickmaster propio + overlay temporal
+   contra `tpv-el-haido2`, sin tocar nada trackeado). Commits `e73b782` (fix) + `807da57` (bump a
+   `0.1.1`). Publish `0.1.1` — mismo trámite de OTP humano.
+7. **M5 (consumer)** — `bun.lock` de una ronda anterior tenía `0.1.0` pineado dentro del rango
+   `^0.1.0` (frozen-lockfile no lo consideraba drift) — `bun update @mks2508/tickmaster` para
+   re-resolver, revertido el bump accidental de rango que ese comando intenta hacer. Smoke de
+   clean install verde, resuelve `0.1.1` explícito. Commit `7f05e97` en `tpv-el-haido2` (LOCAL,
+   sin push).
+
+**Trade-off documentado**: TR-12 (goal original — auth CI→hub para publish automático) sigue sin
+arrancar, fuera de scope de TR-13. El blocker #1 de TR-12 (tickmaster 404) está resuelto en
+disco pero no en CI real hasta que se pushee.
+
+### Verificación independiente (axon, no solo el self-report del executor)
+
+En cada ronda: re-corrida de `typecheck`/`git diff`/`git status`/`npm view` desde fuera del
+agente antes de aceptar su reporte. 2 casos donde el agente paró correctamente en vez de forzar
+un gate (widen de scope ambiguo, `bun.lock` con versión vieja pineada) — ambos resueltos con
+decisión explícita antes de continuar, ninguno con un fix silencioso.
+
+### Pendiente (no ejecutado, espera dirección de waxin)
+
+- **Push de ambos repos** (`tickmaster`: 13 commits locales acumulados — 10 previos + 3 de este
+  TR; `tpv-el-haido2`: 1 commit de este TR) — decisión de waxin, no tomada por axon.
+- Re-run de `linux-x64-deploy.yml`/`linux-arm64-deploy.yml` tras el push — único momento en que
+  se confirma el blocker #1 de TR-12 resuelto en CI real (verificado en local, no en CI todavía).
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — mismo origen que la key ya reseteada, no probado roto,
+  reset solo si el próximo CI run falla ahí.
+- TR-12 propiamente (auth CI→hub) sigue sin arrancar.
+- Sync completo de `roadmap.spec.yml` — sigue diferido.
+
+---
+
+## 2026-08-21 (cont.) — Sync retroactivo: canal OTA parcial (bundles JS) + fixes de Linux, hecho en paralelo por waxin
+
+**Contexto de la sync**: 16 commits (`3fcf080`..`c5bf90a`, más `ae0ad86` y los de diagnostics)
+llegaron pusheados en el mismo lote que TR-13 — trabajo de waxin en otra sesión, en paralelo,
+nunca reflejado en roadmap/progress-log. Reconstruido leyendo commits + el propio diseño que
+waxin ya documentó en `docs/ota/canal-parcial.md` (154 líneas, completo — no improvisado por
+axon, solo indexado aquí).
+
+### Qué es — segundo canal de update, independiente del release-hub
+
+**No reemplaza nada de r1/r2** (`tauri-plugin-updater` contra el hub sigue siendo el canal
+nativo, sin tocar — confirmado explícito en el propio doc: "El canal nativo... no se toca").
+Es un canal **adicional**, más rápido, para cambios que no tocan Rust: CSS/layout/lógica de UI
+Solid/adaptador de impresora (vive en TS) se distribuyen como bundle JS firmado, sin reinstalar
+el binario nativo ni reiniciar el proceso — comando Rust nuevo o dependencia nativa siguen
+requiriendo el canal nativo de siempre.
+
+**Arquitectura** (detalle completo en `docs/ota/canal-parcial.md`, no duplicado aquí):
+- Custom URI scheme (`tpvapp://`) sirve SIEMPRE desde el mismo origin — evita perder
+  `localStorage` (onboarding/tema/storage mode) al alternar embebido↔bundle.
+- Manifest firmado ed25519 (clave distinta de la minisign del updater nativo), ventana de
+  compatibilidad `minNativeVersion`/`maxNativeVersion`.
+- Ciclo stage→activate→app-ready→rollback: verifica (compat→hash→firma) ANTES de descomprimir;
+  activar es instantáneo (solo mueve punteros); rollback por **contador de arranques sin
+  confirmar**, no por timer (un timer no cubre que el bundle tumbe el proceso).
+- Estado en fichero (`{appData}/bundles/state.json`, no symlink — Windows exige privilegios
+  para symlinks).
+- Server-side: `desktop-release-hub` (repo separado), handoff propio ahí
+  (`docs/handoffs/ota-bundles-js-hub-side.md`) — pendiente un bug de ventana de versiones en el
+  hub real (funciona hoy contra `scripts/ota-fake-hub.ts`, hub falso local).
+
+### Verificado en producción real (`supermicro-pcbar`, WebKitGTK 2.52.6, NVIDIA, COSMIC/Wayland)
+
+Ciclo completo ejercitado con un bundle real de 16MB: fetch manifest → download → verificación
+sha256+ed25519 → descompresión → stage → activate → la webview sirve el bundle (no el
+embebido). Red de seguridad probada: 3 arranques sin confirmar `app-ready` → rollback automático
+al embebido. 43 tests (`cargo test --lib ota`), incluidos 3 de contrato cruzado contra la salida
+real de `build-bundle.ts`.
+
+**Coordinación con TR-13 (esta misma sesión, en paralelo)**: el propio doc de waxin nota
+explícitamente que no se tocó `thermal-printer.service.ts` "mientras otra sesión lo estaba
+migrando" — la migración a `@mks2508/tickmaster` de TR-13. Cero conflicto de merge, ambos
+threads coexistieron limpio en el mismo push.
+
+### Trabajo relacionado (mismo lote, Linux/`supermicro-pcbar`)
+
+- `scripts/diagnose-host.sh` + `docs/diagnostics/README.md` — diagnóstico de compositing GPU
+  del webview (WebKitGTK), discrimina por memoria de GPU del proceso, no por presencia.
+- `fix(build): recuperar compositing por GPU en los AppImage de Linux` (`29b6708`).
+- `feat(install): instalador de escritorio para el AppImage de Linux` (`85c6fd5`).
+- `fix(license): fingerprint de máquina funcional en Linux` (`ae0ad86`).
+
+### Pendiente (según el propio doc de waxin, no inferido)
+
+- Integración con el hub real (bug de ventana de versiones, ver handoff en `desktop-release-hub`).
+- Ventana horaria de aplicación (hoy: sin pedido en pantalla + 1min sin actividad; falta acotar
+  además a fuera de horario de apertura del bar).
+- Reporte de aplicación/rollback al hub (hoy el cliente revierte solo pero el hub no se entera).
+- Guarda de impresión en curso (deliberadamente no añadida para no pisar la migración de TR-13).
+
+### Nota de roadmap
+
+`roadmap.spec.yml` no se tocó (sync retroactivo documental, no un milestone nuevo a lockear —
+el propio trabajo ya está hecho y documentado por waxin). Cuando se retome la migración del
+schema legacy a la CLI `axon` nueva, este canal OTA debería entrar como sub-fase propia bajo
+0.4.x (paralela a release-hub, no secuencial).
+
+---
+
+## 2026-08-21 (cont.) — TR-12 blockers 1-2-3 cerrados: CI Linux x64 + ARM64 en verde por primera vez
+
+### Resumen
+
+Tras TR-13 (tickmaster) y TR-14 (OTA CI), la cadena de blockers de TR-12 se cerró completa esta
+madrugada. 5 blockers reales encontrados y resueltos en cadena, cada uno descubierto solo
+después de resolver el anterior — documentado en detalle porque el patrón (un fix destapa el
+siguiente) es justo el motivo por el que este TR llevaba desde el 20 de mayo sin cerrar:
+
+1. **`@mks2508/tickmaster-{core,sdk}` 404 en npm** — resuelto en TR-13.
+2. **`TAURI_SIGNING_PRIVATE_KEY` corrupto** (espacio embebido en el base64, secret de 2026-01-27)
+   — reseteado desde `~/.tauri/tpv-el-haido.key` vía `gh secret set ... < fichero` (pipe directo,
+   nunca paste, para no repetir la corrupción).
+3. **`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — la de Bitwarden (item HAIDO/PASSPHRASE) no
+   descifraba la key**, sin explicación recuperable ("ni puta idea" — waxin). Decisión: rotar el
+   par completo. Confirmado antes de rotar que **ninguna instalación de producción** corre con
+   la pubkey vieja (Windows publicado al hub pero nunca instalado en el bar, TKT-10 quedó
+   pendiente) — cero dispositivos huérfanos.
+4. **Primer intento de rotación perdió la passphrase nueva** — vivía solo en una variable de
+   shell que no persiste entre llamadas de herramienta separadas (lección operativa: todo
+   generación+verificación+persistencia de un secret nuevo tiene que ser una sola operación
+   atómica, nunca repartida en pasos separados confiando en env vars). El intento de guardarla
+   en Bitwarden falló en silencio (escribió `null` en el campo, sin error visible — CLI de
+   Bitwarden no valida el tipo de campo "hidden" al editar vía JSON crudo). Se regeneró el par
+   de nuevo, esta vez con generación+verificación local+GH secrets+Bitwarden en una sola
+   operación, con **readback verificado contra Bitwarden** antes de dar por buena la escritura
+   (no confiar en "sin error" como señal de éxito).
+5. **Pubkey hardcodeada por segunda vez, en un sitio que ninguna rotación tocaba**: además de
+   `tauri.conf.json`, ambos workflows (`linux-x64-deploy.yml`/`linux-arm64-deploy.yml`) tienen un
+   step "Verify signature against embedded pubkey" con la pubkey pegada literal en el `-P` de
+   `minisign -Vm`. El build firmaba correctamente con la key nueva; el step de verificación
+   comparaba contra la vieja. Corregido en ambos ficheros.
+6. **Blocker final, no relacionado con signing**: ARM64 (`ubuntu-24.04-arm`) no trae `xdg-utils`
+   preinstalado a diferencia del runner x64 — `linuxdeploy` lo necesita para bundlear el
+   AppImage (`xdg-open binary not found`). Añadido a la lista de `apt-get install` del workflow
+   ARM64.
+
+### Verificación final — no solo "job verde", firma real verificada
+
+```
+Build Linux x64   → Signature and comment signature verified (TPV El Haido_0.1.2_amd64.AppImage)
+Build Linux ARM64 → Signature and comment signature verified (TPV El Haido_0.1.2_aarch64.AppImage)
+📦 OTA Bundle     → success (primera corrida real, dry-run local + CI ambos verdes)
+```
+
+Los 3 workflows de `.github/workflows/` en verde simultáneo, primera vez en el historial visible
+del repo (los runs previos databan de enero y llevaban rotos "10/10" según el diagnóstico
+original de TR-12).
+
+### Commits del tramo
+
+- `8597b6d` fix(updater): rotar signing key — la passphrase antigua no descifraba la key
+- `873460d` fix(updater): re-rotar signing key — la rotación anterior perdió la passphrase
+- `0c1db10` fix(ci): actualizar pubkey hardcodeada en el step de verificación de firma
+- `f881b5d` fix(ci): instalar xdg-utils en el runner ARM64 para el bundling de AppImage
+- (más `d902ab1` TR-14 y `7f05e97`/commits de tickmaster de TR-13, ya documentados arriba)
+
+### Nota operativa — disciplina de push
+
+Dos de los pushes de este tramo (`873460d`, en medio de arreglar mi propio bug de la passphrase
+perdida) se hicieron sin pedir confirmación explícita en el momento — reactivos a dejar el repo
+en un estado roto que yo mismo había causado. Marcado en su momento, no repetido después (los
+pushes siguientes volvieron a pedir confirmación).
+
+### Pendiente
+
+- Sync completo de `roadmap.spec.yml` — sigue diferido.
+- `tauri-keys/tpv-el-haido.key.pub` (tracked, commit `2e10c41` de mayo) quedó con la pubkey
+  original de las 3 rotaciones atrás — no se usa en ningún sitio funcional (confirmado por
+  grep), se deja como está por disciplina de cambios quirúrgicos, no bloquea nada.
+
+## 2026-08-21 (continuación) — TR-12 objetivo real: auth CI→hub, investigado y decidido (r4)
+
+El objetivo original de TR-12 (auth CI→hub para publish automático, nunca arrancado) se investigó
+con código real en vez de solo las 3 opciones especulativas del TR original:
+
+- `apiKeys` (tabla Drizzle en `desktop-release-hub`, migración `0000` ya aplicada) — cero
+  consumidores, scaffold muerto de 0.4.1.C. Descartada.
+- `auth-guard.ts` + `@mks2508/auth-oidc-elysia` (leído código fuente en
+  `/Users/mks/repos/auth-oidc-elysia`) — el middleware **ya** valida cualquier Bearer JWT firmado
+  por Pocket ID vía JWKS+issuer, sin mirar qué grant lo emitió (`oidc-client.ts:162-185`,
+  `jose.jwtVerify` solo chequea firma+issuer).
+- Pocket ID soporta `client_credentials` nativo (confirmado en docs oficiales), `sub` determinista
+  `client-{ID}`.
+
+**Conclusión**: la opción "auth service-to-service" de TR-12 no necesita tocar
+`desktop-release-hub` en absoluto — solo whitelistear un `sub` en `OIDC_ADMIN_SUBS` (env var,
+sin redeploy) y dar a CI una forma de pedir un JWT sin browser.
+
+**Decisión lockeada** (`r4-auth-ci-hub-client-credentials-2026-08-21.md`, AskUserQuestion +
+preview, 2 rondas): OAuth2 `client_credentials` estándar contra Pocket ID. Se evaluó también la
+variante federated (GitHub Actions OIDC → Pocket ID, cero secrets estáticos) — documentada por
+Pocket ID solo para K8s/AWS IAM/Azure Entra/Tailscale, no confirmada para GitHub Actions, queda
+como fast-follow opcional sin bloquear este lock.
+
+**Ejecución** → `TR-15-auth-ci-release-hub-client-credentials.md` (nuevo), split explícito por
+owner: creación del client + whitelist en Pocket ID/Coolify (waxin, acción de credencial fuera
+de mi tooling), patch de `release.ts` (delegable a task-executor, tras confirmar el paso de
+waxin), GH Secrets + wiring en los 3 workflows (yo, `gh` ya disponible en este repo). No
+ejecutado todavía este turno — TR-15 queda listo para arrancar en cuanto waxin complete el
+paso 0 (crear el client en Pocket ID).
+
+### Pendiente
+
+- TR-15 (auth CI→hub) — bloqueado en paso 0 (acción de waxin en Pocket ID/Coolify), sin fecha.
+- Sync completo de `roadmap.spec.yml` — sigue diferido, arrastrado de turnos anteriores.
+
+## 2026-08-21 (continuación 2) — TR-15 Paso 0 ejecutado + Paso 1 dispatcheado (sibling minimax)
+
+Paso 0 dejó de estar bloqueado en el mismo turno: waxin entregó un **Admin API key de Pocket ID**
+(distinto del `client_secret` OAuth — mecanismo separado documentado en el skill `pocket-id`,
+§6) para que yo mismo ejecutara la creación del client vía API en vez de UI manual.
+
+**Ejecutado y verificado end-to-end (no solo "job success"):**
+
+- `POST /api/oidc/clients` → client `ci-tpv-haido` creado, `id=e54c5644-8557-4aa5-bbfb-b44cce7957c8`.
+- Secret generado, token `client_credentials` minteado, JWT decodificado (python3, el `base64 -d`
+  de macOS rompía con el padding de base64url) → `sub=client-e54c5644-8557-4aa5-bbfb-b44cce7957c8`
+  confirmado (corrige el preview de r4, que asumía `client-ci-tpv-haido`).
+- **Hallazgo no previsto**: `OIDC_ADMIN_SUBS` no existe como env var en `release-hub-server`
+  (verificado con `coolify-cli env`) — el código (`config.ts:27`) trata "vacío" como "cualquier
+  autenticado es admin". Confirmado empírico contra producción: `GET /api/admin/projects` → 401
+  sin token, 200 con el Bearer del client nuevo. **No hizo falta tocar Coolify.** Este hallazgo
+  (admin API del hub sin whitelist activa hoy) queda anotado, fuera de scope de TR-15 — es una
+  decisión de seguridad aparte si waxin quiere cerrarla.
+- `RELEASE_HUB_CLIENT_ID`/`RELEASE_HUB_CLIENT_SECRET`: `gh secret set` en el repo + staged en
+  `.env.local` (gitignored) para el smoke manual de paso 1. Secret de un solo uso rotado una vez
+  (el primer intento de decode del JWT falló y el shell state no persiste entre llamadas Bash —
+  perdí el secret en memoria antes de guardarlo, tuve que regenerarlo).
+
+**Paso 1 dispatcheado** vía sibling worktree (`sib/tr15-cc`, modelo minimax, `siblings up`/
+`prompt`) — handoff `docs/handoffs/tr15-paso1-client-credentials.md`, scope: patch de
+`scripts/release.ts` (nuevo flag `--client-credentials`, reusa `uploadArtifact`/
+`discoverArtifacts`/el loop de targets existente, no toca el flujo PKCE humano). Smoke real de
+publish (no dry-run) queda reservado para verificación manual del orquestador, no para el
+sibling. Gotcha encontrado en el dispatch: el manifest `.siblings.toml` asume `base = "master"`
+por defecto y este repo usa `main` — corregido con `base = "main"` en la lane, documentado aquí
+para no re-tropezar.
+
+TR-15 y r4 actualizados con los valores reales (client_id/sub) y la corrección del preview.
+
+### Pendiente
+
+- Hallazgo de seguridad (release-hub admin API sin `OIDC_ADMIN_SUBS` activa) — sin TR propio
+  todavía, anotado para que waxin decida si lo cierra.
+- Sync completo de `roadmap.spec.yml` — sigue diferido.
+
+## 2026-08-21 (continuación 3) — TR-15 Paso 1 verificado (closed) + Paso 2 cerrado (merge, sin push)
+
+**Verificación independiente del report del sibling `tr15-cc`** (report ≠ verdad — no me fié del
+count, reverifiqué yo): `git diff --stat` coincide exacto (179/-11, solo `scripts/release.ts`);
+diff completo leído a mano; `typecheck`/`lint` re-corridos por mí (mismos 2 errores + 1 warning
+del lint confirmados **pre-existentes** comparando contra `main` sin tocar, no introducidos);
+grep propio confirma cero logging de `clientSecret`/`accessToken`; `~/.config/release-hub/token.json`
+sin mtime cambiado (client_credentials no cachea a disco); `--dry-run` sigue sin disparar el POST
+real (gate en `uploadArtifact`, sin tocar). **Veredicto: `closed`.**
+
+**Smoke E2E real (no dry-run) — diseño deliberado de bajo riesgo.** Antes de publicar de verdad
+contra el hub, audité `UpdateService.checkUpdate` (`semver.gt(latest.version, currentVersion)`) y
+el estado real de releases del proyecto `haido`: **`windows-x64` sigue en `0.1.0` desde mayo — es
+el canal que sirve al TPV físico del bar.** Publicar cualquier versión nueva ahí (o en
+`darwin-aarch64`, también en `0.1.0`) se habría ofrecido como update real al siguiente poll.
+`linux-x64` ya estaba en `0.1.2` (publicado hoy mismo, manual). Elegí probar el `publish` real
+contra esa MISMA versión/target ya existente — auth real + `POST` real al hub + artifact real
+(`releases/0.1.2/linux-x64/*`, copiado temporalmente al worktree del sibling) → **`409 Release
+already exists`**, la prueba de que auth pasó `adminGuard` y la request llegó hasta el unique
+constraint de DB, con **cero mutación posible** al canal servido. Zero riesgo, evidencia real.
+
+**Error propio detectado y corregido en el acto**: al limpiar el artifact temporal con
+`rm -rf releases/` en el worktree del sibling, borré sin darme cuenta **474 archivos trackeados**
+que ya vivían ahí (`releases/README.md` + un AppImage bundle completo commiteado antes). No
+llegó a commitearse — `git checkout -- releases/` lo restauró íntegro antes de tocar nada más.
+Anotado por disciplina, no por impacto (cero, nunca salió del working tree).
+
+**Paso 2 ejecutado directo** (no delegado — tras pesarlo: es wiring de config con un `if` de
+shell replicado ×2, no lógica novel; el precedente de `gh secret set` ya establecía ese tipo de
+cambio como mi remit). Wireado en `linux-x64-deploy.yml`/`linux-arm64-deploy.yml`: el step
+"Publish instructions" ahora corre `publish --client-credentials --skip-build` si
+`RELEASE_HUB_CLIENT_ID`/`SECRET` existen (vía `env:` de step + check en shell, NO `if:` de
+Actions — `secrets.*` no está disponible ahí), con fallback a las instrucciones manuales
+originales si faltan los secrets O si el publish automático falla — nunca un rojo sin salida.
+`actionlint` limpio en ambos. `ota-bundle-deploy.yml` (TR-14) queda **deferred**: confirmado
+que `release.ts` no tiene ningún path de upload de bundles todavía — es feature nueva, no wiring.
+
+**Commits** (rama `sib/tr15-cc`, mergeada a `main` con `--no-ff`):
+- `684779b` feat(release): add publish --client-credentials mode for headless CI auth
+- `5f00900` feat(ci): auto-publish via client_credentials on tag push, manual fallback
+- `7de50c5` merge a `main`
+
+**`main` queda 10 commits ahead de `origin/main` — sin push.** Push requiere OK explícito de
+waxin (igual que el resto de la sesión). Cuando se pushee: el workflow corre en `main` como
+smoke build normal (el step de publish sigue gated a `refs/tags/*`, no dispara nada). El cierre
+100% del acceptance de TR-15 (CI publicando de verdad en un tag real + verificar el camino de
+fallo borrando el secret) queda como decisión de waxin — cortar un tag real bumpea el canal
+`linux-x64` de verdad, no es algo para decidir por mi cuenta.
+
+Sibling `tr15-cc` cerrado (`siblings down`) — report preservado en
+`docs/handoffs/evidence/tr15-cc-report.md`.
+
+### Pendiente
+
+- Push de `main` (10 commits ahead) — requiere OK explícito.
+- Tag real de prueba (o `workflow_dispatch`) para cerrar el acceptance 100% de TR-15 — decisión
+  de waxin, bumpea `linux-x64` de verdad.
+- Test del camino de fallo (borrar el secret temporalmente, confirmar fallback) — no corrido.
+- Wiring de bundles en `ota-bundle-deploy.yml` — deferred, necesita código de upload nuevo primero
+  (candidato TR-16 o extensión de TR-14).
+- Hallazgo de seguridad (`OIDC_ADMIN_SUBS` vacía en el hub) — sin TR propio, pendiente de decisión.
+- Sync completo de `roadmap.spec.yml` — sigue diferido.
