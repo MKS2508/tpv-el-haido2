@@ -34,6 +34,9 @@ fn ota_apply_staged(app: tauri::AppHandle) -> Result<String, String> {
     let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let version = app.package_info().version.to_string();
     let activated = ota::apply::activate_staged(&data_dir, &version).map_err(|e| e.to_string())?;
+    // Aplicar en caliente no consume un arranque, así que el contador no cubre
+    // este caso: hace falta un temporizador que revierta si no confirma.
+    ota::watchdog::arm_hot_apply(app.clone(), activated.clone());
     // Los slots viejos dejan de hacer falta en cuanto hay uno nuevo activo.
     let _ = ota::apply::prune(&data_dir);
     Ok(activated)

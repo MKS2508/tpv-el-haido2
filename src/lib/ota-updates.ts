@@ -100,6 +100,14 @@ export function startOtaUpdates(): void {
         log.info(`Bundle ${event.payload} preparado; esperando hueco para aplicarlo`);
         waitForQuietMomentAndApply(event.payload);
       });
+
+      // Aplicar en caliente no reinicia el proceso, así que si el bundle nuevo
+      // revienta nadie consume un arranque: el backend lo revierte por tiempo y
+      // avisa por aquí. Recargar es lo que devuelve la UI al slot anterior.
+      await listen<string>('ota://bundle-reverted', (event) => {
+        log.warn(`Bundle ${event.payload} revertido por no confirmar; recargando`);
+        location.reload();
+      });
     } catch (error) {
       log.warn('No se pudo escuchar el canal de bundles', { error });
     }

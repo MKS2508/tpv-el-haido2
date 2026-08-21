@@ -131,14 +131,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn el_hub_por_defecto_es_el_tenant_del_updater() {
+    fn el_hub_es_configurable_para_poder_probar_el_canal() {
+        // Un solo test: los dos casos comparten variable de entorno y cargo
+        // ejecuta los tests en paralelo.
         std::env::remove_var("TPV_OTA_HUB");
         assert_eq!(hub_base(), DEFAULT_HUB);
-    }
 
-    #[test]
-    fn se_puede_apuntar_a_un_hub_local() {
-        // Sin esto no hay forma de probar el canal entero sin publicar de verdad.
+        // Sin esta salida no hay forma de ejercitar el canal entero sin publicar.
         std::env::set_var("TPV_OTA_HUB", "http://127.0.0.1:8787");
         assert_eq!(hub_base(), "http://127.0.0.1:8787");
         std::env::remove_var("TPV_OTA_HUB");

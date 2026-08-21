@@ -7,6 +7,9 @@
 //! revierte en el arranque siguiente, que es justo el escenario malo en un bar.
 
 use std::path::Path;
+use std::time::Duration;
+
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use super::apply;
 use super::slots;
@@ -17,6 +20,19 @@ use super::slots;
 /// (corte de luz a mitad, cierre a lo bruto) y revertir por eso sería un
 /// falso positivo.
 const MAX_BOOT_ATTEMPTS: u32 = 2;
+
+/// Margen que se le da a un bundle recién activado en caliente para confirmar.
+///
+/// Contar arranques cubre que el bundle tumbe el proceso, pero no cubre la
+/// aplicación en caliente: tras activar y recargar la webview NO hay reinicio, y
+/// si el bundle nuevo revienta en JS nadie consume un arranque. Sin este
+/// temporizador la caja se queda con la UI rota hasta que alguien reinicie a
+/// mano — y luego harían falta tres reinicios para revertir. Los dos mecanismos
+/// se complementan: contador para el proceso, temporizador para el reload.
+const HOT_APPLY_GRACE: Duration = Duration::from_secs(90);
+
+/// Evento que avisa al frontend de que hubo que revertir en caliente.
+pub const BUNDLE_REVERTED_EVENT: &str = "ota://bundle-reverted";
 
 /// Resultado de la reconciliación de arranque, para poder registrarlo.
 #[derive(Debug, PartialEq, Eq)]
@@ -69,6 +85,36 @@ pub fn mark_ready(app_data_dir: &Path) -> Result<(), String> {
     state.verified = true;
     state.boot_attempts = 0;
     slots::save_state(app_data_dir, &state)
+}
+
+/// Vigila un bundle recién activado en caliente y lo revierte si no confirma.
+///
+/// Se arma justo tras `activate_staged`. Si al vencer el margen el bundle sigue
+/// activo y sin confirmar, se revierte y se avisa al frontend para que recargue:
+/// desde ese momento la webview vuelve a servir el slot anterior o el frontend
+/// embebido.
+pub fn arm_hot_apply<R: Runtime>(app: AppHandle<R>, slot_id: String) {
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(HOT_APPLY_GRACE).await;
+
+        let Ok(data_dir) = app.path().app_data_dir() else {
+            return;
+        };
+        let state = slots::load_state(&data_dir);
+
+        // Si ya confirmó, o si mientras tanto se activó otro, no hay nada que hacer.
+        if state.verified || state.active.as_deref() != Some(slot_id.as_str()) {
+            return;
+        }
+
+        eprintln!("[ota] el bundle {slot_id} no confirmó tras aplicarse en caliente; revirtiendo");
+        match apply::rollback(&data_dir) {
+            Ok(_) => {
+                let _ = app.emit(BUNDLE_REVERTED_EVENT, slot_id);
+            }
+            Err(err) => eprintln!("[ota] no se pudo revertir: {err}"),
+        }
+    });
 }
 
 #[cfg(test)]
