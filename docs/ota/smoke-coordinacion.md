@@ -9,7 +9,7 @@ dónde está el único punto en el que se bloquean mutuamente.
 
 ---
 
-## ESTADO ACTUAL — 2026-08-21 · todo verde salvo un cabo suelto
+## ESTADO ACTUAL — 2026-08-21 · el circuito completo funciona en producción
 
 | | Estado |
 |---|---|
@@ -246,7 +246,7 @@ toca la lógica de ventana en el hub, hay que regenerar la tabla y pasarla.
 
 ---
 
-## 🔴 BLOQUEANTE ENCONTRADO AL PUBLICAR 0.1.1 — `url` relativa en el canal NATIVO
+## ✅ RESUELTO — `url` relativa en el canal nativo (bloqueante al publicar 0.1.1)
 
 **Estado**: 0.1.1 está **publicado y servido**, pero **ningún TPV puede instalarlo**.
 
