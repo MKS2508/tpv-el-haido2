@@ -91,11 +91,13 @@ Lo hago yo. Lo apunto aquí para que sepáis qué esperar y cuándo.
 1. Bump de versión `0.1.0 → 0.2.0` en `package.json` y `src-tauri/tauri.conf.json`.
 2. Build nativo linux-x64 (en `supermicro-pcbar`, que es el builder) vía `build-release.ts`.
 3. `release.ts auth login` (Pocket ID) y `release.ts publish --target linux-x64 --slug haido`.
-4. El TPV instalado se actualiza solo por el canal nativo.
+4. El TPV instalado lo detecta por el canal nativo. **Ojo, no se instala solo**: `UpdateChecker`
+   consulta al arrancar y cada hora, y abre un diálogo que alguien tiene que aceptar. Así que
+   entre publicar y ver el binario nuevo corriendo puede pasar hasta una hora, más el clic.
 
 **Dos avisos que os afectan:**
 
-- **La primera actualización borra el `localStorage` del dispositivo** (onboarding, tema, modo
+- **La primera actualización, cuando se acepte, borra el `localStorage` del dispositivo** (onboarding, tema, modo
   de almacenamiento). Es consecuencia de que la webview pasa a cargar desde un esquema propio,
   necesario para el canal parcial. Está asumido, pero si veis al TPV "como recién instalado"
   tras actualizar, es esto y no un fallo del hub.
