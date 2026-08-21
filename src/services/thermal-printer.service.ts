@@ -5,7 +5,7 @@ import {
   type IPrinterStatus,
   type IPrintResult,
   type ITicket,
-} from '@mks2508/tickmaster-sdk';
+} from '@mks2508/tickmaster/sdk';
 import { invoke } from '@tauri-apps/api/core';
 import { PrinterErrorCode, type PrinterResultError } from '@/lib/error-codes';
 import type Order from '@/models/Order';
