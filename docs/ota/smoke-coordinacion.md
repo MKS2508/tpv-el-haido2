@@ -84,9 +84,11 @@ El campo `url` del manifest tiene que salir **absoluto** (vuestro `toManifest` y
 
 ---
 
-## FASE B — Publicar un binario nuevo (lado tpv-el-haido2)
+## FASE B — Publicar un binario nuevo (lado tpv-el-haido2) — ✅ HECHA
 
-Lo hago yo. Lo apunto aquí para que sepáis qué esperar y cuándo.
+**0.1.1 publicada** el 2026-08-21. Build nativo en `supermicro-pcbar`, firmado y subido.
+El endpoint responde 200 a un 0.1.0 y 204 a un 0.1.1. **Pero no es instalable todavía**: ver el
+bloqueante de la URL relativa más abajo.
 
 1. Bump de versión `0.1.0 → 0.2.0` en `package.json` y `src-tauri/tauri.conf.json`.
 2. Build nativo linux-x64 (en `supermicro-pcbar`, que es el builder) vía `build-release.ts`.
@@ -129,6 +131,64 @@ Coinciden en todos, incluido el que antes divergía — nativo `1.5.9` en la ven
 
 Ese test es la defensa contra que uno de los dos lados cambie de criterio más adelante. Si se
 toca la lógica de ventana en el hub, hay que regenerar la tabla y pasarla.
+
+---
+
+## 🔴 BLOQUEANTE ENCONTRADO AL PUBLICAR 0.1.1 — `url` relativa en el canal NATIVO
+
+**Estado**: 0.1.1 está **publicado y servido**, pero **ningún TPV puede instalarlo**.
+
+`GET /api/updates/linux/x86_64/0.1.0` responde 200 con:
+
+```json
+{
+  "version": "0.1.1",
+  "url": "/api/dl/0.1.1/linux/x86_64/tpv-haido-0.1.1-linux-x64.AppImage",
+  "signature": "dW50cnVzdGVkIGNvbW1lbnQ6…"
+}
+```
+
+La `url` es **relativa**, y `tauri-plugin-updater` la deserializa en un campo de tipo
+`url::Url` (`ReleaseManifestPlatform.url`, updater.rs:74). Ese tipo **no puede representar una
+referencia relativa**: la respuesta entera falla al parsear y el chequeo de actualización muere
+antes de descargar nada.
+
+Comprobado, no deducido — deserializando con el mismo tipo que usa el plugin:
+
+```
+"/api/dl/0.1.1/linux/x86_64/tpv-haido-0.1.1-linux-x64.AppImage"   -> Err (relative URL without a base)
+"https://haido.releases.mks2508.systems/api/dl/…/x.AppImage"      -> Ok
+```
+
+### El arreglo ya lo tenéis escrito
+
+Es exactamente lo que hace vuestro `toManifest` en `routes/tenant/bundles.ts`: componer la
+absoluta con `Host` + `x-forwarded-proto`. El canal de bundles lo hace bien; el de updates, que
+es más antiguo, devuelve la fila de BD tal cual. Hay que aplicar el mismo tratamiento en
+`routes/tenant/updates.ts` (o en `UpdateService.checkUpdate`).
+
+Detrás de un proxy que termina TLS, el esquema tiene que salir de `x-forwarded-proto` y no de
+`request.url`, porque Bun sólo ve el salto en http plano — vuestro comentario en `toManifest` ya
+lo dice.
+
+### Cómo verificar que quedó arreglado
+
+```bash
+curl -s https://haido.releases.mks2508.systems/api/updates/linux/x86_64/0.1.0 \
+  | grep -o '"url":"[^"]*"'
+# debe empezar por https://, no por /api
+```
+
+Con eso el TPV del bar recoge 0.1.1 en su siguiente chequeo (al arrancar o cada hora) sin que
+haya que republicar nada: el artefacto y la firma ya están subidos y son correctos.
+
+### Nota sobre la firma, para descartar sospechas
+
+El AppImage de 0.1.1 se re-empaqueta durante el build (arreglo de aceleración gráfica) y se
+**vuelve a firmar después** del repack. Verificado en el artefacto publicado: la firma es
+posterior al fichero, el hook parcheado sobrevive al re-empaquetado, y el binario arranca con
+aceleración real (172 MiB de GPU, cero errores GBM). Si al arreglar la URL el updater se
+quejara de la firma, el problema no sería ese paso.
 
 ## Puntos de bloqueo mutuo, explícitos
 
