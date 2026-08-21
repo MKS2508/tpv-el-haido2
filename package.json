@@ -31,6 +31,7 @@
     "check": "biome check --write src && eslint src --config eslint.config.js",
     "typecheck": "tsgo --noEmit",
     "typecheck:tsc": "tsc --noEmit",
+    "check:roadmap": "axon gen --out docs --check",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "build:aeat-sidecar": "bun run scripts/build-aeat-sidecar.ts",

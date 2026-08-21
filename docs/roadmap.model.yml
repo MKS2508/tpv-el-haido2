@@ -1,0 +1,329 @@
+# tpv-el-haido — modelo de roadmap (SSOT)
+#
+# Mutaciones SOLO vía axon CLI (`axon <cmd> --model docs/roadmap.model.yml`, o el MCP
+# equivalente), nunca edición manual del contenido (mismo lock que desktop-release-hub
+# dec-0001). Doc derivado: docs/ROADMAP.md — guard: `bun run check:roadmap`.
+#
+# Migrado desde roadmap.spec.yml (schema legacy phases/sub-phases, congelado en
+# 2026-05-10, superseded por este modelo — ver git history si hace falta el original).
+#
+# Nota de bootstrap: este fichero contenedor se creó a mano porque axon 0.2.2 no trae
+# comando de init — probado empírico dos veces: (1) parseModel requiere el fichero ya
+# existente y schema-válido antes de que add-node pueda escribir nada (ENOENT contra
+# fichero inexistente); (2) el editor text-surgical de add-node tampoco puede insertar el
+# PRIMER nodo top-level en una seq `nodes: []` genuinamente vacía (`lastMapOf` revienta
+# "seq vacía o sin map final" — no hay map previo del que anclar el insert). Por eso este
+# nodo semilla (solo id/kind/status, sin título/gate/refs) se escribió a mano como el
+# mínimo indispensable para que la seq tenga un ancla; TODO lo demás — este mismo nodo
+# incluido (título/refs/gate vía set-node/set-gate) y cualquier nodo posterior — se
+# añadió vía CLI/MCP, nunca a mano.
+
+authoritative: true
+model: tpv-haido-roadmap
+modelVersion: '1'
+kindEnumVersion: 1
+zoneEnumVersion: 1
+project: tpv-el-haido
+nodes:
+  - id: outcome/tpv-produccion
+    title: 'TPV El Haido en producción real en el bar — release-hub propio operativo (updates + licensing)'
+    refs: [r1, r2, r3, r4]
+    kind: outcome
+    status: in_progress
+    gate:
+      items:
+        - id: G1
+          verdict: pass
+          class: live-evidence
+          evidenceRef: [e3b732d, 27b8e05, 10145d8, 'TR-15 2026-08-21: windows-x64 confirmado como canal real que sirve al TPV físico del bar desde 0.1.0/mayo']
+          verifiedBy: axon
+
+        - id: G2
+          verdict: pass
+          class: live-evidence
+          evidenceRef: ['haido.releases.mks2508.systems/api/health → 200', 'admin.releases.mks2508.systems/api/health → 200']
+          verifiedBy: axon
+
+        - id: G3
+          verdict: pass
+          class: live-evidence
+          evidenceRef: ['tag v0.1.3', 'CI publish automático verificado 3 capas (log + GET releases + GET dl 200)']
+          verifiedBy: axon
+
+        - id: G4
+          verdict: pass
+          class: impl
+          evidenceRef: [949981a]
+          verifiedBy: axon
+  - id: track/core-tpv
+    kind: track
+    zone: client
+    title: 'Core TPV — SolidJS migration + AEAT compliance + PWA/platform abstraction (0.1.0-0.2.0)'
+    status: done
+    dependsOn: []
+
+  - id: track/deployment-hub
+    refs: [r1, r2]
+    kind: track
+    zone: cross
+    title: 'Deploy producción: tpv-cloud → desktop-release-hub multi-tenant (Coolify) + builds Windows/Linux (0.4.0-0.4.1)'
+    status: in_progress
+    dependsOn: [track/core-tpv]
+    milestones:
+      - id: track/deployment-hub/master-license-hardening
+        title: '0.4.0.A — Master license required en prod, fallback solo en dev (TR-09)'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: [f8c0593, 'src-tauri/src/lib.rs:381-390 panic en prod si faltan env vars', 'src/lib/config.ts:103-105 fail-closed en prod']
+              verifiedBy: axon
+
+      - id: track/deployment-hub/windows-build
+        title: '0.4.0.B/C/D — tpv-cloud unified + tauri.conf endpoints + Windows NSIS build/publish en el bar'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: live-evidence
+              evidenceRef: [844cddf, 2e10c41, e3b732d, 27b8e05, 10145d8, 'OTA smoke verde 2026-05-10 (POST 201 + GET updates 200)']
+              verifiedBy: axon
+
+      - id: track/deployment-hub/hub-scaffold-deploy
+        title: '0.4.1.A/B/E — auth-oidc-elysia + desktop-release-hub scaffold + deploy Coolify/Pocket ID/DNS'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: live-evidence
+              evidenceRef: ['auth-oidc-elysia@6a03aac', 'desktop-release-hub@5a329b0', 'haido.releases.mks2508.systems/api/health → 200 (2026-05-10)']
+              verifiedBy: axon
+
+      - id: track/deployment-hub/admin-publish-cli
+        title: '0.4.1.C/G — admin endpoints del hub + scripts/release.ts CLI (PKCE loopback)'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: [d65664e, cc2168b, 'scripts/build-release.ts 909 líneas']
+              verifiedBy: axon
+
+      - id: track/deployment-hub/migrate-haido-hub
+        title: '0.4.1.F/H — Migrar haido tpv-cloud → hub + smoke OTA Windows'
+        status: in_progress
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: live-evidence
+              evidenceRef: ['project haido fe059f0e-c509-40ff-a105-465c88c5fe40', 'smoke OTA Windows verde 2026-05-10']
+              verifiedBy: axon
+
+            - id: U2
+              verdict: open
+              class: smoke
+              evidenceRef: ['0.4.1.H nunca ejecutado: ningun cliente real hizo update E2E (detecta->descarga->verifica->instala->restart)', 'windows-x64 sigue en 0.1.0 desde mayo, TR-15 evito publicar ahi a proposito', 'desktop-release-hub track/haido-migration U2/U3 open a la fecha (fuente hermana)']
+      - id: track/deployment-hub/admin-ui-postprod
+        title: '0.4.1.D-postprod — Admin UI React del hub (shippeada, vive en repo desktop-release-hub)'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: live-evidence
+              evidenceRef: ['progress-log 2026-08-21 re-bootstrap: pivot no planeado shippeó admin UI + fix SPA-routing', 'detalle completo en repo desktop-release-hub (track/hub-server U1-U4)']
+              verifiedBy: axon
+
+      - id: track/deployment-hub/cleanup-old-license-server
+        title: '0.4.0.F — Cleanup license-server viejo + liberar subdomain (nunca ejecutado)'
+        status: queued
+        dependsOn: []
+
+      - id: track/deployment-hub/license-migration
+        title: 'Migración de licencias tpv-cloud → hub (cuando haya licencias reales que migrar)'
+        status: conditional
+        dependsOn: []
+
+      - id: track/deployment-hub/tpv-cloud-deprecation
+        title: 'Deprecar tpv-cloud (updates.mks2508.systems fuera de servicio)'
+        status: conditional
+        dependsOn: [track/deployment-hub/license-migration]
+
+  - id: track/linux-build-bar
+    kind: track
+    zone: client
+    title: 'TR-07 — Build Linux nativo en supermicro-pcbar (máquina real del bar, CachyOS)'
+    status: in_progress
+    dependsOn: [track/deployment-hub]
+    gate:
+      items:
+        - id: U1
+          verdict: pass
+          class: impl
+          evidenceRef: [65cb616, 'scripts/build-release.ts:176-226 targets linux-x64/linux-arm64 + workarounds PATH/NO_STRIP/patchelf-shim']
+          verifiedBy: axon
+
+        - id: U2
+          verdict: provisional
+          class: live-evidence
+          evidenceRef: ['progress-log 2026-08-21: ciclo OTA completo ejercitado en producción real en supermicro-pcbar (16MB bundle, 3 arranques sin confirmar -> rollback probado)', '85c6fd5 instalador desktop AppImage', 'ae0ad86 fix fingerprint licencia Linux', 'linux-x64 0.1.2/0.1.3 live en el hub']
+          verifiedBy: axon
+  - id: track/printer
+    kind: track
+    zone: client
+    title: 'TR-08 — Impresión térmica real vía @mks2508/tickmaster SDK (revive 0.5.0)'
+    status: done
+    dependsOn: []
+    gate:
+      items:
+        - id: U1
+          verdict: pass
+          class: impl
+          evidenceRef: [949981a, 'thermal-printer.service.ts reescrito con @mks2508/tickmaster-sdk, ThermalPrinter.ts stub eliminado']
+          verifiedBy: axon
+
+        - id: U2
+          verdict: open
+          class: smoke
+          evidenceRef: ['acceptance original TR-08 exigia ticket fisico saliendo de la Epson via RPI-BAR', 'progress-log solo confirma el merge 949981a, no un print fisico verificado']
+  - id: track/testing
+    kind: track
+    zone: cross
+    title: 'TR-10 — Test coverage baseline (Vitest, 0.7.0)'
+    status: done
+    dependsOn: []
+    gate:
+      items:
+        - id: U1
+          verdict: pass
+          class: impl
+          evidenceRef: [949981a, '9 archivos *.test.ts en src/, bun test setup verde']
+          verifiedBy: axon
+
+  - id: track/observability
+    kind: track
+    zone: cross
+    title: 'TR-11 — Migración @mks2508/better-logger@0.18.3 + wire OTel'
+    status: in_progress
+    dependsOn: []
+    gate:
+      items:
+        - id: U1
+          verdict: pass
+          class: impl
+          evidenceRef: [9986afa, 6afb87e, 'package.json better-logger pinned 0.18.3 exacto', 'OtlpTransport wireado condicional en logger-init.ts']
+          verifiedBy: axon
+
+        - id: U2
+          verdict: open
+          class: audit
+          evidenceRef: ['grep 2026-08-21: 25 console.* remanentes en 4 archivos', 'TauriPlatformService.ts (13 calls) + theme-utils.ts (1 call) sin migrar', 'ErrorBoundary.tsx es intercept legitimo, no cuenta']
+          verifiedBy: axon
+  - id: track/ci-release-pipeline
+    kind: track
+    zone: services
+    title: 'TR-12/13/14/15/16 — CI Linux x64/ARM64 + auth CI→hub + OTA bundle pipeline'
+    status: in_progress
+    dependsOn: [track/deployment-hub]
+    milestones:
+      - id: track/ci-release-pipeline/tickmaster-packaging
+        title: 'TR-13 — Unificar @mks2508/tickmaster (core+sdk) en un paquete publicable con subpath exports'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: [7f05e97, e73b782, 807da57, '@mks2508/tickmaster@0.1.1 publicado npm, 153 tests verde']
+              verifiedBy: axon
+
+      - id: track/ci-release-pipeline/ci-green
+        title: 'TR-12 — CI Linux x64/ARM64 en verde (firma minisign verificada, 5 blockers resueltos)'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: live-evidence
+              evidenceRef: [8597b6d, 873460d, 0c1db10, f881b5d, 'firma minisign verificada Linux x64 + ARM64 en CI']
+              verifiedBy: axon
+
+      - id: track/ci-release-pipeline/auth-ci-hub
+        title: 'TR-15 — Auth CI→release-hub vía OAuth2 client_credentials (Pocket ID)'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: live-evidence
+              evidenceRef: [684779b, 5f00900, 'tag v0.1.3 publish automatico verificado en 3 capas independientes']
+              verifiedBy: axon
+
+      - id: track/ci-release-pipeline/admin-whitelist
+        title: 'TR-16 — Activar whitelist de admin (OIDC_ADMIN_SUBS) en desktop-release-hub'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: correctness
+              evidenceRef: ['OIDC_ADMIN_SUBS seteada en release-hub-server', 'smoke positivo ci-tpv-haido 200', 'smoke negativo client no-whitelisteado 401']
+              verifiedBy: axon
+
+            - id: U2
+              verdict: open
+              class: human-verify
+              evidenceRef: ['login humano passkey de waxin al admin UI del hub no confirmado empiricamente (closed-with-flagged-edge)']
+      - id: track/ci-release-pipeline/ota-bundle-ci
+        title: 'TR-14 — Pipeline CI para canal OTA parcial (bundles JS): build+sign hecho, upload al hub pendiente'
+        status: in_progress
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: [d902ab1, 'workflow ota-bundle-deploy.yml: build+sign+artifact']
+              verifiedBy: axon
+
+            - id: U2
+              verdict: open
+              class: feature-gap
+              evidenceRef: ['release.ts no tiene comando de upload de bundles al hub todavia (feature nueva, no wiring)']
+  - id: track/code-signing-multiplatform
+    kind: track
+    zone: client
+    title: '0.3.0 — Code signing + multiplatform builds (macOS notarize, Windows codesign) — nunca ejecutado'
+    status: queued
+    dependsOn: []
+
+  - id: track/production-polish
+    kind: track
+    zone: cross
+    title: '0.6.0 — Production polish post-deploy: hardening, monitoring, AEAT testing real'
+    status: queued
+    dependsOn: []
+
+  - id: track/hetzner-research
+    kind: track
+    zone: services
+    title: '0.8.0 — Research: Hetzner upgrade KVM nested para builds reproducibles cloud (TKT-09)'
+    status: queued
+    dependsOn: []
+decisions: []

@@ -1,11 +1,16 @@
 {
   "project": "tpv-el-haido - Tauri 2 + SolidJS POS para restaurantes/bares",
-  "roadmap": "ROADMAP.md",
-  "roadmapSpec": "roadmap.spec.yml",
+  "roadmap": "docs/ROADMAP.md",
+  "roadmapModel": "docs/roadmap.model.yml",
   "progressLog": "docs/progress-log.md",
   "decisionsDir": "docs/decisions/",
   "handoffsDir": "docs/handoffs/",
   "taskRequestsDir": "docs/task-requests/",
+  "tooling": {
+    "cli": "axon (global bun install, no está en package.json de este repo)",
+    "guard": "bun run check:roadmap",
+    "mutations": "solo vía axon CLI/MCP — edición manual del modelo prohibida salvo bootstrap inicial del contenedor (ver comentario en docs/roadmap.model.yml)"
+  },
   "vibe": "castellano-casual",
   "sessionDiary": false,
   "autoCommit": false,
