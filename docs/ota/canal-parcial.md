@@ -91,34 +91,64 @@ Fichero de estado y no symlink: en Windows los symlinks exigen privilegios.
 
 ## Estado actual
 
-Hecho y con tests (36 en `cargo test --lib ota`):
+**Ciclo completo ejercitado en el hardware de producción** (`supermicro-pcbar`,
+WebKitGTK 2.52.6, NVIDIA, COSMIC/Wayland), contra `scripts/ota-fake-hub.ts` con un bundle
+real de 16 MB firmado por `build-bundle.ts`:
+
+```
+embebido arranca por el esquema
+  → GET /api/bundles/latest?nativeVersion=0.1.0&deviceId=4fd659…
+  → GET /api/bundles/2026.08.21-1/download          (16 756 290 bytes)
+  → sha256 + ed25519 verificados, descomprimido, staged
+  → ota_status: staged=1221a0f6…                    (invoke real desde la webview)
+  → ota_apply_staged → activo, reload
+  → la webview sirve el BUNDLE, no el embebido
+```
+
+Y la red de seguridad, en tres arranques seguidos sin confirmar `app-ready`:
+
+```
+arranque 1 → Pending { attempt: 1 }
+arranque 2 → Pending { attempt: 2 }
+arranque 3 → RolledBack → active=null → vuelve al frontend embebido
+```
+
+Antes de esto, el mismo esquema quedó verificado sirviendo la app entera:
+15 peticiones, `isSecureContext=true`, `crypto.subtle` disponible, módulos ES correctos,
+`localStorage` operativo y la aceleración por GPU intacta (173 MiB).
+
+Hecho y con tests (43 en `cargo test --lib ota`, incluidos tres de contrato cruzado contra
+la salida real de `build-bundle.ts`):
 
 - Esquema propio con fallback al embebido, mapa de MIME y guardia de traversal.
 - Manifest: firma ed25519, sha256 y ventana de compatibilidad.
 - stage / activate / rollback / prune.
 - Watchdog por contador de arranques + comando `ota_app_ready`.
-
-Verificado sobre el webview real de producción (WebKitGTK 2.52.6, NVIDIA,
-COSMIC/Wayland): la app carga entera por el esquema (15 peticiones),
-`isSecureContext=true`, `crypto.subtle` disponible, módulos ES correctos,
-`localStorage` operativo y la aceleración por GPU intacta (173 MiB).
+- Empaquetador y firmador (`build-bundle.ts keygen` / `pack`).
+- Poller cada 5 min + activación en hueco de caja.
 
 Pendiente:
 
-- **`scripts/build-bundle.ts`** — empaquetar `dist/` (base `/`, no la de PWA),
-  calcular hash, firmar con ed25519 y emitir el manifest, más un generador de
-  claves. Sin esto no se puede publicar nada por el canal.
-- **Poller** — `GET /api/bundles/latest?nativeVersion=&deviceId=` cada 5 min y
-  descarga. El WebSocket es optimización, no mecanismo: el polling es el camino.
-  Depende de que aterricen los endpoints del hub.
-- **Guardas de operación abierta** — no activar con ticket abierto, caja abierta
-  o impresión en curso. `stage` puede correr siempre; `activate` sólo en hueco.
-- **Ventana horaria y pinning por dispositivo** — el pinning es sobre todo del
-  hub; aquí sólo hay que mandar el `deviceId` (reutilizar
-  `get_machine_fingerprint`).
+- **Integración con el hub real** — funciona contra el hub falso; el real tiene un bug de
+  ventana de versiones pendiente (ver el handoff en `desktop-release-hub`,
+  `docs/handoffs/ota-bundles-js-hub-side.md`, sección 2.1).
+- **Ventana horaria de aplicación** — hoy la guarda es "sin pedido en pantalla y un minuto
+  sin actividad"; falta poder restringirlo además a fuera del horario de apertura.
+- **Reporte de aplicación/rollback al hub** — el cliente ya revierte solo, pero desde el hub
+  un rollback es hoy indistinguible de que nunca se aplicó.
+- **Guarda de impresión en curso** — no se añadió para no tocar `thermal-printer.service.ts`
+  mientras otra sesión lo estaba migrando.
 
-Nota para quien pruebe: `cargo build --release` a secas produce un build que
-Tauri considera **dev** (`dev = !feature("custom-protocol")`), y entonces la
-ventana apunta al dev server en vez de al esquema. Para probar el canal hace
-falta `cargo build --release --features tauri/custom-protocol`, que es lo que
-activa `tauri build`.
+Nota para quien pruebe: `cargo build --release` a secas produce un build que Tauri considera
+**dev** (`dev = !feature("custom-protocol")`), y entonces la ventana apunta al dev server en vez
+de al esquema. Hace falta `cargo build --release --features tauri/custom-protocol`, que es lo que
+activa `tauri build`. La app lo avisa por stderr al arrancar.
+
+Para probar el canal entero en local:
+
+```bash
+bun run scripts/build-bundle.ts keygen                       # una vez
+bun run scripts/build-bundle.ts pack --build --min 0.1.0 --max 0.1.0
+bun run scripts/ota-fake-hub.ts --bundle releases/bundles/<id>
+TPV_OTA_HUB=http://127.0.0.1:8787 ./target/release/tpv-el-haido
+```
