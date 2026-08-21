@@ -636,6 +636,82 @@ async function resolvePassphrase(): Promise<Result<string, ResultError>> {
 }
 
 /**
+ * Comprueba que la clave privada elegida se corresponde con la pubkey que el
+ * binario va a llevar embebida.
+ *
+ * Sin esto, usar una clave que no toca produce "incorrect updater private key
+ * password: Wrong password for that key" — un mensaje que señala a la passphrase
+ * cuando el problema es la clave, y que costó un buen rato desentrañar el
+ * 2026-08-21: había una clave obsoleta en `tauri-keys/`, que tiene prioridad
+ * sobre `~/.tauri/`, y la passphrase del vault era la de la clave nueva.
+ *
+ * No se puede derivar la pubkey de una clave minisign cifrada sin descifrarla,
+ * pero minisign guarda la pública junto a la privada como `<clave>.pub`, y eso
+ * sí se puede comparar.
+ *
+ * @param keyPath - Ruta de la clave privada que se va a usar.
+ * @returns `ok(undefined)` si casan o si no hay `.pub` con el que comparar.
+ */
+export function verifyKeyMatchesConfig(keyPath: string): Result<void, ResultError> {
+  const pubPath = `${keyPath}.pub`;
+  if (!existsSync(pubPath)) {
+    log.warn(`Sin ${basename(pubPath)} junto a la clave: no se puede comprobar que corresponda a la pubkey embebida.`);
+    return ok(undefined);
+  }
+
+  const confResult = tryCatch(() => {
+    const conf = JSON.parse(
+      readFileSync(resolve(PROJECT_ROOT, 'src-tauri', 'tauri.conf.json'), 'utf-8'),
+    ) as { plugins?: { updater?: { pubkey?: string } } };
+    const pubkey = conf.plugins?.updater?.pubkey;
+    if (!pubkey) throw new Error('tauri.conf.json no declara plugins.updater.pubkey');
+    return pubkey;
+  }, 'CONFIG_READ_FAILED');
+
+  if (isErr(confResult)) {
+    return err(confResult.error);
+  }
+
+  // Los .pub aparecen en dos formatos según quién los generase: texto minisign
+  // tal cual, o ese mismo texto en base64 (que es como lo guarda tauri.conf.json).
+  // Se normalizan los dos antes de comparar.
+  const asMinisignText = (raw: string): string => {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('untrusted comment:')) return trimmed;
+    const decoded = Buffer.from(trimmed, 'base64').toString('utf-8');
+    return decoded.startsWith('untrusted comment:') ? decoded.trim() : trimmed;
+  };
+
+  const embedded = asMinisignText(confResult.value);
+  const onDisk = asMinisignText(readFileSync(pubPath, 'utf-8'));
+
+  // Se compara la línea de la clave, no el comentario, que varía de formato.
+  const keyLine = (text: string): string => text.split('\n').map((l) => l.trim()).filter(Boolean).pop() ?? '';
+
+  if (keyLine(embedded) !== keyLine(onDisk)) {
+    return err(
+      resultError(
+        'SIGNING_KEY_MISMATCH',
+        [
+          'La clave de firma no corresponde a la pubkey que el binario llevará embebida.',
+          `  clave usada     : ${keyPath}`,
+          `  su pública      : ${keyLine(onDisk)}`,
+          `  la config espera: ${keyLine(embedded)}`,
+          '',
+          'Firmar así produciría artefactos que ningún cliente aceptaría. Usa la clave que',
+          'corresponde a esa pubkey, o actualiza plugins.updater.pubkey en tauri.conf.json.',
+          '',
+          'Ojo: una clave en tauri-keys/ del repo tiene prioridad sobre ~/.tauri/.',
+        ].join('\n'),
+      ),
+    );
+  }
+
+  log.success('La clave de firma corresponde a la pubkey embebida.');
+  return ok(undefined);
+}
+
+/**
  * Loads Tauri signing keys (private key + passphrase).
  *
  * Resolution strategy (independent for each piece):
@@ -681,6 +757,13 @@ export async function loadSigningKeys(): Promise<Result<ISigningKeys, ResultErro
     const fileResult = locatePrivateKeyFile(keyName);
     if (isErr(fileResult)) {
       return err(fileResult.error);
+    }
+
+    // Antes de nada: que la clave elegida sea la que corresponde a la pubkey
+    // embebida. Firmar con otra produce artefactos que ningún cliente acepta.
+    const matchResult = verifyKeyMatchesConfig(fileResult.value);
+    if (isErr(matchResult)) {
+      return err(matchResult.error);
     }
 
     const readResult = readPrivateKeyFile(fileResult.value);
