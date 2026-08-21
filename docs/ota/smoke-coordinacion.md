@@ -9,6 +9,21 @@ dónde está el único punto en el que se bloquean mutuamente.
 
 ---
 
+## ESTADO ACTUAL — 2026-08-21 · todo verde salvo un cabo suelto
+
+| | Estado |
+|---|---|
+| FASE A — smoke del hub | ✅ 17/17 (§A.3) |
+| FASE B — binario publicado | ✅ **0.1.2** publicada e **instalada en el bar** |
+| FASE C — bundle real | ✅ **ciclo completo ejecutado en producción** (§FASE C) |
+| Telemetría de aplicación | ✅ recibida por el hub (204) |
+| Único pendiente | 🟡 hacer `yank` a **0.1.1** — deja al dispositivo sin salida |
+
+Lo de abajo conserva el histórico de bloqueantes ya resueltos, por si hace falta rastrear
+alguna decisión. Para saber qué hay hoy, basta con esta tabla y la sección de FASE C.
+
+---
+
 ## 0. Lo que hay que entender antes de nada: son dos canales y van en orden
 
 | | Canal nativo | Canal parcial (bundles JS) |
@@ -148,6 +163,49 @@ El `hash` no se manda: lo recalculáis vosotros sobre los bytes subidos.
 > **Antes de subirlo, ojo al orden**: en cuanto esté cargado, el primer TPV que corra 0.1.1 se
 > lo llevará en ≤5 min. Si preferís encadenarlo con que el bar acepte primero el update nativo,
 > subidlo cuando lo digáis; por mi parte está listo.
+
+### ✅ FASE C COMPLETADA — 2026-08-21, ciclo real de punta a punta
+
+Subisteis el bundle y **el TPV del bar lo aplicó solo**. Traza del dispositivo real contra el
+hub de producción:
+
+```
+[ota] bundle 2026.08.21-3 preparado (16 760 485 bytes)
+[ota] reportado applied al hub: 204 No Content
+```
+
+```json
+{
+  "active": "e7be5b9635f61fa046e84ba1d28692f0",
+  "active_hub_id": "dbbe326a-f9dd-43ad-acd3-c915f845784e",
+  "verified": true,
+  "boot_attempts": 0,
+  "native_version_at_swap": "0.1.2"
+}
+```
+
+Es decir: consulta → descarga de 16 MB → sha256 y ed25519 verificados → descomprimido en su
+slot → aplicado al quedar la caja quieta → recarga → `app-ready` confirmado → reporte a
+`/report`. Sin intervención manual en ningún punto.
+
+**Lo que esto valida de vuestro lado**, además de los endpoints: que el manifest que compone
+`toManifest` lo consume el cliente sin adaptaciones, que la URL absoluta funciona, que la firma
+que verificáis al subir es la misma que valida el cliente, y que el reporte llega.
+
+**Comprobación que os toca a vosotros**: el reporte debería estar en
+`GET /api/admin/projects/haido/bundles/reports` — bundle `dbbe326a-f9dd-43ad-acd3-c915f845784e`,
+device `4fd659707ba01a3088cf949d419d55eba76d1e92d87eeab9c6dcb3863f49f9cd`, outcome `applied`.
+Si aparece ahí, el circuito está cerrado por los dos lados.
+
+**Nota sobre el UUID**: se extrajo correctamente de la URL de descarga que servís, contra el hub
+real y no sólo contra el falso. Sigue en pie lo dicho más abajo — la forma de esa URL es
+contrato de facto hasta que el manifest exponga el `id` como campo.
+
+### El bar ya no rechaza firmas
+
+La reinstalación manual que exigía la rotación de clave **está hecha**. El binario instalado
+embebe únicamente la pubkey nueva, así que el auto-update vuelve a funcionar solo de aquí en
+adelante. El canal de bundles ya no depende de nada manual.
 
 ### Cotas de versión — ya no hay restricción
 
