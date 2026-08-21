@@ -1,0 +1,120 @@
+name: 📦 OTA Bundle (JS partial channel)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'tsconfig.json'
+      - 'tsconfig.node.json'
+      - 'package.json'
+      - 'bun.lock'
+  workflow_dispatch:
+    inputs:
+      min_native_version:
+        description: 'minNativeVersion override (default: src-tauri/tauri.conf.json version)'
+        required: false
+        type: string
+      max_native_version:
+        description: 'maxNativeVersion override (default: same as min)'
+        required: false
+        type: string
+
+jobs:
+  build-ota-bundle:
+    name: Build + sign OTA bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend (typecheck + vite build)
+        run: bun run build
+
+      - name: Restore OTA signing key
+        env:
+          OTA_KEY: ${{ secrets.OTA_BUNDLE_SIGNING_PRIVATE_KEY }}
+        run: |
+          [ -n "$OTA_KEY" ] || { echo "::error::secret OTA_BUNDLE_SIGNING_PRIVATE_KEY no seteado"; exit 1; }
+          mkdir -p tauri-keys
+          printf '%s' "$OTA_KEY" > tauri-keys/ota-bundle.key
+          chmod 600 tauri-keys/ota-bundle.key
+
+      - name: Resolve version window + bundle id
+        id: meta
+        run: |
+          DEFAULT_VERSION=$(jq -r '.version' src-tauri/tauri.conf.json)
+          MIN="${{ inputs.min_native_version }}"
+          MAX="${{ inputs.max_native_version }}"
+          echo "min=${MIN:-$DEFAULT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "max=${MAX:-$DEFAULT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "version=$(date -u +%Y.%m.%d)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Pack + sign bundle
+        run: |
+          bun run scripts/build-bundle.ts pack \
+            --min "${{ steps.meta.outputs.min }}" \
+            --max "${{ steps.meta.outputs.max }}" \
+            --version "${{ steps.meta.outputs.version }}"
+
+      - name: Verify contract (index.html root, manifest shape)
+        run: |
+          BUNDLE_DIR="releases/bundles/${{ steps.meta.outputs.version }}"
+          MANIFEST="$BUNDLE_DIR/manifest.json"
+          test -f "$MANIFEST" || { echo "::error::manifest.json not found in $BUNDLE_DIR"; exit 1; }
+          unzip -l "$BUNDLE_DIR/bundle.zip" | awk '{print $NF}' | grep -qx 'index.html' \
+            || { echo "::error::bundle.zip missing root index.html"; exit 1; }
+          jq -e '.bundleVersion | test("^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}-[0-9]+$")' "$MANIFEST" > /dev/null \
+            || { echo "::error::bundleVersion does not match contract"; exit 1; }
+          jq -e '.hash | test("^sha256:[0-9a-f]{64}$")' "$MANIFEST" > /dev/null \
+            || { echo "::error::hash does not match contract"; exit 1; }
+          SIG_LEN=$(jq -r '.signature' "$MANIFEST" | base64 -d | wc -c)
+          [ "$SIG_LEN" -eq 64 ] || { echo "::error::signature is $SIG_LEN bytes, expected 64"; exit 1; }
+          echo "Contract OK: $MANIFEST"
+
+      - name: Verify ed25519 signature against embedded pubkey
+        run: |
+          bun -e "
+          (async () => {
+            const fs = require('fs');
+            const dir = 'releases/bundles/${{ steps.meta.outputs.version }}';
+            const manifest = JSON.parse(fs.readFileSync(dir + '/manifest.json', 'utf-8'));
+            const pubkeyB64 = fs.readFileSync('src-tauri/ota-bundle-pubkey.txt', 'utf-8').trim();
+            const zipBytes = fs.readFileSync(dir + '/bundle.zip');
+            const key = await crypto.subtle.importKey('raw', Buffer.from(pubkeyB64, 'base64'), { name: 'Ed25519' }, false, ['verify']);
+            const ok = await crypto.subtle.verify('Ed25519', key, Buffer.from(manifest.signature, 'base64'), zipBytes);
+            if (!ok) { console.error('ed25519 verification FAILED'); process.exit(1); }
+            console.log('ed25519 verification OK');
+          })();
+          "
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ota-bundle-${{ steps.meta.outputs.version }}
+          path: releases/bundles/${{ steps.meta.outputs.version }}/**
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish instructions (manual interim -- incremento (a) de TR-14)
+        run: |
+          {
+            echo "## Publish al hub (manual, interim -- incremento (a) de TR-14)"
+            echo ""
+            echo "1. Descargar el artifact \`ota-bundle-${{ steps.meta.outputs.version }}\` de este run."
+            echo "2. Confirmar que el proyecto \`haido\` tiene \`bundle_pubkey\` cargada en el hub."
+            echo "3. Subir a mano: POST /api/admin/projects/haido/bundles (multipart:"
+            echo "   bundleVersion, minNativeVersion, maxNativeVersion, signature, bundle)."
+            echo "   Requiere sesion Pocket ID en el navegador -- release.ts no cubre bundles todavia."
+          } >> "$GITHUB_STEP_SUMMARY"
