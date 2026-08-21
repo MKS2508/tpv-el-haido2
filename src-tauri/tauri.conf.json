@@ -51,7 +51,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVGMDYwRjUyQTkzQjFCQ0EKUldUS0d6dXBVZzhHNzhpY255bjNHMGFZeFRTcXRtMGJnMFBEb2thZGdNUmttWDlRWXJmUHRXZWcK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERCMEJCRjQ0MzM0RUJCQjEKUldTeHUwNHpSTDhMMjUwd042MUg0eHZhU1c4R21BR0JPSVB0cW1SYkt3NkM5Wk5sQzlWcmxVVVUK",
       "endpoints": [
         "https://haido.releases.mks2508.systems/api/updates/{{target}}/{{arch}}/{{current_version}}"
       ],
