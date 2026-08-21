@@ -77,14 +77,32 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish instructions (manual interim — TR-12 opción 3)
+      - name: Publish to release-hub (auto si hay secrets, fallback manual — TR-15)
         if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_HUB_CLIENT_ID: ${{ secrets.RELEASE_HUB_CLIENT_ID }}
+          RELEASE_HUB_CLIENT_SECRET: ${{ secrets.RELEASE_HUB_CLIENT_SECRET }}
         run: |
-          {
-            echo "## Publish al release-hub (manual, interim — TR-12 opción 3)"
-            echo ""
-            echo "1. Descargar el artifact \`linux-arm64-release\` de este run."
-            echo "2. Colocarlo en \`releases/<version>/linux-arm64/\` en tu checkout local."
-            echo "3. \`bun run scripts/release.ts auth login\` (si no hay sesión activa)."
-            echo "4. \`bun run scripts/release.ts publish --target linux-arm64 --slug haido --skip-build\`"
-          } >> "$GITHUB_STEP_SUMMARY"
+          manual_instructions() {
+            {
+              echo "## Publish al release-hub (manual, interim — TR-12 opción 3 / fallback TR-15)"
+              echo ""
+              echo "1. Descargar el artifact \`linux-arm64-release\` de este run."
+              echo "2. Colocarlo en \`releases/<version>/linux-arm64/\` en tu checkout local."
+              echo "3. \`bun run scripts/release.ts auth login\` (si no hay sesión activa)."
+              echo "4. \`bun run scripts/release.ts publish --target linux-arm64 --slug haido --skip-build\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          if [ -z "$RELEASE_HUB_CLIENT_ID" ] || [ -z "$RELEASE_HUB_CLIENT_SECRET" ]; then
+            echo "RELEASE_HUB_CLIENT_ID/SECRET no están seteados — fallback manual (TR-15 paso 2)."
+            manual_instructions
+            exit 0
+          fi
+
+          if bun run scripts/release.ts publish --client-credentials --skip-build --target linux-arm64 --slug haido; then
+            echo "## Publish al release-hub: OK (automático, client_credentials — TR-15)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Publish automático falló — fallback a instrucciones manuales (TR-15 paso 2)."
+            manual_instructions
+          fi

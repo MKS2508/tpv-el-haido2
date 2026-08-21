@@ -20,7 +20,12 @@
  *     [--hub https://admin.releases.mks2508.systems] \
  *     [--notes "Release notes"] \
  *     [--skip-build] \
+ *     [--client-credentials] \
  *     [--dry-run]
+ *
+ *   --client-credentials: headless CI mode — auth via OAuth2 client_credentials
+ *     grant against Pocket ID using RELEASE_HUB_CLIENT_ID / RELEASE_HUB_CLIENT_SECRET
+ *     env vars. No PKCE cache required, no disk cache written, no browser.
  */
 
 import { existsSync, mkdirSync, chmodSync, readdirSync, readFileSync } from 'node:fs';
@@ -98,6 +103,7 @@ export interface IPublishOptions {
   readonly hub: string;
   readonly notes: string;
   readonly skipBuild: boolean;
+  readonly clientCredentials: boolean;
   readonly dryRun: boolean;
 }
 
@@ -168,6 +174,9 @@ Commands:
     --hub      Admin API base URL (default: ${DEFAULT_HUB_URL})
     --notes    Release notes / changelog text
     --skip-build  Skip bun run build-release; assumes artifacts exist
+    --client-credentials  Headless auth via OAuth2 client_credentials grant (CI mode).
+                  Requires RELEASE_HUB_CLIENT_ID + RELEASE_HUB_CLIENT_SECRET env vars.
+                  No PKCE cache needed; no token written to disk.
     --dry-run  Log what would be uploaded, no POST
 
 Examples:
@@ -175,6 +184,7 @@ Examples:
   bun run scripts/release.ts auth status
   bun run scripts/release.ts publish --target macos-arm64 --slug haido --dry-run
   bun run scripts/release.ts publish --target all --slug haido --skip-build
+  bun run scripts/release.ts publish --target macos-arm64 --slug haido --client-credentials --dry-run
 `);
 }
 
@@ -221,6 +231,7 @@ function parsePublishOptions(argv: string[]): Result<IPublishOptions, ResultErro
     hub: get('--hub') ?? DEFAULT_HUB_URL,
     notes: get('--notes') ?? '',
     skipBuild: has('--skip-build'),
+    clientCredentials: has('--client-credentials'),
     dryRun: has('--dry-run'),
   });
 }
@@ -483,6 +494,150 @@ async function loadValidToken(): Promise<Result<ITokenCache, ResultError>> {
   }
 
   return refreshAccessToken(cache, discoveryResult.value);
+}
+
+// ─────────────────────────────── Client credentials (CI) ─────────────────────
+
+/**
+ * Result of a successful OAuth2 `client_credentials` grant. Holds the access
+ * token in memory only — never persisted to disk.
+ */
+export interface IClientCredentialsToken {
+  readonly accessToken: string;
+  /** Optional subject claim extracted from the access token (display only). */
+  readonly sub: string;
+}
+
+/**
+ * Mints an access token via OAuth2 `client_credentials` grant (RFC 6749 §4.4)
+ * against Pocket ID. Intended for headless CI use — no browser, no PKCE, no
+ * disk cache.
+ *
+ * Required env vars:
+ *   - `RELEASE_HUB_CLIENT_ID` — confidential client ID registered in Pocket ID
+ *   - `RELEASE_HUB_CLIENT_SECRET` — corresponding client secret
+ *
+ * The token is returned to the caller and lives only in the calling process's
+ * memory. Re-invoke this function to mint a fresh token if the current one
+ * expires (cheap; ~one HTTP round-trip).
+ *
+ * @returns `ok({ accessToken, sub })` or an error.
+ */
+export async function clientCredentialsLogin(): Promise<Result<IClientCredentialsToken, ResultError>> {
+  const clientId = process.env.RELEASE_HUB_CLIENT_ID;
+  const clientSecret = process.env.RELEASE_HUB_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    const missing = [
+      !clientId ? 'RELEASE_HUB_CLIENT_ID' : null,
+      !clientSecret ? 'RELEASE_HUB_CLIENT_SECRET' : null,
+    ].filter(Boolean).join(', ');
+    return err(
+      resultError(
+        'CLIENT_CREDENTIALS_ENV_MISSING',
+        `client_credentials mode requires env vars: ${missing}. ` +
+          `Export them before running publish --client-credentials.`,
+      ),
+    );
+  }
+
+  log.info('Fetching OIDC discovery metadata (client_credentials mode)…');
+  const discoveryResult = await discoverOidc(OIDC_ISSUER_URL);
+  if (isErr(discoveryResult)) {
+    return err(
+      resultError(
+        'OIDC_DISCOVERY_FAILED',
+        `OIDC discovery failed for client_credentials: ${discoveryResult.error.message}`,
+      ),
+    );
+  }
+  const serverMetadata = discoveryResult.value;
+  log.success('OIDC discovery complete.');
+
+  // Confidential client — Pocket ID issues tokens via HTTP Basic auth on the
+  // token endpoint (RFC 6749 §2.3.1), which `ClientSecretBasic` implements.
+  const clientIdentity: oauth.Client = {
+    client_id: clientId,
+    token_endpoint_auth_method: 'client_secret_basic',
+  };
+  const clientAuth = oauth.ClientSecretBasic(clientSecret);
+
+  const tokenResult = await tryCatchAsync(async () => {
+    const params = new URLSearchParams({ grant_type: 'client_credentials' });
+    // Pocket ID scopes: hub admin endpoints accept the `openid` baseline;
+    // additional scopes per client config. Don't over-ask; let the server
+    // reject if it requires more.
+    params.set('scope', 'openid');
+
+    const tokenResponse = await oauth.clientCredentialsGrantRequest(
+      serverMetadata,
+      clientIdentity,
+      clientAuth,
+      params,
+    );
+
+    const tokens = await oauth.processClientCredentialsResponse(
+      serverMetadata,
+      clientIdentity,
+      tokenResponse,
+    );
+    return tokens;
+  }, 'CLIENT_CREDENTIALS_GRANT_FAILED');
+
+  if (isErr(tokenResult)) {
+    return err(
+      resultError(
+        'CLIENT_CREDENTIALS_GRANT_FAILED',
+        `client_credentials grant failed: ${tokenResult.error.message}`,
+      ),
+    );
+  }
+
+  const tokens = tokenResult.value;
+  const accessToken = tokens.access_token;
+  if (!accessToken) {
+    return err(
+      resultError(
+        'CLIENT_CREDENTIALS_NO_ACCESS_TOKEN',
+        'client_credentials grant returned no access_token',
+      ),
+    );
+  }
+
+  // Extract `sub` for display — opaque to the caller, no signature verify.
+  let sub = 'unknown';
+  const decodeResult = decodeJwtPayload(accessToken);
+  if (isOk(decodeResult)) {
+    sub = (decodeResult.value.sub as string | undefined) ?? 'unknown';
+  }
+
+  log.success(`client_credentials grant OK (sub=${sub}, scope=${tokens.scope ?? 'n/a'}).`);
+  return ok({ accessToken, sub });
+}
+
+/**
+ * Resolves an access token using the auth strategy selected by `opts`.
+ *
+ * - `opts.clientCredentials === true` → mint via `clientCredentialsLogin()`.
+ * - otherwise → load PKCE cache (refresh if expired).
+ *
+ * Kept separate from `publish()` so the retry-on-401 path can re-mint under
+ * the same strategy without duplicating branching.
+ */
+async function mintAccessToken(
+  opts: IPublishOptions,
+): Promise<Result<{ accessToken: string; email?: string; sub?: string }, ResultError>> {
+  if (opts.clientCredentials) {
+    const ccResult = await clientCredentialsLogin();
+    if (isErr(ccResult)) return err(ccResult.error);
+    return ok({ accessToken: ccResult.value.accessToken, sub: ccResult.value.sub });
+  }
+  const pkceResult = await loadValidToken();
+  if (isErr(pkceResult)) return err(pkceResult.error);
+  return ok({
+    accessToken: pkceResult.value.access_token,
+    email: pkceResult.value.email,
+    sub: pkceResult.value.sub,
+  });
 }
 
 // ─────────────────────────────── auth login ──────────────────────────────────
@@ -1044,8 +1199,9 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
 
   // 1. Auth
   let accessToken: string;
-  if (opts.dryRun) {
-    // Allow dry-run without auth to facilitate smoke testing.
+  if (opts.dryRun && !opts.clientCredentials) {
+    // Dry-run without --client-credentials: keep PKCE-style behaviour
+    // (placeholder if no cache) so existing CI smokes that fake auth stay green.
     const cacheResult = readTokenCache();
     if (isOk(cacheResult)) {
       accessToken = cacheResult.value.access_token;
@@ -1055,17 +1211,27 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
       log.warn('[DRY-RUN] No token cached — upload would fail in live mode. Run: auth login');
     }
   } else {
-    const tokenResult = await loadValidToken();
+    // Live mode OR --client-credentials (regardless of --dry-run): always
+    // mint a real token. This is what makes --client-credentials --dry-run
+    // actually exercise the grant — the whole point of the smoke.
+    const tokenResult = await mintAccessToken(opts);
     if (isErr(tokenResult)) {
       return err(
         resultError(
           'AUTH_REQUIRED',
-          `Not authenticated: ${tokenResult.error.message}\nRun: bun run release:auth-login`,
+          `Not authenticated: ${tokenResult.error.message}\n` +
+            (opts.clientCredentials
+              ? 'Set RELEASE_HUB_CLIENT_ID + RELEASE_HUB_CLIENT_SECRET env vars.'
+              : 'Run: bun run release:auth-login'),
         ),
       );
     }
-    accessToken = tokenResult.value.access_token;
-    log.success(`Authenticated as: ${tokenResult.value.email}`);
+    accessToken = tokenResult.value.accessToken;
+    if (opts.clientCredentials) {
+      log.success(`Authenticated via client_credentials (sub=${tokenResult.value.sub ?? 'unknown'}).`);
+    } else {
+      log.success(`Authenticated as: ${tokenResult.value.email}`);
+    }
   }
 
   // 2. Read version
@@ -1127,10 +1293,12 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
     );
 
     if (isErr(uploadResult)) {
-      // If 401, attempt one token refresh and retry.
+      // If 401, attempt one re-auth (PKCE refresh OR client_credentials re-mint)
+      // and retry. The strategy follows `opts` so --client-credentials mode
+      // mints a fresh token instead of trying to load the (absent) PKCE cache.
       if (uploadResult.error.message.includes('Unauthorized') && !opts.dryRun) {
-        log.warn('Got 401 — attempting token refresh + retry…');
-        const refreshResult = await loadValidToken();
+        log.warn('Got 401 — attempting re-auth + retry…');
+        const refreshResult = await mintAccessToken(opts);
         if (isOk(refreshResult)) {
           const retryResult = await uploadArtifact(
             opts,
@@ -1138,7 +1306,7 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
             version,
             artifactPath,
             sigContent,
-            refreshResult.value.access_token,
+            refreshResult.value.accessToken,
           );
           if (isOk(retryResult)) {
             results.push(retryResult.value);
@@ -1146,7 +1314,7 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
           }
           log.error(`Retry upload failed for ${target}: ${retryResult.error.message}`);
         } else {
-          log.error(`Token refresh failed: ${refreshResult.error.message}`);
+          log.error(`Re-auth failed: ${refreshResult.error.message}`);
         }
       } else {
         log.error(`Upload failed for ${target}: ${uploadResult.error.message}`);
