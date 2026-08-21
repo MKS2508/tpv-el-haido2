@@ -591,6 +591,52 @@ tpv-el-haido/
 - Master licenses validate locally without server connection
 - Regular licenses require online validation against license server
 
+## Release CLI (`scripts/release.ts`) — publish to desktop-release-hub
+
+CLI que autentica contra Pocket ID y publica artefactos firmados a
+`desktop-release-hub` (`haido.releases.mks2508.systems` / `admin.releases.mks2508.systems`).
+Dos modos de auth — **elegí el que corresponda, no son intercambiables**:
+
+| Modo | Cuándo | Auth | Cache |
+|---|---|---|---|
+| **PKCE loopback** (humano) | `bun run scripts/release.ts auth login` (una vez) → `publish` sin flags | Navegador, passkey Pocket ID | `~/.config/release-hub/token.json` (refresh automático) |
+| **`client_credentials`** (CI/headless) | `publish --client-credentials` | `RELEASE_HUB_CLIENT_ID` / `RELEASE_HUB_CLIENT_SECRET` (env vars, GitHub Secrets en CI) | **Ninguno** — mintea token nuevo en memoria cada invocación, se descarta al salir |
+
+```bash
+# Humano, una vez por máquina
+bun run scripts/release.ts auth login
+bun run scripts/release.ts auth status   # ver token cacheado / expiry
+bun run scripts/release.ts auth logout   # borrar cache
+
+# Publish manual (usa el token PKCE cacheado)
+bun run scripts/release.ts publish --target macos-arm64 --slug haido [--dry-run]
+
+# Publish headless (CI, o local si exportás las env vars) — nunca abre navegador
+RELEASE_HUB_CLIENT_ID=... RELEASE_HUB_CLIENT_SECRET=... \
+  bun run scripts/release.ts publish --client-credentials --skip-build --target linux-x64 --slug haido
+```
+
+**Flags de `publish`**: `--target <macos-arm64|macos-x64|windows-x64|linux-x64|linux-arm64|all>`
+· `--slug <project>` (default implícito `haido`) · `--hub <url>` (default
+`https://admin.releases.mks2508.systems`) · `--notes "..."` · `--skip-build` (asume artifacts ya
+compilados en `releases/<version>/<target>/`) · `--client-credentials` (ver tabla arriba) ·
+`--dry-run` (loguea qué subiría, sin `POST` real — **excepción**: con `--client-credentials`
+igual mintea un token real, para poder probar el grant sin arriesgar un upload real).
+
+**CI**: `linux-x64-deploy.yml` / `linux-arm64-deploy.yml` corren `publish --client-credentials
+--skip-build` en tags `v*` (nunca en push a `main`, que es solo smoke build) — auto si
+`RELEASE_HUB_CLIENT_ID`/`SECRET` existen como GitHub Secrets, cae a instrucciones manuales en el
+step summary si faltan o si el publish automático falla (nunca un rojo sin salida). Verificado
+end-to-end real en el tag `v0.1.3` (2026-08-21) — ver `docs/task-requests/TR-15-*.md` y
+`docs/decisions/r4-auth-ci-hub-client-credentials-2026-08-21.md` para el detalle de investigación
+(por qué OAuth2 `client_credentials` y no las otras 2 opciones evaluadas) y la evidencia de
+verificación (logs de CI + `GET` real al hub + descarga del artifact).
+
+**Secrets**: `RELEASE_HUB_CLIENT_ID`/`SECRET` viven en GitHub Secrets (CI) y en `.env.local`
+(gitignored, para smoke manual) — nunca en commit/log/doc. El client Pocket ID (`ci-tpv-haido`,
+`client_credentials` grant) fue creado vía Admin API de Pocket ID, no por UI — ver TR-15 si hace
+falta rotarlo o crear uno nuevo para otro proyecto.
+
 ## CRITICAL: Pre-Test Validation Protocol
 
 **OBLIGATORIO**: Antes de pedir al usuario que pruebe cualquier cambio, SIEMPRE ejecutar:
@@ -632,8 +678,9 @@ Este proyecto usa **Axon** (meta-orchestrator para multi-session projects).
 **Configuración**: `.claude/axon.config.json`
 
 **Archivos clave**:
-- `roadmap.spec.yml` — SSOT del roadmap (semver-like: 0.X.Y)
-- `ROADMAP.md` — roadmap legible (generado desde spec)
+- `docs/roadmap.model.yml` — SSOT del roadmap (schema de nodos `axon` v0.2.2: outcome/track +
+  milestones anidados + gates per-item). Mutaciones solo vía `axon` CLI/MCP, nunca edición manual.
+- `docs/ROADMAP.md` — roadmap legible (generado desde el modelo, guard `bun run check:roadmap`)
 - `docs/task-requests/` — task-requests para @task-decomposer
 - `docs/progress-log.md` — log de progreso por fase
 - `docs/handoffs/` — handoffs entre sesiones
