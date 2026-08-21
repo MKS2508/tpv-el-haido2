@@ -76,15 +76,18 @@ Fichero de estado y no symlink: en Windows los symlinks exigen privilegios.
    descomprimir: descomprimir ya es ejecutar la decisión de confiar.
 2. **activate** — sólo mueve punteros, instantáneo. Marca `verified = false`.
 3. **app-ready** — el frontend confirma tras un doble `requestAnimationFrame`.
-4. **rollback** — si se agotan los arranques sin confirmar, vuelta a `previous`;
-   si no hay, al frontend embebido.
+4. **rollback** — por dos vías complementarias: un temporizador de 90 s tras aplicar en
+   caliente (el reload no reinicia el proceso, así que ahí nadie consume un arranque) y un
+   contador de arranques sin confirmar (que sí cubre que el bundle tumbe el proceso). Se
+   vuelve a `previous`; si no hay, al frontend embebido.
 
 ### Tres invariantes que no son opcionales
 
 - **Verificar antes de tocar disco.** Un bundle que no valida no llega a
   descomprimirse.
-- **Contar arranques, no segundos.** Un temporizador no cubre que el bundle tumbe
-  el proceso; el contador de arranques sí.
+- **Contar arranques Y contar segundos.** Un temporizador no cubre que el bundle
+  tumbe el proceso; un contador de arranques no cubre la aplicación en caliente,
+  donde no hay reinicio que contar. Hacen falta los dos.
 - **Un cambio de binario nativo invalida el slot.** Tras actualizar el binario, el
   frontend embebido es más nuevo que cualquier slot. `minNativeVersion` no cubre
   este sentido porque el bundle ya estaba instalado.
@@ -92,17 +95,16 @@ Fichero de estado y no symlink: en Windows los symlinks exigen privilegios.
 ## Estado actual
 
 **Ciclo completo ejercitado en el hardware de producción** (`supermicro-pcbar`,
-WebKitGTK 2.52.6, NVIDIA, COSMIC/Wayland), contra `scripts/ota-fake-hub.ts` con un bundle
-real de 16 MB firmado por `build-bundle.ts`:
+WebKitGTK 2.52.6, NVIDIA, COSMIC/Wayland), por la ruta real y sin instrumentación, contra
+`scripts/ota-fake-hub.ts` con un bundle de 16 MB firmado por `build-bundle.ts`:
 
 ```
-embebido arranca por el esquema
-  → GET /api/bundles/latest?nativeVersion=0.1.0&deviceId=4fd659…
-  → GET /api/bundles/2026.08.21-1/download          (16 756 290 bytes)
-  → sha256 + ed25519 verificados, descomprimido, staged
-  → ota_status: staged=1221a0f6…                    (invoke real desde la webview)
-  → ota_apply_staged → activo, reload
-  → la webview sirve el BUNDLE, no el embebido
+GET /api/bundles/latest?nativeVersion=0.1.0&deviceId=4fd659…
+GET /api/bundles/2026.08.21-2/download        16 760 543 bytes
+  → sha256 + ed25519 verificados, descomprimido, preparado
+  → el frontend aplica solo al cumplirse la guarda (sin pedido, 60 s sin actividad)
+  → la webview pasa a servir el BUNDLE
+  → state.json: verified = true   (app-ready por la ruta real, invoke incluido)
 ```
 
 Y la red de seguridad, en tres arranques seguidos sin confirmar `app-ready`:
