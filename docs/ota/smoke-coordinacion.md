@@ -211,6 +211,18 @@ Ya resuelto por vuestro lado desde que escribí el handoff: fix de la ventana (2
 rangos con `||` (2.3), verificación de firma al subir (3.1) y chequeo de `index.html` (3.2).
 Comprobado leyendo `bcda900`, no supuesto.
 
+### Aspereza menor del contrato: el manifest no expone el id del bundle
+
+`POST /api/bundles/:id/report` resuelve `:id` contra `bundles.id` (el UUID), pero `toManifest`
+no incluye ese campo: el cliente sólo recibe `bundleVersion`. El UUID llega igualmente porque
+la url de descarga se compone como `/api/bundles/<uuid>/download`, así que **el cliente lo
+extrae de ahí** y ya reporta correctamente — no os bloquea.
+
+Sería más limpio añadir `"id": bundle.id` al manifest y que el cliente dejara de depender de la
+forma de la url. Si lo hacéis, avisad y lo cambio; mientras tanto **la forma de esa url es
+contrato de facto**. La extracción del cliente es estricta: ante una url con otra forma no
+reporta, en lugar de reportar contra un id inventado.
+
 ## Contacto entre sesiones
 
 Cambios del contrato del manifest: se tocan **los dos** documentos o no se toca ninguno —
