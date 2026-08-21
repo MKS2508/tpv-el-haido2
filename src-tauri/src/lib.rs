@@ -24,6 +24,38 @@ struct DbState {
     db: Mutex<Option<Database>>,
 }
 
+/// Evita la ventana en blanco de WebKitGTK cuando no hay ruta DMABUF utilizable.
+///
+/// El renderer DMABUF de WebKitGTK falla al reservar el buffer sobre NVIDIA por la
+/// ruta X11 ("Failed to create GBM buffer"), y según el estado del driver eso se
+/// manifiesta como compositing por software o directamente como ventana en
+/// blanco. Desactivarlo devuelve una ventana que se ve, pero renderizada por CPU.
+///
+/// Por eso sólo se desactiva cuando NO hay sesión Wayland: ahí la ruta DMABUF sí
+/// funciona y desactivarla costaría toda la aceleración (medido en
+/// supermicro-pcbar: 173 MiB de GPU con DMABUF frente a no aparecer siquiera en
+/// nvidia-smi sin él). El AppImage además se empaqueta forzando la ruta Wayland
+/// cuando existe, ver `patchAppImageGtkHook` en scripts/build-release.ts.
+///
+/// Respeta un valor puesto desde fuera, para poder forzar cualquiera de las dos
+/// rutas al diagnosticar.
+#[cfg(target_os = "linux")]
+fn ensure_webkit_renderer_usable() {
+    let on_wayland = std::env::var("WAYLAND_DISPLAY").is_ok_and(|v| !v.is_empty());
+    let already_set = std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_ok();
+
+    if !on_wayland && !already_set {
+        eprintln!(
+            "[render] sin sesión Wayland: se desactiva el renderer DMABUF para evitar la ventana \
+             en blanco. El compositing pasa a ser por software."
+        );
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn ensure_webkit_renderer_usable() {}
+
 /// Activa el bundle preparado. Lo llama el frontend, no el poller.
 ///
 /// Quién decide CUÁNDO es el frontend a propósito: es el único que sabe si hay
@@ -487,6 +519,8 @@ async fn cleanup_audit_logs(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    ensure_webkit_renderer_usable();
+
     tauri::Builder::default()
         .register_asynchronous_uri_scheme_protocol(ota::SCHEME, ota::protocol::handle)
         .plugin(tauri_plugin_opener::init())
