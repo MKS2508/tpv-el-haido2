@@ -850,3 +850,34 @@ panel de admin). Cero cambios de código necesarios en ningún repo, es una env 
 - TR-16 (whitelist admin del hub) — listo, sin ejecutar, esperando OK.
 - Wiring de bundles en `ota-bundle-deploy.yml` — deferred (candidato TR-17 o extensión de TR-14).
 - Sync completo de `roadmap.spec.yml` — sigue diferido.
+
+## 2026-08-21 (continuación 6) — TR-16 ejecutado: whitelist activa y verificada en ambos sentidos
+
+Con OK explícito ("ejecutalo"): `OIDC_ADMIN_SUBS` seteada en `release-hub-server` (`coolify-cli
+env --set`) + restart para recargar env. Verificado con 2 smokes reales, no solo lectura de
+config:
+
+- **Positivo**: token de `ci-tpv-haido` (whitelisteado) → `GET /api/admin/projects` → `200`,
+  sigue pasando.
+- **Negativo**: client M2M desechable creado solo para el test (`tr16-negative-test`, sin tocar
+  el secret de ningún servicio real de los ~15 registrados) → mismo endpoint → **`401`** — antes
+  del fix cualquier JWT válido daba `200` aquí. Client desechable borrado tras el test.
+
+Gotcha encontrado: el monitor de background para esperar el restart usaba `coolify-cli status`
+buscando el substring `running:healthy`, pero ese comando no lo emite en ese formato —
+`coolify-cli list` sí. El loop quedó pollenado inofensivamente sin nunca cumplir la condición;
+verificado el estado real con `list` en su lugar. Anotado para no repetir el mismo grep.
+
+**Único punto sin verificación empírica directa**: el login humano de waxin (passkey en
+navegador, no simulable desde aquí) — el sub correcto ya está en la whitelist, mismo mecanismo
+ya probado dos veces, pero queda como confirmación de un minuto pendiente de waxin.
+
+TR-16 cerrado como `closed-with-flagged-edge`. El objetivo de TR-15 (auth CI→hub) y su hallazgo
+colateral (TR-16, whitelist de admin) quedan ambos resueltos esta sesión.
+
+### Pendiente
+
+- TR-16 — confirmar a mano que el login humano de waxin al admin UI del hub sigue funcionando
+  (no bloqueante, alta confianza).
+- Wiring de bundles en `ota-bundle-deploy.yml` — deferred (candidato TR-17 o extensión de TR-14).
+- Sync completo de `roadmap.spec.yml` — sigue diferido.

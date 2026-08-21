@@ -89,6 +89,33 @@ OIDC_ADMIN_SUBS=678e7ffd-a0ef-4923-ac76-51bce345f169,client-e54c5644-8557-4aa5-b
 - Documentar el resultado en este mismo TR (sección "Estado") + una línea en el progress-log de
   `tpv-el-haido2` (aunque el cambio viva en otro repo, el hallazgo se originó aquí).
 
+## Estado (2026-08-21, ejecutado y verificado — OK explícito de waxin)
+
+Ejecutado en el orden del TR:
+
+1. ✅ `OIDC_ADMIN_SUBS` seteada en `release-hub-server` (`coolify-cli env --set`) con exactamente
+   los 2 subs propuestos. Confirmado leyendo la var de vuelta.
+2. ✅ `coolify-cli restart d79mh3d95qhlpdd7hmmdn2sn` — servicio `running:healthy` tras el restart
+   (verificado con `coolify-cli list`, no con `status` — su formato de salida no matchea
+   `running:healthy` como substring, nota para la próxima vez).
+3. ✅ **Smoke positivo**: token real de `ci-tpv-haido` (client de TR-15) → `GET /api/admin/projects`
+   → `200`. Sigue pasando, como debía.
+4. ✅ **Smoke negativo**: creado un client M2M desechable (`tr16-negative-test`, NO en la
+   whitelist) — vía la misma Admin API key, sin tocar el secret de ningún servicio real — token
+   real minteado → `GET /api/admin/projects` → **`401`** (antes del fix, cualquier token válido
+   daba `200` aquí). Prueba directa de que el gate ahora filtra de verdad. Client desechable
+   borrado después (`DELETE /api/oidc/clients/<id>` → `204`).
+5. ⏸️ **Flujo humano de waxin — no verificado empíricamente** (requeriría una ceremonia passkey
+   real en navegador, fuera de lo que puedo ejecutar). Garantía indirecta: mismo mecanismo de
+   whitelist que el smoke positivo/negativo ya probaron, y el sub de waxin
+   (`678e7ffd-a0ef-4923-ac76-51bce345f169`) está en la lista — si algo estuviera mal, sería un
+   error de transcripción del UUID, no de lógica. **Pendiente: waxin confirma a mano** que sigue
+   entrando a `admin.releases.mks2508.systems` sin problema.
+
+**Veredicto: `closed-with-flagged-edge`** — el gate está activo y verificado en ambos sentidos
+(positivo/negativo); el único punto sin prueba directa es el login humano, que queda como
+verificación de un minuto para waxin, no como bloqueante técnico.
+
 ## Suggested executor agent
 
 Directo (yo, axon) — es una env var + 2 smokes de verificación, no hay ambigüedad de diseño ni
