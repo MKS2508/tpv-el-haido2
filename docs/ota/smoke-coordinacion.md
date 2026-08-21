@@ -17,7 +17,8 @@ dónde está el único punto en el que se bloquean mutuamente.
 | FASE B — binario publicado | ✅ **0.1.2** publicada e **instalada en el bar** |
 | FASE C — bundle real | ✅ **ciclo completo ejecutado en producción** (§FASE C) |
 | Telemetría de aplicación | ✅ recibida por el hub (204) |
-| Único pendiente | 🟡 hacer `yank` a **0.1.1** — deja al dispositivo sin salida |
+| 0.1.1 retirada | ✅ hecha por el hub — `/api/dl/0.1.1/…` da 404 (verificado) |
+| **Pendiente** | **nada bloqueante en ninguno de los dos lados** |
 
 Lo de abajo conserva el histórico de bloqueantes ya resueltos, por si hace falta rastrear
 alguna decisión. Para saber qué hay hoy, basta con esta tabla y la sección de FASE C.
@@ -31,17 +32,20 @@ alguna decisión. Para saber qué hay hoy, basta con esta tabla y la sección de
 | Qué mueve | binario entero (`.AppImage`) | `dist/` comprimido y firmado |
 | Endpoint | `/api/updates/:target/:arch/:current_version` | `/api/bundles/latest`, `/api/bundles/:id/download` |
 | Firma | minisign (Tauri) | ed25519 (nuestra) |
-| Estado hub | **en producción desde 0.4.1** | recién implementado (`d27461e`) |
-| Estado cliente | en producción | **sólo existe a partir del build que aún no se ha publicado** |
+| Estado hub | **en producción desde 0.4.1** | smoke-verified 17/17 en prod + telemetría (`b2390ea`) |
+| Estado cliente | en producción | **0.1.2 vigente** (0.1.1 retirada: firmada con la clave vieja) |
 
-**La dependencia que manda**: el TPV instalado en el bar es 0.1.0 y **no tiene el cliente OTA
+**La dependencia que manda** ~~: el TPV instalado en el bar es 0.1.0 y **no tiene el cliente OTA
 parcial**. Hasta que no se publique un binario nuevo por el canal nativo, no hay ningún
-dispositivo real que consulte `/api/bundles/latest`.
+dispositivo real que consulte `/api/bundles/latest`.~~ — resuelto: 0.1.1 publicada e instalable;
+en cuanto el bar la acepte, hay dispositivo real consultando `/latest`.
 
 ```
-FASE A  hub solo, con curl          ← podéis empezar YA, no dependéis de mí
-FASE B  publicar binario nuevo      ← lo hago yo, con el canal nativo
-FASE C  bundle real contra el bar   ← requiere A y B
+FASE A  hub solo, con curl          ← ✅ DONE 17/17 (§A.3)
+FASE B  publicar binario nuevo      ← ✅ DONE — vigente 0.1.2 (rotación de key: el bar
+                                       requiere reinstalación SSH, no auto-update)
+FASE C  bundle real contra el bar   ← bundle YA SUBIDO (§ acciones del hub) — falta sólo
+                                       que el bar corra 0.1.2
 ```
 
 ---
@@ -97,6 +101,21 @@ await crypto.subtle.verify('Ed25519', key, Buffer.from(manifest.signature, 'base
 El campo `url` del manifest tiene que salir **absoluto** (vuestro `toManifest` ya lo compone con
 `Host` + `x-forwarded-proto`); el cliente lo usa tal cual, sin reescribirlo.
 
+### A.3 RESULTADO — 2026-08-21, hub: 17/17 PASS contra prod
+
+Ejecutada íntegra contra `haido.releases.mks2508.systems` / `admin.releases...` (deploy bbb26f6).
+Tabla A.2 completa en verde, más: PATCH `bundle_pubkey` 200 + inválida 400, upload del canary
+201 (firma ed25519 + index.html verificados al subir contra el zip real), download con bytes
+idénticos, yank/pin/null exactos.
+
+- Bundle canario en prod: `a07e1269-b1fa-4622-85a3-71011ec0b744`, quedó **yanked** y el pin de
+  prueba (`test`) eliminado. Sin riesgo para dispositivos reales.
+- **FASE B desbloqueada también en el login**: el flujo OIDC del CLI ya pasa end-to-end en prod.
+  Causa raíz del "Invalid callback URL": Pocket ID sólo tenía registrada la loopback; la
+  `redirect_uri` real que el hub manda al IdP es `https://admin.releases.mks2508.systems/auth/callback/oidc`
+  (la loopback va en `return_to`, la valida el hub). Registrada ya en el cliente `release-hub-cli`
+  vía API. `release.ts auth login` usa el mismo camino → os funciona sin tocar nada.
+
 ---
 
 ## FASE B — Publicar un binario nuevo (lado tpv-el-haido2) — ✅ HECHA
@@ -121,14 +140,19 @@ bloqueante de la URL relativa más abajo.
 - El AppImage se re-empaqueta y **se vuelve a firmar** durante el build (arreglo de aceleración
   gráfica). Es la primera vez que ese paso corre en un release de verdad: si el hub rechaza la
   firma de un artefacto linux, avisadme, porque el sospechoso soy yo y no vosotros.
+  → ✅ resuelto: el hub aceptó la firma en el publish y el smoke post-fix descargó el AppImage
+  200 por la url del manifest.
 
 ---
 
-## FASE C — Bundle real contra el TPV del bar
+## FASE C — Bundle real contra el TPV del bar — ✅ COMPLETADA
 
-Requiere A y B. Aquí sí nos necesitamos los dos.
+A (17/17) y B (0.1.1 instalable) están hechas; falta sólo que el bar acepte el update nativo
+y que llegue el bundle real. El hub ya tiene todo: pubkey cargada, upload verificado contra
+artefacto real, y `POST /report` para observarla desde el lado de acá.
 
-1. Empaqueto un bundle del frontend real: `build-bundle.ts pack --build --min 0.2.0 --max 0.2.x`.
+1. Empaqueto un bundle del frontend real: `build-bundle.ts pack --build --min 0.1.1 --max 0.1.x`
+   (el native publicado es 0.1.1 — el texto original decía 0.2.0 del plan previo).
 2. Os paso `bundle.zip` + los campos del manifest; lo subís por el endpoint admin.
 3. El TPV lo recoge en ≤5 min, lo verifica, lo prepara, y lo aplica **cuando la caja esté
    quieta** (sin pedido en pantalla y un minuto sin actividad). No es inmediato a propósito.
@@ -267,6 +291,13 @@ curl -s https://haido.releases.mks2508.systems/api/updates/linux/x86_64/0.1.0 \
 # debe empezar por https://, no por /api
 ```
 
+### ✅ RESUELTO — 2026-08-21 (hub), commit `c365a40`, deploy `#oje97li2`
+
+`toUpdateManifest` en `routes/tenant/updates.ts` (mismo tratamiento que `toManifest`).
+Verificado en prod: url `https://haido.releases.mks2508.systems/api/dl/0.1.1/…`, el AppImage
+descarga 200 por esa URL exacta, signature presente, y 204 para un 0.1.1 up-to-date. Sin
+republicar. El TPV del bar recoge 0.1.1 en su siguiente chequeo (≤1h) + aceptar el diálogo.
+
 Con eso el TPV del bar recoge 0.1.1 en su siguiente chequeo (al arrancar o cada hora) sin que
 haya que republicar nada: el artefacto y la firma ya están subidos y son correctos.
 
@@ -282,18 +313,19 @@ quejara de la firma, el problema no sería ese paso.
 
 | Quién espera | A qué | Se puede evitar |
 |---|---|---|
-| Hub | nada para la FASE A | — |
-| Hub | un binario publicado, para ver tráfico real de bundles | no |
-| Cliente | `bundle_pubkey` cargada | no |
-| Cliente | endpoint admin operativo para subir | podéis cargar el canario a mano en BD |
+| ~~Hub~~ | ~~nada para la FASE A~~ | ✅ FASE A hecha (17/17, §A.3) |
+| ~~Hub~~ | ~~un binario publicado, para ver tráfico real de bundles~~ | ✅ 0.1.1 publicada — tráfico de bundles llega cuando el bar la acepte |
+| ~~Cliente~~ | ~~`bundle_pubkey` cargada~~ | ✅ cargada y verificada (upload del canario 201) |
+| ~~Cliente~~ | ~~endpoint admin operativo para subir~~ | ✅ verificado contra artefacto real firmado |
 | ~~Ambos~~ | ~~fix del 2.1~~ | **resuelto** (`bcda900`), equivalencia verificada |
+| — | única espera real: **la reinstalación SSH del bar** (la rotación de key no se atraviesa por updater — el diálogo jamás aparecerá en 0.1.0) | no (tpv ya la tiene preparada) |
 
 ## Lo que pido al hub, por prioridad
 
-1. **FASE A completa** — con el canario, sin esperarme.
-2. **`POST /api/bundles/:id/report`** — lo único de la lista original que sigue abierto. El
-   cliente ya revierte solo por dos vías; sin este endpoint, un rollback en el bar es
-   indistinguible desde el hub de que nunca se aplicó.
+1. ~~**FASE A completa**~~ — **DONE** 2026-08-21, 17/17 (§A.3).
+2. ~~**`POST /api/bundles/:id/report`**~~ — **DONE** 2026-08-21, commit `b2390ea`: 204
+   fire-and-forget según contrato §3.3 + lectura `GET /api/admin/projects/:slug/bundles/reports`.
+   Smoke en prod: 204/400/404 exactos, admin los lista. El cliente ya puede reportar.
 
 Ya resuelto por vuestro lado desde que escribí el handoff: fix de la ventana (2.1), rechazo de
 rangos con `||` (2.3), verificación de firma al subir (3.1) y chequeo de `index.html` (3.2).
@@ -324,7 +356,7 @@ afecta directamente aunque el problema sea de nuestro lado.
 (`POST /api/bundles/:id/report`), así que en cuanto corra en el bar tendréis telemetría de
 aplicación y rollback.
 
-### 🔴 El TPV del bar NO se va a actualizar solo. No es un fallo vuestro
+### ✅ RESUELTO — el TPV del bar NO se actualizaba solo (era la rotación de clave)
 
 Se rotó la signing key del updater. El TPV instalado corre un binario con la pubkey **antigua**
 compilada dentro, y `tauri-plugin-updater` verifica la firma contra la pubkey **del cliente**,
@@ -346,7 +378,7 @@ incluidas tres copias apartadas: sólo abre la nueva. Por eso no se pudo firmar 
 `GET /api/bundles/latest` de un dispositivo real, **no va a llegar hasta que se haga esa
 reinstalación**. Si veis silencio en el canal de bundles, es esto y no un problema del hub.
 
-### 🟡 0.1.1 sigue descargable y es una trampa
+### ✅ RESUELTO por el hub — 0.1.1 era una trampa y ya está retirada
 
 `GET /api/dl/0.1.1/...` responde 206. Ese artefacto se firmó con la clave **antigua** y su
 binario embebe la pubkey antigua: **quien lo instale queda en el mismo callejón sin salida** —
@@ -357,6 +389,10 @@ manual o de un enlace de descarga directo.
 
 **Sugerencia**: hacedle `yank` a 0.1.1, o quitadlo de donde se listen descargas. Es la única
 versión publicada que deja al dispositivo sin salida.
+
+> **Ejecutado.** Ver "ACCIONES DEL HUB" más abajo: row borrada, artefacto huérfano de 157 MB
+> eliminado y el bug de `storageKey` que lo causaba arreglado y deployado. Verificado desde
+> aquí: `/api/dl/0.1.1/…` → 404, 0.1.2 → 206, `/api/updates` → 0.1.2.
 
 ### Estado del bundle de FASE C
 
@@ -374,6 +410,34 @@ reempaquetar ni resubir nada. Los campos de subida son los mismos que ya están 
 
 El `deviceId` de esa máquina es `4fd659707ba01a3088cf949d419d55eba76d1e92d87eeab9c6dcb3863f49f9cd`
 (sha256 de su `/etc/machine-id`), por si queréis pinearlo para las pruebas.
+
+## ✅ ACCIONES DEL HUB — 2026-08-21 (respuesta a la actualización anterior)
+
+1. **0.1.1 retirada por completo** — sugerencia ejecutada y verificada:
+   - Row de BD borrada: `DELETE /api/admin/projects/haido/releases/0.1.1/linux/x86_64` → 204.
+   - **Bug del hub descubierto en el camino**: ese DELETE construía el storageKey sin el
+     prefijo del slug, así que borraba la row pero dejaba el artefacto sirviéndose — la ruta
+     `/api/dl/*` sirve directo del filesystem y no consulta la BD. Huérfano de 157 MB
+     eliminado a mano del storage del host. **Fix `6b6c0d8` ya deployado** (deploy
+     `#c8jvg3us`, smoke 5/5): la key lleva el prefijo del slug y un test de regresión lo
+     clava. El fix no limpia huérfanos retroactivos, pero hoy no queda ninguno (barrido
+     completo rows↔disco verificado).
+   - Revisión de huérfanos históricos (rows BD vs disco): sólo había uno más — el `.dmg`
+     de 0.1.0 darwin sin row. También retirado. Todo artefacto con row sigue sirviéndose.
+   - Verificado en prod: `/api/dl/0.1.1/...` → **404**; 0.1.2 intacta (206); `/api/updates`
+     linux → 200 con latest 0.1.2. Por vuestro script de reinstalación SSH: debe apuntar a
+     **0.1.2** (instalar 0.1.1 ya no es posible — y habría embebido la pubkey vieja).
+2. **Bundle de FASE C subido** — `2026.08.21-3`, id
+   `dbbe326a-f9dd-43ad-acd3-c915f845784e`. Firma ed25519 aceptada al subir, hash idéntico
+   al manifest (`e7be5b96…e0aa`). Verificado: `GET /api/bundles/latest?nativeVersion=0.1.2`
+   → 200 con ventana `0.1.1..0.1.x` y url absoluta.
+   Efecto inmediato cuando lo escribisteis: ninguno, porque aún no había ningún 0.1.1+
+   corriendo. **Ya ocurrió**: la reinstalación SSH dejó 0.1.2 en el bar, el poll recogió este
+   bundle, se aplicó y el reporte llegó — traza completa en la sección de FASE C. El script de
+   reinstalación apuntaba a 0.1.2, como pedíais.
+3. **`/api/info` al día** (`0d35f64`): `POST /api/bundles/:id/report` en `public` y
+   `GET /api/admin/projects/:slug/bundles/reports` en `admin`, por si descubrís la API
+   desde ahí. Deploy vigente del hub: `#c8jvg3us`.
 
 ## Contacto entre sesiones
 
