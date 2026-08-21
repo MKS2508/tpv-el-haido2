@@ -285,6 +285,43 @@ mod tests {
     }
 
     #[test]
+    fn coincide_con_la_ventana_del_hub() {
+        // Tabla generada ejecutando la implementación real del hub
+        // (BundleService.withinWindow, desktop-release-hub bcda900, tras el fix
+        // de la cota pelada) sobre estos mismos catorce casos. Si alguno de los
+        // dos lados cambia de criterio, este test lo caza antes de que el hub
+        // empiece a servir bundles que el cliente descarta en silencio.
+        let (signing, _) = keypair();
+        let casos: &[(&str, &str, &str, bool)] = &[
+            ("0.2.0", "0.2.0", "0.2.x", true),
+            ("0.2.3", "0.2.0", "0.2.x", true),
+            ("0.3.0", "0.2.0", "0.2.x", false),
+            ("1.5.9", "1.4.0", "1.6.0", true),
+            ("1.4.0", "1.4.0", "1.6.0", true),
+            ("1.6.0", "1.4.0", "1.6.0", true),
+            ("1.6.1", "1.4.0", "1.6.0", false),
+            ("1.3.9", "1.4.0", "1.6.0", false),
+            ("1.5.3", "1.0.0", "^1.5.0", true),
+            ("2.0.0", "1.0.0", "^1.5.0", false),
+            ("1.9.9", "1.0.0", ">=1.0.0 <2.0.0", true),
+            ("2.0.1", "1.0.0", ">=1.0.0 <2.0.0", false),
+            ("0.1.0", "0.1.0", "0.9.0", true),
+            ("0.5.0", "0.1.0", "0.9.0", true),
+        ];
+
+        for (native, min, max, esperado) in casos {
+            let mut m = manifest_for(b"x", &signing);
+            m.min_native_version = (*min).to_string();
+            m.max_native_version = (*max).to_string();
+            assert_eq!(
+                m.check_native_compatible(native).is_ok(),
+                *esperado,
+                "nativo {native} con ventana [{min}, {max}]: el hub dice {esperado}"
+            );
+        }
+    }
+
+    #[test]
     fn una_version_ilegible_no_se_da_por_compatible() {
         let (signing, _) = keypair();
         let m = manifest_for(b"x", &signing);
