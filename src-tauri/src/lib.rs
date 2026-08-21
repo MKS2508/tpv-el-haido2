@@ -89,7 +89,21 @@ fn ota_status(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
 #[tauri::command]
 fn ota_app_ready(app: tauri::AppHandle) -> Result<(), String> {
     let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    ota::watchdog::mark_ready(&data_dir)
+
+    // Sólo se reporta la primera vez que este bundle confirma: en los arranques
+    // siguientes ya está verificado y repetirlo llenaría el hub de ruido.
+    let recien_confirmado = {
+        let state = ota::slots::load_state(&data_dir);
+        state.active.is_some() && !state.verified
+    };
+    ota::watchdog::mark_ready(&data_dir)?;
+
+    if recien_confirmado {
+        if let Some(id) = ota::slots::load_state(&data_dir).active_hub_id {
+            ota::poller::report(app.clone(), id, ota::poller::Outcome::Applied, None);
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -538,7 +552,22 @@ pub fn run() {
                 // Consume un intento de arranque y revierte si el bundle activo
                 // lleva demasiados sin confirmar. Va antes de crear la ventana:
                 // si revierte, el protocolo ya tiene que servir el slot anterior.
-                println!("[ota] arranque: {:?}", ota::watchdog::reconcile_boot(&data_dir));
+                // Se captura el id antes de reconciliar: si revierte, el estado
+                // ya no lo tendrá y no habría nada que reportar.
+                let hub_id_previo = ota::slots::load_state(&data_dir).active_hub_id;
+                let arranque = ota::watchdog::reconcile_boot(&data_dir);
+                println!("[ota] arranque: {arranque:?}");
+
+                if let (ota::watchdog::BootOutcome::RolledBack { .. }, Some(id)) =
+                    (&arranque, hub_id_previo)
+                {
+                    ota::poller::report(
+                        app.handle().clone(),
+                        id,
+                        ota::poller::Outcome::RolledBack,
+                        Some("no confirmó app-ready en los arranques concedidos".into()),
+                    );
+                }
 
                 // El canal parcial no debe poder impedir que el TPV arranque: si
                 // no hay fingerprint, simplemente no se consulta al hub.

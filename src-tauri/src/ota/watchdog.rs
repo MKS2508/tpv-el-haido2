@@ -108,8 +108,17 @@ pub fn arm_hot_apply<R: Runtime>(app: AppHandle<R>, slot_id: String) {
         }
 
         eprintln!("[ota] el bundle {slot_id} no confirmó tras aplicarse en caliente; revirtiendo");
+        let hub_id = state.active_hub_id.clone();
         match apply::rollback(&data_dir) {
             Ok(_) => {
+                if let Some(id) = hub_id {
+                    super::poller::report(
+                        app.clone(),
+                        id,
+                        super::poller::Outcome::RolledBack,
+                        Some("no confirmó app-ready tras aplicarse en caliente".into()),
+                    );
+                }
                 let _ = app.emit(BUNDLE_REVERTED_EVENT, slot_id);
             }
             Err(err) => eprintln!("[ota] no se pudo revertir: {err}"),

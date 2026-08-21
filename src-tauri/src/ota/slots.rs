@@ -30,6 +30,14 @@ pub struct SlotState {
     pub previous: Option<String>,
     /// Bundle descargado y verificado, a la espera de aplicarse.
     pub staged: Option<String>,
+    /// Id del bundle en el hub (UUID) del slot preparado.
+    ///
+    /// El slot se nombra por hash, que es lo que importa en disco; el hub lo
+    /// identifica por su UUID. Hace falta guardarlo para poder reportar el
+    /// resultado más tarde, incluso tras un reinicio.
+    pub staged_hub_id: Option<String>,
+    /// Id en el hub del slot activo.
+    pub active_hub_id: Option<String>,
     /// `false` mientras el bundle activo no haya confirmado `app-ready`.
     pub verified: bool,
     /// Arranques consumidos por el bundle activo sin confirmar.

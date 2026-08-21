@@ -49,6 +49,19 @@ pub fn slot_id(manifest: &BundleManifest) -> Result<String, ApplyError> {
     Ok(clean)
 }
 
+/// Extrae el identificador del bundle en el hub de su URL de descarga.
+///
+/// El manifest no lleva el UUID como campo propio, pero el hub compone la URL
+/// como `/api/bundles/<uuid>/download`, así que viaja ahí. Sería más limpio que
+/// el manifest lo expusiera directamente — anotado en el contrato de
+/// coordinación—, pero esto funciona con el contrato tal y como está hoy.
+pub fn hub_bundle_id(url: &str) -> Option<String> {
+    let sin_query = url.split(['?', '#']).next()?;
+    let resto = sin_query.split("/api/bundles/").nth(1)?;
+    let id = resto.strip_suffix("/download")?;
+    (!id.is_empty() && !id.contains('/')).then(|| id.to_string())
+}
+
 /// Descomprime el zip en `dest`, rechazando entradas que escapen del destino.
 ///
 /// Un .zip puede declarar rutas como `../../algo`: `enclosed_name` ya las
@@ -135,6 +148,7 @@ pub fn stage(
 
     let mut state = slots::load_state(app_data_dir);
     state.staged = Some(id.clone());
+    state.staged_hub_id = hub_bundle_id(&manifest.url);
     slots::save_state(app_data_dir, &state).map_err(ApplyError::Io)?;
     Ok(id)
 }
@@ -151,6 +165,7 @@ pub fn activate_staged(app_data_dir: &Path, native_version: &str) -> Result<Stri
 
     state.previous = state.active.take();
     state.active = Some(staged.clone());
+    state.active_hub_id = state.staged_hub_id.take();
     state.verified = false;
     state.boot_attempts = 0;
     state.native_version_at_swap = Some(native_version.to_string());
@@ -163,6 +178,7 @@ pub fn activate_staged(app_data_dir: &Path, native_version: &str) -> Result<Stri
 pub fn rollback(app_data_dir: &Path) -> Result<Option<String>, ApplyError> {
     let mut state = slots::load_state(app_data_dir);
     let fallido = state.active.take();
+    state.active_hub_id = None;
     state.active = state.previous.take();
     state.verified = state.active.is_some();
     state.boot_attempts = 0;
@@ -247,6 +263,50 @@ mod tests {
             released_at: None,
         };
         (m, pubkey)
+    }
+
+    #[test]
+    fn se_extrae_el_id_del_hub_de_la_url_de_descarga() {
+        // El hub compone la url como /api/bundles/<uuid>/download
+        // (admin/bundles.ts:332). Es el único sitio donde el UUID viaja hasta el
+        // cliente, y hace falta para poder reportar el resultado.
+        assert_eq!(
+            hub_bundle_id("https://haido.releases.mks2508.systems/api/bundles/9f1c-uuid/download"),
+            Some("9f1c-uuid".to_string())
+        );
+        assert_eq!(
+            hub_bundle_id("http://127.0.0.1:8787/api/bundles/canary-1/download?x=1"),
+            Some("canary-1".to_string())
+        );
+    }
+
+    #[test]
+    fn una_url_con_otra_forma_no_inventa_un_id() {
+        // Si el hub cambiara la forma de la url, es preferible no reportar a
+        // reportar contra un id inventado.
+        assert_eq!(hub_bundle_id("https://h/api/bundles//download"), None);
+        assert_eq!(hub_bundle_id("https://h/api/otra-cosa/x/download"), None);
+        assert_eq!(hub_bundle_id("https://h/api/bundles/a/b/download"), None);
+        assert_eq!(hub_bundle_id("no-es-una-url"), None);
+    }
+
+    #[test]
+    fn el_id_del_hub_viaja_de_stage_a_activo_y_se_limpia_al_revertir() {
+        let dir = tmpdir("hubid");
+        let zip = zip_with(&[("index.html", b"<html>")]);
+        let (mut m, pk) = signed(&zip);
+        m.url = "https://haido.releases.mks2508.systems/api/bundles/uuid-abc/download".into();
+
+        stage(&dir, &m, &pk, "0.1.0", &zip).unwrap();
+        assert_eq!(slots::load_state(&dir).staged_hub_id.as_deref(), Some("uuid-abc"));
+
+        activate_staged(&dir, "0.1.0").unwrap();
+        let st = slots::load_state(&dir);
+        assert_eq!(st.active_hub_id.as_deref(), Some("uuid-abc"), "pasa a activo");
+        assert!(st.staged_hub_id.is_none(), "deja de estar preparado");
+
+        rollback(&dir).unwrap();
+        assert!(slots::load_state(&dir).active_hub_id.is_none());
     }
 
     #[test]

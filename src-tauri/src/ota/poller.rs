@@ -29,6 +29,57 @@ const FIRST_POLL_DELAY: Duration = Duration::from_secs(60);
 /// Evento que avisa al frontend de que hay un bundle listo para aplicar.
 pub const BUNDLE_STAGED_EVENT: &str = "ota://bundle-staged";
 
+/// Resultado que se comunica al hub tras intentar aplicar un bundle.
+#[derive(Debug, Clone, Copy)]
+pub enum Outcome {
+    Applied,
+    RolledBack,
+}
+
+impl Outcome {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Applied => "applied",
+            Self::RolledBack => "rolled-back",
+        }
+    }
+}
+
+/// Informa al hub de cómo acabó un bundle.
+///
+/// El cliente revierte por su cuenta, así que sin esto un rollback en el bar es
+/// indistinguible desde el hub de que el bundle no llegó a aplicarse nunca — que
+/// es justo la diferencia que importa cuando algo va mal a distancia.
+///
+/// Es fire-and-forget: el resultado del envío no puede condicionar nada de lo que
+/// haga la app. Si no hay red, se pierde el reporte y ya está.
+pub fn report<R: Runtime>(
+    app: AppHandle<R>,
+    hub_bundle_id: String,
+    outcome: Outcome,
+    error: Option<String>,
+) {
+    tauri::async_runtime::spawn(async move {
+        let Ok(device_id) = crate::license::generate_machine_fingerprint() else {
+            return;
+        };
+        let mut payload = serde_json::json!({
+            "deviceId": device_id,
+            "outcome": outcome.as_str(),
+        });
+        if let Some(err) = error {
+            payload["error"] = serde_json::Value::String(err);
+        }
+
+        let url = format!("{}/api/bundles/{hub_bundle_id}/report", hub_base());
+        match reqwest::Client::new().post(&url).json(&payload).send().await {
+            Ok(res) => println!("[ota] reportado {} al hub: {}", outcome.as_str(), res.status()),
+            Err(err) => eprintln!("[ota] no se pudo reportar al hub: {err}"),
+        }
+        let _ = app;
+    });
+}
+
 /// Base del hub. `TPV_OTA_HUB` permite apuntar a un hub local para probar el
 /// canal entero sin publicar nada.
 fn hub_base() -> String {
