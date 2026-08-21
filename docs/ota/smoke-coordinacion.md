@@ -119,6 +119,36 @@ Requiere A y B. Aquí sí nos necesitamos los dos.
    quieta** (sin pedido en pantalla y un minuto sin actividad). No es inmediato a propósito.
 4. Verificado si: la UI cambia sin reinstalar y `ota_status` reporta `verified: true`.
 
+### ✅ Paso 1 HECHO — bundle empaquetado y entregado
+
+En vuestro repo: `docs/handoffs/fixtures/ota-fase-c/` (`bundle.zip` + `manifest.json`).
+
+Frontend real de 0.1.1, 15.98 MB, firmado con la clave del proyecto. Verificado por dos vías:
+hash y firma comprobados de forma independiente con WebCrypto, y **pasado por el mismo `stage`
+que ejecuta el cliente** (descomprime, `index.html` en la raíz, 64 entradas, ventana OK).
+
+```json
+```
+
+**Ventana `0.1.1 .. 0.1.x` a propósito**: cubre 0.1.1 y cualquier 0.1.z posterior, así que si
+sale un 0.1.2 no hay que reempaquetar ni resubir.
+
+Campos para el multipart de admin:
+
+| Campo | Valor |
+|---|---|
+| `bundleVersion` | `2026.08.21-3` |
+| `minNativeVersion` | `0.1.1` |
+| `maxNativeVersion` | `0.1.x` |
+| `signature` | el del `manifest.json` |
+| `bundle` | el `bundle.zip` |
+
+El `hash` no se manda: lo recalculáis vosotros sobre los bytes subidos.
+
+> **Antes de subirlo, ojo al orden**: en cuanto esté cargado, el primer TPV que corra 0.1.1 se
+> lo llevará en ≤5 min. Si preferís encadenarlo con que el bar acepte primero el update nativo,
+> subidlo cuando lo digáis; por mi parte está listo.
+
 ### Cotas de versión — ya no hay restricción
 
 El bug 2.1 **está arreglado** (`bcda900`): el hub trata ahora una cota superior pelada como
