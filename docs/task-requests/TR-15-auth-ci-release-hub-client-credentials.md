@@ -104,12 +104,24 @@ waxin entregó, en vez de UI manual — mismo resultado, más rápido):**
   llegó hasta el unique constraint de DB; cero mutación al canal real porque colisiona a
   propósito con una versión ya publicada — elegido así deliberadamente para no arriesgar el
   canal `windows-x64`, que sigue en `0.1.0` desde mayo y es lo que corre el TPV del bar).
-- ⏸️ **CI en un tag de prueba real — NO ejecutado todavía.** El código está mergeado a `main`
-  pero no pusheado (requiere OK explícito de waxin). Un tag `v*` real dispararía el publish
-  automático de verdad (y sí bumpearía el canal `linux-x64`, hoy en 0.1.2 → lo que sea el nuevo
-  tag). El test del camino de fallo (borrar el secret temporalmente) tampoco se ha corrido — son
-  las dos piezas que quedan para dar por 100% cerrado el acceptance, ambas decisión de waxin
-  (cuándo cortar un tag real).
+- ✅ **CI en un tag real — EJECUTADO Y VERIFICADO (2026-08-21, tag `v0.1.3`, OK explícito de
+  waxin).** Version bump `0.1.2→0.1.3` (necesario, `0.1.2` ya publicado en `linux-x64` habría
+  colisionado con 409 en vez de probar el camino feliz) → push `main` → tag `v0.1.3` → CI corrió
+  ambos jobs (`linux-x64`, `linux-arm64`) sin intervención manual. Verificado en 3 capas
+  independientes (no solo "job success" — el propio wiring hace `exit 0` incluso en el
+  fallback, así que "success" no distingue los dos caminos):
+  1. Log de CI: `Uploaded tpv-haido-0.1.3-linux-x64.AppImage → haido v0.1.3` /
+     `tpv-haido-0.1.3-linux-arm64.AppImage → haido v0.1.3 (linux/aarch64)`.
+  2. `GET /api/admin/projects/haido/releases` real: ambas filas `0.1.3` existen, `pubDate`
+     coincide con la hora del run.
+  3. `GET /api/dl/0.1.3/linux/x86_64/...` → `200`, 136MB reales servidos (no una fila huérfana).
+  `windows-x64`/`darwin-aarch64` confirmados **sin cambios** (siguen en `0.1.0`) — el canal del
+  bar nunca estuvo en riesgo, esos targets no tienen workflow de CI.
+- ⏸️ El test del camino de fallo (borrar el secret temporalmente, confirmar que cae a
+  instrucciones manuales en un run real) **no se ha corrido** — el camino de fallo sí se
+  ejerció indirectamente en el smoke manual de paso 1 (env vars ausentes) pero no en un run de
+  CI real. Queda como verificación opcional, no bloqueante — el código y el `if` que lo
+  implementa ya están verificados por lectura + `actionlint`.
 - ✅ `TR-12-...md` actualizado con referencia a este TR. `TR-14-...md` — pendiente de actualizar
   con la nota de scope-diferido de bundles (ver Paso 2.7 arriba).
 

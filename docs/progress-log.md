@@ -784,10 +784,44 @@ Sibling `tr15-cc` cerrado (`siblings down`) — report preservado en
 
 ### Pendiente
 
-- Push de `main` (10 commits ahead) — requiere OK explícito.
-- Tag real de prueba (o `workflow_dispatch`) para cerrar el acceptance 100% de TR-15 — decisión
-  de waxin, bumpea `linux-x64` de verdad.
-- Test del camino de fallo (borrar el secret temporalmente, confirmar fallback) — no corrido.
+- Wiring de bundles en `ota-bundle-deploy.yml` — deferred, necesita código de upload nuevo primero
+  (candidato TR-16 o extensión de TR-14).
+- Hallazgo de seguridad (`OIDC_ADMIN_SUBS` vacía en el hub) — sin TR propio, pendiente de decisión.
+- Sync completo de `roadmap.spec.yml` — sigue diferido.
+
+## 2026-08-21 (continuación 4) — TR-15 acceptance 100% cerrado: tag real, publish automático verificado
+
+Con OK explícito de waxin ("si a las 3"): docs commiteadas (`8c15424`), bump `0.1.2→0.1.3`
+(`d7fccd3` — necesario, `0.1.2` ya publicado manual en `linux-x64` hoy habría colisionado con
+409 en vez de probar el camino feliz), push a `origin/main` (`f881b5d..d7fccd3`), tag `v0.1.3`
+creado y pusheado.
+
+**CI corrió el publish automático de verdad, sin intervención manual**, verificado en 3 capas
+independientes (no solo "job success" — el wiring de TR-15 hace `exit 0` incluso en el
+fallback, así que el conclusion verde de GH Actions NO distingue "publicó" de "cayó al
+fallback"):
+
+1. Log de CI (`gh run view --log`): `Uploaded tpv-haido-0.1.3-linux-x64.AppImage → haido v0.1.3`
+   y el equivalente arm64/aarch64.
+2. `GET /api/admin/projects/haido/releases` (token real, no cacheado): ambas filas `0.1.3`
+   existen con `pubDate` coincidiendo con la hora exacta del run.
+3. `GET /api/dl/0.1.3/linux/x86_64/...` → `200`, 136MB reales servidos — no una fila huérfana
+   de un storage-write fallido.
+
+`windows-x64`/`darwin-aarch64` confirmados sin cambios (`0.1.0`, mayo) — esos targets no tienen
+workflow de CI en este repo, nunca estuvieron en riesgo pese a ser el canal real que usa el TPV
+del bar.
+
+**TR-15 queda `closed` en su totalidad** (paso 0, paso 1, paso 2, y ahora el acceptance de "CI
+publica de verdad en un tag real" — los 4 pendientes de la ronda anterior). Único punto abierto,
+no bloqueante: el camino de fallo (secret ausente) no se probó en un run de CI real, solo en el
+smoke manual de paso 1 — el código y el `if` que lo implementa ya están verificados por lectura
++ `actionlint`, se considera cubierto por evidencia indirecta suficiente.
+
+**Objetivo original de TR-12 ("auth CI→hub para publish automático") cerrado end-to-end.**
+
+### Pendiente
+
 - Wiring de bundles en `ota-bundle-deploy.yml` — deferred, necesita código de upload nuevo primero
   (candidato TR-16 o extensión de TR-14).
 - Hallazgo de seguridad (`OIDC_ADMIN_SUBS` vacía en el hub) — sin TR propio, pendiente de decisión.
