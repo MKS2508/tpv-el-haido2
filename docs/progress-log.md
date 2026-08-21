@@ -823,6 +823,30 @@ smoke manual de paso 1 — el código y el `if` que lo implementa ya están veri
 ### Pendiente
 
 - Wiring de bundles en `ota-bundle-deploy.yml` — deferred, necesita código de upload nuevo primero
-  (candidato TR-16 o extensión de TR-14).
-- Hallazgo de seguridad (`OIDC_ADMIN_SUBS` vacía en el hub) — sin TR propio, pendiente de decisión.
+  (candidato TR-17 o extensión de TR-14).
+- Sync completo de `roadmap.spec.yml` — sigue diferido.
+
+## 2026-08-21 (continuación 5) — TR-16 abierto: whitelist de admin en `desktop-release-hub`
+
+El hallazgo de seguridad de TR-15 (`OIDC_ADMIN_SUBS` vacía = cualquier JWT válido de Pocket ID
+pasa como admin del release-hub) tiene ahora TR propio:
+`docs/task-requests/TR-16-release-hub-admin-whitelist.md`.
+
+Investigación adicional para acotar el fix exacto (evidencia real, no supuestos):
+- `desktop-release-hub` es **single-tenant** — `GET /api/admin/projects` solo devuelve `haido`.
+- Pocket ID tiene **un único usuario humano** — `mks2508` (waxin), sub
+  `678e7ffd-a0ef-4923-ac76-51bce345f169` (vía `GET /api/users` con el Admin API key), el mismo
+  que usa el login PKCE del admin UI del hub (`release-hub-cli`, cuyo `OIDC_CLIENT_ID` ya está
+  configurado en `release-hub-server`).
+- Whitelist propuesta, exacta y mínima: `678e7ffd-a0ef-4923-ac76-51bce345f169` (waxin) +
+  `client-e54c5644-8557-4aa5-bbfb-b44cce7957c8` (`ci-tpv-haido`, TR-15).
+
+**No ejecutado** — el TR queda listo, pero requiere OK explícito de waxin antes de tocar auth
+de producción de un servicio externo a este repo (un error en la whitelist se auto-bloquea del
+panel de admin). Cero cambios de código necesarios en ningún repo, es una env var de Coolify.
+
+### Pendiente
+
+- TR-16 (whitelist admin del hub) — listo, sin ejecutar, esperando OK.
+- Wiring de bundles en `ota-bundle-deploy.yml` — deferred (candidato TR-17 o extensión de TR-14).
 - Sync completo de `roadmap.spec.yml` — sigue diferido.
