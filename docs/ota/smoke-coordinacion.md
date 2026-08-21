@@ -115,23 +115,18 @@ Requiere A y B. Aquí sí nos necesitamos los dos.
    quieta** (sin pedido en pantalla y un minuto sin actividad). No es inmediato a propósito.
 4. Verificado si: la UI cambia sin reinstalar y `ota_status` reporta `verified: true`.
 
-### Cotas de versión a usar en el smoke — importante
+### Cotas de versión — ya no hay restricción
 
-Usad **`min = 0.2.0`, `max = 0.2.x`**. Con ese patrón vuestra implementación y la mía coinciden,
-así que el smoke pasa **sin necesidad de arreglar antes el bug 2.1**:
+El bug 2.1 **está arreglado** (`bcda900`): el hub trata ahora una cota superior pelada como
+`lte` y sólo usa `satisfies` cuando es un rango, que es exactamente la regla del cliente.
 
-| | hub (`gte` + `satisfies`) | cliente | |
-|---|---|---|---|
-| `min=0.2.0, max=0.2.x`, nativo `0.2.0` | ✅ | ✅ | coinciden |
-| `min=0.2.0, max=0.2.x`, nativo `0.2.3` | ✅ | ✅ | coinciden |
-| `min=0.1.0, max=0.3.0`, nativo `0.2.0` | ❌ | ✅ | **divergen** ← el bug |
+Verificado con un test diferencial: catorce casos generados ejecutando la implementación real
+del hub y comprobados contra la del cliente (`manifest.rs::coincide_con_la_ventana_del_hub`).
+Coinciden en todos, incluido el que antes divergía — nativo `1.5.9` en la ventana
+`[1.4.0, 1.6.0]`, que antes el hub no servía.
 
-Es decir: **no os bloqueo con 2.1 para el smoke**, pero sigue siendo un bug que hay que arreglar
-antes de publicar bundles con cotas peladas, porque en producción la forma natural de rellenar
-los campos deja fuera a casi todos los dispositivos, en silencio. Detalle y arreglo propuesto en
-`docs/handoffs/ota-bundles-js-hub-side.md`, sección 2.1.
-
----
+Ese test es la defensa contra que uno de los dos lados cambie de criterio más adelante. Si se
+toca la lógica de ventana en el hub, hay que regenerar la tabla y pasarla.
 
 ## Puntos de bloqueo mutuo, explícitos
 
@@ -141,16 +136,18 @@ los campos deja fuera a casi todos los dispositivos, en silencio. Detalle y arre
 | Hub | un binario publicado, para ver tráfico real de bundles | no |
 | Cliente | `bundle_pubkey` cargada | no |
 | Cliente | endpoint admin operativo para subir | podéis cargar el canario a mano en BD |
-| Ambos | fix del 2.1 antes de **producción** | para el smoke sí, con las cotas de arriba |
+| ~~Ambos~~ | ~~fix del 2.1~~ | **resuelto** (`bcda900`), equivalencia verificada |
 
 ## Lo que pido al hub, por prioridad
 
 1. **FASE A completa** — con el canario, sin esperarme.
-2. **Fix 2.1** — antes de publicar bundles de verdad, no antes del smoke.
-3. **Verificar la firma al subir** — hoy se guarda sin comprobar, y una firma mal generada sólo
-   se descubre en el dispositivo, en silencio. El snippet de A.1 es exactamente lo que hace falta.
-4. **`POST /api/bundles/:id/report`** — el cliente ya revierte solo por dos vías; sin este
-   endpoint, un rollback en el bar es indistinguible desde el hub de que nunca se aplicó.
+2. **`POST /api/bundles/:id/report`** — lo único de la lista original que sigue abierto. El
+   cliente ya revierte solo por dos vías; sin este endpoint, un rollback en el bar es
+   indistinguible desde el hub de que nunca se aplicó.
+
+Ya resuelto por vuestro lado desde que escribí el handoff: fix de la ventana (2.1), rechazo de
+rangos con `||` (2.3), verificación de firma al subir (3.1) y chequeo de `index.html` (3.2).
+Comprobado leyendo `bcda900`, no supuesto.
 
 ## Contacto entre sesiones
 
