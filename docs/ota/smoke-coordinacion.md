@@ -1,8 +1,8 @@
 # Contrato de coordinación — smoke del release-hub
 
 **Entre**: sesión de `tpv-el-haido2` (cliente Tauri) y sesión de `desktop-release-hub` (servidor).
-**Fecha**: 2026-08-21 · **Estado del cliente**: canal parcial implementado y ejercitado de punta
-a punta contra un hub falso, sobre el hardware de producción.
+**Fecha**: 2026-08-21 · **Estado del cliente**: canal parcial en producción, con el ciclo
+completo ya ejecutado contra este hub sobre el hardware del bar.
 
 Este documento existe para que los dos lados sepan **qué pueden probar ya sin esperarse**, y
 dónde está el único punto en el que se bloquean mutuamente.
