@@ -86,7 +86,7 @@ El campo `url` del manifest tiene que salir **absoluto** (vuestro `toManifest` y
 
 ## FASE B — Publicar un binario nuevo (lado tpv-el-haido2) — ✅ HECHA
 
-**0.1.1 publicada** el 2026-08-21. Build nativo en `supermicro-pcbar`, firmado y subido.
+**0.1.1 y después 0.1.2 publicadas** el 2026-08-21 (lo vigente es 0.1.2). Build nativo en `supermicro-pcbar`, firmado y subido.
 El endpoint responde 200 a un 0.1.0 y 204 a un 0.1.1. **Pero no es instalable todavía**: ver el
 bloqueante de la URL relativa más abajo.
 
@@ -252,6 +252,70 @@ Sería más limpio añadir `"id": bundle.id` al manifest y que el cliente dejara
 forma de la url. Si lo hacéis, avisad y lo cambio; mientras tanto **la forma de esa url es
 contrato de facto**. La extracción del cliente es estricta: ante una url con otra forma no
 reporta, en lugar de reportar contra un id inventado.
+
+---
+
+## ⚠️ ACTUALIZACIÓN 2026-08-21 — 0.1.2 publicada y **rotación de signing key**
+
+Lo que ha cambiado desde que disteis FASE C por desbloqueada. Hay una consecuencia que os
+afecta directamente aunque el problema sea de nuestro lado.
+
+### Lo publicado ahora es 0.1.2, no 0.1.1
+
+`GET /api/updates/linux/x86_64/0.1.0` devuelve **0.1.2**. Trae el reporte al hub
+(`POST /api/bundles/:id/report`), así que en cuanto corra en el bar tendréis telemetría de
+aplicación y rollback.
+
+### 🔴 El TPV del bar NO se va a actualizar solo. No es un fallo vuestro
+
+Se rotó la signing key del updater. El TPV instalado corre un binario con la pubkey **antigua**
+compilada dentro, y `tauri-plugin-updater` verifica la firma contra la pubkey **del cliente**,
+no contra la del servidor:
+
+```
+pubkey del binario instalado en el bar : RWTSIzayxELfO5VU…
+pubkey con la que se firma 0.1.2       : RWSxu04zRL8L250w…
+```
+
+**Una rotación de clave no se puede atravesar por auto-update.** El bar rechazará la firma de
+0.1.2 haga lo que haga el hub. Hace falta **una reinstalación manual** (por SSH, ya preparada);
+a partir de ahí el binario lleva la pubkey nueva y el canal queda sano para siempre.
+
+La passphrase de la clave antigua se perdió — comprobado firmando contra cada candidata,
+incluidas tres copias apartadas: sólo abre la nueva. Por eso no se pudo firmar con la vieja.
+
+**Lo que significa para vosotros**: si estáis esperando ver el primer
+`GET /api/bundles/latest` de un dispositivo real, **no va a llegar hasta que se haga esa
+reinstalación**. Si veis silencio en el canal de bundles, es esto y no un problema del hub.
+
+### 🟡 0.1.1 sigue descargable y es una trampa
+
+`GET /api/dl/0.1.1/...` responde 206. Ese artefacto se firmó con la clave **antigua** y su
+binario embebe la pubkey antigua: **quien lo instale queda en el mismo callejón sin salida** —
+no podrá auto-actualizarse a 0.1.2 ni a nada posterior.
+
+Ya no se ofrece por `/api/updates` (latest es 0.1.2), así que el riesgo es sólo de instalación
+manual o de un enlace de descarga directo.
+
+**Sugerencia**: hacedle `yank` a 0.1.1, o quitadlo de donde se listen descargas. Es la única
+versión publicada que deja al dispositivo sin salida.
+
+### Estado del bundle de FASE C
+
+Sigue **válido y sin tocar**: su ventana `0.1.1 .. 0.1.x` cubre 0.1.2, así que no hay que
+reempaquetar ni resubir nada. Los campos de subida son los mismos que ya están más arriba.
+
+### Lo que veréis cuando el bar corra 0.1.2
+
+| Cuándo | Qué |
+|---|---|
+| Al minuto del arranque | `GET /api/bundles/latest?nativeVersion=0.1.2&deviceId=4fd659…` |
+| Si hay bundle aplicable | descarga, y aplicación cuando la caja esté quieta |
+| Tras confirmar | `POST /api/bundles/<uuid>/report` con `outcome: "applied"` |
+| Si el bundle falla | mismo endpoint con `"rolled-back"` y el motivo en `error` |
+
+El `deviceId` de esa máquina es `4fd659707ba01a3088cf949d419d55eba76d1e92d87eeab9c6dcb3863f49f9cd`
+(sha256 de su `/etc/machine-id`), por si queréis pinearlo para las pruebas.
 
 ## Contacto entre sesiones
 
