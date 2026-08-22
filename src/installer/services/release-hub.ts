@@ -14,6 +14,10 @@
  * endpoint read-only del propio TPV (TR-19.D candidate).
  */
 
+import { createContextLogger } from '@/lib/logger';
+
+const log = createContextLogger('installer.release-hub');
+
 export interface ReleaseHubArtifact {
   /** URL del AppImage firmado (lo que `downloadArtifact` acepta) */
   downloadUrl: string;
@@ -65,5 +69,5 @@ export async function reportInstallEvent(event: {
   success: boolean;
   durationMs: number;
 }): Promise<void> {
-  console.warn('[installer] reportInstallEvent not yet wired to backend', event);
+  log.warn('reportInstallEvent not yet wired to backend', { event });
 }

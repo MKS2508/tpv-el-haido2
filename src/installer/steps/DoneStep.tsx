@@ -11,6 +11,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { createContextLogger } from '@/lib/logger';
 
 import { StepContainer } from '../components/StepContainer';
 import type { InstallerStrings } from '../i18n/es';
@@ -21,6 +22,8 @@ interface DoneStepProps {
   t: InstallerStrings;
   onClose: () => void;
 }
+
+const log = createContextLogger('DoneStep');
 
 export function DoneStep(props: DoneStepProps) {
   const result = () => props.machine.state().installResult;
@@ -34,7 +37,7 @@ export function DoneStep(props: DoneStepProps) {
     // `std::process::Command::new(cmd).spawn()` o similar). Por ahora
     // cerramos la ventana con la intención de que el user ejecute el comando
     // manualmente desde su shell.
-    console.info('[DoneStep] Launch command available:', cmd);
+    log.info('Launch command available', { cmd });
     props.onClose();
   };
 
