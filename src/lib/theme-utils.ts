@@ -1,6 +1,9 @@
 /**
  * Utility functions for theme management
  */
+import { createContextLogger } from '@/lib/logger';
+
+const _log = createContextLogger('theme-utils');
 
 // Get the current theme from localStorage or return the default
 export function getStoredTheme(): string {
@@ -72,7 +75,7 @@ export const createAntiFlashScript = (): string => {
           }
         }
       } catch (e) {
-        console.error('Theme initialization error:', e);
+        log.error('Theme initialization error', { error: e });
       }
     })();
   `;
