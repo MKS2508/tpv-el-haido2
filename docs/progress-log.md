@@ -32,6 +32,67 @@ verdes.
 
 ---
 
+## 2026-08-22 (evening, cont. 4) — FIX I: wizard stub URL — `/api/releases` → `/releases/latest`
+
+**Milestone**: cierra el último stale URL latente en `src/installer/services/release-hub.ts` —
+el wizard stub `fetchLatestArtifact()` emitía `https://haido.releases.mks2508.systems/api/releases/${slug}/latest/${target}`,
+un path que 404ea contra el hub live (verificado 200 en `/releases/latest/${slug}/${target}`).
+Latent porque el runtime real del wizard delega al IPC Rust `installer:download` que construye
+URLs internamente — este stub TS es dead code en el flow de producción, pero tracked y
+misleading para futuros readers.
+
+**Sync multi-sesión**: Waxin modificó `docs/roadmap.model.yml` + `ROADMAP.md` + `progress-log.md`
+desde otra sesión del hub (commit `730f96b`, "desbloquea TR-19.E -- hub confirmo que no lo
+bloquea"). Detectado el delta al dispatchar FIX I, validado con `bun run check:roadmap` → EXIT 0
+(SSOT coherente). Waxin confirmó push coordinated (su delta + FIX I + merge).
+
+**Commits mergeados**:
+- `988202f` → `2f4f409` — **FIX I wizard stub URL**: surgical 3-line edit en
+  `src/installer/services/release-hub.ts`:
+    - Línea 50 (functional): `/api/releases/${slug}/latest/${target}` → `/releases/latest/${slug}/${target}`
+    - Línea 13 (JSDoc): `/api/releases/latest?...` → `/releases/latest/...?` (consistencia)
+    - Línea 38 (JSDoc): `GET /api/releases/:slug/latest.json` → `GET /releases/latest/:slug/latest.json` (consistencia)
+  Latent dead code (wizard usa IPC Rust, no el stub), pero tracked reference URL era 404
+  contra el live hub — fixed al path verificado-working.
+  Refs: `/tmp/fix-i-wizard-stub-url-report.md`.
+
+**Verificación final**:
+- `grep -rn "api/releases/\\${slug}" src/installer/ scripts/ src-tauri/src/` → 0 hits
+- `grep -n "releases/latest/\\${slug}" src/installer/services/release-hub.ts` → 1 hit (línea 50)
+- `bun run typecheck` → EXIT 0 en main post-merge
+- `bun run check:roadmap` → EXIT 0 (`docs/ROADMAP.md sincronizado con el modelo, 129 líneas`)
+- `bun run scripts/release.ts publish-bundle --dry-run --slug haido --bundle /tmp/test-bundle.zip` → EXIT 0
+- Co-author audit: ✓ CLEAN (0 hits en `git log -1 --format='%B' | grep -iE "co-author|claude|anthropic|AI"`)
+- Blast radius: 1 file, 3 insertions(+), 3 deletions(-)
+
+**Explore agent adicional** (despachado en paralelo a FIX I para barrer más stale URLs/references):
+- Q1 (wizard URL) y Q3 (JSDoc stale refs) — ya cerrados por FIX I (validación independiente del explorador confirma fix completo)
+- Q2 (`User-Agent` Rust `tpv-el-haido-installer/0.1` debería usar `env!("CARGO_PKG_VERSION")`) — pending, 1 línea Rust surgical
+- Q4 (cosmetic `0.1.0` JSDoc/CLI examples en scripts/) — pending, batch cosmetic
+- R1 (sqlite-storage-adapter 17 raw invokes sin `isTauri()` guard) — pending, refactor medium
+- R2 (audit.service 4 raw invokes) — pending, refactor small-medium
+- R3 (OTA partial-channel `/api/bundles/...` endpoints verificar contra prod hub) — pending, architectural
+- ESC/POS residue en source code: ✅ CLEAN (todos los grep hits eran Spanish-word false positives: `Refresco`, `descomprimir`, `desconocido`)
+- Reporte: `/tmp/explorer-4-installer-release-staleness-report.md` (reportado inline en sesión porque Explore agent fue read-only y no pudo escribir a `/tmp/` por harness constraint — contenido íntegro está en mi contexto)
+
+### Tareas
+
+- `#28` FIX I wizard stub URL → completed
+- `#29` TR-19.E E2E smoke Linux (unblocked por Waxin desde 730f96b) → in_progress, esperando dirección Waxin
+
+### Co-author audit (FIX I)
+
+- `git log -1 --format='%B' | grep -iE "co-author|claude|anthropic|AI|generated with"` → **0 hits**.
+  Conventional commit only, default git config `MKS2508`.
+
+### Estado final de main
+
+- **main @ `2f4f409`**, sincronizado con `origin/main` (3 commits ahead → 0 ahead post-push coordinated).
+- 7 merges del día: FIX E/F/H, TR-20, TR-release-publish-bundle, FIX I, + Waxin's docs delta.
+- Typecheck EXIT 0, `check:roadmap` EXIT 0.
+
+---
+
 ## 2026-08-22 (evening, cont. 3) — TR-20 windows-x64-deploy.yml + TR-release-publish-bundle (CI coverage 100% native + OTA)
 
 **Milestone**: cierra los 2 gaps estructurales de CI que FIX H flageó en su entry (la noche
