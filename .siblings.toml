@@ -4,3 +4,17 @@ copy    = [".env.local"]
 install = true
 model   = "minimax"
 base    = "main"
+
+[lanes.tr11-residual]
+globs   = ["src/**"]
+copy    = [".env.local", "tauri-keys/tpv-el-haido.key", "tauri-keys/ota-bundle.key"]
+install = true
+model   = "minimax"
+base    = "main"
+
+[lanes.tr14]
+globs   = [".github/workflows/ota-bundle-deploy.yml"]
+copy    = [".env.local", "tauri-keys/ota-bundle.key"]
+install = false
+model   = "minimax"
+base    = "main"
