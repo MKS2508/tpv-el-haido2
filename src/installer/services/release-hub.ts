@@ -10,7 +10,7 @@
  * `fetchLatestArtifact` se delega a `installer:download` indirectamente —
  * el backend ya hace el GET contra `desktop-release-hub` desde Rust, así que
  * el frontend nunca toca el bearer token directamente. Si en algún momento
- * se quiere consultar `/api/releases/latest?...` desde TS, lo ideal es un
+ * se quiere consultar `/releases/latest/...?` desde TS, lo ideal es un
  * endpoint read-only del propio TPV (TR-19.D candidate).
  */
 
@@ -35,7 +35,7 @@ export interface ReleaseHubArtifact {
  * fetchLatestArtifact — TR-19.B + post-merge TS alignment.
  *
  * El hub todavía no expone un endpoint público de metadata para el wizard
- * (TR-19.D candidate: GET /api/releases/:slug/latest.json con downloadUrl,
+ * (TR-19.D candidate: GET /releases/latest/:slug/latest.json con downloadUrl,
  * version, sha256, bytesTotal, releasedAt). Mientras tanto devolvemos la URL
  * predecible del artifact + placeholders honestos: la verificación real de
  * SHA256 ocurre durante `installer:download` en Rust (`release_hub.rs`),
@@ -47,7 +47,7 @@ export async function fetchLatestArtifact(
   target: string
 ): Promise<ReleaseHubArtifact> {
   return {
-    downloadUrl: `https://haido.releases.mks2508.systems/api/releases/${slug}/latest/${target}`,
+    downloadUrl: `https://haido.releases.mks2508.systems/releases/latest/${slug}/${target}`,
     checksumSha256: '',
     version: 'latest',
     bytesTotal: 0,
