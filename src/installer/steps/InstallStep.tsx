@@ -57,7 +57,7 @@ export function InstallStep(props: InstallStepProps) {
     }
 
     // eslint-disable-next-line solid/reactivity
-    unsubscribe = onProgress((progress) => {
+    unsubscribe = await onProgress((progress) => {
       props.machine.setDownloadProgress(progress);
       appendLog(progress.message || `${progress.phase} (${progress.percent}%)`);
     });

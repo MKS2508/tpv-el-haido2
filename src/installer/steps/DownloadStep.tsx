@@ -66,7 +66,7 @@ export function DownloadStep(props: DownloadStepProps) {
 
     // Subscribe to live progress events (TR-19.B los enchufa via listen()).
     // eslint-disable-next-line solid/reactivity
-    unsubscribe = onProgress((progress) => {
+    unsubscribe = await onProgress((progress) => {
       props.machine.setDownloadProgress(progress);
     });
 

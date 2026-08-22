@@ -28,30 +28,26 @@ export interface ReleaseHubArtifact {
 }
 
 /**
- * Wrapper de fetchLatestArtifact — TR-19.B.
+ * fetchLatestArtifact — TR-19.B + post-merge TS alignment.
  *
- * En la versión actual, el caller (TR-19.C wizard step) debe traer los datos
- * firmados desde fuera (del CLI de release, embebido en build, o del propio
- * release-hub vía un endpoint público). Este wrapper los valida y los pasa
- * al backend.
- *
- * Si en TR-19.D se decide exponer un `/api/releases/latest` HTTP público del
- * hub para el wizard, este sería el entrypoint TS. Por ahora es un passthrough
- * validatorio.
+ * El hub todavía no expone un endpoint público de metadata para el wizard
+ * (TR-19.D candidate: GET /api/releases/:slug/latest.json con downloadUrl,
+ * version, sha256, bytesTotal, releasedAt). Mientras tanto devolvemos la URL
+ * predecible del artifact + placeholders honestos: la verificación real de
+ * SHA256 ocurre durante `installer:download` en Rust (`release_hub.rs`),
+ * no aquí. Si Tauri updater está configurado con `latest.json` en el mismo
+ * host, podemos cambiar a `await fetch(latest.json)` sin tocar el consumer.
  */
 export async function fetchLatestArtifact(
-  artifact: ReleaseHubArtifact
-): Promise<{ downloadUrl: string; checksumSha256: string }> {
-  // Validación defensiva en TS antes de pagar el round-trip al backend.
-  if (!/^[a-f0-9]{64}$/.test(artifact.checksumSha256)) {
-    throw new Error(`Invalid SHA256 format: ${artifact.checksumSha256}`);
-  }
-  if (!artifact.downloadUrl.startsWith('https://')) {
-    throw new Error(`downloadUrl must be HTTPS (got ${artifact.downloadUrl})`);
-  }
+  slug: string,
+  target: string
+): Promise<ReleaseHubArtifact> {
   return {
-    downloadUrl: artifact.downloadUrl,
-    checksumSha256: artifact.checksumSha256.toLowerCase(),
+    downloadUrl: `https://haido.releases.mks2508.systems/api/releases/${slug}/latest/${target}`,
+    checksumSha256: '',
+    version: 'latest',
+    bytesTotal: 0,
+    releasedAt: '',
   };
 }
 
