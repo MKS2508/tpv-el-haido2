@@ -1,3 +1,5 @@
+import { ok, type ResultError } from '@mks2508/no-throw';
+import type { ThemeConfig } from '@mks2508/shadcn-basecoat-theme-manager';
 import {
   Check,
   Download,
@@ -9,9 +11,7 @@ import {
   Sun,
   Upload,
 } from 'lucide-solid';
-import { ok, type ResultError } from '@mks2508/no-throw';
-import type { ThemeConfig } from '@mks2508/shadcn-basecoat-theme-manager';
-import { For, Show, createSignal } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,8 +28,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
 import { createContextLogger } from '@/lib/logger';
-import { useAppTheme } from '@/lib/theme-context';
 import { createOperationStateSignal } from '@/lib/state-helpers';
+import { useAppTheme } from '@/lib/theme-context';
 
 const log = createContextLogger('ThemeSelector');
 
@@ -77,7 +77,10 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
       const themes = (data.themes || data.items || []) as TweakCNTheme[];
       setTweakCNThemes(themes);
       setShowTweakCNThemes(true);
-      toast({ title: 'Temas cargados', description: `Se encontraron ${themes.length} temas disponibles` });
+      toast({
+        title: 'Temas cargados',
+        description: `Se encontraron ${themes.length} temas disponibles`,
+      });
       return ok(themes);
     });
   };
@@ -95,22 +98,32 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
           themeUrl
         );
         await appTheme.setTheme(themeData.name || theme.name);
-        toast({ title: 'Tema instalado', description: `"${theme.label || theme.name}" instalado correctamente` });
+        toast({
+          title: 'Tema instalado',
+          description: `"${theme.label || theme.name}" instalado correctamente`,
+        });
       }
-      return ok(undefined as void);
+      return ok(undefined as undefined);
     });
     const s = importOp.state();
     if (s.status === 'failed') {
       log.error('Error installing theme', s.error as ResultError<string>);
-      toast({ title: 'Error', description: `No se pudo instalar "${theme.label || theme.name}"`, variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: `No se pudo instalar "${theme.label || theme.name}"`,
+        variant: 'destructive',
+      });
     }
   };
 
   const isDarkMode = () => appTheme.effectiveMode() === 'dark';
   const currentTheme = () => appTheme.currentTheme();
 
-  const handleDarkModeToggle = () => {
-    appTheme.toggleMode();
+  const handleToggle2State = async () => {
+    const theme = appTheme.currentTheme();
+    const mode = appTheme.effectiveMode();
+    const next = mode === 'dark' ? 'light' : 'dark';
+    await appTheme.setTheme(theme, next);
   };
 
   const handleTouchModeToggle = (enabled: boolean) => {
@@ -175,31 +188,43 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
       });
       setIsImportDialogOpen(false);
       setImportUrl('');
-      return ok(undefined as void);
+      return ok(undefined as undefined);
     });
 
     const s = importOp.state();
     if (s.status === 'failed') {
       log.error('Error importing theme', s.error as ResultError<string>);
-      toast({ title: 'Error al importar tema', description: 'No se pudo importar el tema. Verifica la URL e inténtalo de nuevo.', variant: 'destructive' });
+      toast({
+        title: 'Error al importar tema',
+        description: 'No se pudo importar el tema. Verifica la URL e inténtalo de nuevo.',
+        variant: 'destructive',
+      });
     }
   };
 
   const getCategoryIcon = (category: ThemeConfig['category']) => {
     switch (category) {
-      case 'built-in': return '🎨';
-      case 'installed': return '📦';
-      case 'custom': return '✏️';
-      default: return '🎨';
+      case 'built-in':
+        return '🎨';
+      case 'installed':
+        return '📦';
+      case 'custom':
+        return '✏️';
+      default:
+        return '🎨';
     }
   };
 
   const getCategoryColor = (category: ThemeConfig['category']) => {
     switch (category) {
-      case 'built-in': return 'bg-primary/20 text-primary-foreground border-primary/20';
-      case 'installed': return 'bg-secondary/20 text-secondary-foreground border-secondary/20';
-      case 'custom': return 'bg-accent/20 text-accent-foreground border-accent/20';
-      default: return 'bg-muted/20 text-muted-foreground border-muted/20';
+      case 'built-in':
+        return 'bg-primary/20 text-primary-foreground border-primary/20';
+      case 'installed':
+        return 'bg-secondary/20 text-secondary-foreground border-secondary/20';
+      case 'custom':
+        return 'bg-accent/20 text-accent-foreground border-accent/20';
+      default:
+        return 'bg-muted/20 text-muted-foreground border-muted/20';
     }
   };
 
@@ -224,7 +249,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                 Activa el tema oscuro para ambientes con poca luz
               </p>
             </div>
-            <Switch id="darkMode" checked={isDarkMode()} onChange={handleDarkModeToggle} />
+            <Switch id="darkMode" checked={isDarkMode()} onChange={handleToggle2State} />
           </div>
 
           <div class="flex items-center justify-between">

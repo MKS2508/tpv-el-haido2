@@ -3,10 +3,13 @@ import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { check, type Update } from '@tauri-apps/plugin-updater';
+import { createContextLogger } from '@/lib/logger';
 import type Order from '@/models/Order';
 import { loadPrinterConfig, printOrder } from '@/services/thermal-printer.service';
 import type { LicenseStatus } from '@/types/license';
 import type { PlatformService } from './PlatformService';
+
+const log = createContextLogger('TauriPlatformService');
 
 /**
  * PlatformService implementation for Tauri (Desktop)
@@ -50,10 +53,10 @@ export class TauriPlatformService implements PlatformService {
           { name: 'Todos los archivos', extensions: ['*'] },
         ],
       });
-      console.log('[TauriPlatformService] File selected:', selected);
+      log.debug(`File selected: ${selected as string | null}`);
       return selected as string | null;
     } catch (error) {
-      console.error('[TauriPlatformService] Error opening file dialog:', error);
+      log.error('Error opening file dialog:', error instanceof Error ? error : undefined);
       return null;
     }
   }
@@ -68,10 +71,10 @@ export class TauriPlatformService implements PlatformService {
           { name: 'Todos los archivos', extensions: ['*'] },
         ],
       });
-      console.log('[TauriPlatformService] Save path selected:', filePath);
+      log.debug(`Save path selected: ${filePath as string | null}`);
       return filePath;
     } catch (error) {
-      console.error('[TauriPlatformService] Error opening save dialog:', error);
+      log.error('Error opening save dialog:', error instanceof Error ? error : undefined);
       return null;
     }
   }
@@ -90,12 +93,12 @@ export class TauriPlatformService implements PlatformService {
       this.cachedUpdate = update;
 
       if (update) {
-        console.log(`[TauriPlatformService] Update available: ${update.version}`);
+        log.info(`Update available: ${update.version}`);
       } else {
-        console.log('[TauriPlatformService] No updates available');
+        log.debug('No updates available');
       }
     } catch (error) {
-      console.error('[TauriPlatformService] Error checking for updates:', error);
+      log.error('Error checking for updates:', error instanceof Error ? error : undefined);
       throw error;
     }
   }
@@ -115,12 +118,12 @@ export class TauriPlatformService implements PlatformService {
     }
 
     try {
-      console.log('[TauriPlatformService] Downloading and installing update...');
+      log.info('Downloading and installing update...');
       await this.cachedUpdate.downloadAndInstall();
-      console.log('[TauriPlatformService] Update installed, relaunching...');
+      log.info('Update installed, relaunching...');
       await relaunch();
     } catch (error) {
-      console.error('[TauriPlatformService] Error installing update:', error);
+      log.error('Error installing update:', error instanceof Error ? error : undefined);
       throw error;
     }
   }
@@ -149,7 +152,7 @@ export class TauriPlatformService implements PlatformService {
     try {
       return await invoke<LicenseStatus>('check_license_status');
     } catch (error) {
-      console.error('[TauriPlatformService] Error checking license:', error);
+      log.error('Error checking license:', error instanceof Error ? error : undefined);
       return {
         isActivated: false,
         isValid: false,
@@ -165,7 +168,7 @@ export class TauriPlatformService implements PlatformService {
         email,
       });
     } catch (error) {
-      console.error('[TauriPlatformService] Error validating license:', error);
+      log.error('Error validating license:', error instanceof Error ? error : undefined);
       return {
         isActivated: false,
         isValid: false,
@@ -177,9 +180,9 @@ export class TauriPlatformService implements PlatformService {
   async clearLicense(): Promise<void> {
     try {
       await invoke('clear_license');
-      console.log('[TauriPlatformService] License cleared successfully');
+      log.info('License cleared successfully');
     } catch (error) {
-      console.error('[TauriPlatformService] Error clearing license:', error);
+      log.error('Error clearing license:', error instanceof Error ? error : undefined);
       throw error;
     }
   }
@@ -188,7 +191,7 @@ export class TauriPlatformService implements PlatformService {
     try {
       return await invoke<string>('get_machine_fingerprint');
     } catch (error) {
-      console.error('[TauriPlatformService] Error getting fingerprint:', error);
+      log.error('Error getting fingerprint:', error instanceof Error ? error : undefined);
       return '';
     }
   }

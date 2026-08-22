@@ -6,7 +6,7 @@
  * Usa TransactionState para conexión y OperationState para operaciones de escritura.
  */
 
-import { isErr, ok, type Result, tryCatchAsync } from '@mks2508/no-throw';
+import { isErr, tryCatchAsync } from '@mks2508/no-throw';
 import { createEffect, createMemo, createSignal } from 'solid-js';
 import { AEATErrorCode } from '@/lib/error-codes';
 import { createContextLogger } from '@/lib/logger';

@@ -87,7 +87,7 @@ const statusConfig: Record<
  * Determina el estado de facturación basado en OrderAEATInfo
  */
 function getInvoiceStatus(aeat?: OrderAEATInfo): InvoiceStatus {
-  if (!aeat || !aeat.invoiceSent) {
+  if (!aeat?.invoiceSent) {
     // Si no hay info o no se ha enviado, pero tiene status pending, está en proceso
     if (aeat?.invoiceStatus === 'pending') {
       return 'pending';

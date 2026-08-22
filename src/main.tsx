@@ -2,6 +2,7 @@ import logger from '@mks2508/better-logger';
 import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { render } from 'solid-js/web';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ErrorBoundary';
+import { InstallerApp } from '@/installer';
 import { initializeLogger } from '@/lib/logger-init';
 import { signalAppReady } from '@/lib/ota-ready';
 import { startOtaUpdates } from '@/lib/ota-updates';
@@ -67,19 +68,24 @@ function ensureAeatConfig() {
       };
       localStorage.setItem(key, JSON.stringify(cfg));
     } else {
-      localStorage.setItem(key, JSON.stringify({
-        businessData: {
-          nif: '16639695T',
-          nombreRazon: 'GERMAN ASENSIO BLASCO',
-          serieFactura: 'HAI',
-          tipoFactura: 'F1',
-          descripcionOperacion: 'Venta de servicios de hostelería',
-        },
-        environment: 'production',
-        mode: 'sidecar',
-      }));
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          businessData: {
+            nif: '16639695T',
+            nombreRazon: 'GERMAN ASENSIO BLASCO',
+            serieFactura: 'HAI',
+            tipoFactura: 'F1',
+            descripcionOperacion: 'Venta de servicios de hostelería',
+          },
+          environment: 'production',
+          mode: 'sidecar',
+        })
+      );
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 async function initializeApp() {
@@ -128,6 +134,31 @@ async function initializeApp() {
   const root = document.getElementById('root');
   if (!root) throw new Error('Root element not found');
 
+  // Gate installer mode (TR-19.A.2 sidecar pattern, ver r7):
+  // el binario Rust detecta `--install` y monta una WebviewWindow con label
+  // "installer". Aquí decidimos qué árbol montar según ese label — POS normal
+  // o wizard installer. Sin flag => label "main" (default de Tauri), caemos al
+  // camino POS existente intacto.
+  const isInstaller = await detectInstallerMode();
+  appLog.info(`Bootstrapping ${isInstaller ? 'InstallerApp (sidecar)' : 'App (POS)'}`);
+
+  if (isInstaller) {
+    // Installer: ThemeProvider compartido para que el wizard herede el theme
+    // activo del TPV (12 temas disponibles). Sin AppErrorBoundary de page-level
+    // porque el installer tiene su propio StepContainer con feedback por step.
+    // Sin signalAppReady/startOtaUpdates porque no hay OTA ni watchdog para un
+    // binario one-shot del installer.
+    render(
+      () => (
+        <ThemeProvider>
+          <InstallerApp language="es" />
+        </ThemeProvider>
+      ),
+      root
+    );
+    return;
+  }
+
   render(
     () => (
       <AppErrorBoundary
@@ -150,6 +181,27 @@ async function initializeApp() {
 
   // Escucha bundles preparados y los aplica cuando la caja esté quieta.
   startOtaUpdates();
+}
+
+/**
+ * TR-19.A.2 — Detecta si la webview actual es la del installer.
+ *
+ * Estrategia: leer el label de la WebviewWindow via `@tauri-apps/api/webviewWindow`.
+ * El binario Rust (`src-tauri/src/main.rs`) crea la ventana con label "installer"
+ * cuando detecta `--install`; sin flag, el POS usa label "main" (default Tauri).
+ *
+ * Falsy en cualquier camino no-Tauri (browser / PWA) para que el fallback a
+ * POS funcione sin cambios cuando el frontend corre fuera del binario sidecar.
+ */
+async function detectInstallerMode(): Promise<boolean> {
+  if (!isTauri()) return false;
+  try {
+    const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+    const win = getCurrentWebviewWindow();
+    return win.label === 'installer';
+  } catch {
+    return false;
+  }
 }
 
 initializeApp();

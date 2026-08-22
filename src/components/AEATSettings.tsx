@@ -20,7 +20,6 @@ import {
   Server,
   Square,
   Wifi,
-  WifiOff,
   X,
 } from 'lucide-solid';
 import { createSignal, Show } from 'solid-js';
@@ -168,8 +167,7 @@ export default function AEATSettings(props: AEATSettingsProps) {
     }
   };
 
-  const hasBusinessData = () =>
-    !!(config().businessData.nif && config().businessData.nombreRazon);
+  const hasBusinessData = () => !!(config().businessData.nif && config().businessData.nombreRazon);
 
   const getStatusColor = (): string => {
     if (!isEnabled()) return 'bg-gray-400';
@@ -232,8 +230,8 @@ export default function AEATSettings(props: AEATSettingsProps) {
                 VERI*FACTU
               </CardTitle>
               <CardDescription>
-                Integración con el sistema de facturación electrónica de la Agencia Tributaria (AEAT).
-                Cumplimiento normativo Ley 11/2021 — Reglamento VERI*FACTU.
+                Integración con el sistema de facturación electrónica de la Agencia Tributaria
+                (AEAT). Cumplimiento normativo Ley 11/2021 — Reglamento VERI*FACTU.
               </CardDescription>
             </div>
             <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/50">
@@ -355,7 +353,12 @@ export default function AEATSettings(props: AEATSettingsProps) {
               </p>
             </div>
 
-            <Button onClick={handleTestConnection} disabled={isLoading()} variant="outline" class="w-full">
+            <Button
+              onClick={handleTestConnection}
+              disabled={isLoading()}
+              variant="outline"
+              class="w-full"
+            >
               <Show when={isLoading()}>
                 <Loader2 class="mr-2 h-4 w-4 animate-spin" />
               </Show>

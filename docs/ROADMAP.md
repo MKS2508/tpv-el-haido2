@@ -2,7 +2,7 @@
 
 # Roadmap — tpv-el-haido
 
-modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 10 tracks · 0 spikes · 14 milestones
+modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 16 tracks · 0 spikes · 14 milestones
 
 ## Outcomes
 
@@ -57,7 +57,7 @@ gate: U1✓  (pass=1 provisional=0 partial=0 open=0)
 ### track/observability  ● in_progress
 TR-11 — Migración @mks2508/better-logger@0.18.3 + wire OTel
 deps: (ninguna)
-gate: U1✓ U2○  (pass=1 provisional=0 partial=0 open=1)
+gate: U1✓ U2✓  (pass=2 provisional=0 partial=0 open=0)
 
 ### track/ci-release-pipeline  ● in_progress
 TR-12/13/14/15/16 — CI Linux x64/ARM64 + auth CI→hub + OTA bundle pipeline
@@ -84,6 +84,31 @@ deps: (ninguna)
 
 ### track/hetzner-research  ○ queued
 0.8.0 — Research: Hetzner upgrade KVM nested para builds reproducibles cloud (TKT-09)
+deps: (ninguna)
+
+### track/gemini-integration  ○ queued
+r5 — gemini-commit-wizard npm publish + SDK mínimo (CommitGenerator + VersionManager + AutoReleaseManagerAI)
+deps: (ninguna)
+
+### track/wizard-linux-research  ✓ done
+r6 — Wizard GUI Linux: research lane (eval 3-5 candidatos robusto+profesional antes de track build)
+completed: 2026-08-22
+deps: (ninguna)
+
+### track/lint-baseline  ○ queued
+TR-17 — biome lint baseline autofix (33 errores pre-existentes en src/components/)
+deps: (ninguna)
+
+### track/wizard-linux-build  ○ queued
+Wizard Linux GUI installer — Tauri sidecar pattern (r7)
+deps: (ninguna)
+
+### track/lint-baseline-residual-svgs  ○ queued
+Lint residuales — SVG title + aria-label (6 trivial)
+deps: (ninguna)
+
+### track/lint-baseline-residual-any  ○ queued
+Lint residuales — noExplicitAny (7 mayor)
 deps: (ninguna)
 
 ## Decisiones locked: 0

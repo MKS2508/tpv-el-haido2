@@ -5,18 +5,9 @@
  * This file provides SolidJS-friendly wrappers.
  */
 
-import {
-  ThemeCore,
-  type ThemeCoreInstance,
-} from '@mks2508/shadcn-basecoat-theme-manager';
+import { ThemeCore, type ThemeCoreInstance } from '@mks2508/shadcn-basecoat-theme-manager';
 import type { JSX } from 'solid-js';
-import {
-  type Accessor,
-  createContext,
-  createSignal,
-  onMount,
-  useContext,
-} from 'solid-js';
+import { type Accessor, createContext, createSignal, onMount, useContext } from 'solid-js';
 
 // ==================== Types ====================
 

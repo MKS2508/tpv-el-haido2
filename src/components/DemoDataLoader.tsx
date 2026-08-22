@@ -5,6 +5,7 @@
  * Útil para capturas de pantalla del Kit Digital.
  */
 
+import { ok } from '@mks2508/no-throw';
 import {
   AlertCircle,
   CheckCircle2,
@@ -16,7 +17,6 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-solid';
-import { ok } from '@mks2508/no-throw';
 import { createSignal, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {

@@ -113,8 +113,8 @@ export function useUpdater() {
       const match = s.message.match(/(\d+)\/(\d+)/);
       if (match) {
         return {
-          contentLength: parseInt(match[2]),
-          downloaded: parseInt(match[1]),
+          contentLength: parseInt(match[2], 10),
+          downloaded: parseInt(match[1], 10),
         };
       }
     }

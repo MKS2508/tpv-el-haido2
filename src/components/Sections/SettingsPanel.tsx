@@ -304,6 +304,13 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     }
   };
 
+  const handleToggle2State = async () => {
+    const theme = appTheme.currentTheme();
+    const mode = appTheme.effectiveMode();
+    const next = mode === 'dark' ? 'light' : 'dark';
+    await appTheme.setTheme(theme, next);
+  };
+
   const handleStorageModeToggle = (newMode: StorageMode) => {
     if (newMode !== state.storageMode) {
       setPendingStorageMode(newMode);
@@ -414,7 +421,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                           <SwitchUI
                             id="darkMode"
                             checked={appTheme.effectiveMode() === 'dark'}
-                            onChange={() => appTheme.toggleMode()}
+                            onChange={handleToggle2State}
                           />
                         </div>
 

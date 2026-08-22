@@ -13,6 +13,13 @@ export function ModeToggle() {
 
   const isDark = () => appTheme.effectiveMode() === 'dark';
 
+  const handleToggle2State = async () => {
+    const theme = appTheme.currentTheme();
+    const mode = appTheme.effectiveMode();
+    const next = mode === 'dark' ? 'light' : 'dark';
+    await appTheme.setTheme(theme, next);
+  };
+
   return (
     <Show
       when={mounted()}
@@ -23,7 +30,7 @@ export function ModeToggle() {
         </Button>
       }
     >
-      <Button variant="ghost" size="icon" onClick={() => appTheme.toggleMode()} class="h-9 w-9">
+      <Button variant="ghost" size="icon" onClick={handleToggle2State} class="h-9 w-9">
         <Show
           when={isDark()}
           fallback={
