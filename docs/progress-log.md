@@ -4,7 +4,48 @@ Log de progreso por fase. Mantenido al día con cada milestone completado.
 
 ---
 
-## 2026-08-22 (afternoon→evening) — Wizard installer pipeline cerrado: F + D mergeados; TR-19.E queda como único pendiente
+## 2026-08-22 (evening) — 3 surgical fixes mergeados: canApplyNow gate + http-storage Tauri 2 + stale docs sweep
+
+**Milestone**: dispatch de 3 Explore agents en paralelo (OTA updater + tech debt/PWA/isTauri + Thermal/CI/Gemini) reveló 3 fixes pequeños con valor real que se podían shippear **sin esperar a Waxin fixear el hub**. Despachados en paralelo, worktree-isolated, todos mergeados limpios.
+
+**Commits mergeados a `main`** (3 fixes ahead of origin):
+- `50b3d23` → `6fd9a9e` — **FIX B**: `fix(http-storage): use canonical isTauri() — fix Tauri 1.x vs 2.x global name mismatch`. `src/services/http-storage-adapter.ts:17` reemplazó `'__TAURI_IPC__' in window` (Tauri 1.x) por `isTauri()` del detector canónico (SSR-safe, checks `__TAURI_INTERNALS__` || `__TAURI__`). **Fix de latent bug** que podía romper fetch/CORS en desktop builds silenciosamente. Side benefit: cierra el grep "5 isTauri implementations" del CLAUDE.md.
+- `352d0e1` → (merge C) — **FIX C**: `docs: fix stale claims in CLAUDE.md + PWA plan + TR-12 status`. 3 archivos docs-only: CLAUDE.md (PWA promoted "Not Implemented" → "Implemented", updater endpoint corregido a release-hub URL, thermal printer wording corregido de "ESC/POS" a HTTP client to tickmaster-daemon on RPI-BAR); todo-plans/pwa-architecture-plan.json (pwaReadiness status `zero` → `complete`, `vite-plugin-pwa` movido a `consciouslySkipped` con reason); docs/task-requests/TR-12 (Status header `done` + Resolution linkeando progress-log.md:741-812).
+- `5324e12` → (merge A) — **FIX A**: `fix(updater): gate relaunch on canApplyNow (no auto-restart mid-order)`. `src/hooks/useUpdater.ts` reemplazó `await relaunchFn()` incondicional por `await canApplyNow()` gate. Si el box NO es seguro para reload (ticket abierto, interaction reciente), persiste el pending update a localStorage (`tpv-pending-update` con `{version, reason, deferredAt}`) + signal `pendingUpdate` + expone `dismissPendingUpdate` via return. **Cierra el POS UX risk** para 24/7 unattended bar PC.
+
+**Anomalías registradas**:
+- **LSP diagnostics flood** (false positives): SolidJS JSX.IntrinsicElements + path resolutions falsos durante los merges. Verificado contra `tsgo --noEmit` real: EXIT 0 cada vez. NO son reales. (Worth noting: el LSP tiene stale cache problemático para paths `@/` y JSX — agentes futuros deben verificar con `tsgo --noEmit`, no fiarse del LSP.)
+- **Agent A worktree anomaly**: "EnterWorktree refused from subagent, worked around by branching in the existing worktree". El branch `fix-updater-canapplynow` vive en el worktree existente (isolation preservada — su branch no se cruza con otros). No es blocker pero vale notar para futuro runbook de dispatch.
+
+**Explorer reports archivados** (3 sweeps broad):
+- `/tmp/explorer-1-tech-debt-pwa-istauri-report.md` — tech debt scope (platform abstraction DEFER, PWA production-ready, isTauri scattered DO NOW = FIX B)
+- `/tmp/explorer-2-ota-updater-report.md` — OTA updater production-readiness (config + key OK, useUpdater NEEDS-WORK = FIX A, no windows-x64-deploy.yml estructural gap, E2E never run on bar PC)
+- `/tmp/explorer-3-thermal-ci-gemini-report.md` — thermal printer (functional-but-unverified, daemon en otro repo), CI Linux production-pipeline (TR-12 + TR-15 done, v0.1.3 verificado), Gemini release.ts BLOCKED-BY-SDK (`generateNotes` no existe en el SDK, solo `run()` público)
+
+**Push a remote** (al cierre de este entry): pendiente (commits sin pushear).
+
+**Deferred / pendiente batches waxin-side**:
+- `#10` npm dist-tags polluted — deferred (cosmetic, proyecto pinea `2.1.1` exacto).
+- PR upstream gemini pineando `better-logger@0.18.3` — DESCARTADO por waxin.
+- **TR-19.E** (E2E smoke con release real) — bloqueado por Waxin arreglando hub.
+- **`windows-x64-deploy.yml`** no existe (2-3h GH Actions en `windows-latest`) — único target de producción (Windows bar PC) requiere build manual on-host.
+- **Gemini release.ts integration** — BLOCKED-BY-SDK: `manager.generateNotes({version, changes})` no existe en `AutoReleaseManagerAI` instalado (solo `run()` público). Decisión Waxin antes de re-dispatch: ¿SDK upstream agrega el método o reescribimos step 3 con `*Provider` públicos + prompt hand-rolled?
+- **OTA bundle publish automation** — TR-14 increment (b) open: `release.ts publish` no soporta bundles todavía.
+- **Thermal printer offline-queue** — permadefer post v0.5.0.
+
+**Perma-defer / nice-to-have**:
+- Platform abstraction consolidation (abstracción cubre 5/12 métodos, resto son storage/audit/installer sin 2da implementación legítima)
+- macOS CI workflow
+- Stale `.pub` files cleanup (key rotation drift: 2 pubkeys obsoletos tracked, no security leak)
+- useUpdater network resilience (backoff/jitter/`navigator.onLine`), disk-space check, sig mismatch path custom — mejoras nice-to-have post v0.5.0
+
+**Next (cuando Waxin termine con el hub)**:
+1. TR-19.E E2E smoke con release real desde el hub (download AppImage, install, verify `.desktop` registry, `xdg-mime` link integrity)
+2. Waxin decide sobre Gemini SDK API mismatch → re-dispatch TR-18 step 3 con la decisión
+3. Considerar `windows-x64-deploy.yml` si Waxin quiere CI real para el target Windows (effort 2-3h)
+4. OTA bundle publish automation (TR-14 increment (b))
+
+---
 
 **Milestone**: TR-19.A + .A.2 + .A.3 + TR-19.B (Rust IPC real) + TR-19.C (wizard 6 steps) + post-merge contract drift fix + TR-19.F (better-logger sweep) + **TR-19.D (bash shim + AppImage config + README + CI verify)** — todos mergeados a `main` y pusheados a `origin/main`. Solo queda TR-19.E (E2E smoke con release real).
 
