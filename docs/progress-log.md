@@ -1137,3 +1137,73 @@ colateral (TR-16, whitelist de admin) quedan ambos resueltos esta sesión.
   (no bloqueante, alta confianza).
 - Wiring de bundles en `ota-bundle-deploy.yml` — deferred (candidato TR-17 o extensión de TR-14).
 - Sync completo de `roadmap.spec.yml` — sigue diferido.
+
+---
+
+## 2026-08-22 — FIX F: surface deferred-update Dialog (no silent canApplyNow deferral)
+
+### Bug
+
+`useUpdater` (post FIX A) ya exponía la superficie diferida vía 3 signals/métodos —
+`pendingUpdate`, `hasDeferredUpdate`, `dismissPendingUpdate` — y persistía el estado en
+`localStorage` (`tpv-pending-update`) para sobrevivir recargas. Pero **ningún componente la
+consumía** (`grep -r pendingUpdate src/components/` solo devolvía definiciones). Cuando
+`canApplyNow()` rechazaba un relaunch (pedido abierto o `idle < 60s`), el operador se quedaba
+sin señal — descarga silenciosa con update pendiente.
+
+### Fix (patrón user-locked vía AskUserQuestion preview)
+
+Waxin eligió **Dialog modal** (recomendado, mirror del Update Available dialog existente) sobre
+las alternativas de banner persistente o toast-en-Settings. Implementado en
+`src/components/UpdateChecker.tsx`:
+
+- Segundo `<Dialog>` montado globalmente (ya está en `App.tsx:421`), abre cuando
+  `updater.hasDeferredUpdate()`.
+- Title: ⏰ "Actualización pendiente" + body con `pendingUpdate().version` y
+  `pendingUpdate().reason` + nota "se aplicará automáticamente cuando no haya pedidos y la caja
+  esté inactiva".
+- Botones: **Recordar más tarde** → `dismissPendingUpdate()` (limpia signal + localStorage), y
+  **Reintentar ahora** → `handleRetryNow` (definido nuevo) que primero `checkForUpdates()`
+  para rehidratar el `updateData` en cache (se pierde en recargas aunque el deferred-state
+  sobrevive), luego `downloadAndInstall()` que vuelve a gate-keep por `canApplyNow`. Si el
+  update desapareció del hub entre medio (versión ya no disponible), limpia el stale-notice.
+- Sólo se tocó `UpdateChecker.tsx` (+197/-67, mayormente re-indent del nuevo wrapping
+  `<>...</>` que envuelve ambos Dialogs como siblings); cero cambios en `App.tsx`,
+  `useUpdater.ts`, ni en otros consumers (`VersionInfo.tsx`, `UpdateCheckButton`).
+
+### Verificación independiente (en worktree + post-merge)
+
+| Comando | Exit | Detalle |
+|---|---|---|
+| `bun run typecheck` (tsgo) | **0** | Sin errores. Re-corrido tras merge en main, EXIT 0 también. |
+| `bun run build` | **0** | `✓ built in 4.83s` |
+| `bun run lint:fix` | **1** | 11 errors + 8 warnings **pre-existing en main limpio** (confirmado via `git stash` del diff → mismo conteo). No introducidos por este cambio. |
+| `grep -rn "pendingUpdate\|hasDeferredUpdate\|dismissPendingUpdate" src/components/` | 6 hits | 3 destructures/closures + nuevo handleRetryNow + 2 nuevos consumption sites (Dialog open / onOpenChange handler). |
+
+### Diagnósticos LSP (falsos positivos ya conocidos)
+
+El sistema reportó `Cannot find name 'Fragment'` y `Expected corresponding closing tag for JSX
+fragment` en `UpdateChecker.tsx:53` y `:180`. `tsgo --noEmit` los descarta — el compiler de
+SolidJS maneja el `<>...</>` shorthand sin requerir import explícito de `Fragment`. Mismo
+patrón de LSP diagnostics flood documentado en FIX E de esta misma sesión. Las deprecations de
+`AlertCircle`/`CheckCircle2` (lucide-solid) son pre-existentes en main.
+
+### Commits
+
+- `2f55b90` fix(updater): surface deferred-update Dialog (no silent canApplyNow deferral)
+- `bd811e8` merge: FIX F surface deferred-update Dialog (rama
+  `worktree-agent-a39e6f9c553806a3c`, merge `--no-ff`)
+- Co-author audit: ✓ CLEAN (sin `Co-Authored-By:`, sin "Generated with Claude Code", sin
+  atribución AI).
+
+### Reporte de agente
+
+`/tmp/fix-f-pending-update-dialog-report.md` (waxin lock 2026-08-18, persistido ANTES de
+terminar).
+
+### Pendiente
+
+- Lane FIX H (drift final docs) corriendo en worktree paralelo — veredicto en cuanto el report
+  llegue.
+- Push pendiente: esperar merge de FIX H o OK explícito de waxin (esta rama ya está mergeada
+  en main pero no pusheada).
