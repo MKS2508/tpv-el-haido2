@@ -1559,3 +1559,160 @@ Waxin aprobó dispatch de FIX J + acumulación con FIX K antes de push.
 - Worktrees de lanes previas FIX I/J (`agent-a3a5927*`, `agent-ac98475*`) preservados por
   si Waxin quiere inspeccionar; pueden limpiarse con `git worktree remove --force` cuando
   ya no aporten trazabilidad.
+
+## 2026-08-22 (cont. 5) — R1+R2 PlatformService migration + FIX L hub-side alias
+
+### R3 verify (scripts/release.ts OTA partial-channel) — CERRADO
+
+Tres Explore agents en paralelo (R1, R2, R3) para mapear scope antes de dispatch.
+
+- **R3 closed sin fix**: `scripts/release.ts` es correcto contra el hub de prod
+  (`https://haido.releases.mks2508.systems`). Verificados con curl reales todos los
+  endpoints declarados:
+    - `POST /api/admin/projects/${slug}/releases` → 401 (endpoint exists, auth-gated)
+    - `POST /api/admin/projects/${slug}/bundles` → 401 (multipart field names match
+      `apps/server/src/routes/admin/bundles.ts:212-217` verbatim)
+    - `GET /api/bundles/latest?nativeVersion=…` → 200 (manifest con UUID URL)
+    - `GET /api/bundles/{uuid}/download` → 200 (zip 17 MB devuelto)
+    - `POST /api/bundles/{uuid}/report` → 400 (endpoint exists, valida body)
+- **Out-of-scope finding**: `src-tauri/tauri.conf.json:59` updater endpoint template
+  `{{target}}/{{arch}}` se sustituye a `darwin-aarch64/aarch64` (Tauri updaterPlatformKey),
+  pero el hub solo acepta server taxonomy `darwin|linux|windows` × `aarch64|x86_64`.
+  Resultado: 400 UNSUPPORTED_TARGET en runtime. → FIX L (ver abajo).
+
+Reporte: `/tmp/r3-ota-endpoint-verify-report.md`.
+
+### R2 — audit.service → PlatformService (4 methods)
+
+Scope: 4 raw invokes en `src/services/audit.service.ts:33,45,59,71` (Tauri commands
+`create_audit_log`, `get_audit_logs`, `export_audit_logs`, `cleanup_audit_logs`).
+
+Diff: 4 files, +198/-15 (más eficiente que el estimate conservador de 310 LOC).
+
+| File | Δ | Contenido |
+|---|---|---|
+| `src/services/platform/PlatformService.ts` | +55 | +`PlatformErrorCode` (UNSUPPORTED_PLATFORM\|BACKEND_FAILED\|INVALID_PAYLOAD), `PlatformError`, `AuditPlatformResult<T>`, 4 method signatures |
+| `src/services/platform/TauriPlatformService.ts` | +47 | 4 method impls (1:1 port), wrapped en `tryCatchAsync` con `'BACKEND_FAILED'` |
+| `src/services/platform/WebPlatformService.ts` | +72 | 4 PWA stubs, cada uno con `log.warn()` (AEAT VERI*FACTU compliance flag honrado) |
+| `src/services/audit.service.ts` | +24/-15 | swap 4 invokes, drop `@tauri-apps/api/core` import, add `toAuditError<T>()` helper (preserva consumer-facing signatures) |
+
+Verificación: `bun run typecheck` EXIT 0, lint clean en 4 files (11 pre-existing errors
+en 9 files no relacionados sin cambios), co-author audit CLEAN.
+
+7 consumers (store.ts, Login.tsx, AuditLog.tsx, SettingsPanel.tsx, LicenseStatus.tsx,
+LicenseDialog.tsx, LicenseSplashScreen.tsx) usan namespace import — sin signature drift.
+
+Backend Rust (`src-tauri/src/lib.rs:486-533` + registration `:673-676`) UNCHANGED.
+
+Recovery: agent editó en worktree aislado pero no pudo commitear desde worktree
+(worktree isolation refused); orchestrator commiteó desde main + merge --no-ff.
+
+Branch: `refactor/audit-service-platform-service` @ `d7b26a6`, merge `da80fa5`.
+
+### FIX L — tauri.conf.json updater endpoint: hub-side alias map
+
+Bug runtime: Tauri 2 sustituye `{{target}}` a `darwin-aarch64` (updaterPlatformKey),
+hub solo acepta `darwin` (server taxonomy) → 400 UNSUPPORTED_TARGET.
+
+Decisión Waxin: hub-side alias (no per-target override ni disable nativo).
+
+Diff: 1 file (`desktop-release-hub/apps/server/src/routes/tenant/updates.ts`), +19/-1.
+
+```ts
+const TAURI_TARGET_ALIAS: Record<string, string> = {
+  'darwin-aarch64': 'darwin',
+  'darwin-x86_64': 'darwin',
+  'linux-aarch64': 'linux',
+  'linux-x86_64': 'linux',
+  'windows-aarch64': 'windows',
+  'windows-x86_64': 'windows',
+}
+
+// En handler:
+const normalizedTarget = TAURI_TARGET_ALIAS[params.target] ?? params.target
+```
+
+Verificación: `bun run typecheck` EXIT 0 en 4 workspaces (shared, sdk, server, admin-ui).
+
+Beneficio: tpv-el-haido2 sin cambios (cross-repo fix aislado).
+Trade-off: requiere PR/deploy en hub antes de fix efectivo end-to-end.
+
+Branch: `fix/updater-target-alias-mapping` @ `0dd067c` (en `desktop-release-hub`,
+local, no push).
+
+Recovery: agent editó en tpv-el-haido2 worktree (cross-repo bash blocked); orchestrator
+editó directo al hub working tree + commit desde main del hub.
+
+### R1 — sqlite-storage-adapter → PlatformService (23 methods)
+
+Scope real: **23** raw invokes (upstream "~17" subestimaba — narrow grep `invoke\(` perdió
+5 generic-form reads. R1 explore agent confirmó con `grep -nE "invoke[<(<]"` pattern).
+
+Diff: 6 files, +626/-205 (post-recovery manual Edit).
+
+| File | Δ | Contenido |
+|---|---|---|
+| `src/services/platform/PlatformService.ts` | +~60 | +3 model imports (Category, Product, Table, User), `StoragePlatformResult<T>` type, 23 method signatures (5 entities × 4 CRUD + 3 utility) |
+| `src/services/platform/TauriPlatformService.ts` | +~80 | 23 method impls (1:1 port Tauri commands, exact payload shapes) |
+| `src/services/platform/WebPlatformService.ts` | +~210 | 23 PWA stubs, cada uno con `log.warn()` |
+| `src/services/sqlite-storage-adapter.ts` | ~190 net change | swap 23 invokes, drop direct `@tauri-apps/api/core` import, add constructor DI (`PlatformService = getPlatformService()` default), add `toStorageError<T>()` bridge |
+| `src/services/sqlite-storage-adapter.test.ts` | rewrite | mock PlatformService en lugar de `@tauri-apps/api/core` invoke — 23 assertion groups preservados (mismo input/output, mismo error path) |
+| `src/store/store.ts:89` | +1 | `new SqliteStorageAdapter(getPlatformService())` (explicit DI) |
+
+Verificación: `bun run typecheck` EXIT 0, biome + eslint clean en 6 files, **`vitest run`
+PASSED 23/23** (validación fuerte del test rewrite). Co-author audit CLEAN.
+
+Backend Rust UNCHANGED.
+
+Cyclic-import mitigation: type-only import del `PlatformService` interface; runtime
+`getPlatformService()` solo en `store.ts` y constructor default del adapter.
+
+Recovery: agent commiteó `dbab1a5` en branch `worktree-agent-aa4b849a2d68ffb4d` (worktree
+isolation refused cross-worktree ops). Cherry-pick desde main conflictó en 3 PlatformService
+files (R1 base = `9011d02` pre-R2). Orchestrator resolvió extrayendo R1-only patch
+(`git diff 9011d02..dbab1a5` filtrado a 6 files) + manual Edit sobre base post-R2,
+preservando R2 audit methods verbatim.
+
+Branch: `refactor/sqlite-storage-adapter-platform-service` @ `51ad0a0`, merge `3ad4109`.
+
+### Commits (ordenados, tpv-el-haido2)
+
+```
+3ad4109 merge: R1 refactor sqlite-storage-adapter → PlatformService (23 methods)
+51ad0a0 refactor(storage): migrate 23 raw invokes to PlatformService (R1)
+da80fa5 merge: R2 refactor audit.service → PlatformService (4 methods + stubs AEAT-compliant)
+d7b26a6 refactor(audit): migrate 4 raw invokes to PlatformService (R2)
+829e0f2 docs(progress-log): entry cont.4 - multi-session sync + FIX J + FIX K
+8e68726 merge: FIX K cosmetic version bump
+dfba50e docs(scripts): bump example versions in JSDoc/CLI to 0.1.3 (FIX K)
+79ea9a9 merge: FIX J installer User-Agent - CARGO_PKG_VERSION macro
+bba5cae fix(installer): User-Agent uses CARGO_PKG_VERSION macro (FIX J)
+```
+
+**9 commits ahead de origin/main**. Pendiente push con OK explícito de Waxin.
+
+Commits (desktop-release-hub):
+```
+0dd067c fix(hub): alias tauri updaterPlatformKey to server taxonomy in /api/updates
+```
+
+**1 commit ahead de origin/main (hub)**. Pendiente push con OK explícito de Waxin.
+
+### Reportes de agente
+
+- `/tmp/r1-sqlite-storage-adapter-scope-report.md` (explore, 193 lines)
+- `/tmp/r2-audit-service-scope-report.md` (explore)
+- `/tmp/r3-ota-endpoint-verify-report.md` (explore, 144 lines)
+- `/tmp/r1-fix-report.md` (executor, scope deviations=[], verdict done)
+- `/tmp/r2-fix-report.md` (executor, scope deviations justificadas, verdict done)
+- `/tmp/fix-l-hub-target-alias-report.md` (executor, verdict done tras recovery)
+
+### Estado final de main
+
+- 9 commits ahead de origin/main en tpv-el-haido2 (FIX J + merge + FIX K + merge +
+  progress-log + R2 fix + merge + R1 fix + merge).
+- 1 commit ahead de origin/main en desktop-release-hub (FIX L).
+- Typecheck EXIT 0 confirmado en main post-R1.
+- vitest 23/23 PASSED (test rewrite validado).
+- Co-author audit CLEAN en todos los commits nuevos.
+- Tasks #32, #33, #34, #35, #36, #37 → completed.
