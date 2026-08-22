@@ -4,6 +4,38 @@ Log de progreso por fase. Mantenido al día con cada milestone completado.
 
 ---
 
+## 2026-08-22 (evening, cont.) — FIX D: haidodocs download links alineados (release-hub + v0.1.3 + Linux available)
+
+**Pedido de Waxin**: "para la web de docs donde está lo de descargar ajusta los enlaces pls".
+
+**Milestone**: 6 archivos de `apps/haidodocs/content/` actualizados para reflejar el estado real del hub de releases (R1 decision movió OTA + downloads de GitHub Releases a `haido.releases.mks2508.systems`) y el último release verificado end-to-end (`v0.1.3` per TR-15). Linux/RPi promoted de "diferido" a "DISPONIBLE" (AppImage + wizard, TR-19.D).
+
+**Commit mergeado**:
+- `00e7f07` → (merge D) — `docs(haidodocs): align download links to release-hub + bump 0.1.0 to 0.1.3 + Linux available`
+
+**Archivos tocados** (6):
+- `apps/haidodocs/content/docs/descarga.mdx` (ES): v0.1.0 → v0.1.3 en URLs hardcodeadas, Linux div `diferido` → `DISPONIBLE` con badge accent-green + link al hub, wizard mention en Linux install tab.
+- `apps/haidodocs/content/en/docs/download.mdx` (EN): mirror de ES.
+- `apps/haidodocs/content/docs/guia-usuario/instalacion.mdx` (ES): 5× `github.com/MKS2508/tpv-el-haido2/releases/latest/...` → `haido.releases.mks2508.systems/releases/latest/...`.
+- `apps/haidodocs/content/en/docs/user-guide/installation.mdx` (EN): mirror de ES.
+- `apps/haidodocs/content/docs/changelog.mdx` (ES): intro Callout GitHub Releases → release-hub.
+- `apps/haidodocs/content/en/docs/changelog.mdx` (EN): mirror.
+
+**Verification**:
+- `bun run build` exit 0 (Next.js 16.2.2, 71 static pages)
+- Grep `github.com/MKS2508/tpv-el-haido2/releases` en los 6 archivos: 0 hits
+- Grep `0.1.0` en los 6 archivos: 0 hits
+- Grep `0.1.3` en los 6 archivos: 10 nuevos hits donde se esperaba
+
+**Out-of-scope flagged** (deliberadamente NO tocados por scope discipline):
+- `apps/haidodocs/content/docs/desarrollo/plataformas.mdx` (ES) — 3 hits outdated: `wget .../releases/latest/download/tpv-el-haido_arm64.deb` (line 158), `"version": "0.1.0"` config sample (line 238), `"https://github.com/.../releases/latest/download/latest.json"` (line 344, Tauri updater endpoint config — ESTE SÍ necesita fix per R1).
+- `apps/haidodocs/content/en/docs/development/platforms.mdx` (EN) — mismo patrón, 3 hits.
+- Changelogs `## [0.1.0] - 2024-XX-XX` historical entries: correct records, no son stale refs.
+
+**Follow-up TR sugerido** (Waxin decide): `TR-19.F.2` o nuevo, scope = actualizar `plataformas.mdx` + `platforms.mdx` con los URLs release-hub y `0.1.3` + bump updater endpoint a `https://haido.releases.mks2508.systems/api/updates/{{target}}/{{arch}}/{{current_version}}` (template Tauri 2 correcto). Effort: small.
+
+---
+
 ## 2026-08-22 (evening) — 3 surgical fixes mergeados: canApplyNow gate + http-storage Tauri 2 + stale docs sweep
 
 **Milestone**: dispatch de 3 Explore agents en paralelo (OTA updater + tech debt/PWA/isTauri + Thermal/CI/Gemini) reveló 3 fixes pequeños con valor real que se podían shippear **sin esperar a Waxin fixear el hub**. Despachados en paralelo, worktree-isolated, todos mergeados limpios.
