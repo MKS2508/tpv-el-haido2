@@ -32,6 +32,13 @@ const MoonSunSwitch: Component<MoonSunSwitchProps> = (props) => {
   const switchSize = () => sizeClasses[props.size ?? 'md'];
   const containerSize = () => containerSizeClasses[props.size ?? 'md'];
 
+  const handleToggle2State = async () => {
+    const theme = appTheme.currentTheme();
+    const mode = appTheme.effectiveMode();
+    const next = mode === 'dark' ? 'light' : 'dark';
+    await appTheme.setTheme(theme, next);
+  };
+
   return (
     <div
       class={`flex items-center justify-center bg-transparent text-foreground ${containerSize()}`}
@@ -41,7 +48,7 @@ const MoonSunSwitch: Component<MoonSunSwitchProps> = (props) => {
           type="checkbox"
           class="opacity-0 w-0 h-0"
           checked={isDarkMode()}
-          onInput={() => appTheme.toggleMode()}
+          onClick={handleToggle2State}
         />
         <span
           class={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-600 ease-out overflow-hidden z-[1] rounded-full`}

@@ -109,8 +109,11 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
   const isDarkMode = () => appTheme.effectiveMode() === 'dark';
   const currentTheme = () => appTheme.currentTheme();
 
-  const handleDarkModeToggle = () => {
-    appTheme.toggleMode();
+  const handleToggle2State = async () => {
+    const theme = appTheme.currentTheme();
+    const mode = appTheme.effectiveMode();
+    const next = mode === 'dark' ? 'light' : 'dark';
+    await appTheme.setTheme(theme, next);
   };
 
   const handleTouchModeToggle = (enabled: boolean) => {
@@ -224,7 +227,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                 Activa el tema oscuro para ambientes con poca luz
               </p>
             </div>
-            <Switch id="darkMode" checked={isDarkMode()} onChange={handleDarkModeToggle} />
+            <Switch id="darkMode" checked={isDarkMode()} onChange={handleToggle2State} />
           </div>
 
           <div class="flex items-center justify-between">
