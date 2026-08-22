@@ -1,0 +1,33 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "installer-capability",
+  "description": "Permisos para el installer mode (--install flag). Se carga SOLO en windows con label 'installer'.",
+  "windows": ["installer"],
+  "permissions": [
+    "core:default",
+    "core:webview:allow-create-webview-window",
+    "core:window:allow-close",
+    "opener:default",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "http:default",
+    "shell:default",
+    "shell:allow-open",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "update-desktop-database",
+          "cmd": "update-desktop-database",
+          "args": ["~/.local/share/applications"]
+        },
+        {
+          "name": "chmod",
+          "cmd": "chmod",
+          "args": ["+x", { "validator": ".+" }]
+        }
+      ]
+    }
+  ]
+}
