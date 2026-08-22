@@ -1,0 +1,127 @@
+name: 🪟 Windows x64 Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-windows-x64:
+    name: Build Windows x64
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Verify MSVC + WebView2 toolchain (pre-installed on windows-latest)
+        shell: pwsh
+        run: |
+          $cl = Get-Command cl.exe -ErrorAction SilentlyContinue
+          if (-not $cl) {
+            Write-Error "MSVC cl.exe not found on PATH. windows-latest should pre-install Build Tools 2022 — if the runner image changed, switch to microsoft-visualstudio/setup-vcpp-tools@v1."
+            exit 1
+          }
+          Write-Host "MSVC cl.exe at: $($cl.Source)"
+          $wv2 = Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' -ErrorAction SilentlyContinue
+          if (-not $wv2) {
+            Write-Warning "WebView2 Runtime registry entry not found — Tauri build may fail if WebView2 SDK is missing. Not hard-failing (Tauri bundles its own bootstrapper, runtime is for end-user installs)."
+          } else {
+            Write-Host "WebView2 Runtime version: $($wv2.pv)"
+          }
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2.9.2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install minisign (signature verification — not pre-installed on windows-latest)
+        run: choco install minisign -y --no-progress
+
+      - name: Build + sign (windows-x64)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bun run scripts/build-release.ts --target windows-x64
+
+      - name: List bundle output (verifica *.exe, *.exe.sig, *.nsis.zip, *.nsis.zip.sig)
+        shell: bash
+        run: |
+          BUNDLE_DIR="src-tauri/target/x86_64-pc-windows-msvc/release/bundle"
+          find "$BUNDLE_DIR" -maxdepth 2 -type f
+          # Windows produce OTA bundle (.nsis.zip) + NSIS installer (-setup.exe), ambos firmados
+          ARTIFACT_DIR="releases"
+          MISSING=0
+          for pattern in '*.exe' '*.exe.sig' '*.nsis.zip' '*.nsis.zip.sig'; do
+            found=$(find "$ARTIFACT_DIR" -path "*/windows-x64/*" -name "$pattern" 2>/dev/null | head -1)
+            if [ -z "$found" ]; then
+              echo "::error::Expected $pattern under $ARTIFACT_DIR/*/windows-x64/, none found"
+              MISSING=1
+            else
+              echo "OK $pattern: $found"
+            fi
+          done
+          [ "$MISSING" -eq 0 ] || exit 1
+
+      - name: Verify signature against embedded pubkey
+        shell: bash
+        run: |
+          ARTIFACT=$(find releases -path "*/windows-x64/*" -name "*.nsis.zip" -not -name "*.sig" | head -1)
+          if [ -z "$ARTIFACT" ]; then echo "::error::No .nsis.zip artifact found under releases/"; exit 1; fi
+          base64 -d "${ARTIFACT}.sig" > /tmp/artifact.minisig
+          minisign -Vm "$ARTIFACT" -x /tmp/artifact.minisig \
+            -P RWSxu04zRL8L250wN61H4xvaSW8GmAGBOIPtqmRbKw6C9ZNlC9VrlUUU
+
+      - name: Upload release artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-x64-release
+          path: releases/*/windows-x64/**
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish to release-hub (auto si hay secrets, fallback manual — TR-15)
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_HUB_CLIENT_ID: ${{ secrets.RELEASE_HUB_CLIENT_ID }}
+          RELEASE_HUB_CLIENT_SECRET: ${{ secrets.RELEASE_HUB_CLIENT_SECRET }}
+        shell: bash
+        run: |
+          manual_instructions() {
+            {
+              echo "## Publish al release-hub (manual, interim — TR-12 opción 3 / fallback TR-15)"
+              echo ""
+              echo "1. Descargar el artifact \`windows-x64-release\` de este run."
+              echo "2. Colocarlo en \`releases/<version>/windows-x64/\` en tu checkout local."
+              echo "3. \`bun run scripts/release.ts auth login\` (si no hay sesión activa)."
+              echo "4. \`bun run scripts/release.ts publish --target windows-x64 --slug haido --skip-build\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          if [ -z "$RELEASE_HUB_CLIENT_ID" ] || [ -z "$RELEASE_HUB_CLIENT_SECRET" ]; then
+            echo "RELEASE_HUB_CLIENT_ID/SECRET no están seteados — fallback manual (TR-15 paso 2)."
+            manual_instructions
+            exit 0
+          fi
+
+          if bun run scripts/release.ts publish --client-credentials --skip-build --target windows-x64 --slug haido; then
+            echo "## Publish al release-hub: OK (automático, client_credentials — TR-15)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Publish automático falló — fallback a instrucciones manuales (TR-15 paso 2)."
+            manual_instructions
+          fi
