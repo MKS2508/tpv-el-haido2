@@ -2,7 +2,7 @@
 
 # Roadmap — tpv-el-haido
 
-modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 13 tracks · 0 spikes · 14 milestones
+modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 16 tracks · 0 spikes · 14 milestones
 
 ## Outcomes
 
@@ -90,12 +90,25 @@ deps: (ninguna)
 r5 — gemini-commit-wizard npm publish + SDK mínimo (CommitGenerator + VersionManager + AutoReleaseManagerAI)
 deps: (ninguna)
 
-### track/wizard-linux-research  ○ queued
+### track/wizard-linux-research  ✓ done
 r6 — Wizard GUI Linux: research lane (eval 3-5 candidatos robusto+profesional antes de track build)
+completed: 2026-08-22
 deps: (ninguna)
 
 ### track/lint-baseline  ○ queued
 TR-17 — biome lint baseline autofix (33 errores pre-existentes en src/components/)
+deps: (ninguna)
+
+### track/wizard-linux-build  ○ queued
+Wizard Linux GUI installer — Tauri sidecar pattern (r7)
+deps: (ninguna)
+
+### track/lint-baseline-residual-svgs  ○ queued
+Lint residuales — SVG title + aria-label (6 trivial)
+deps: (ninguna)
+
+### track/lint-baseline-residual-any  ○ queued
+Lint residuales — noExplicitAny (7 mayor)
 deps: (ninguna)
 
 ## Decisiones locked: 0

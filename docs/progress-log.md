@@ -4,6 +4,59 @@ Log de progreso por fase. Mantenido al día con cada milestone completado.
 
 ---
 
+## 2026-08-22 — Tauri sidecar + gemini partial + lint baseline + theme fix
+
+**Milestone**: r7 sidecar installer + TR-17 lint + TR-18 gemini SDK (Paso 1+2 OK, Paso 3 bloqueado) + Wizard research cerrado
+
+**Docs nuevas**:
+- [`docs/decisions/r7-tpv-sidecar-installer-2026-08-22.md`](./decisions/r7-tpv-sidecar-installer-2026-08-22.md) — **winner cambia**: Electron standalone → **Tauri sidecar** (mismo binario TPV con flag `--install`)
+- [`docs/research/wizard-linux-candidates-2026-08-22.md`](./research/wizard-linux-candidates-2026-08-22.md) — addendum post-re-eval (632+47 líneas, score sidecar 5.0/5)
+- [`docs/task-requests/TR-18-gemini-integration-fallback.md`](./task-requests/TR-18-gemini-integration-fallback.md) — install dep + 10 scripts npm + integrar SDK
+- [`docs/task-requests/TR-19-wizard-linux-build.md`](./task-requests/TR-19-wizard-linux-build.md) — scope reescrito: Tauri sidecar, sub-decomposition A/B/C/D/E
+- [`docs/task-requests/TR-19-A-wizard-scaffolding.md`](./task-requests/TR-19-A-wizard-scaffolding.md) — sidecar bootstrap (estructura + Welcome step + IPC contracts locked)
+
+**Cambios locked/commiteados**:
+- `afa271c` — fix(theme): toggle light/dark cicla 2 estados, no 3 (4 call sites)
+- `d6bfe7a` — style(lint): 28 autofixes baseline (TR-17, 23 archivos, typecheck+build verdes)
+- `3ab1de7` — docs(research): wizard Linux GUI análisis multi-candidato (r6)
+
+**Cambios en working tree** (sin commitear todavía):
+- `package.json` + `bun.lock`: `gemini-commit-wizard@2.1.1` instalado (devDep, pin exacto) + 10 scripts npm (`commit`, `commit:quick`, `commit:manual`, `commit:auto`, `commit:dry`, `version:minor/major/patch/beta/sync`)
+- `scripts/release.ts`: **NO tocado** (Paso 3 TR-18 bloqueado por SDK API mismatch — `AutoReleaseManagerAI.generateNotes()` no existe)
+- `docs/ROADMAP.md` regenerado (123 líneas, guard verde)
+- `docs/roadmap.model.yml` +3 tracks (`wizard-linux-build`, `lint-baseline-residual-svgs`, `lint-baseline-residual-any`) + `wizard-linux-research` cerrado como `done`
+
+**Wizard installer — decisión r7**:
+- Stack: **Tauri sidecar** (mismo binario TPV + flag `--install`). Razones:
+  1. Cero bundle extra vs ~150MB Electron
+  2. Mismo stack (debug, signing, updater unificado)
+  3. Reusa theme system + shadcn/ui del TPV
+  4. DX: dev del installer ya está en el codebase TPV
+- Out of scope MVP: `/opt/tpv-el-haido` (root install — incompat con auto-updater), code signing, macOS/Windows installer, first-launch wizard post-install (track separado)
+- Sub-decomposition A/B/C/D/E con critical path `A → (B∥C) → D → E`. Total 26-40h humano, ~3-5h wall-clock LLM con paralelismo B∥C.
+
+**TR-18 gemini integration — parcial**:
+- ✅ gemini-commit-wizard@2.1.1 instalado (devDep, sin caret)
+- ✅ 10 scripts npm agregados (sin `"version"` hook — correcto, evita loop con version-manager.ts)
+- ✅ typecheck + build EXIT 0, lint baseline intacto (11 residuales pre-existentes)
+- ❌ Paso 3 BLOQUEADO: TR asumía `AutoReleaseManagerAI.generateNotes({version, changes})` que **no existe** en el SDK. Constructor real: `{ force?, useAI?, noGitHub?, projectRoot? }` (NO acepta `provider`). Métodos públicos reales: `run()` (pipeline completo, side-effects masivos), `generateReleaseDocumentation()`/`generateCommitMessage()` (private). Decisión: cerrar como `done (partial)` + abrir TR-18.b si se quiere integrar AI-notes con `CommitGenerator` directo.
+- Hallazgo extra: gemini trae `@mks2508/better-logger@0.18.2-alpha.1` (vs `0.18.3` proyecto) + `@mks2508/no-throw@^0.1.0` (vs `^0.3.7` proyecto) → Bun instala ambas versiones → duplicación. PR upstream recomendado para pinear `0.18.3`.
+
+**npm publish debug**:
+- 3 OTPs consumidos (539996, 913831, 287374). Diagnóstico final: publish del 3er OTP SÍ publicó pero npm lo taggeó como `beta` (por mi flag `--tag beta`) en vez de `latest`.
+- Registry real ahora: `latest=2.1.0`, `beta=2.1.1`, `next=0.2.1` + pollution `0.3.0` huérfano del 2do publish parcial.
+- Pendiente waxin: `npm dist-tag add gemini-commit-wizard@2.1.1 latest --otp=CODE` + `npm dist-tag rm gemini-commit-wizard beta --otp=CODE` (2 OTPs más para arreglar).
+
+**Estado del guard**: `bun run check:roadmap` ✅ verde (123 líneas).
+
+**Próximos pasos** (waxin decide):
+1. Commit consolidado del working tree actual (TR-18 partial + r7 + TR-19 + TR-19.A + SSOT + research addendum)
+2. Despachar agente ejecutor para TR-19.A sidecar bootstrap (scope seguro, NO toca lib.rs)
+3. TR-19.A.2 entrypoint detection en `src-tauri/src/lib.rs` (REQUIERE REVIEW HUMANO — alto blast radius)
+4. 2 OTPs para arreglar npm dist-tags
+
+---
+
 ## 2026-08-22 — Locked decisions r5 + r6 + 3 tracks nuevos (post-TR-11/14)
 
 **Docs**:

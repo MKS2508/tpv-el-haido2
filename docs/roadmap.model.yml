@@ -338,13 +338,35 @@ nodes:
     kind: track
     zone: client
     title: 'r6 — Wizard GUI Linux: research lane (eval 3-5 candidatos robusto+profesional antes de track build)'
-    status: queued
+    status: done
+    completedDate: '2026-08-22'
     dependsOn: []
 
   - id: track/lint-baseline
     kind: track
     zone: cross
     title: 'TR-17 — biome lint baseline autofix (33 errores pre-existentes en src/components/)'
+    status: queued
+    dependsOn: []
+
+  - id: track/wizard-linux-build
+    kind: track
+    zone: client
+    title: 'Wizard Linux GUI installer — Tauri sidecar pattern (r7)'
+    status: queued
+    dependsOn: []
+
+  - id: track/lint-baseline-residual-svgs
+    kind: track
+    zone: cross
+    title: 'Lint residuales — SVG title + aria-label (6 trivial)'
+    status: queued
+    dependsOn: []
+
+  - id: track/lint-baseline-residual-any
+    kind: track
+    zone: cross
+    title: 'Lint residuales — noExplicitAny (7 mayor)'
     status: queued
     dependsOn: []
 decisions: []

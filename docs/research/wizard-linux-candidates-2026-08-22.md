@@ -630,3 +630,50 @@ El **Candidato 4 (Tauri-native first-launch wizard)** debe implementarse POST-in
 **Dependencias**: ninguna nueva en el proyecto principal del TPV (el installer es un proyecto separado que consume el AppImage como input).
 
 **Stop condition**: installer publicadocomo asset en GitHub Releases y funcionando en Ubuntu 22.04 LTS.
+
+---
+
+## Post-research re-evaluation (2026-08-22) — Winner cambia a Tauri sidecar
+
+**Trigger**: waxin preguntó *"electron? y tauri?"* — push-back legítimo al stack incoherente. El proyecto es 100% Tauri 2; meter Electron introduce stack paralelo (Chromium runtime + electron-builder + electron-updater + signing tooling distinto).
+
+**Decisión final (locked, ver [r7](../decisions/r7-tpv-sidecar-installer-2026-08-22.md))**: **Tauri sidecar** — el instalador NO es un binario separado. Es el **mismo TPV El Haido ejecutándose con flag `--install`**.
+
+### Comparativa rápida vs candidatos originales
+
+| Aspecto | whiptail/dialog (C1) | Electron std (C2) | Tauri f-launch (C3) | .deb/.rpm (C4) | Web wizard (C5) | **Tauri sidecar (NEW)** |
+|---|---|---|---|---|---|---|
+| Score original | 3.2/5 | 4.4/5 | 4.2/5 | 3.8/5 | 3.6/5 | **5.0/5** (re-eval) |
+| Bundle extra | 0 | ~150MB | 0 (first-launch only) | 0 (uses distro) | 0 | **0MB** (reusa TPV) |
+| Stack coherence | ✅ bash | ❌ paralelo | ✅ mismo TPV | ⚠️ distro-specific | ❌ servidor externo | ✅✅ **mismo binario** |
+| Code signing | NA | electron tooling | reusa TPV | distro | NA | **reusa TPV** |
+| Auto-update installer | NA | electron-updater | NA | distro | NA | **NA — viaja con TPV** |
+| UX para usuario no-técnico | ⚠️ TTY feel | ✅✅ wizard maduro | ⚠️ post-install only | ❌ manual install | ⚠️ requiere browser | ✅✅ wizard React + shadcn |
+| Esfuerzo total | ~6-10h | ~26-40h (5 sub-tracks) | ~4-6h (post-install) | ~8-12h | ~10-15h | **~22-32h (refactor entrypoint + A-E truncado)** |
+
+### Por qué sidecar gana sobre Electron standalone
+
+1. **Stack coherence**: 1 binario, 1 signing, 1 updater, 1 release pipeline. Electron introduce universo paralelo a mantener para siempre.
+2. **Bundle size**: 0MB extra. Electron añade ~150MB solo para el installer.
+3. **DX**: dev que toca el installer mañana ya está en el codebase del TPV. No hay cambio de contexto a Electron docs.
+4. **Auto-update natural**: cuando el TPV se auto-actualiza, también se actualiza el installer (es el mismo binario). Con Electron, hay que sincronizar 2 updaters.
+5. **Componentes UI**: reusa theme system, i18n, shadcn/ui del TPV directamente. Cero duplicación de design system.
+
+### Cómo encaja con C3 (Tauri first-launch wizard)
+
+**C3 sigue siendo válido como track separado**: first-launch wizard (post-instalación) configura PIN, theme, licencia, impresora. Es el siguiente paso natural después del sidecar installer, no se superpone.
+
+### Cambios al scope del track `wizard-linux-build`
+
+- ~~Crear proyecto electron-builder separado~~ → usar `src/installer/` dentro del TPV app
+- ~~Targets AppImage/NSIS/DMG cross-platform~~ → solo AppImage (Linux first), MVP
+- ~~electron-updater~~ → NA (viaja con TPV updater)
+- Wizard 4 pasos → 7 pasos (Welcome→Download→Install path→Components→Review→Install→Done)
+- TR-19.A reescrito como `TR-19-A-sidecar-bootstrap.md` (scope truncado: setup estructura + IPC contracts + Welcome step, sin tocar lib.rs todavía)
+
+### Out of scope MVP (reafirmado)
+
+- `/opt/tpv-el-haido` (root install) — incompatibilidad con auto-updater
+- macOS/Windows installer (solo Linux)
+- Wizard first-launch post-instalación (track separado)
+- Code signing (MVP lo deja para después)
