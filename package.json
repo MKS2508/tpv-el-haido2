@@ -54,7 +54,17 @@
     "release:all": "bun run scripts/build-release.ts --target all",
     "release:auth-login": "bun run scripts/release.ts auth login",
     "release:auth-status": "bun run scripts/release.ts auth status",
-    "release:publish": "bun run scripts/release.ts publish"
+    "release:publish": "bun run scripts/release.ts publish",
+    "commit": "bun node_modules/gemini-commit-wizard/src/commit-ui.ts",
+    "commit:quick": "bun node_modules/gemini-commit-wizard/src/commit-ui.ts --quick",
+    "commit:manual": "bun node_modules/gemini-commit-wizard/src/commit-generator.ts",
+    "commit:auto": "bun node_modules/gemini-commit-wizard/src/commit-generator.ts --auto-approve",
+    "commit:dry": "bun node_modules/gemini-commit-wizard/src/commit-generator.ts --dry-run",
+    "version:minor": "bun node_modules/gemini-commit-wizard/src/version-manager.ts --type minor",
+    "version:major": "bun node_modules/gemini-commit-wizard/src/version-manager.ts --type major",
+    "version:patch": "bun node_modules/gemini-commit-wizard/src/version-manager.ts --type patch",
+    "version:beta": "bun node_modules/gemini-commit-wizard/src/version-manager.ts --prefix beta",
+    "version:sync": "bun node_modules/gemini-commit-wizard/src/version-manager.ts --sync"
   },
   "dependencies": {
     "@amad3v/solid-chart": "^1.0.4",
@@ -99,6 +109,7 @@
     "eslint": "^10.2.0",
     "eslint-plugin-solid": "^0.14.5",
     "fake-indexeddb": "^6.2.5",
+    "gemini-commit-wizard": "2.1.1",
     "jscodeshift": "^17.3.0",
     "jsdom": "^30.0.1",
     "oxlint": "^1.59.0",
