@@ -7,7 +7,7 @@
  *
  * Uso:
  *   bun run scripts/build-bundle.ts keygen
- *   bun run scripts/build-bundle.ts pack --min 0.1.0 --max 0.1.0 [--build] [--dist dist]
+ *   bun run scripts/build-bundle.ts pack --min 0.1.3 --max 0.1.3 [--build] [--dist dist]
  *
  * Contrato del manifest: docs/ota/canal-parcial.md
  */
