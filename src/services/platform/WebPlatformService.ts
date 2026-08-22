@@ -6,9 +6,17 @@ import type {
   IAuditLogExportResult,
   IAuditLogFilter,
 } from '@/models/AuditLog';
+import type Category from '@/models/Category';
 import type Order from '@/models/Order';
+import type Product from '@/models/Product';
+import type Table from '@/models/Table';
+import type User from '@/models/User';
 import type { LicenseStatus } from '@/types/license';
-import type { AuditPlatformResult, PlatformService } from './PlatformService';
+import type {
+  AuditPlatformResult,
+  PlatformService,
+  StoragePlatformResult,
+} from './PlatformService';
 
 const log = createContextLogger('WebPlatformService');
 
@@ -261,6 +269,264 @@ export class WebPlatformService implements PlatformService {
       error: {
         code: 'UNSUPPORTED_PLATFORM',
         message: 'Audit logging requires Tauri runtime (AEAT VERI*FACTU compliance)',
+      },
+    };
+  }
+
+  // ================================
+  // STORAGE CRUD — NOT SUPPORTED IN PWA
+  // ================================
+  // SQLite storage is Tauri-only. PWA cannot persist to the desktop SQLite
+  // database — IndexedDbStorageAdapter handles web persistence via a
+  // different code path. Every stub returns UNSUPPORTED_PLATFORM + log.warn
+  // so missing-platform calls stay observable, matching the audit pattern.
+
+  // Products
+  async getProducts(): StoragePlatformResult<Product[]> {
+    log.warn('PlatformService.getProducts not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async createProduct(_product: Product): StoragePlatformResult<void> {
+    log.warn('PlatformService.createProduct not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async updateProduct(_product: Product): StoragePlatformResult<void> {
+    log.warn('PlatformService.updateProduct not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async deleteProduct(_product: Product): StoragePlatformResult<void> {
+    log.warn('PlatformService.deleteProduct not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+
+  // Categories
+  async getCategories(): StoragePlatformResult<Category[]> {
+    log.warn('PlatformService.getCategories not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async createCategory(_category: Category): StoragePlatformResult<void> {
+    log.warn('PlatformService.createCategory not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async updateCategory(_category: Category): StoragePlatformResult<void> {
+    log.warn('PlatformService.updateCategory not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async deleteCategory(_category: Category): StoragePlatformResult<void> {
+    log.warn('PlatformService.deleteCategory not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+
+  // Orders
+  async getOrders(): StoragePlatformResult<Order[]> {
+    log.warn('PlatformService.getOrders not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async createOrder(_order: Order): StoragePlatformResult<void> {
+    log.warn('PlatformService.createOrder not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async updateOrder(_order: Order): StoragePlatformResult<void> {
+    log.warn('PlatformService.updateOrder not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async deleteOrder(_order: Order): StoragePlatformResult<void> {
+    log.warn('PlatformService.deleteOrder not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+
+  // Tables
+  async getTables(): StoragePlatformResult<Table[]> {
+    log.warn('PlatformService.getTables not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async createTable(_table: Table): StoragePlatformResult<void> {
+    log.warn('PlatformService.createTable not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async updateTable(_table: Table): StoragePlatformResult<void> {
+    log.warn('PlatformService.updateTable not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async deleteTable(_table: Table): StoragePlatformResult<void> {
+    log.warn('PlatformService.deleteTable not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+
+  // Users
+  async getUsers(): StoragePlatformResult<User[]> {
+    log.warn('PlatformService.getUsers not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async createUser(_user: User): StoragePlatformResult<void> {
+    log.warn('PlatformService.createUser not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async updateUser(_user: User): StoragePlatformResult<void> {
+    log.warn('PlatformService.updateUser not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async deleteUser(_user: User): StoragePlatformResult<void> {
+    log.warn('PlatformService.deleteUser not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+
+  // Utility
+  async clearAllData(): StoragePlatformResult<void> {
+    log.warn('PlatformService.clearAllData not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async exportData(): StoragePlatformResult<{
+    products: Product[];
+    categories: Category[];
+    orders: Order[];
+  }> {
+    log.warn('PlatformService.exportData not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
+      },
+    };
+  }
+  async importData(_data: {
+    products: Product[];
+    categories: Category[];
+    orders: Order[];
+  }): StoragePlatformResult<void> {
+    log.warn('PlatformService.importData not supported in web/PWA mode');
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'SQLite storage requires Tauri runtime',
       },
     };
   }
