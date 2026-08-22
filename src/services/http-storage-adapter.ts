@@ -6,6 +6,7 @@ import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import type User from '@/models/User';
+import { isTauri } from '@/services/platform';
 import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
 
 export class HttpStorageAdapter implements IStorageAdapter {
@@ -14,7 +15,7 @@ export class HttpStorageAdapter implements IStorageAdapter {
   private activeControllers = new Map<string, AbortController>();
 
   private getFetchFn() {
-    return typeof window !== 'undefined' && '__TAURI_IPC__' in window ? tauriFetch : fetch;
+    return isTauri() ? tauriFetch : fetch;
   }
 
   private createController(requestId: string, timeout = this.timeout): AbortController {
