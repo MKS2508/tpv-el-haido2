@@ -74,17 +74,19 @@
       ]
     },
     "pwaReadiness": {
-      "status": "zero",
-      "missing": [
-        "public/manifest.json",
-        "public/sw.js",
-        "PWA icons (192x192, 512x512)",
-        "vite-plugin-pwa dependency",
-        "Service worker registration"
+      "status": "complete (hand-rolled, deliberately not vite-plugin-pwa)",
+      "missing": [],
+      "consciouslySkipped": [
+        "vite-plugin-pwa dependency — using a hand-rolled `public/sw.js` instead (registerType: 'autoUpdate' style caching implemented by hand against STATIC/DYNAMIC/IMAGE/FONT cache buckets, plus install/activate/fetch/message handlers). No workbox anywhere in the tree (`grep workbox src/ public/ scripts/` → 0)."
       ],
       "existing": [
-        "index.html meta tags (viewport, theme-color, description)",
-        "logo.svg (but oversized at 789KB)"
+        "index.html meta tags (viewport, theme-color, description, apple-touch-icon, apple-mobile-web-app-capable, manifest link)",
+        "public/manifest.json (70 lines — name, icons, start_url, display, scope, screenshots, shortcuts)",
+        "public/sw.js (208 lines — STATIC/DYNAMIC/IMAGE/FONT caches + install/activate/fetch/message handlers)",
+        "src/main.tsx:15-54 — `navigator.serviceWorker.register(getSwPath(), { scope: getSwScope() })` gated by `!isTauri()`",
+        "scripts/build-pwa.ts — orchestrator: runs `PWA_BUILD=true bun run build`, copies dist + manifest + sw + icons + theme CSS to `apps/haidodocs/public/tpv/`, rewrites paths to `/tpv/` prefix",
+        "vite.config.ts:14 — `base: process.env.PWA_BUILD === 'true' ? '/tpv/' : '/'`",
+        "logo.svg"
       ]
     },
     "tauriMobileBlockers": [
@@ -207,8 +209,10 @@
     },
     {
       "id": "pwa-vite-plugin",
-      "title": "Instalar y configurar vite-plugin-pwa",
-      "description": "Añadir plugin PWA a Vite con estrategia de caching",
+      "title": "[CONSCIOUSLY SKIPPED] Instalar y configurar vite-plugin-pwa",
+      "description": "No ejecutado — el proyecto deliberadamente no adoptó vite-plugin-pwa/workbox. En su lugar: `public/sw.js` hand-rolled (STATIC/DYNAMIC/IMAGE/FONT caches + install/activate/fetch/message handlers), registrado desde `src/main.tsx` con `navigator.serviceWorker.register(getSwPath(), { scope: getSwScope() })`, gateado por `!isTauri()`. Mantenido aquí como referencia histórica para no re-introducir workbox por accidente.",
+      "consciouslySkipped": true,
+      "consciouslySkippedReason": "Hand-rolled SW chosen for full control of cache strategies + zero extra deps + no workbox runtime in tree. Revisit only if maintenance cost of the hand-rolled SW exceeds the bundle-size cost of workbox.",
       "phase": "phase2",
       "files": ["package.json", "vite.config.ts"],
       "complexity": "easy",

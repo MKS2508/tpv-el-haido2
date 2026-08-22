@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **App ID**: `com.elhaido.tpv`
 - **Features**: Order management, product catalog, thermal receipt printing, PIN-based user authentication, and Spanish AEAT tax compliance (VerificaTu)
-- **Auto-updater**: Checks `https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/latest.json`
+- **Auto-updater**: Checks the release-hub endpoint `https://haido.releases.mks2508.systems/api/updates/{{target}}/{{arch}}/{{current_version}}` (Tauri 2 dynamic template — moved off GitHub Releases per R1 decision)
 
 ## Development Commands
 
@@ -289,13 +289,13 @@ Only one sidecar is currently configured:
 - Screenshot functionality
 - Onboarding flow
 - Theme management
+- PWA support — hand-rolled `public/sw.js` (STATIC/DYNAMIC/IMAGE/FONT cache layers) registered in `src/main.tsx` (gated by `!isTauri()`), `public/manifest.json` (icons, scope, screenshots, shortcuts), `index.html` PWA meta tags, and `scripts/build-pwa.ts` deploy script (copies dist + manifest + sw + icons + theme CSS into `apps/haidodocs/public/tpv/` with `/tpv/` base path)
 
 ### Partially Implemented ⚠️
 - Platform abstraction (interface exists but `isTauri()` scattered everywhere - 5 implementations)
-- Thermal printer integration (service exists but no sidecar)
+- Thermal printer integration — service layer works (HTTP client to external `tickmaster-daemon` via `@mks2508/tickmaster/sdk`); daemon runs on `RPI-BAR` (Raspberry Pi on the tailnet) and talks to an Epson TM-U210PD (matrix 9-pin, USB-parallel via Prolific PL2305) over `bun:ffi` + `libusb-1.0`. **Not** a Tauri sidecar.
 
 ### Not Implemented ❌
-- PWA support (build infrastructure exists with `PWA_BUILD` env var, but no manifest/service worker)
 - Tauri Mobile support (would need major refactoring)
 - Offline-first web mode
 
@@ -303,7 +303,6 @@ Only one sidecar is currently configured:
 1. **Platform abstraction unused**: 16+ files directly call `invoke()` instead of using PlatformService
 2. **Scattered platform detection**: 5 different `isTauri()` implementations across codebase
 3. **No testing**: Zero test coverage
-4. **PWA incomplete**: Planning exists in `todo-plans/pwa-architecture-plan.json` but no implementation
 
 ## Utility Scripts
 
@@ -321,7 +320,7 @@ Located in `/scripts/`:
 
 ### Public Assets
 
-- `public/manifest.json` - PWA manifest (incomplete - no service worker registered)
+- `public/manifest.json` - PWA manifest (icons, scope, screenshots, shortcuts); paired with hand-rolled `public/sw.js` registered from `src/main.tsx`
 - `public/themes/registry.json` - Theme registry for the 12 available themes
 
 ### Configuration Files
@@ -375,7 +374,7 @@ TypeScript interfaces for domain entities:
 - `http-storage-adapter.ts` - REST API client (remote server mode)
 - `indexeddb-storage-adapter.ts` - IndexedDB (PWA/web fallback)
 - `storage-adapter.interface.ts` - Common storage interface
-- `thermal-printer.service.ts` - ESC/POS printer integration
+- `thermal-printer.service.ts` - HTTP client to external `tickmaster-daemon` (Raspberry Pi on tailnet runs the daemon, talks to Epson TM-U210PD over `bun:ffi` + `libusb-1.0` — not a Tauri sidecar, not ESC/POS)
 - `stock-images.service.ts` - Stock image management
 - `data-migration.service.ts` - Data migration utilities
 - `platform/` - Platform detection and abstraction (currently unused)
@@ -666,7 +665,7 @@ bun run tauri build  # Build completo Tauri
 - **Window**: 1200x800 default size
 - **Dev URL**: http://localhost:1420 (strictPort, fails if unavailable)
 - **Frontend Dist**: ../dist
-- **Updater**: GitHub releases endpoint with minisign public key
+- **Updater**: release-hub endpoint with minisign public key (`https://haido.releases.mks2508.systems/api/updates/{{target}}/{{arch}}/{{current_version}}`, Tauri 2 dynamic template)
 - **External Binaries**: sidecars/aeat-bridge
 - **Build Targets**: "all" (creates artifacts for all platforms)
 - **CSP**: null (no content security policy restriction)

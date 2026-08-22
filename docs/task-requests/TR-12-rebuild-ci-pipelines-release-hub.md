@@ -4,6 +4,8 @@
 **Phase**: sin numerar (candidato 0.4.2/0.6.0, decidir post-ejecución — mismo criterio que TR-07/TR-11)
 **Priority**: medium (mejora de dev workflow, no bloquea producción de esta noche)
 **Estimated**: 2-3h (incluye investigación de auth CI→hub, no es solo YAML)
+**Status**: done
+**Resolution**: see `docs/progress-log.md:741-812` (cadena de 6 blockers cerrada: tickmaster 404 vía TR-13 + signing key corrupta + passphrase + pubkey duplicada en workflows + xdg-utils ARM64; CI Linux x64 + ARM64 en verde con firma minisign real verificada, no solo "job success"). Auth CI→hub se decidió en `docs/decisions/r4-auth-ci-hub-client-credentials-2026-08-21.md` y se ejecutó vía `docs/task-requests/TR-15-auth-ci-release-hub-client-credentials.md` (OAuth2 `client_credentials` contra Pocket ID, sin cambios en `desktop-release-hub`). v0.1.3 verificada end-to-end real (publish desde tag + install en bar).
 
 ## Estado (2026-08-21, re-check tras merge de TR-08/TR-10 en `949981a`)
 
