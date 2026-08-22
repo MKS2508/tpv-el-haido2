@@ -19,6 +19,7 @@
  *     --slug haido \
  *     [--hub https://admin.releases.mks2508.systems] \
  *     [--notes "Release notes"] \
+ *     [--ai-notes] \
  *     [--skip-build] \
  *     [--client-credentials] \
  *     [--dry-run]
@@ -33,6 +34,13 @@ import { join, basename, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
 import * as oauth from 'oauth4webapi';
 import logger from '@mks2508/better-logger';
+import {
+  createProvider,
+  createReleasePrompt,
+  type IAutoReleaseInfo,
+  type IGeminiPromptConfig,
+  type IVersionData,
+} from 'gemini-commit-wizard';
 import {
   ok,
   err,
@@ -102,6 +110,7 @@ export interface IPublishOptions {
   readonly slug: string;
   readonly hub: string;
   readonly notes: string;
+  readonly aiNotes: boolean;
   readonly skipBuild: boolean;
   readonly clientCredentials: boolean;
   readonly dryRun: boolean;
@@ -218,6 +227,10 @@ Commands:
     --slug     Project slug in release-hub (e.g. "haido")     (required)
     --hub      Admin API base URL (default: ${DEFAULT_HUB_URL})
     --notes    Release notes / changelog text
+    --ai-notes Generate release notes with AI (gemini-commit-wizard) from the
+                  commits since the last git tag. Ignored when --notes is given.
+                  Needs GEMINI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY or the
+                  \`gemini\` CLI; degrades to empty notes with a warning if absent.
     --skip-build  Skip bun run build-release; assumes artifacts exist
     --client-credentials  Headless auth via OAuth2 client_credentials grant (CI mode).
                   Requires RELEASE_HUB_CLIENT_ID + RELEASE_HUB_CLIENT_SECRET env vars.
@@ -292,6 +305,7 @@ function parsePublishOptions(argv: string[]): Result<IPublishOptions, ResultErro
     slug,
     hub: get('--hub') ?? DEFAULT_HUB_URL,
     notes: get('--notes') ?? '',
+    aiNotes: has('--ai-notes'),
     skipBuild: has('--skip-build'),
     clientCredentials: has('--client-credentials'),
     dryRun: has('--dry-run'),
@@ -1283,6 +1297,151 @@ async function uploadArtifact(
   });
 }
 
+// ─────────────────────────────── AI release notes ────────────────────────────
+
+/**
+ * Runs `git` synchronously and returns trimmed stdout.
+ *
+ * @param args - Argument vector passed to `git`.
+ * @returns Trimmed stdout, or an error when git exits non-zero.
+ */
+function gitCapture(args: string[]): Result<string, ResultError> {
+  return tryCatch(() => {
+    const proc = Bun.spawnSync(['git', ...args], { cwd: PROJECT_ROOT });
+    if (proc.exitCode !== 0) {
+      throw new Error(
+        `git ${args.join(' ')} exited with ${proc.exitCode}: ${proc.stderr.toString().trim()}`,
+      );
+    }
+    return proc.stdout.toString().trim();
+  }, 'GIT_COMMAND_FAILED');
+}
+
+/**
+ * Extracts the `## 📝 NOTAS DE RELEASE` section from a raw AI response.
+ *
+ * The prompt built by `createReleasePrompt` asks for a markdown document with
+ * four `##` sections; only the release-notes one is meant for end users.
+ *
+ * @param response - Raw AI response text.
+ * @returns The section body, or an error when the section is absent.
+ */
+function extractReleaseNotesSection(response: string): Result<string, ResultError> {
+  const match = response.match(/## 📝 NOTAS DE RELEASE\s*\n([\s\S]*?)(?=\n## |\n*$)/);
+  const body = match?.[1]
+    ?.replace(/```\s*$/, '')
+    .trim();
+
+  if (!body) {
+    return err(
+      resultError(
+        'AI_NOTES_UNPARSEABLE',
+        'AI response did not contain a "## 📝 NOTAS DE RELEASE" section.',
+      ),
+    );
+  }
+  return ok(body);
+}
+
+/**
+ * Generates release notes with the `gemini-commit-wizard` AI provider system.
+ *
+ * Uses `createProvider()` (auto-detects GEMINI_API_KEY > GROQ_API_KEY >
+ * OPENROUTER_API_KEY > `gemini` binary) plus `createReleasePrompt()` directly —
+ * `AutoReleaseManagerAI` is bypassed on purpose because it hardcodes a
+ * `gemini` CLI spawn and ignores the multi-provider selection.
+ *
+ * The git range is `<last tag>..HEAD`. Every failure mode (no provider
+ * configured, no tags yet, AI error, unparseable response) is returned as an
+ * error so callers can degrade gracefully instead of failing the release.
+ *
+ * @param version - Version string being released (e.g. "0.1.4").
+ * @returns The release-notes markdown, or an error describing why not.
+ */
+export async function generateReleaseNotesWithAI(
+  version: string,
+): Promise<Result<string, ResultError>> {
+  const providerResult = tryCatch(() => createProvider(), 'AI_PROVIDER_UNAVAILABLE');
+  if (isErr(providerResult)) {
+    return err(
+      resultError('AI_PROVIDER_UNAVAILABLE', `No AI provider: ${providerResult.error.message}`),
+    );
+  }
+  const provider = providerResult.value;
+  log.info(`AI provider: ${provider.name} (model: ${provider.model})`);
+
+  const lastTagResult = gitCapture(['describe', '--tags', '--abbrev=0']);
+  if (isErr(lastTagResult)) {
+    return err(
+      resultError(
+        'AI_NOTES_NO_BASE_TAG',
+        `Cannot resolve last git tag (no tags yet?): ${lastTagResult.error.message}`,
+      ),
+    );
+  }
+  const lastTag = lastTagResult.value;
+  const range = `${lastTag}..HEAD`;
+
+  const commitsResult = gitCapture(['log', range, '--format=%h %s']);
+  const filesResult = gitCapture(['diff', '--name-only', range]);
+  if (isErr(commitsResult) || isErr(filesResult)) {
+    const message = isErr(commitsResult) ? commitsResult.error.message : 'diff failed';
+    return err(resultError('AI_NOTES_NO_HISTORY', `Cannot read git history: ${message}`));
+  }
+
+  const commits = commitsResult.value.split('\n').filter(Boolean);
+  const changedFiles = filesResult.value.split('\n').filter(Boolean);
+  if (commits.length === 0) {
+    return err(
+      resultError('AI_NOTES_EMPTY_RANGE', `No commits in range ${range} — nothing to summarise.`),
+    );
+  }
+
+  const [major = 0, minor = 0, patch = 0] = version.split('.').map((n) => Number.parseInt(n, 10));
+  const releaseInfo: IAutoReleaseInfo = { version, prefix: '', major, minor, patch };
+  const versionInfo: IVersionData = {
+    version,
+    date: new Date().toISOString().slice(0, 10),
+    type: 'patch',
+    title: `TPV El Haido ${version}`,
+    changes: [],
+    technical_notes: '',
+    breaking_changes: [],
+  };
+
+  const promptConfig: IGeminiPromptConfig = {
+    projectContext: {
+      name: 'TPV El Haido',
+      description: 'Point of Sale desktop app for restaurants/bars (Tauri 2 + SolidJS)',
+      version,
+      techStack: ['Tauri 2', 'SolidJS', 'TypeScript', 'Rust', 'Bun'],
+      targetPlatform: 'Desktop (macOS, Windows, Linux)',
+    },
+    analysisType: 'release',
+    specificContext: `Release ${version} — ${commits.length} commits since ${lastTag}.`,
+    data: {
+      releaseInfo,
+      versionInfo,
+      previousTag: lastTag,
+      commits,
+      changedFiles,
+      date: new Date().toISOString(),
+    },
+  };
+
+  const responseResult = await tryCatchAsync(
+    async () => provider.generate(createReleasePrompt(promptConfig)),
+    'AI_GENERATION_FAILED',
+  );
+  if (isErr(responseResult)) {
+    return err(
+      resultError('AI_GENERATION_FAILED', `AI generation failed: ${responseResult.error.message}`),
+    );
+  }
+
+  return extractReleaseNotesSection(responseResult.value);
+}
+
 // ─────────────────────────────── publish ─────────────────────────────────────
 
 /**
@@ -1356,6 +1515,24 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
   log.info(`Hub: ${opts.hub}`);
   log.info(`Slug: ${opts.slug}`);
 
+  // 2b. AI release notes (opt-in, best-effort — never fails the publish)
+  let resolvedNotes = opts.notes;
+  if (opts.aiNotes && !resolvedNotes) {
+    const aiResult = await generateReleaseNotesWithAI(version);
+    if (isErr(aiResult)) {
+      log.warn(
+        `AI release-notes generation skipped: ${aiResult.error.message} ` +
+          '— publishing without notes.',
+      );
+    } else {
+      resolvedNotes = aiResult.value;
+      log.success(`AI release notes generated (${resolvedNotes.length} chars).`);
+      if (opts.dryRun) log.info(`[DRY-RUN] Notes:\n${resolvedNotes}`);
+    }
+  } else if (opts.aiNotes && resolvedNotes) {
+    log.info('--ai-notes ignored: explicit --notes provided.');
+  }
+
   // 3. Build + 4. Discover + 5. Upload — per target
   const results: IReleaseUploadResult[] = [];
   const failed: string[] = [];
@@ -1386,7 +1563,7 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
 
     // Upload (or dry-run)
     const uploadResult = await uploadArtifact(
-      opts,
+      { ...opts, notes: resolvedNotes },
       target,
       version,
       artifactPath,
