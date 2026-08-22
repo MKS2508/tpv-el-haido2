@@ -4,6 +4,52 @@ Log de progreso por fase. Mantenido al día con cada milestone completado.
 
 ---
 
+## 2026-08-22 — Locked decisions r5 + r6 + 3 tracks nuevos (post-TR-11/14)
+
+**Docs**:
+- [`docs/decisions/r5-gemini-commit-wizard-npm-publish-sdk-minimo-2026-08-22.md`](./decisions/r5-gemini-commit-wizard-npm-publish-sdk-minimo-2026-08-22.md)
+- [`docs/decisions/r6-wizard-linux-research-lane-multi-candidato-2026-08-22.md`](./decisions/r6-wizard-linux-research-lane-multi-candidato-2026-08-22.md)
+
+**Interview**: 1 ronda de AskUserQuestion con previews en cada pregunta. waxin eligió:
+- **r5** install mode = **(d) Publicar a npm como `@mks2508/gemini-commit-wizard` + dep normal** (con `--tag beta` primero para validar flujo de publish)
+- **r5** SDK unification = **(a) Mínimo** — `CommitGenerator` + `VersionManager` + `AutoReleaseManagerAI` en release.ts. ~30 líneas nuevas. PKCE/client_credentials NO cambia.
+- **r6** Wizard Linux = **research lane multi-candidato** antes de build (waxin: *"probemos varios casos, uno robusto y profesional y con buena ux y ui"* — nota libre cambió el alcance de la opción abstracta a una lane de evaluación)
+
+**Tracks nuevos en SSOT** (`track/gemini-integration`, `track/wizard-linux-research`, `track/lint-baseline`, todos `queued`):
+
+| Track | Zone | Lock | Notas |
+|---|---|---|---|
+| `track/gemini-integration` | cross | r5 | npm publish + integrar SDK mínimo en release.ts |
+| `track/wizard-linux-research` | client | r6 | research lane que evalúa 3-5 candidatos con criterios UX/UI/robustez/profesionalidad antes del track de build |
+| `track/lint-baseline` | cross | TR-17 | 33 biome errors pre-existentes en `src/components/` — autofix + fixes manuales seguros |
+
+**Estado del guard**: `bun run check:roadmap` ✅ verde (`docs/ROADMAP.md` regenerado y sincronizado, 110 líneas).
+
+**Pregunta factual respondida** (waxin: *"¿está ya la cli de publish para los 2 tipos de publish?"*):
+**SÍ** — `scripts/release.ts` cubre ambos modos verificados por grep:
+- PKCE loopback (humano): líneas 8, 26, 57-65, 165-169, 262-415
+- `client_credentials` (CI/headless): líneas 23, 26-28, 177-179, 502-543
+
+**Hallazgos de research sobre gemini-commit-wizard** (información para la lane de integración):
+- `package.json` v2.1.0, **no publicado** en npm (sin `publishConfig`)
+- En tpv-el-haido2: **solo referenciado** en `.claude/axon.config.json:51`, **NO instalado**
+- `GitHubReleaseManager` (gh CLI) NO aplica — nuestro target es `desktop-release-hub` (Pocket ID OAuth2)
+- `AutoReleaseManagerAI` SÍ aplica — encaja en `release.ts` antes del POST al Hub
+
+---
+
+## 2026-08-22 — TR-11 + TR-14 ejecutados y verificados
+
+**TR-11** (`track/observability` — `in_progress` per waxin lock, NO cerrado todavía): commit `5979f91` mergió la migración de 15 `console.*` en `TauriPlatformService.ts` (única residual del scope). 11 residual matches en otros archivos son exenciones verificadas (8 ErrorBoundary intercept dev, 1 theme-utils string template, 1 script.js dead file, 1 thermal-printer comentario). Verificación independiente: typecheck + build verdes, grep residual exacto (11).
+
+**TR-14** (`track/ci-release-pipeline/ota-bundle-ci` — sigue `in_progress` por el upload-to-hub pendiente): work YA estaba mergeado en main como `d902ab1` (2026-08-21). Lane sib/tr14 fue **NO-OP** (detectado y evitado duplicado). Verificación end-to-end vía `gh workflow run ota-bundle-deploy.yml` → run `32541763433` ✅ success (31s, 13 steps verdes, ed25519 verify OK). Reporte en `/tmp/tr14-report.md`.
+
+**TR-15 + TR-16** previos: cerrados con commits `ca90e59` (v0.1.3 público) y `dfbfee8` (release CLI docs) + `1ddec68` + `dfbfee8` (whitelist admin OIDC).
+
+---
+
+
+
 ## 2026-05-09 — Locked decision r1: Deployment Architecture
 
 **Doc**: [`docs/decisions/r1-deployment-architecture-2026-05-09.md`](./decisions/r1-deployment-architecture-2026-05-09.md)

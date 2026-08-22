@@ -2,7 +2,7 @@
 
 # Roadmap — tpv-el-haido
 
-modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 10 tracks · 0 spikes · 14 milestones
+modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 13 tracks · 0 spikes · 14 milestones
 
 ## Outcomes
 
@@ -84,6 +84,18 @@ deps: (ninguna)
 
 ### track/hetzner-research  ○ queued
 0.8.0 — Research: Hetzner upgrade KVM nested para builds reproducibles cloud (TKT-09)
+deps: (ninguna)
+
+### track/gemini-integration  ○ queued
+r5 — gemini-commit-wizard npm publish + SDK mínimo (CommitGenerator + VersionManager + AutoReleaseManagerAI)
+deps: (ninguna)
+
+### track/wizard-linux-research  ○ queued
+r6 — Wizard GUI Linux: research lane (eval 3-5 candidatos robusto+profesional antes de track build)
+deps: (ninguna)
+
+### track/lint-baseline  ○ queued
+TR-17 — biome lint baseline autofix (33 errores pre-existentes en src/components/)
 deps: (ninguna)
 
 ## Decisiones locked: 0

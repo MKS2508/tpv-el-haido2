@@ -326,4 +326,25 @@ nodes:
     title: '0.8.0 — Research: Hetzner upgrade KVM nested para builds reproducibles cloud (TKT-09)'
     status: queued
     dependsOn: []
+
+  - id: track/gemini-integration
+    kind: track
+    zone: cross
+    title: 'r5 — gemini-commit-wizard npm publish + SDK mínimo (CommitGenerator + VersionManager + AutoReleaseManagerAI)'
+    status: queued
+    dependsOn: []
+
+  - id: track/wizard-linux-research
+    kind: track
+    zone: client
+    title: 'r6 — Wizard GUI Linux: research lane (eval 3-5 candidatos robusto+profesional antes de track build)'
+    status: queued
+    dependsOn: []
+
+  - id: track/lint-baseline
+    kind: track
+    zone: cross
+    title: 'TR-17 — biome lint baseline autofix (33 errores pre-existentes en src/components/)'
+    status: queued
+    dependsOn: []
 decisions: []
