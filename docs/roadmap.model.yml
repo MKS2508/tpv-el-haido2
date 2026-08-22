@@ -353,7 +353,7 @@ nodes:
     kind: track
     zone: client
     title: 'Wizard Linux GUI installer — Tauri sidecar pattern (r7)'
-    status: queued
+    status: in_progress
     dependsOn: []
 
   - id: track/lint-baseline-residual-svgs

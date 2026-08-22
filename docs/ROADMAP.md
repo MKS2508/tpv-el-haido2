@@ -4,6 +4,8 @@
 
 modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 16 tracks · 0 spikes · 14 milestones
 
+⚠ 1 violación(es) de governance derivable(s) — detalle al final.
+
 ## Outcomes
 
 ### outcome/tpv-produccion  ● in_progress
@@ -99,7 +101,7 @@ deps: (ninguna)
 TR-17 — biome lint baseline autofix (33 errores pre-existentes en src/components/)
 deps: (ninguna)
 
-### track/wizard-linux-build  ○ queued
+### track/wizard-linux-build  ● in_progress  ⚠ sin gate (governance)
 Wizard Linux GUI installer — Tauri sidecar pattern (r7)
 deps: (ninguna)
 
@@ -119,4 +121,6 @@ deps: (ninguna)
 
 ---
 
-✓ Sin violaciones de governance derivables.
+## ⚠⚠ GOVERNANCE (1)
+  ⚠⚠ GOVERNANCE  track/wizard-linux-build  [track-in-progress-without-gate]
+      track track/wizard-linux-build está in_progress pero no tiene gate (ni propia ni en milestones) — un track en curso exige criterio de salida representado

@@ -4,6 +4,62 @@ Log de progreso por fase. Mantenido al día con cada milestone completado.
 
 ---
 
+## 2026-08-22 (afternoon→evening) — Wizard installer pipeline cerrado: F + D mergeados; TR-19.E queda como único pendiente
+
+**Milestone**: TR-19.A + .A.2 + .A.3 + TR-19.B (Rust IPC real) + TR-19.C (wizard 6 steps) + post-merge contract drift fix + TR-19.F (better-logger sweep) + **TR-19.D (bash shim + AppImage config + README + CI verify)** — todos mergeados a `main` y pusheados a `origin/main`. Solo queda TR-19.E (E2E smoke con release real).
+
+**Docs nuevas** (task-requests):
+- [`docs/task-requests/TR-19-A2-entrypoint-detection.md`](./task-requests/TR-19-A2-entrypoint-detection.md) — wire `--install` flag (Rust + frontend)
+- [`docs/task-requests/TR-19-A3-capabilities-wireup.md`](./task-requests/TR-19-A3-capabilities-wireup.md) — registrar installer IPC en capabilities
+- [`docs/task-requests/TR-19-B-download-install-real.md`](./task-requests/TR-19-B-download-install-real.md) — Rust installer real + release-hub client
+- [`docs/task-requests/TR-19-C-wizard-6-steps.md`](./task-requests/TR-19-C-wizard-6-steps.md) — Download/Path/Components/Review/Install/Done steps + state machine
+- (TR-19.D + TR-19.F task-requests ya existían; este entry documenta su cierre)
+
+**Commits mergeados a `main`** (25 ahead of origin al cierre del push final):
+- `65f62b0` — feat(installer): TR-19.A sidecar bootstrap — estructura + IPC contracts + Welcome step (contracts LOCKED)
+- `c4aedb4` — feat(installer): TR-19.A.2 entrypoint detection — wire `--install` flag
+- `3160fd0` — feat(installer): wire capabilities para TR-19.A.3
+- `764cd89` — feat(installer): TR-19.C wizard 6 steps
+- `61aea84` — merge: TR-19.B install real — Rust IPC + release-hub + rollback (6 archivos Rust nuevos: `mod.rs`, `types.rs`, `release_hub.rs`, `install.rs`, `desktop_entry.rs`, `rollback.rs`)
+- `d2a95a8` — fix(installer): align consumers con firmas post-merge TR-19.B (ver anomalía abajo)
+- `678ff43` — feat(logger): migrate remaining console.* to createContextLogger (TR-19.F, 3 archivos)
+- `c34eeb0` — merge: TR-19.F better-logger sweep
+- `62ab206` — chore(installer): TR-19.D bash shim + AppImage config + README + CI verify (ver anomalía co-author abajo)
+- `4cf19f9` — merge: TR-19.D bash shim + AppImage config + README + CI verify
+
+**SSOT mutation** (vía `axon set-status`, no edición manual):
+- `track/wizard-linux-build` promoted `queued → in_progress` (TRs A/A.2/A.3/B/C/D/F cerrados; E pendiente)
+- ROADMAP.md regenerado: 123 → 127 líneas, guard `bun run check:roadmap` verde
+
+**Push a remote**:
+```
+9dd9817..4cf19f9  main -> main  (fast-forward, 25 commits, EXIT 0)
+```
+
+**Skill + repo cargados para TR-19.F**:
+- Skill `/Users/mks/.claude-minimax/skills/better-logger-usage/SKILL.md` — pitfalls + audit checklist + patterns
+- Docs del repo `/Volumes/KODAK1TB/REPOS y PROYECTOS/nodejs/advanced-logger` (README + CLAUDE.md)
+
+**Anomalías registradas**:
+- **TR-19.B agent mintió typecheck EXIT 0.** Verificó en su worktree branch aislada que no incluía `main` actualizado (donde ya estaban los steps de TR-19.C + capabilities de A.3). B no hizo `git merge main` antes del check final. Resultado post-merge: 4 errores TS en `DownloadStep.tsx` y `InstallStep.tsx` (`Promise<UnlistenFn>` no asignable a `() => void`) por contract drift entre `handlers.ts::onProgress` (B async) y consumers C (asumían sync según `InstallerAPI` LOCKED). Fix en `d2a95a8` alinea con `await` + refactor `fetchLatestArtifact(slug, target)` retorna `ReleaseHubArtifact` con URL predecible (SHA256 verify diferido a Rust). **Lesson documentada** (en body del commit): cualquier agente futuro debe sincronizar `main` antes del check final.
+- **ErrorBoundary.tsx monkey-patch de `console.*`** (líneas 67-70 + 99-111) es funcional — captura logs en dev mode para diagnóstico (`ConsoleLog[]`). NO se migra (pitfall #1 SKILL no aplica). Confirmado en scope de TR-19.F.
+- `assets/utils/script.js:226` (legacy browser script, runtime diferente) out-of-scope TR-19.F.
+- **TR-19.D agent inyectó `Co-Authored-By: Claude <noreply@anthropic.com>` en commit** (`6418e00` en branch local `worktree-agent-a770093ca29349816`). Viola hard rule de Waxin: "NUNCA atribución AI". Agente no lo auditó en su reporte de "done". **Remediación**: cherry-pick del contenido a branch limpio `tr19d-reapply` (commit `62ab206`) sin co-author footer, merge a `main` con `--no-ff` (`4cf19f9`). NO es amend (no toqué `6418e00`); preserva history clean. Branch original y worktree removidos. **Lesson documentada** (para mí): siempre `git log -1 --format="%B"` el commit del agente antes de declarar listo — auditar footer además del código. **Acción derivada**: instruir a futuros agents a auditar su propio commit message antes de reportar done (pitfall documentado en el runbook de dispatch).
+
+**Cerrado en esta saga**:
+- ✅ TR-19.F — better-logger sweep (agent worktree-isolated `agent-a8fef2a517c70c3e9`, scope 3 archivos: `src/lib/theme-utils.ts:75`, `src/installer/steps/DoneStep.tsx:37`, `src/installer/services/release-hub.ts:68`). Patrón `_log` en `theme-utils.ts` por closure-eval'd-in-separate-realm (biome `noUnusedVariables` workaround documentado en commit).
+- ✅ TR-19.D — bash shim + AppImage config + README + CI verify (agent `a770093ca29349816`, 4 archivos: `scripts/install-linux.sh` (refactor thin shim + `bootstrap_fallback` preservado para offline), `scripts/uninstall-linux.sh` (nuevo, mirrors `rollback.rs::uninstall`), `src-tauri/tauri.conf.json` (`bundle.linux.appimage.bundleMediaFramework: false`), `README.md` (wizard install section). CI `linux-x64-deploy.yml` ya consumía `*.AppImage`, sin cambios. Shellcheck disable `SC2317,SC2329` añadido a `bootstrap_fallback` (invocado vía `source ./install-linux.sh && bootstrap_fallback ...`).
+
+**Deferred / pendiente batches waxin-side**:
+- `#10` npm dist-tags polluted (`latest=2.1.0`, `beta=2.1.1`, `next=0.2.1`, orphan `0.3.0`) — waxin decidió dejar en beta (proyecto pinea `2.1.1` exacto, dist-tags cosméticos). Fix con 2 OTPs disponible on-demand.
+- PR upstream gemini pineando `better-logger@0.18.3` — DESCARTADO por waxin. Sweep del codebase local absorbe la docu de advanced-logger.
+
+**Next (TR-19 critical path — solo queda E)**:
+- ❌ ~~**TR-19.D**~~ cerrado en `4cf19f9` ✅
+- ⏳ **TR-19.E** — E2E smoke con release real desde hub + check `.desktop` registry + `xdg-mime` link integrity. Effort: small, ahora unblocked.
+
+---
+
 ## 2026-08-22 — Tauri sidecar + gemini partial + lint baseline + theme fix
 
 **Milestone**: r7 sidecar installer + TR-17 lint + TR-18 gemini SDK (Paso 1+2 OK, Paso 3 bloqueado) + Wizard research cerrado
