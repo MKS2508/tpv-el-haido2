@@ -1716,3 +1716,102 @@ Commits (desktop-release-hub):
 - vitest 23/23 PASSED (test rewrite validado).
 - Co-author audit CLEAN en todos los commits nuevos.
 - Tasks #32, #33, #34, #35, #36, #37 → completed.
+
+---
+
+## 2026-08-23 — TR-18.b unlocked: AI-generated release notes via `--ai-notes` flag
+
+**Milestone**: cierra el último blocker de TR-18 (gemini integration en `scripts/release.ts`)
+que el commit 71cbc55 dejó abierto como TR-18.b. El flag `--ai-notes` ya genera notas reales
+de release usando `gemini-commit-wizard@2.1.1` SDK + Gemini (auto-detect provider). Próximo
+publish (v0.1.4) puede auto-generar las notas con este mismo flag.
+
+### Integración
+
+**Path correcto** (corrección a la suposición original): `AutoReleaseManagerAI` del SDK
+existe pero hardcodea `Bun.spawnSync(['gemini'])`, ignora la selección multi-provider. La
+integración bypass-ea `AutoReleaseManagerAI` y usa `createProvider()` + `createReleasePrompt()`
+directos — ambos exportados desde `gemini-commit-wizard/src/index.ts`.
+
+**Auto-detect provider** (priority): `GEMINI_API_KEY` → `GROQ_API_KEY` → `OPENROUTER_API_KEY` →
+`gemini` CLI binary. Default model gemini-sdk: `gemini-2.5-flash`.
+
+**Output**: prompt pide 4 secciones markdown (`## 🎯 RESUMEN`, `## 📋 CHANGELOG GENERADO`,
+`## 🏷️ INFORMACIÓN DE VERSIÓN`, `## 📝 NOTAS DE RELEASE`) — extractor regex captura solo la
+última (`## 📝 NOTAS DE RELEASE`), con trailing-fence strip (la última sección cae dentro del
+` ```markdown ` fence del prompt template).
+
+### Commits mergeados a `main` (2 merges `--no-ff`)
+
+- `75b6a88` → `21b2730` — **TR-18.b unlock**: `scripts/release.ts` +178/-1, single file. Tres
+  helpers nuevos (`gitCapture`, `extractReleaseNotesSection`, `generateReleaseNotesWithAI`),
+  nuevo flag `IPublishOptions.aiNotes: boolean`, parsing en `parsePublishOptions()`, doc en
+  `printHelp()`, wire-up en `publish()` step 2b (best-effort, **never fails the publish**:
+  graceful fallback si provider ausente / AI falla / range vacío → `log.warn` + continúa sin
+  notas). `--notes` tiene precedencia sobre `--ai-notes` (explicit info log si ambos pasan).
+  Sin cambios en `package.json` (`gemini-commit-wizard@2.1.1` ya pinned devDep).
+- `958cb43` — **orchestrator verification fix** (1 línea): el patch original dejó el call site
+  de `mintAccessToken` en `publishBundle()` (línea 1958) construyendo un `IPublishOptions`
+  literal sin el nuevo required field `aiNotes`. Fix surgical: `aiNotes: false` (ese literal es
+  solo auth context, nunca publica). **Gap de verificación detectado por el orchestrator**:
+  el agent executor usó `bun run typecheck` que corre `tsgo --noEmit` con `tsconfig.json` (cubre
+  `src/` únicamente). El check real para `scripts/` es `tsgo -p tsconfig.node.json --noEmit`
+  (que SÍ cubre `scripts/**/*.ts`). Lección: scripts/ tiene su propio composite tsconfig.
+
+### Smoke tests (todos PASS, ejecutados en main post-merge)
+
+1. `bun run scripts/release.ts publish --target macos-arm64 --slug haido --ai-notes --dry-run --skip-build`:
+   - `AI provider: Gemini SDK (model: gemini-2.5-flash)` — auto-detect OK
+   - `AI release notes generated (1590 chars)` — llamada real a Gemini, output verídico
+   - Notes en castellano, describen准确地 los cambios v0.1.3 (wizard 6 steps, PlatformService
+     refactor, CI Windows x64, OTA bundles, AI notes self-referential)
+   - Section extraction: clean, no leakage de secciones hermanas, no fence leakage
+   - `[DRY-RUN]` respetado, no POST sent
+2. `--ai-notes` + `GEMINI_API_KEY`/`GROQ_API_KEY`/`OPENROUTER_API_KEY` unset y `gemini` off `PATH`:
+   `WARN  AI release-notes generation skipped: No AI provider: ... — publishing without notes.`
+   Publish continúa, **NO falla el release**.
+3. Sin `--ai-notes` (backwards compat): flow byte-for-byte idéntico al baseline pre-patch.
+   Cero subprocess git, cero provider resolve, cero log lines nuevos.
+4. `--ai-notes` + `--notes`: `--ai-notes ignored: explicit --notes provided.` (precedencia).
+
+### Verificación independiente (orchestrator)
+
+- `npx tsgo -p tsconfig.node.json --noEmit` baseline (7b496d5): 41 errors (todos pre-existentes:
+  `Bun` not found, `bun:sqlite`, `oauth4webapi ServerMetadata`, `vite.config.ts` overload)
+- Post-merge: 55 errors (+14, todos del mismo patrón `Cannot find name 'Bun'` que el patch
+  repite con cada `Bun.spawnSync` nuevo en `gitCapture`)
+- Post-fix (commit 958cb43): 55 errors (delta -1 del `aiNotes missing` que introdujo el patch)
+- **El patch introdujo exactamente 1 error real**, ya fixed. Los 14 nuevos errores de `Bun`
+  son ruido del mismo flavor pre-existente (tsgo no resuelve `@types/bun` pese a
+  `tsconfig.node.json` tener `"types": ["node", "bun-types"]` — pre-existing issue out of scope).
+- Co-author audit en ambos commits: **CLEAN** (0 hits `claude|anthropic|co-author|generated`).
+- Blast radius: 1 file, 179 insertions, 2 deletions.
+
+### Decisiones locked (informativas, no requieren Waxin OK)
+
+- **aiNotes requerido en `IPublishOptions`**: trade-off vs optional. Required fuerza a los
+  call sites existentes a declarar intención (default false en el CLI parser vía
+  `has('--ai-notes')`). Alternative considered: optional `?` — rechazado porque perderíamos el
+  reminder explícito en el call site de `mintAccessToken`.
+- **`publish-bundle` flow NO envía notes**: explícitamente out-of-scope TR-18.b. El hub acepta
+  notes pero `publish-bundle` no los construye. Si se necesitan bundles con notas, follow-up
+  separado (mismo helper es reutilizable, ~10 LOC de wiring extra).
+
+### Reportes de agente
+
+- `/tmp/tr18b-sdk-map-report.md` (Explore agent, 408 lines — corrigió el commit 71cbc55 al
+  verificar que `AutoReleaseManagerAI` no acepta provider y hardcodea gemini CLI)
+- `/tmp/tr18b-executor-report.md` (Executor agent, con scope deviations justificadas —
+  principalmente: type shapes reales de `IAutoReleaseInfo`/`IVersionData` diferían del report
+  Explore, executor las verificó contra `types/release.types.ts`)
+- `/tmp/tr18b-orchestrator-verify-report.md` (este orquestador, FALTA — pendiente tras push)
+
+### Estado final de main
+
+- main @ `958cb43`, **2 commits ahead de origin/main**.
+- Typecheck (`tsconfig.node.json`): 55 errors total, +1 introducido por patch (fixed), 14 nuevos
+  errores de `Bun` not-found (mismo patrón pre-existente), 40 errores pre-existentes sin tocar.
+- Co-author audit: CLEAN.
+- Task #38 → completed.
+- **Pendiente push coordinated** (con Waxin OK en la misma sesión).
+
