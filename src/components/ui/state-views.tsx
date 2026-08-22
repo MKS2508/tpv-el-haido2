@@ -246,7 +246,7 @@ function LoadingStateView(props: { message?: string }): JSX.Element {
 /**
  * Default success state view
  */
-function SuccessStateView<T>(props: { data: T }): JSX.Element {
+function SuccessStateView<T>(_props: { data: T }): JSX.Element {
   return (
     <div class="flex flex-col items-center justify-center gap-2 p-4 text-green-600">
       <svg

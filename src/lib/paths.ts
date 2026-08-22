@@ -15,7 +15,7 @@ declare const __PWA_BASE__: string;
 const BASE = __PWA_BASE__;
 
 // Helper to prepend base path - will be optimized away by minifier
-const withBase = (path: string): string => {
+const _withBase = (path: string): string => {
   return BASE ? `${BASE}${path}` : path;
 };
 

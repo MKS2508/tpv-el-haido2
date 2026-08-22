@@ -67,19 +67,24 @@ function ensureAeatConfig() {
       };
       localStorage.setItem(key, JSON.stringify(cfg));
     } else {
-      localStorage.setItem(key, JSON.stringify({
-        businessData: {
-          nif: '16639695T',
-          nombreRazon: 'GERMAN ASENSIO BLASCO',
-          serieFactura: 'HAI',
-          tipoFactura: 'F1',
-          descripcionOperacion: 'Venta de servicios de hostelería',
-        },
-        environment: 'production',
-        mode: 'sidecar',
-      }));
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          businessData: {
+            nif: '16639695T',
+            nombreRazon: 'GERMAN ASENSIO BLASCO',
+            serieFactura: 'HAI',
+            tipoFactura: 'F1',
+            descripcionOperacion: 'Venta de servicios de hostelería',
+          },
+          environment: 'production',
+          mode: 'sidecar',
+        })
+      );
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 async function initializeApp() {

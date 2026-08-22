@@ -139,7 +139,11 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
         base,
         isTouch() && 'touch-optimized',
         'shadow-md',
-        isAdding() ? 'border-success shadow-success/30' : showSuccess() ? 'border-success/50' : 'hover:border-foreground/20 hover:shadow-lg',
+        isAdding()
+          ? 'border-success shadow-success/30'
+          : showSuccess()
+            ? 'border-success/50'
+            : 'hover:border-foreground/20 hover:shadow-lg',
         props.class
       );
     }
@@ -315,7 +319,10 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
           {/* Stock indicator para mode order */}
           <Show
             when={
-              mode() === 'order' && typeof props.product.stock === 'number' && props.product.stock > 0 && props.product.stock < 10
+              mode() === 'order' &&
+              typeof props.product.stock === 'number' &&
+              props.product.stock > 0 &&
+              props.product.stock < 10
             }
           >
             <div class="px-2 py-0.5 bg-warning/15 rounded-md">

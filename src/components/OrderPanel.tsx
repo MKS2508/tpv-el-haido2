@@ -1,5 +1,5 @@
 import { Motion } from '@motionone/solid';
-import { Receipt, ShoppingCartIcon, UtensilsCrossed, X } from 'lucide-solid';
+import { Receipt, UtensilsCrossed, X } from 'lucide-solid';
 import { createEffect, createMemo, createSignal, Show } from 'solid-js';
 import OrderTable from '@/components/OrderTable';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,10 @@ function OrderPanel(props: OrderPanelProps) {
   const total = createMemo(() => props.selectedOrder?.total ?? 0);
 
   return (
-    <div class="h-full flex flex-col overflow-hidden" style={{ background: 'color-mix(in oklch, var(--foreground) 4%, var(--background) 96%)' }}>
+    <div
+      class="h-full flex flex-col overflow-hidden"
+      style={{ background: 'color-mix(in oklch, var(--foreground) 4%, var(--background) 96%)' }}
+    >
       <Show
         when={props.selectedOrder}
         fallback={
@@ -183,7 +186,9 @@ function OrderPanel(props: OrderPanelProps) {
                     )}
                   >
                     <span class="truncate">Completar</span>
-                    <span class="ml-1 flex-shrink-0"><AnimatedCounter value={total()} animate={!props.disableAnimations} /></span>
+                    <span class="ml-1 flex-shrink-0">
+                      <AnimatedCounter value={total()} animate={!props.disableAnimations} />
+                    </span>
                   </Button>
                 </div>
               </Show>

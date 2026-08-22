@@ -124,7 +124,8 @@ const ProductCard = (props: ProductCardProps) => {
   };
 
   const getCardStyles = () => {
-    const base = 'relative flex flex-col overflow-hidden rounded-2xl cursor-pointer transition-all duration-150 border border-foreground/[0.08]';
+    const base =
+      'relative flex flex-col overflow-hidden rounded-2xl cursor-pointer transition-all duration-150 border border-foreground/[0.08]';
 
     if (local.mode === 'order') {
       return cn(
@@ -297,7 +298,9 @@ const ProductCard = (props: ProductCardProps) => {
             local.product.stock > 0 &&
             local.product.stock < 10 && (
               <div class="px-2 py-0.5 bg-warning/15 rounded-md">
-                <span class="text-[11px] font-semibold text-warning">{local.product.stock} uds</span>
+                <span class="text-[11px] font-semibold text-warning">
+                  {local.product.stock} uds
+                </span>
               </div>
             )}
 

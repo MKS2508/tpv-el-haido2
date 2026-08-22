@@ -62,7 +62,7 @@ interface ScrollAreaProps extends JSX.HTMLAttributes<HTMLDivElement> {
   children?: JSX.Element;
 }
 
-function ScrollArea(props: ScrollAreaProps) {
+function _ScrollArea(props: ScrollAreaProps) {
   const [local, others] = splitProps(props, ['class', 'children']);
   return (
     <div class={cn('relative overflow-auto', local.class)} {...others}>
@@ -153,11 +153,7 @@ function Sidebar(props: SidebarProps) {
                 alt="El Haido Logo"
                 class={cn(
                   'transition-all duration-200',
-                  local.isSidebarOpen
-                    ? isTablet()
-                      ? 'h-14 w-20'
-                      : 'h-16 w-24'
-                    : 'h-8 w-8'
+                  local.isSidebarOpen ? (isTablet() ? 'h-14 w-20' : 'h-16 w-24') : 'h-8 w-8'
                 )}
               />
               <Presence>
@@ -172,9 +168,7 @@ function Sidebar(props: SidebarProps) {
                     <p class="text-[10px] text-sidebar-foreground/50 leading-tight">
                       GERMAN ASENSIO BLASCO
                     </p>
-                    <p class="text-[9px] text-sidebar-foreground/40 leading-tight">
-                      NIF 16639695T
-                    </p>
+                    <p class="text-[9px] text-sidebar-foreground/40 leading-tight">NIF 16639695T</p>
                   </Motion.div>
                 </Show>
               </Presence>
@@ -236,9 +230,7 @@ function Sidebar(props: SidebarProps) {
                         'font-medium text-[15px]',
                         'focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
                         'min-h-[48px] max-h-[72px]',
-                        local.isSidebarOpen
-                          ? 'justify-start px-4 gap-3'
-                          : 'justify-center px-2',
+                        local.isSidebarOpen ? 'justify-start px-4 gap-3' : 'justify-center px-2',
                         isActive()
                           ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md'
                           : 'bg-foreground/5 text-sidebar-foreground hover:bg-foreground/10'
@@ -268,10 +260,12 @@ function Sidebar(props: SidebarProps) {
             {/* Footer — theme, logout, collapse */}
             <div class="flex-shrink-0 px-3 pb-3 pt-2 border-t border-foreground/10 space-y-2">
               {/* Theme switch + collapse toggle */}
-              <div class={cn(
-                'flex items-center py-1',
-                local.isSidebarOpen ? 'justify-between px-1' : 'justify-center'
-              )}>
+              <div
+                class={cn(
+                  'flex items-center py-1',
+                  local.isSidebarOpen ? 'justify-between px-1' : 'justify-center'
+                )}
+              >
                 <MoonSunSwitch size="sm" />
                 <Show when={local.toggleSidebar}>
                   <button
@@ -279,10 +273,11 @@ function Sidebar(props: SidebarProps) {
                     class="flex items-center justify-center h-8 w-8 rounded-lg text-sidebar-foreground hover:bg-foreground/10 transition-colors"
                     onClick={() => local.toggleSidebar?.()}
                   >
-                    {local.isSidebarOpen
-                      ? <ChevronLeft class="h-4 w-4" />
-                      : <ChevronRight class="h-4 w-4" />
-                    }
+                    {local.isSidebarOpen ? (
+                      <ChevronLeft class="h-4 w-4" />
+                    ) : (
+                      <ChevronRight class="h-4 w-4" />
+                    )}
                   </button>
                 </Show>
               </div>

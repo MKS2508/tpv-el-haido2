@@ -202,7 +202,9 @@ function OrderTable(props: OrderTableProps) {
                       delay: index() * 0.05,
                       easing: [0.4, 0, 0.2, 1],
                     }}
-                    hover={{ backgroundColor: 'color-mix(in oklch, var(--accent) 5%, transparent)' }}
+                    hover={{
+                      backgroundColor: 'color-mix(in oklch, var(--accent) 5%, transparent)',
+                    }}
                   >
                     <TableCell class="text-card-foreground text-left w-[45%] px-2">
                       <Motion.span

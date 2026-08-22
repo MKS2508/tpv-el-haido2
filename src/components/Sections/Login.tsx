@@ -1,5 +1,5 @@
-import { Motion, Presence } from '@motionone/solid';
 import { ok } from '@mks2508/no-throw';
+import { Motion, Presence } from '@motionone/solid';
 import { Loader2 } from 'lucide-solid';
 import {
   createEffect,
@@ -90,7 +90,11 @@ const Login = (props: LoginProps) => {
       setPin('');
       // Auditar intento de login fallido — el usuario seleccionado es quien intentó autenticarse
       if (user) {
-        const ctx: IAuditContext = { userId: user.id, userName: user.name, businessNif: getBusinessNif() };
+        const ctx: IAuditContext = {
+          userId: user.id,
+          userName: user.name,
+          businessNif: getBusinessNif(),
+        };
         void logLogin(ctx, false, 'PIN incorrecto');
       }
     }

@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { createContextLogger } from '@/lib/logger';
 import { logLicenseDeactivate } from '@/services/audit.service';
 import { getPlatformService } from '@/services/platform';
-import useStore from '@/store/store';
-import { getBusinessNif } from '@/store/store';
+import useStore, { getBusinessNif } from '@/store/store';
 import type { LicenseStatus } from '@/types/license';
 
 const log = createContextLogger('LicenseStatus');
@@ -43,7 +42,11 @@ export default function LicenseStatusCard(props: LicenseStatusCardProps) {
   const handleClearLicense = async () => {
     try {
       const platform = getPlatformService();
-      const ctx = store.getAuditContext() ?? { userId: 0, userName: 'system', businessNif: getBusinessNif() };
+      const ctx = store.getAuditContext() ?? {
+        userId: 0,
+        userName: 'system',
+        businessNif: getBusinessNif(),
+      };
       await platform.clearLicense();
       void logLicenseDeactivate(ctx);
       toast.success('Licencia eliminada correctamente');

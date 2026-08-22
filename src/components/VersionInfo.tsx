@@ -1,4 +1,15 @@
-import { AlertCircle, Building2, CheckCircle2, Download, Info, KeyRound, Lock, RefreshCw, Shield, User } from 'lucide-solid';
+import {
+  AlertCircle,
+  Building2,
+  CheckCircle2,
+  Download,
+  Info,
+  KeyRound,
+  Lock,
+  RefreshCw,
+  Shield,
+  User,
+} from 'lucide-solid';
 import { createSignal, onMount, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import { useUpdater } from '@/hooks/useUpdater';
@@ -284,9 +295,10 @@ export function VersionInfo(props: VersionInfoProps) {
           <div class="space-y-1">
             <p class="font-semibold text-foreground">Sistema actualizable</p>
             <p class="text-sm text-muted-foreground">
-              Actualizaciones OTA (Over-The-Air) firmadas digitalmente. El sistema verifica e instala
-              nuevas versiones de forma automática sin intervención del usuario, garantizando que la
-              solución se mantiene actualizada con las últimas funcionalidades y parches de seguridad.
+              Actualizaciones OTA (Over-The-Air) firmadas digitalmente. El sistema verifica e
+              instala nuevas versiones de forma automática sin intervención del usuario,
+              garantizando que la solución se mantiene actualizada con las últimas funcionalidades y
+              parches de seguridad.
             </p>
           </div>
         </div>
@@ -304,8 +316,8 @@ export function VersionInfo(props: VersionInfoProps) {
               Este software requiere una licencia válida para su funcionamiento. La licencia es
               otorgada únicamente por el responsable del desarrollo y/o por GERMAN ASENSIO BLASCO
               como titular del establecimiento. El sistema es completamente inutilizable sin previa
-              activación y verificación de licencia, impidiendo copias ilegales o uso fraudulento
-              de la solución.
+              activación y verificación de licencia, impidiendo copias ilegales o uso fraudulento de
+              la solución.
             </p>
           </div>
         </div>

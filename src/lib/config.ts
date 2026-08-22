@@ -100,9 +100,12 @@ export const config: Config = {
     enabled: import.meta.env.VITE_DEBUG_MODE === 'true',
     /** Master license email — fallback SOLO en dev; vacío en prod (VITE_* se inlinea en
      * build time, el minifier elimina el string dev-only del bundle de producción) */
-    masterEmail: import.meta.env.VITE_MASTER_LICENSE_EMAIL || (import.meta.env.DEV ? 'admin@haido.local' : ''),
+    masterEmail:
+      import.meta.env.VITE_MASTER_LICENSE_EMAIL || (import.meta.env.DEV ? 'admin@haido.local' : ''),
     /** Master license key — mismo criterio */
-    masterKey: import.meta.env.VITE_MASTER_LICENSE_KEY || (import.meta.env.DEV ? 'HAI-MASTER-DEV-KEY-2026' : ''),
+    masterKey:
+      import.meta.env.VITE_MASTER_LICENSE_KEY ||
+      (import.meta.env.DEV ? 'HAI-MASTER-DEV-KEY-2026' : ''),
   },
 
   /**
