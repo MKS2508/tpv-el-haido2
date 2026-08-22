@@ -1,7 +1,14 @@
 import { createContextLogger } from '@/lib/logger';
+import type {
+  IAuditLog,
+  IAuditLogCreateRequest,
+  IAuditLogExportOptions,
+  IAuditLogExportResult,
+  IAuditLogFilter,
+} from '@/models/AuditLog';
 import type Order from '@/models/Order';
 import type { LicenseStatus } from '@/types/license';
-import type { PlatformService } from './PlatformService';
+import type { AuditPlatformResult, PlatformService } from './PlatformService';
 
 const log = createContextLogger('WebPlatformService');
 
@@ -193,5 +200,68 @@ export class WebPlatformService implements PlatformService {
   async getMachineFingerprint(): Promise<string> {
     log.debug('Machine fingerprint not available in PWA');
     return '';
+  }
+
+  // ================================
+  // AUDIT LOGS — NOT SUPPORTED IN PWA
+  // ================================
+  // Audit is an AEAT VERI*FACTU regulatory surface: backend writes are
+  // SQLite-persistent and required for compliance. PWA cannot fulfill this,
+  // so every stub returns `UNSUPPORTED_PLATFORM` AND logs a warning — silent
+  // failures here would hide compliance gaps from ops, which is exactly the
+  // regression this layer is meant to prevent.
+
+  async createAuditLog(_request: IAuditLogCreateRequest): AuditPlatformResult<number> {
+    log.warn(
+      'PlatformService.createAuditLog not supported in web/PWA mode (AEAT VERI*FACTU compliance gap)'
+    );
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'Audit logging requires Tauri runtime (AEAT VERI*FACTU compliance)',
+      },
+    };
+  }
+
+  async getAuditLogs(_filter?: IAuditLogFilter): AuditPlatformResult<IAuditLog[]> {
+    log.warn(
+      'PlatformService.getAuditLogs not supported in web/PWA mode (AEAT VERI*FACTU compliance gap)'
+    );
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'Audit logging requires Tauri runtime (AEAT VERI*FACTU compliance)',
+      },
+    };
+  }
+
+  async exportAuditLogs(
+    _options: IAuditLogExportOptions
+  ): AuditPlatformResult<IAuditLogExportResult> {
+    log.warn(
+      'PlatformService.exportAuditLogs not supported in web/PWA mode (AEAT VERI*FACTU compliance gap)'
+    );
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'Audit logging requires Tauri runtime (AEAT VERI*FACTU compliance)',
+      },
+    };
+  }
+
+  async cleanupAuditLogs(_cutoffDate: string): AuditPlatformResult<number> {
+    log.warn(
+      'PlatformService.cleanupAuditLogs not supported in web/PWA mode (AEAT VERI*FACTU compliance gap)'
+    );
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED_PLATFORM',
+        message: 'Audit logging requires Tauri runtime (AEAT VERI*FACTU compliance)',
+      },
+    };
   }
 }

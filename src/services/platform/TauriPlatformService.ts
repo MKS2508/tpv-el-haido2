@@ -1,13 +1,20 @@
-import { isErr } from '@mks2508/no-throw';
+import { isErr, tryCatchAsync } from '@mks2508/no-throw';
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { createContextLogger } from '@/lib/logger';
+import type {
+  IAuditLog,
+  IAuditLogCreateRequest,
+  IAuditLogExportOptions,
+  IAuditLogExportResult,
+  IAuditLogFilter,
+} from '@/models/AuditLog';
 import type Order from '@/models/Order';
 import { loadPrinterConfig, printOrder } from '@/services/thermal-printer.service';
 import type { LicenseStatus } from '@/types/license';
-import type { PlatformService } from './PlatformService';
+import type { AuditPlatformResult, PlatformService } from './PlatformService';
 
 const log = createContextLogger('TauriPlatformService');
 
@@ -194,5 +201,41 @@ export class TauriPlatformService implements PlatformService {
       log.error('Error getting fingerprint:', error instanceof Error ? error : undefined);
       return '';
     }
+  }
+
+  // ================================
+  // AUDIT LOGS (AEAT VERI*FACTU regulatory surface)
+  // ================================
+  // 1:1 port of the four raw `invoke()` calls previously in
+  // src/services/audit.service.ts. Same Tauri command strings, same payload
+  // shapes (`{ request }`, `{ filter }`, `{ options }`, `{ cutoffDate }`).
+  // Wrapped in `tryCatchAsync` with `PlatformError` so consumers get the
+  // unified Result<…, PlatformError> shape required by PlatformService.
+
+  async createAuditLog(request: IAuditLogCreateRequest): AuditPlatformResult<number> {
+    return tryCatchAsync(() => invoke<number>('create_audit_log', { request }), 'BACKEND_FAILED');
+  }
+
+  async getAuditLogs(filter?: IAuditLogFilter): AuditPlatformResult<IAuditLog[]> {
+    return tryCatchAsync(
+      () => invoke<IAuditLog[]>('get_audit_logs', { filter: filter ?? {} }),
+      'BACKEND_FAILED'
+    );
+  }
+
+  async exportAuditLogs(
+    options: IAuditLogExportOptions
+  ): AuditPlatformResult<IAuditLogExportResult> {
+    return tryCatchAsync(
+      () => invoke<IAuditLogExportResult>('export_audit_logs', { options }),
+      'BACKEND_FAILED'
+    );
+  }
+
+  async cleanupAuditLogs(cutoffDate: string): AuditPlatformResult<number> {
+    return tryCatchAsync(
+      () => invoke<number>('cleanup_audit_logs', { cutoffDate }),
+      'BACKEND_FAILED'
+    );
   }
 }

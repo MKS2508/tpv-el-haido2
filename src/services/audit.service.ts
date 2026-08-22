@@ -5,8 +5,7 @@
  * Las operaciones de logging son fire-and-forget: no bloquean la UI
  * y los fallos se registran en el logger pero no interrumpen la operación principal.
  */
-import { type Result, type ResultError, tryCatchAsync } from '@mks2508/no-throw';
-import { invoke } from '@tauri-apps/api/core';
+import { err, type Result, type ResultError } from '@mks2508/no-throw';
 import { AuditErrorCode, type AuditErrorCode as AuditErrorCodeType } from '@/lib/error-codes';
 import { auditLog } from '@/lib/logger';
 import type {
@@ -18,8 +17,27 @@ import type {
   IAuditLogExportResult,
   IAuditLogFilter,
 } from '@/models/AuditLog';
+import { getPlatformService } from '@/services/platform';
+import type { PlatformError } from '@/services/platform/PlatformService';
 
 type AuditResult<T> = Result<T, ResultError<AuditErrorCodeType>>;
+
+/**
+ * Bridges a `PlatformError` into an `AuditResultError`, preserving the
+ * message + cause so ops still see what failed. Each call site picks the
+ * appropriate `AuditErrorCode` fallback for its operation.
+ */
+function toAuditError<T>(
+  platformResult: Result<T, PlatformError>,
+  fallbackCode: AuditErrorCodeType
+): AuditResult<T> {
+  if (platformResult.ok) return platformResult;
+  return err({
+    code: fallbackCode,
+    message: platformResult.error.message,
+    cause: platformResult.error.cause,
+  });
+}
 
 /**
  * Crea un log de auditoría en la base de datos.
@@ -29,8 +47,8 @@ type AuditResult<T> = Result<T, ResultError<AuditErrorCodeType>>;
 export async function createAuditLog(
   request: IAuditLogCreateRequest
 ): Promise<AuditResult<number>> {
-  return tryCatchAsync(
-    async () => invoke<number>('create_audit_log', { request }),
+  return toAuditError(
+    await getPlatformService().createAuditLog(request),
     AuditErrorCode.CreateFailed
   );
 }
@@ -41,10 +59,7 @@ export async function createAuditLog(
  * @returns Result con array de logs o error
  */
 export async function getAuditLogs(filter?: IAuditLogFilter): Promise<AuditResult<IAuditLog[]>> {
-  return tryCatchAsync(
-    async () => invoke<IAuditLog[]>('get_audit_logs', { filter: filter ?? {} }),
-    AuditErrorCode.ReadFailed
-  );
+  return toAuditError(await getPlatformService().getAuditLogs(filter), AuditErrorCode.ReadFailed);
 }
 
 /**
@@ -55,8 +70,8 @@ export async function getAuditLogs(filter?: IAuditLogFilter): Promise<AuditResul
 export async function exportAuditLogs(
   options: IAuditLogExportOptions
 ): Promise<AuditResult<IAuditLogExportResult>> {
-  return tryCatchAsync(
-    async () => invoke<IAuditLogExportResult>('export_audit_logs', { options }),
+  return toAuditError(
+    await getPlatformService().exportAuditLogs(options),
     AuditErrorCode.ExportFailed
   );
 }
@@ -67,8 +82,8 @@ export async function exportAuditLogs(
  * @returns Result con el número de registros eliminados o error
  */
 export async function cleanupAuditLogs(cutoffDate: string): Promise<AuditResult<number>> {
-  return tryCatchAsync(
-    async () => invoke<number>('cleanup_audit_logs', { cutoffDate }),
+  return toAuditError(
+    await getPlatformService().cleanupAuditLogs(cutoffDate),
     AuditErrorCode.CleanupFailed
   );
 }
