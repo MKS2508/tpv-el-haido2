@@ -1207,3 +1207,79 @@ terminar).
   llegue.
 - Push pendiente: esperar merge de FIX H o OK explícito de waxin (esta rama ya está mergeada
   en main pero no pusheada).
+
+---
+
+## 2026-08-22 (cont.) — FIX H: final docs drift sweep — release-hub + v0.1.3 + tickmaster (24 archivos)
+
+### Scope (más amplio que la lista inicial, justificado en el reporte)
+
+El agente siguió la lista de 9 archivos de la spec pero, al barrer, encontró drift activa en
+5 archivos extra dentro de `apps/haidodocs/content/` que **claramente** caían en el scope
+("user-facing + developer docs"). Documentó los 5 como "extra findings" en el reporte. Mismo
+alcance amplios pero disciplinado: ningún archivo histórico (`docs/INTERVIEW-*`,
+`docs/EXPLORATION-SUMMARY-*`, tickets cerrados, planes antiguos) tocado — protegidos del audit
+trail.
+
+### Archivos tocados (24, total +1448/-928)
+
+**README + release docs (4 archivos, ~100 líneas)**:
+- `README.md` — 3 edits (L9 GitHub→release-hub, L44 ESC/POS→tickmaster, RPi install block .deb→AppImage v0.1.3)
+- `releases/documentation/README.md` — RPi install + downloads link
+- `releases/documentation/RPi-Build-Documentation.md` — sample filenames `0.1.0`→`0.1.3` via `replace_all`
+- `generate-docs.ts` (root) + `releases/documentation/generate-docs.ts` — mismo drift paralelo, ambas tocadas
+- `docs/kit-digital/DOCUMENTO_PRESENTACION.md` — versión `[0.1.0]`→`[0.1.3]` + ESC/POS→tickmaster stack + nota retroactiva
+
+**haidodocs mdx (11 archivos, ~170 líneas)**:
+- ES `instalacion.mdx` + EN `installation.mdx` — `.deb` URLs → canónicas AppImage v0.1.3
+- ES `plataformas.mdx` + EN `platforms.mdx` — mismo L158 (`.deb` → AppImage)
+- ES `impresora.mdx` + EN `printer.mdx` — **extra**, rewrite ESC/POS→tickmaster (3 secciones)
+- ES `index.mdx` + EN `index.mdx` — **extra**, feature card landing page
+- ES `changelog.mdx` + EN `changelog.mdx` — **extra**, bullet `[0.1.0]` "ESC/POS" → "thermal" (header preservado per V3 carve-out)
+- ES `arquitectura.mdx` + EN `architecture.mdx` — **extra**, mermaid `PrinterHW[Impresora ESC/POS]` + sidecar table
+- ES `stack.mdx` + EN `stack.mdx` — **extra**, `escpos`/`usb`/`serialport` row → `@mks2508/tickmaster/sdk`
+
+**Static served manual assets (4 archivos, +2048/-?)**:
+- `apps/haidodocs/public/manual-usuario.md` — **regenerado** vía `bun run scripts/generate-manual.ts` (2026 líneas diff en su mayor parte por el frontmatter bump + integración de los mdx edits)
+- `manual-usuario.{html,print.html,fixed.html}` — sed URL replacements (GitHub→release-hub, .deb→AppImage); Playwright no instalado para regenerar limpio, justificado en reporte
+
+### Verificación independiente post-merge en main
+
+| Grep | Hits | Estado |
+|---|---|---|
+| V1 — `github.com/MKS2508/tpv-el-haido2/releases` en `apps/haidodocs/content/`, `README.md`, `docs/kit-digital/`, `generate-docs.ts`, `releases/` | **0** | ✅ PASS |
+| V2 — `ESC/POS\|escpos` en `apps/haidodocs/content/`, `README.md`, `docs/kit-digital/` | **0** | ✅ PASS |
+| V3 — `0.1.0` en 5 dirs excluyendo `## [0.1.0]` headers (carve-out changelog legítimo) | **0** | ✅ PASS |
+| V3 raw (sin carve-out) | 2 | ✅ Solo los 2 headers `[0.1.0] - 2024-XX-XX` esperados en changelog |
+
+### Decisiones del agente (en reporte, levemente cuestionables pero razonables)
+
+- **Kit Digital note**: la spec sugería literal `(tickmaster HTTP, no ESC/POS)` lo cual habría
+  fallado V2 grep. El agente parafraseó: `tickmaster-daemon HTTP, protocolo matricial Epson
+  TM-U210PD`. Cumple el spirit (mantener coherencia + comunicar stack real) sin violar V2.
+  Aprobado.
+- **HTML manual en `apps/haidodocs/public/`**: la spec decía NO tocar `apps/haidodocs/out/`
+  (build output Next.js, confirmado 0 hits en `ls-files`). El agente tocó `apps/haidodocs/public/`
+  (que **sí es tracked**, son static assets servidos al usuario). Aclaración: la prohibición era
+  sobre `out/`, no `public/`. Razonable. Permitido.
+- **Extras en scope**: cada uno cierra drift user-facing real. No añadir scope creep.
+- **`releases/documentation/generate-docs.ts`**: spec dijo "generate-docs.ts" (singular, root).
+  El agente tocó también el paralelo en `releases/documentation/` porque comparte exactamente el
+  mismo drift y V3 lo barría. Razonable.
+
+### Commits
+
+- `a474b07` docs: final drift sweep - release-hub + v0.1.3 + tickmaster
+- `3acf5bb` merge: FIX H final docs drift sweep (rama `docs/final-drift-sweep`, merge `--no-ff`)
+- Co-author audit: ✓ CLEAN
+
+### Reporte de agente
+
+`/tmp/fix-h-final-drift-sweep-report.md` (waxin lock 2026-08-18, persistido ANTES de terminar).
+
+### Estado final de main
+
+- **5 commits ahead de origin/main** (FIX E merge, FIX F commit + merge + progress-log, FIX H
+  commit + merge). Pendiente push con OK explícito.
+- Typecheck EXIT 0 confirmado en main post-merge.
+- Tareas #25 (FIX H) → completed.
