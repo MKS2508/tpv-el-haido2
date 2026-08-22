@@ -5,7 +5,7 @@ description: 'Download TPV El Haido for Windows, macOS, Linux or Raspberry Pi'
 
 # Download TPV El Haido
 
-Current version: **v0.1.0**. Pick the option that matches your system.
+Current version: **v0.1.3**. Pick the option that matches your system.
 
 <Callout type="info">
   Downloads are served from our own hub: `haido.releases.mks2508.systems`. Auto-updates inside the app are already wired to this endpoint — install once and TPV will keep itself up to date.
@@ -15,10 +15,10 @@ Current version: **v0.1.0**. Pick the option that matches your system.
 
 | Platform | Architecture | Format | Size | Status |
 |---|---|---|---|---|
-| **macOS Apple Silicon** | ARM64 | `.dmg` | 51 MB | [Download](https://haido.releases.mks2508.systems/api/dl/0.1.0/darwin/aarch64/tpv-haido-0.1.0-macos-arm64.dmg) |
+| **macOS Apple Silicon** | ARM64 | `.dmg` | 51 MB | [Download](https://haido.releases.mks2508.systems/api/dl/0.1.3/darwin/aarch64/tpv-haido-0.1.3-macos-arm64.dmg) |
 | **Windows** | x64 | `.exe` | — | Build pending (in-progress on bar machine) |
 | **macOS Intel** | x64 | `.dmg` | — | Build pending |
-| **Linux / Raspberry Pi** | x64 / ARM64 | `.deb` / `.AppImage` | — | Deferred (post-launch) |
+| **Linux / Raspberry Pi** | x64 / ARM64 | `.deb` / `.AppImage` | — | [Download](https://haido.releases.mks2508.systems/releases/latest) (AppImage + wizard) |
 | **Web (PWA)** | any | browser | — | [Try in browser](/tpv/index.html) |
 
 ## Installation
@@ -31,7 +31,7 @@ Current version: **v0.1.0**. Pick the option that matches your system.
 <Steps>
 ### Download
 
-Grab `tpv-haido-0.1.0-macos-arm64.dmg` from the link above.
+Grab `tpv-haido-0.1.3-macos-arm64.dmg` from the link above.
 
 ### Open the DMG
 
@@ -60,7 +60,7 @@ Right-click the app → **Open** (this skips Gatekeeper since the binary is sign
 
 > **Pending** — the first Windows build is being prepared right now on the production machine. Once available it will be published at:
 >
-> `https://haido.releases.mks2508.systems/api/dl/0.1.0/windows/x86_64/tpv-haido-0.1.0-windows-x64-setup.exe`
+> `https://haido.releases.mks2508.systems/api/dl/0.1.3/windows/x86_64/tpv-haido-0.1.3-windows-x64-setup.exe`
 >
 > After the initial install, subsequent versions arrive via auto-update.
 
@@ -69,7 +69,9 @@ Right-click the app → **Open** (this skips Gatekeeper since the binary is sign
 
 ### Linux (any distro)
 
-> **Deferred** — Linux is not in scope for the initial production phase. The app is fully PWA-compatible, so in the meantime you can use the [web version](/tpv/index.html) in any modern browser (Chrome, Firefox, Edge), including on a Raspberry Pi.
+> **Available** — grab the AppImage bundle from the [Hub Releases](https://haido.releases.mks2508.systems/releases/latest). A signed wizard installer (`bash install-linux.sh`) is also published alongside — it handles download, signature verification, install path and desktop integration in 7 steps.
+>
+> If you prefer running it in a browser, the app is fully PWA-compatible: use the [web version](/tpv/index.html) on any modern browser (Chrome, Firefox, Edge), including on a Raspberry Pi.
 
 </Tab>
 </Tabs>
