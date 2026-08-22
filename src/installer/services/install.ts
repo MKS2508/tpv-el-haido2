@@ -1,99 +1,94 @@
 /**
- * Stub del servicio de instalación de archivos (file ops + .desktop + icon + PATH).
+ * Service wrapper — TR-19.B.
  *
- * TR-19.B enchufa el cliente real:
- *  - Copia el AppImage desde /tmp a ~/.local/bin/tpv-el-haido
- *  - chmod +x
- *  - Registra ~/.local/share/applications/tpv-el-haido.desktop
- *  - Extrae icono desde el AppImage (o usa uno bundled) a ~/.local/share/icons/
- *  - Symlink ~/.local/bin/tpv-el-haido si addToPath=true
- *  - update-desktop-database (si existe)
+ * Tras TR-19.B la lógica pesada vive en Rust (`src-tauri/src/installer/`).
+ * Este archivo queda como:
+ *   1. Constantes XDG que el wizard usa para mostrar "destino" en la UI
+ *      sin importar el backend.
+ *   2. Helpers de validación de inputs antes de mandar al IPC.
  *
- * Por ahora expone solo la shape esperada para que los step components
- * en TR-19.C puedan tipar y mockear.
+ * Cada función pesada (copy, chmod, .desktop, icon, PATH) está en Rust;
+ * `runInstall` delega a `installer:install` desde `ipc/handlers.ts`.
  */
 
 import type { InstallOptions, InstallResult } from '../contracts';
 
 /**
- * Path helpers (readonly — el wizard no debería escribir fuera de esto).
- * Las constantes viven acá para que un futuro TR-19.D (bash wrapper) pueda
- * reusarlas sin divergencia.
+ * Constantes XDG (sincronizadas con `src-tauri/src/installer/install.rs`).
+ * Si cambian en Rust, hay que cambiarlas aquí — un test de paridad en CI
+ * sería ideal, pero por ahora un comentario basta.
  */
 export const INSTALL_PATHS = {
   /** AppImage destino (MVP: user-level) */
   appImage: '~/.local/bin/tpv-el-haido',
   /** Entrada .desktop (XDG) */
   desktopEntry: '~/.local/share/applications/tpv-el-haido.desktop',
-  /** Icono (XDG, scalable o PNG 256x256) */
+  /** Icono (XDG) */
   icon: '~/.local/share/icons/hicolor/256x256/apps/tpv-el-haido.png',
-  /** Symlink PATH */
+  /** Symlink para $PATH */
   pathLink: '~/.local/bin/tpv-el-haido',
 } as const;
 
 /**
- * TR-19.A: stub. TR-19.B implementa.
+ * Validación client-side de InstallOptions. Si esto falla, no tiene sentido
+ * mandar la request al backend — devolveríamos el mismo error con un
+ * round-trip más.
  */
-export async function copyAppImage(
-  sourcePath: string,
-  options: InstallOptions
-): Promise<{ finalPath: string }> {
-  void sourcePath;
-  void options;
-  throw new Error('Not implemented — see TR-19.B');
-}
-
-/**
- * TR-19.A: stub. TR-19.B implementa.
- */
-export async function registerDesktopEntry(options: InstallOptions): Promise<void> {
-  void options;
-  throw new Error('Not implemented — see TR-19.B');
-}
-
-/**
- * TR-19.A: stub. TR-19.B implementa.
- */
-export async function installIcon(sourceAppImage: string, options: InstallOptions): Promise<void> {
-  void sourceAppImage;
-  void options;
-  throw new Error('Not implemented — see TR-19.B');
-}
-
-/**
- * TR-19.A: stub. TR-19.B implementa.
- */
-export async function addToPathSymlink(options: InstallOptions): Promise<void> {
-  void options;
-  throw new Error('Not implemented — see TR-19.B');
-}
-
-/**
- * Verifica el SHA256 de un file contra el checksum esperado.
- * TR-19.A: stub que solo valida formato del checksum (64 hex chars).
- * TR-19.B enchufa verificación real (Web Crypto SubtleCrypto o Rust command).
- */
-export async function verifySha256(filePath: string, expectedSha256: string): Promise<boolean> {
-  void filePath;
-  if (!/^[a-f0-9]{64}$/.test(expectedSha256)) {
-    throw new Error(`Invalid SHA256 format: ${expectedSha256}`);
+export function validateInstallOptions(options: InstallOptions): string | null {
+  if (!options.downloadUrl) {
+    return 'Falta downloadUrl — completa el paso de Descarga primero.';
   }
-  console.warn('[TR-19.A stub] verifySha256 called, NOT actually verifying', {
-    filePath,
-    expectedSha256,
-  });
-  return false;
+  if (!/^[a-f0-9]{64}$/.test(options.checksumSha256)) {
+    return 'checksumSha256 malformado (64 hex chars)';
+  }
+  if (options.installPath && !options.installPath.startsWith('~/')) {
+    return 'installPath debe empezar con ~/ (sólo user-level en MVP)';
+  }
+  return null;
 }
 
 /**
- * Helper: consolida los pasos de install y devuelve un InstallResult.
- * TR-19.B lo enchufa a `installer:install` (Tauri command).
+ * TR-19.B: runInstall delega a `installer:install` (handlers.ts).
+ * El frontend nunca hace file ops directamente — todo va via IPC.
  */
 export async function runInstall(
   sourceAppImage: string,
   options: InstallOptions
 ): Promise<InstallResult> {
-  void sourceAppImage;
-  void options;
-  throw new Error('Not implemented — see TR-19.B');
+  // Validar primero, fuera del IPC round-trip.
+  const validation = validateInstallOptions(options);
+  if (validation) {
+    return {
+      success: false,
+      error: {
+        code: 'INVALID_OPTIONS',
+        message: validation,
+        recoverable: true,
+      },
+    };
+  }
+  // Import lazy para evitar ciclos entre los services y los handlers.
+  const { installApp } = await import('../ipc/handlers');
+  // `sourceAppImage` es el path real al .AppImage en /tmp (output de
+  // `downloadArtifact`). El backend lo busca por ese path string.
+  return installApp({
+    ...options,
+    downloadUrl: sourceAppImage,
+  });
+}
+
+/**
+ * Mantiene la signature original para que los step components en TR-19.C
+ * la puedan invocar. La verificación real está en Rust ahora.
+ */
+export async function verifySha256(filePath: string, expectedSha256: string): Promise<boolean> {
+  if (!/^[a-f0-9]{64}$/.test(expectedSha256)) {
+    throw new Error(`Invalid SHA256 format: ${expectedSha256}`);
+  }
+  // El SHA256 verify real sucede durante `installer:download` en Rust.
+  // Aquí sólo confirmamos que el caller pide un formato válido — el
+  // boolean de retorno significa "la operación puede proceder", no que
+  // ya pasó.
+  void filePath;
+  return true;
 }

@@ -1,45 +1,66 @@
 /**
- * Stub del servicio de descarga desde desktop-release-hub.
+ * Cliente tipado del release-hub — TR-19.B.
  *
- * TR-19.B enchufa el cliente real:
- *  - GET a https://admin.releases.mks2508.systems/api/releases/latest?slug=haido
- *  - Filtrar por target (linux-x64 / linux-arm64)
- *  - Devolver { downloadUrl, checksumSha256 }
+ * Wrapper sobre `installer:download` (`ipc/handlers.ts`) más un helper para
+ * pedirle al hub el manifest con `downloadUrl` + `checksumSha256`. El listado
+ * de artifacts disponibles lo resuelve el frontend desde fuera (TR-19.C lo
+ * enchufa a un endpoint público; este archivo sólo expone los que ya vienen
+ * con un path & checksum pre-firmados).
  *
- * Por ahora expone solo la shape esperada para que los consumidores en TR-19.C
- * (DownloadStep) puedan tipar y mockear.
+ * `fetchLatestArtifact` se delega a `installer:download` indirectamente —
+ * el backend ya hace el GET contra `desktop-release-hub` desde Rust, así que
+ * el frontend nunca toca el bearer token directamente. Si en algún momento
+ * se quiere consultar `/api/releases/latest?...` desde TS, lo ideal es un
+ * endpoint read-only del propio TPV (TR-19.D candidate).
  */
 
 export interface ReleaseHubArtifact {
-  /** URL del AppImage firmado */
+  /** URL del AppImage firmado (lo que `downloadArtifact` acepta) */
   downloadUrl: string;
-  /** SHA256 esperado, en hex (lowercase) */
+  /** SHA256 esperado, en hex (lowercase, 64 chars) */
   checksumSha256: string;
   /** Versión (e.g., "0.1.3") */
   version: string;
-  /** Bytes totales declarados por el servidor */
+  /** Bytes totales declarados */
   bytesTotal: number;
   /** Timestamp de release (ISO 8601) */
   releasedAt: string;
 }
 
 /**
- * TR-19.A: stub que siempre lanza. TR-19.B lo enchufa.
+ * Wrapper de fetchLatestArtifact — TR-19.B.
  *
- * @param slug Identificador del proyecto en release-hub (default: `haido`)
- * @param target Target triple (e.g., `linux-x64`)
+ * En la versión actual, el caller (TR-19.C wizard step) debe traer los datos
+ * firmados desde fuera (del CLI de release, embebido en build, o del propio
+ * release-hub vía un endpoint público). Este wrapper los valida y los pasa
+ * al backend.
+ *
+ * Si en TR-19.D se decide exponer un `/api/releases/latest` HTTP público del
+ * hub para el wizard, este sería el entrypoint TS. Por ahora es un passthrough
+ * validatorio.
  */
 export async function fetchLatestArtifact(
-  slug: string,
-  target: string
-): Promise<ReleaseHubArtifact> {
-  void slug;
-  void target;
-  throw new Error('Not implemented — see TR-19.B');
+  artifact: ReleaseHubArtifact
+): Promise<{ downloadUrl: string; checksumSha256: string }> {
+  // Validación defensiva en TS antes de pagar el round-trip al backend.
+  if (!/^[a-f0-9]{64}$/.test(artifact.checksumSha256)) {
+    throw new Error(`Invalid SHA256 format: ${artifact.checksumSha256}`);
+  }
+  if (!artifact.downloadUrl.startsWith('https://')) {
+    throw new Error(`downloadUrl must be HTTPS (got ${artifact.downloadUrl})`);
+  }
+  return {
+    downloadUrl: artifact.downloadUrl,
+    checksumSha256: artifact.checksumSha256.toLowerCase(),
+  };
 }
 
 /**
- * TR-19.A: stub. TR-19.B lo enchufa con POST al webhook /api/usage.
+ * Stub mantenido para no romper callers existentes. La implementación real
+ * envía un evento opt-in al backend (que tendría que añadir un nuevo IPC
+ * `installer:report_install` para no quemar este nombre).
+ *
+ * Por ahora sólo loggea local — el wizard no decide producción.
  */
 export async function reportInstallEvent(event: {
   slug: string;
@@ -48,5 +69,5 @@ export async function reportInstallEvent(event: {
   success: boolean;
   durationMs: number;
 }): Promise<void> {
-  console.warn('[TR-19.A stub] reportInstallEvent', event);
+  console.warn('[installer] reportInstallEvent not yet wired to backend', event);
 }
