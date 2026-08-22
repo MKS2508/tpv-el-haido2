@@ -8,11 +8,52 @@
  */
 
 import { ok, type Result, type ResultError } from '@mks2508/no-throw';
-import { createMemo } from 'solid-js';
+import { createMemo, createSignal } from 'solid-js';
 import type { AppErrorCode } from '@/lib/error-codes';
 import { createContextLogger } from '@/lib/logger';
+import { canApplyNow } from '@/lib/ota-updates';
 import { createOperationStateSignal } from '@/lib/state-helpers';
 import { isTauri } from '@/services/platform';
+
+const PENDING_UPDATE_STORAGE_KEY = 'tpv-pending-update';
+
+interface IPendingUpdate {
+  version: string;
+  reason: string;
+  deferredAt: number;
+}
+
+function loadPendingUpdate(): IPendingUpdate | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(PENDING_UPDATE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<IPendingUpdate>;
+    if (
+      typeof parsed.version === 'string' &&
+      typeof parsed.reason === 'string' &&
+      typeof parsed.deferredAt === 'number'
+    ) {
+      return parsed as IPendingUpdate;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function savePendingUpdate(value: IPendingUpdate | null): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    if (value === null) {
+      localStorage.removeItem(PENDING_UPDATE_STORAGE_KEY);
+    } else {
+      localStorage.setItem(PENDING_UPDATE_STORAGE_KEY, JSON.stringify(value));
+    }
+  } catch {
+    /* ignore quota / private-mode errors */
+  }
+}
 
 // ==================== Types ====================
 
@@ -89,6 +130,13 @@ export function useUpdater() {
   const checkOp = createOperationStateSignal<ICheckResult>();
   // Download operation
   const downloadOp = createOperationStateSignal<IDownloadResult>();
+
+  // Pending update that was deferred because canApplyNow() said no.
+  // Restored from localStorage so the notice survives a reload, and cleared
+  // once the operator dismisses it (or the update is applied).
+  const [pendingUpdate, setPendingUpdate] = createSignal<IPendingUpdate | null>(
+    loadPendingUpdate()
+  );
 
   // Backwards-compatible derived states
   const available = createMemo(() => {
@@ -234,9 +282,29 @@ export function useUpdater() {
 
           dlSuccess = true;
 
-          // Relaunch the app
+          // Relaunch the app — but only if the box is in a state that can take
+          // a reload. canApplyNow() refuses when a ticket is open on screen or
+          // the operator just interacted; in that case we persist the pending
+          // update so the notice survives the next mount instead of killing
+          // the process mid-order.
           if (relaunchFn) {
-            await relaunchFn();
+            const verdict = await canApplyNow();
+            if (verdict.ok) {
+              await relaunchFn();
+            } else {
+              const reason = verdict.reason ?? 'no es seguro reiniciar ahora';
+              log.warn('Update deferred — not safe to relaunch yet', {
+                version: updateData.version,
+                reason,
+              });
+              const deferred: IPendingUpdate = {
+                version: updateData.version,
+                reason,
+                deferredAt: Date.now(),
+              };
+              setPendingUpdate(deferred);
+              savePendingUpdate(deferred);
+            }
           }
 
           return ok({ success: true, version: updateData.version });
@@ -258,6 +326,17 @@ export function useUpdater() {
     checkOp.reset();
   };
 
+  /**
+   * Clear the deferred-update notice (and its localStorage entry).
+   * Use when the operator acknowledges the message.
+   */
+  const dismissPendingUpdate = () => {
+    setPendingUpdate(null);
+    savePendingUpdate(null);
+  };
+
+  const hasDeferredUpdate = createMemo(() => pendingUpdate() !== null);
+
   return {
     // Backwards-compatible accessors
     available,
@@ -268,10 +347,15 @@ export function useUpdater() {
     version,
     notes,
 
+    // Deferred-update notice (set when relaunch was gated on canApplyNow)
+    pendingUpdate,
+    hasDeferredUpdate,
+
     // Actions
     checkForUpdates,
     downloadAndInstall,
     dismissUpdate,
+    dismissPendingUpdate,
 
     // Full operation states for advanced consumers
     checkOperation: checkOp.state,
