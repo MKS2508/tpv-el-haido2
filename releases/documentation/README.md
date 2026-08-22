@@ -13,27 +13,26 @@ Una aplicación TPV (Terminal Punto de Venta) moderna desarrollada con React + T
 
 ## 🍓 Instalación en Raspberry Pi 3
 
-### Opción 1: Paquete DEB (Recomendado)
+### Opción 1: AppImage (Recomendado)
 ```bash
-# Descargar desde GitHub Releases
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/TPV\ El\ Haido_0.1.0_arm64.deb
+# Descargar desde el release-hub
+wget https://haido.releases.mks2508.systems/api/dl/0.1.3/linux/aarch64/tpv-haido-0.1.3-linux-arm64.AppImage
 
-# Instalar
-sudo dpkg -i "TPV El Haido_0.1.0_arm64.deb"
-sudo apt-get install -f  # Resolver dependencias si es necesario
+# Hacer ejecutable
+chmod +x tpv-haido-0.1.3-linux-arm64.AppImage
 
 # Ejecutar
-tpv-el-haido
+./tpv-haido-0.1.3-linux-arm64.AppImage
 ```
 
 ### Opción 2: Ejecutable Directo
 ```bash
-# Descargar ejecutable ARM64
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido
+# Descargar ejecutable ARM64 desde el release-hub
+wget https://haido.releases.mks2508.systems/api/dl/0.1.3/linux/aarch64/tpv-haido-0.1.3-linux-arm64.AppImage
 
 # Dar permisos y ejecutar
-chmod +x tpv-el-haido
-./tpv-el-haido
+chmod +x tpv-haido-0.1.3-linux-arm64.AppImage
+./tpv-haido-0.1.3-linux-arm64.AppImage
 ```
 
 ## 💻 Desarrollo Local
@@ -123,7 +122,7 @@ tpv-el-haido2/
 ## 📚 Documentación
 
 - [RPi-Build-Documentation.md](RPi-Build-Documentation.md) - Guía completa de compilación
-- [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases) - Descargas
+- [Release Hub](https://haido.releases.mks2508.systems/releases) - Descargas
 
 ## 🤝 Contribuir
 

@@ -1,6 +1,6 @@
 ---
 title: Thermal Printer
-description: 'Configure ESC/POS thermal printer for receipts in TPV El Haido'
+description: 'Configure tickmaster-daemon thermal printing (HTTP to RPI over LAN/VPN) for receipts in TPV El Haido'
 ---
 
 # Configure Thermal Printer
@@ -9,18 +9,10 @@ Guide to configure your thermal printer and print sales receipts.
 
 ## Compatible Printers
 
-TPV El Haido supports any printer compatible with the ESC/POS protocol:
-
-| Brand | Tested Models |
-|-------|---------------|
-| **Epson** | TM-T20, TM-T88, TM-T82 |
-| **Star** | TSP100, TSP650, mPOP |
-| **Bixolon** | SRP-330, SRP-350 |
-| **Sewoo** | LK-TL200, LK-TL320 |
-| **Generic** | USB/Serial printers 58mm, 80mm |
+TPV El Haido prints receipts through the `tickmaster` daemon running on the bar's Raspberry Pi (RPI-BAR), which talks to the Epson TM-U210PD matrix printer over USB (Prolific PL2305) via `bun:ffi` + `libusb-1.0`. The TPV does not talk directly to the printer: it uses HTTP over LAN/VPN to the daemon.
 
 <Callout type="info">
-  Most POS thermal printers use the ESC/POS standard and are compatible.
+  This guide covers the TPV side of the tickmaster-daemon integration. To configure the daemon on the RPI, see the `@mks2508/tickmaster` repository.
 </Callout>
 
 ## Physical Connection
@@ -236,7 +228,7 @@ If you have a second printer for the kitchen:
 ### Strange characters
 
 - Verify paper width is correct (58mm vs 80mm)
-- Check encoding (should be ESC/POS compatible)
+- Check encoding (should be compatible with tickmaster-daemon / Epson matrix)
 
 ### Drawer won't open
 
@@ -252,22 +244,21 @@ If you have a second printer for the kitchen:
 
 ## Technical Specifications
 
-### ESC/POS Protocol
+### tickmaster-daemon Integration
 
-The system sends standard ESC/POS commands:
+The TPV sends HTTP requests to the `tickmaster` daemon on the RPI, which then drives the Epson TM-U210PD:
 
 ```
-ESC @ - Initialize printer
-ESC a - Alignment
-ESC ! - Text style
-GS V - Cut paper
-ESC p - Open drawer
+POST /print      - Print receipt (daemon queue)
+GET  /status     - Printer status and queue
+POST /open-drawer - Open cash drawer
 ```
 
-### Network port
+### Daemon endpoint
 
-- Standard port: **9100** (raw printing)
-- Protocol: Direct TCP/IP
+- Default: `http://tickmaster.local:8080` (configurable in Settings)
+- Network: Tailscale (preferred) or local LAN
+- Auth: API key in `X-Tickmaster-Key` header
 
 ## Next Step
 

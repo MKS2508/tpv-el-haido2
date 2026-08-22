@@ -154,12 +154,14 @@ bun run tauri build --target universal-apple-darwin
 ### Instalación
 
 ```bash
-# Descargar el .deb ARM64
-wget https://haido.releases.mks2508.systems/releases/latest/download/tpv-el-haido_arm64.deb
+# Descargar el AppImage ARM64
+wget https://haido.releases.mks2508.systems/api/dl/0.1.3/linux/aarch64/tpv-haido-0.1.3-linux-arm64.AppImage
 
-# Instalar
-sudo dpkg -i tpv-el-haido_arm64.deb
-sudo apt-get install -f
+# Hacer ejecutable
+chmod +x tpv-haido-0.1.3-linux-arm64.AppImage
+
+# Ejecutar
+./tpv-haido-0.1.3-linux-arm64.AppImage
 ```
 
 ### Optimizaciones para RPi
