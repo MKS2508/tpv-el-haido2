@@ -227,9 +227,9 @@ nodes:
           verifiedBy: axon
 
         - id: U2
-          verdict: open
+          verdict: pass
           class: audit
-          evidenceRef: ['grep 2026-08-21: 25 console.* remanentes en 4 archivos', 'TauriPlatformService.ts (13 calls) + theme-utils.ts (1 call) sin migrar', 'ErrorBoundary.tsx es intercept legitimo, no cuenta']
+          evidenceRef: [5979f91c7c5ad6b70290fc4e4b16b8e1acf3736b, aee541a, grep-residual-11, typecheck-pass, build-pass]
           verifiedBy: axon
   - id: track/ci-release-pipeline
     kind: track

@@ -57,7 +57,7 @@ gate: U1✓  (pass=1 provisional=0 partial=0 open=0)
 ### track/observability  ● in_progress
 TR-11 — Migración @mks2508/better-logger@0.18.3 + wire OTel
 deps: (ninguna)
-gate: U1✓ U2○  (pass=1 provisional=0 partial=0 open=1)
+gate: U1✓ U2✓  (pass=2 provisional=0 partial=0 open=0)
 
 ### track/ci-release-pipeline  ● in_progress
 TR-12/13/14/15/16 — CI Linux x64/ARM64 + auth CI→hub + OTA bundle pipeline
