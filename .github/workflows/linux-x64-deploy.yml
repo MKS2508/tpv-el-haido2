@@ -99,7 +99,16 @@ jobs:
             exit 0
           fi
 
-          if bun run scripts/release.ts publish --client-credentials --skip-build --target linux-x64 --slug haido; then
+          # Release notes: read from docs/releases/<version>-notes.md if present, else empty.
+          # Generated locally by `bun run scripts/release.ts publish --ai-notes` and committed
+          # next to the workflow. Pattern: releases/ in .gitignore unanchored → exception !docs/releases/
+          # keeps the markdown tracked. Workflow never fails on missing file (graceful fallback).
+          NOTES_FILE="docs/releases/${GITHUB_REF_NAME}-notes.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "::warning::Notes file $NOTES_FILE not found — publishing without --notes."
+          fi
+          NOTES_CONTENT="$(cat "$NOTES_FILE" 2>/dev/null || echo '')"
+          if bun run scripts/release.ts publish --client-credentials --skip-build --target linux-x64 --slug haido --notes "$NOTES_CONTENT"; then
             echo "## Publish al release-hub: OK (automático, client_credentials — TR-15)" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Publish automático falló — fallback a instrucciones manuales (TR-15 paso 2)."

@@ -61,4 +61,8 @@ docker-compose.override.yml
 # Release artifacts (binaries built locally — upload to release-hub via release.ts publish)
 # Keep folder structure, ignore binary content. .sig and latest.json are small but generated.
 releases/
+# Exception: docs/releases/ holds committed release-notes markdown (e.g. v0.1.4-notes.md)
+# consumed by CI workflows (linux-x64-deploy.yml --notes flag). Pattern above unanchored,
+# so this re-include is required to keep release-notes markdown tracked.
+!docs/releases/
 /.claude/agent-memory
