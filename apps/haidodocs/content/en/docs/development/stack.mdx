@@ -90,15 +90,14 @@ Node.js sidecar for AEAT communication:
 | soap | SOAP client |
 | node-forge | Certificate handling |
 
-### thermal-printer-cli
+### tickmaster (external)
 
-Node.js sidecar for printing:
+HTTP client to the tickmaster daemon (runs on RPI, not a TPV sidecar):
 
 | Dependency | Use |
 |------------|-----|
-| escpos | ESC/POS protocol |
-| usb | USB communication |
-| serialport | Serial communication |
+| @mks2508/tickmaster/sdk | HTTP client to tickmaster daemon on RPI |
+| — | (Daemon runs on RPI, not a TPV sidecar) |
 
 ## package.json Versions
 

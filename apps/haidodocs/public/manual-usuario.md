@@ -1,66 +1,59 @@
-# TPV El Haido
-
-
-## Manual de Usuario Oficial
-
-**Sistema de Punto de Venta para Hostelería**
-
-
+---
+title: Manual de Usuario - TPV El Haido
+version: 1.0.0
+generated: 2026-08-22
 ---
 
-### Gestión de pedidos · Facturación electrónica · Impresión térmica
+# Manual de Usuario
 
-**Versión 1.0.0** | **Febrero 2026**
+**TPV El Haido** - Sistema de Punto de Venta para Hostelería
 
-![Portada de TPV El Haido con logo del sistema](screenshots/PORTADA.png)
+Versión: 1.0.0
+Fecha de generación: 2026-08-22
 
-*Imagen de portada: TPV El Haido - Sistema de Punto de Venta*
-
-***
-
-***
+---
 
 ## Tabla de Contenidos
 
-1. [Introducción](#1-introducción) — Visión general y primeros pasos
-2. [Instalación](#2-instalación) — Guía de instalación por sistema operativo
-3. [Primeros Pasos](#3-primeros-pasos) — Configuración inicial y primera venta
-4. [Gestión de Pedidos](#4-gestión-de-pedidos) — Crear, modificar y gestionar comandas
-5. [Gestión de Productos](#5-gestión-de-productos) — Catálogo de productos y categorías
-6. [Gestión de Clientes](#6-gestión-de-clientes) — Base de datos de clientes
-7. [Procesamiento de Pagos](#7-procesamiento-de-pagos) — Cobros, tickets y cierre de caja
-8. [Facturación VERI*FACTU](#8-facturación-verifactu) — Integración con la AEAT
-9. [Configuración de Impresora](#9-configuración-de-impresora) — Impresoras térmicas y tickets
-10. [Temas y Personalización](#10-temas-y-personalización) — Personaliza la interfaz
+1. [Introducción](#1-introduccion)
+2. [Instalación](#2-instalacion)
+3. [Primeros Pasos](#3-primeros-pasos)
+4. [Gestión de Pedidos](#4-gestion-de-pedidos)
+5. [Gestión de Productos](#5-gestion-de-productos)
+6. [Gestión de Clientes](#6-gestion-de-clientes)
+7. [Procesamiento de Pagos](#7-procesamiento-de-pagos)
+8. [Facturación VERI*FACTU](#8-facturacion-verifactu)
+9. [Configuración de Impresora](#9-configuracion-de-impresora)
+10. [Temas y Personalización](#10-temas-y-personalizacion)
 
 ---
 
-***
+## 1. Introducción {#1-introduccion}
 
-***
+# Guía de Usuario
 
-## 1. Introducción
+Bienvenido a la guía de usuario de TPV El Haido. Aquí encontrarás todo lo necesario para sacar el máximo partido a tu sistema de punto de venta.
 
-Bienvenido a **TPV El Haido**, tu sistema de punto de venta diseñado específicamente para hostelería. Esta guía te acompañará desde la instalación hasta el dominio completo de todas las funcionalidades.
+> ℹ️ **Info**
+> 
+> Esta guía está pensada para usuarios finales. Si eres desarrollador, consulta la **sección de desarrollo** (ver sección desarrollo).
 
-> **Nota para desarrolladores**
-> Esta guía está pensada para usuarios finales. Si eres desarrollador, consulta la sección de desarrollo en la documentación online.
+### 1.1 Empezar
 
-### 1.1 ¿Qué puedes hacer con TPV El Haido?
+  - **Instalación**: Instala TPV El Haido en tu sistema operativo
+  - **Primeros Pasos**: Configuración inicial y primera venta
 
-| Funcionalidad | Descripción |
-|---------------|-------------|
-| **Pedidos** | Crea comandas, gestiona mesas y cobra de forma rápida |
-| **Productos** | Organiza tu catálogo con categorías, precios e imágenes |
-| **Clientes** | Mantén una base de datos para facturas completas |
-| **Pagos** | Efectivo, tarjeta o mixto con cálculo automático de cambio |
-| **Impresión** | Tickets térmicos personalizados con tu logo |
-| **Facturación** | Envío automático a la AEAT con VERI*FACTU |
-| **Temas** | 6 temas visuales para adaptar la interfaz a tu negocio |
+### 1.2 Funcionalidades
 
-### 1.2 Flujo de trabajo típico
+  - **Productos**: Gestiona tu catalogo de productos y categorias
+  - **Pedidos**: Crea y gestiona comandas
+  - **Clientes**: Base de datos de clientes y facturacion
+  - **Pagos**: Procesa pagos e imprime tickets
+  - **Impresora**: Configura tu impresora termica
+  - **Facturacion**: Integracion con AEAT VERI*FACTU
+  - **Temas**: Personaliza la apariencia
 
-El uso diario de TPV El Haido sigue este flujo sencillo:
+### 1.3 Flujo de Trabajo Típico
 
 ```mermaid
 graph LR
@@ -68,111 +61,105 @@ graph LR
     B --> C[Añadir Productos]
     C --> D[Cobrar]
     D --> E[Imprimir Ticket]
-
-    style A fill:#e1f5ff
-    style B fill:#fff4e1
-    style C fill:#e8f5e9
-    style D fill:#fce4ec
-    style E fill:#f3e5f5
+    E --> F[Enviar Factura AEAT]
 ```
 
-### 1.3 Pantalla principal
+### 1.4 Pantalla Principal
 
-La interfaz está organizada en secciones accesibles desde el menú lateral:
+La interfaz de TPV El Haido está organizada en secciones accesibles desde el menú lateral:
 
-| Sección | Icono | Descripción |
-|---------|-------|-------------|
-| **Inicio** | 🏠 | Panel principal con resumen del día |
-| **Nueva Comanda** | ➕ | Crear pedidos y añadir productos |
-| **Historial** | 📋 | Consultar pedidos anteriores |
-| **Productos** | 📦 | Gestionar tu catálogo |
-| **Clientes** | 👥 | Base de datos de clientes |
-| **Facturas** | 📄 | Facturas AEAT y estados |
-| **Ajustes** | ⚙️ | Configuración del sistema |
+| Sección | Descripción |
+|---------|-------------|
+| **Inicio** | Panel principal con resumen del día |
+| **Nueva Comanda** | Crear pedidos y añadir productos |
+| **Historial** | Ver pedidos anteriores |
+| **Productos** | Gestionar catálogo |
+| **Clientes** | Base de datos de clientes |
+| **Facturas** | Facturas AEAT y estados |
+| **Ajustes** | Configuración del sistema |
 
-### 1.4 Obtener ayuda
+### 1.5 Soporte
 
 Si tienes preguntas o encuentras problemas:
 
-1. Abre el pannel de settings, escanea el codifo QR en la parte de problemas y sigue las instrucciones
+1. Consulta esta documentación
+2. Revisa los [issues en GitHub](https://github.com/MKS2508/tpv-el-haido2/issues)
+3. Abre un nuevo issue describiendo tu problema
 
 ---
 
-***
+## 2. Instalación {#2-instalacion}
 
-***
+Guía detallada para instalar TPV El Haido en tu sistema operativo.
 
-## 2. Instalación
+### 2.1 Requisitos Previos
 
-Guía paso a paso para instalar TPV El Haido en tu sistema operativo.
+Antes de instalar, verifica que tu sistema cumple los requisitos mínimos:
 
-### 2.1 Requisitos del sistema
-
-Antes de instalar, verifica que tu equipo cumple estos requisitos:
-
-| Componente | Mínimo | Recomendado |
-|------------|--------|-------------|
-| **RAM** | 512 MB | 1 GB o más |
+| Requisito | Mínimo | Recomendado |
+|-----------|--------|-------------|
+| **RAM** | 512 MB | 1 GB |
 | **Almacenamiento** | 100 MB | 500 MB |
-| **Pantalla** | 800×600 | 1024×768 o superior |
-| **Internet** | Opcional | Requerido para VERI*FACTU |
+| **Pantalla** | 800x600 | 1024x768+ |
+| **Conexión** | Opcional | Requerida para VERI*FACTU |
 
-### 2.2 Instalación en Windows
+### 2.2 Instalación por Sistema
 
-#### Windows 10/11 (64 bits)
+##### Windows
+
+##### Windows 10/11
 
 **Paso 1: Descargar el instalador**
 
-1. Accede a [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases/latest)
+1. Ve al [Hub de Releases](https://haido.releases.mks2508.systems/releases/latest)
 2. Descarga el archivo `TPV.El.Haido_x.x.x_x64-setup.exe`
 
 **Paso 2: Ejecutar el instalador**
 
 1. Haz doble clic en el archivo descargado
-2. Si aparece Windows SmartScreen:
-   - Haz clic en **"Más información"**
-   - Luego en **"Ejecutar de todas formas"**
+2. Si aparece Windows SmartScreen, haz clic en "Más información" → "Ejecutar de todas formas"
 3. Sigue el asistente de instalación
 
-**Paso 3: Verificar la instalación**
+**Paso 3: Verificar instalación**
 
 1. Busca "TPV El Haido" en el menú de inicio
 2. Haz clic para abrir la aplicación
 3. Deberías ver la pantalla de login o el asistente de configuración
 
-> **⚠️ Windows SmartScreen**
-> Al ser una aplicación no firmada por Microsoft, Windows puede mostrar una advertencia. Esto es completamente normal para software independiente y no indica ningún problema de seguridad.
+> ⚠️ **Warning**
+> 
+> **Windows SmartScreen**: Al ser una aplicación no firmada por Microsoft, Windows puede mostrar una advertencia. Esto es normal para software independiente.
 
-### 2.3 Instalación en macOS
+##### macOS
 
-#### macOS 11 Big Sur o superior
+##### macOS 11 Big Sur o superior
 
 **Paso 1: Descargar el DMG**
 
-1. Accede a [GitHub Releases](https://github.com/MKS2508/tpv-el-haido2/releases/latest)
+1. Ve al [Hub de Releases](https://haido.releases.mks2508.systems/releases/latest)
 2. Descarga el archivo correspondiente a tu Mac:
-   - **Mac con Intel**: `TPV.El.Haido_x64.dmg`
-   - **Mac con Apple Silicon (M1/M2/M3/M4)**: `TPV.El.Haido_aarch64.dmg`
+   - **Intel**: `TPV.El.Haido_x64.dmg`
+   - **Apple Silicon (M1/M2/M3/M4)**: `TPV.El.Haido_aarch64.dmg`
 
 **Paso 2: Instalar la aplicación**
 
 1. Abre el archivo DMG descargado
 2. Arrastra el icono de TPV El Haido a la carpeta "Aplicaciones"
-3. Expulsa el volumen DMG (clic derecho → Expulsar)
+3. Expulsa el volumen DMG
 
 **Paso 3: Primera ejecución**
 
 1. Abre la carpeta Aplicaciones
-2. Haz **clic derecho** en "TPV El Haido"
-3. Selecciona **"Abrir"** en el menú contextual
-4. En el diálogo de seguridad, haz clic en **"Abrir"**
+2. Haz clic derecho en "TPV El Haido" → "Abrir"
+3. En el diálogo de seguridad, haz clic en "Abrir"
 
-> **ℹ️ Gatekeeper de macOS**
-> macOS puede bloquear la primera ejecución de aplicaciones descargadas. Usar clic derecho → Abrir evita tener que ir a Preferencias del Sistema.
+> ℹ️ **Info**
+> 
+> **Gatekeeper**: macOS puede bloquear la primera ejecución. Usa clic derecho → Abrir para evitar ir a Preferencias del Sistema.
 
-### 2.4 Instalación en Linux
+##### Linux
 
-#### Ubuntu, Debian y derivados
+##### Ubuntu, Debian y derivados
 
 **Paso 1: Instalar dependencias**
 
@@ -181,322 +168,353 @@ sudo apt update
 sudo apt install -y libwebkit2gtk-4.1-0 libgtk-3-0
 ```
 
-**Paso 2: Descargar e instalar**
+**Paso 2: Descargar e instalar el AppImage**
 
 ```bash
 # Descargar la última versión
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_amd64.deb
+wget https://haido.releases.mks2508.systems/api/dl/0.1.3/linux/x86_64/tpv-haido-0.1.3-linux-amd64.AppImage
 
-# Instalar el paquete
-sudo dpkg -i tpv-el-haido_amd64.deb
+# Hacer ejecutable
+chmod +x tpv-haido-0.1.3-linux-amd64.AppImage
 
-# Resolver dependencias si es necesario
-sudo apt-get install -f
+# Ejecutar
+./tpv-haido-0.1.3-linux-amd64.AppImage
 ```
 
 **Paso 3: Ejecutar**
 
 ```bash
 # Desde terminal
-tpv-el-haido
+./tpv-haido-0.1.3-linux-amd64.AppImage
 
-# O buscar "TPV El Haido" en el menú de aplicaciones
+# O buscar en el menú de aplicaciones
 ```
 
-#### Alternativa: AppImage (cualquier distribución)
+##### Alternativa: AppImage (cualquier distribución)
 
 ```bash
 # Descargar
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido.AppImage
+wget https://haido.releases.mks2508.systems/api/dl/0.1.3/linux/x86_64/tpv-haido-0.1.3-linux-amd64.AppImage
 
 # Hacer ejecutable
-chmod +x tpv-el-haido.AppImage
+chmod +x tpv-haido-0.1.3-linux-amd64.AppImage
 
 # Ejecutar
-./tpv-el-haido.AppImage
+./tpv-haido-0.1.3-linux-amd64.AppImage
 ```
 
-### 2.5 Instalación en Raspberry Pi
+##### Raspberry Pi
 
-#### Raspberry Pi 3/4/5 (64 bits) (arm)
+##### Raspberry Pi 4/5 (64-bit)
 
+**Paso 1: Verificar sistema operativo**
 
+```bash
+# Debe mostrar aarch64
+uname -m
+```
 
-**Paso 1: Instalar dependencias**
+> ⚠️ **Warning**
+> 
+> Raspberry Pi OS debe ser la versión de **64 bits**. La versión de 32 bits no es compatible.
+
+**Paso 2: Instalar dependencias**
 
 ```bash
 sudo apt update
 sudo apt install -y libwebkit2gtk-4.1-0 libgtk-3-0
 ```
 
-**Paso 2: Descargar e instalar**
+**Paso 3: Descargar e instalar**
 
 ```bash
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido_arm64.deb
-sudo dpkg -i tpv-el-haido_arm64.deb
-sudo apt-get install -f
+# Descargar versión ARM64
+wget https://haido.releases.mks2508.systems/api/dl/0.1.3/linux/aarch64/tpv-haido-0.1.3-linux-arm64.AppImage
+
+# Hacer ejecutable
+chmod +x tpv-haido-0.1.3-linux-arm64.AppImage
+
+# Ejecutar
+./tpv-haido-0.1.3-linux-arm64.AppImage
 ```
 
-**Optimizaciones recomendadas para Raspberry Pi:**
+**Paso 4: Ejecutar**
 
-1. Usa el tema de **alto contraste** (menos efectos visuales)
-2. Desactiva las animaciones en Ajustes
-3. Asigna al menos 256 MB a la GPU en `raspi-config`
+```bash
+./tpv-haido-0.1.3-linux-arm64.AppImage
+```
 
-### 2.6 Pantalla de configuración
+##### Optimizaciones para Raspberry Pi
 
-Una vez instalada, accederás al asistente de configuración:
+Para mejorar el rendimiento:
 
-![Pantalla de ajustes del sistema donde puedes configurar almacenamiento, usuarios, impresoras e integración con AEAT](screenshots/11_settings.png)
+1. Usa el tema de alto contraste (menos efectos visuales)
+2. Desactiva animaciones en Ajustes
+3. Asigna al menos 256MB a la GPU en `raspi-config`
 
-*Imagen: Pantalla de Ajustes con las opciones de configuración disponibles*
+### 2.3 Pantalla de Configuración
 
-### 2.7 Validación de licencia
+Una vez instalada la aplicación, accederás al asistente de configuración o a la pantalla de ajustes:
 
-Para acceder a todas las funcionalidades, valida tu licencia:
+![Pantalla de configuración](/screenshots/11_settings.png)
 
-![Estado de licencia válida mostrando los datos de activación](screenshots/Licenciavalida.png)
+Desde aquí puedes:
+- Configurar el modo de almacenamiento
+- Gestionar usuarios
+- Configurar impresoras
+- Ajustar la integración con AEAT
 
-*Imagen 3: Pantalla de licencia válida con estado "Licencia Activa"*
+### 2.4 Validación de Licencia
 
-**Pasos para validar:**
+Para usar todas las funcionalidades, valida tu licencia:
 
-1. Ve a **Ajustes → Licencia**
-2. Introduce tu clave de licencia
-3. Haz clic en **Validar**
-4. Si es válida, verás el estado "Licencia Activa"
-
-### 2.8 Gestión de usuarios
-
-Crea cuentas para cada empleado de tu negocio:
-
-![Pantalla de gestión de usuarios con lista de empleados y opciones de crear, editar y eliminar](screenshots/02_settings_usuarios.png)
-
-*Imagen 4: Panel de gestión de usuarios en Ajustes*
-
-**Crear un nuevo usuario:**
-
-1. Ve a **Ajustes → Usuarios**
-2. Haz clic en **Nuevo Usuario**
-3. Introduce:
-   - **Nombre**: Nombre del empleado
-   - **Avatar**: Selecciona una imagen
-   - **PIN**: Código de 4 dígitos
-   - **Rol**: Administrador o Empleado
-4. Haz clic en **Guardar**
-
-> **ℹ️ Roles de usuario**
-> - **Administrador**: Acceso completo a ajustes y configuración
-> - **Empleado**: Solo puede crear pedidos y ver historial propio
+![Licencia válida](/screenshots/Licenciavalida.png)
 
 1. Ve a **Ajustes → Licencia**
 2. Introduce tu clave de licencia
 3. Haz clic en **Validar**
 4. Si es válida, verás el estado "Licencia Activa"
 
-> **ℹ️ Modo demo**
-> Puedes usar la aplicación sin licencia en modo demo, pero algunas funciones estarán limitadas.
+> ℹ️ **Info**
+> 
+> Puedes usar la aplicación en modo demo sin licencia, pero algunas funciones estarán limitadas.
 
-### 2.8 Solución de problemas de instalación
+### 2.5 Solución de Problemas
 
-#### La aplicación no abre
+##### La aplicación no abre
 
-**En Windows:**
+##### Windows
+
 1. Verifica que tienes Windows 10 o superior
 2. Intenta ejecutar como administrador
-3. Revisa si un antivirus está bloqueando la ejecución
+3. Revisa si hay un antivirus bloqueando la ejecución
 4. Reinstala la aplicación
 
-**En macOS:**
+##### macOS
+
 1. Ve a **Preferencias del Sistema → Seguridad y Privacidad**
 2. En la pestaña General, haz clic en "Abrir de todas formas"
-3. Si persiste, ejecuta: `xattr -cr /Applications/TPV\ El\ Haido.app`
+3. Si persiste, prueba: `xattr -cr /Applications/TPV\ El\ Haido.app`
 
-**En Linux:**
+##### Linux
+
 1. Verifica las dependencias: `apt list --installed | grep webkit`
 2. Comprueba permisos: `chmod +x /usr/bin/tpv-el-haido`
 3. Ejecuta desde terminal para ver errores: `tpv-el-haido`
 
-#### Error de base de datos
+##### Error de base de datos
 
 Si ves un error relacionado con SQLite:
 
-1. Cierra la aplicación completamente
-2. Localiza y elimina el archivo de base de datos:
+1. Cierra la aplicación
+2. Borra el archivo de base de datos:
    - **Windows**: `%APPDATA%\com.elhaido.tpv\tpv-haido.db`
    - **macOS**: `~/Library/Application Support/com.elhaido.tpv/tpv-haido.db`
    - **Linux**: `~/.config/com.elhaido.tpv/tpv-haido.db`
 3. Reinicia la aplicación (se creará una nueva base de datos)
 
-> **⚠️ Pérdida de datos**
+> ⚠️ **Warning**
+> 
 > Borrar la base de datos eliminará todos tus datos. Haz una copia de seguridad primero si es posible.
+
+##### Problemas de rendimiento
+
+1. Verifica que cumples los requisitos mínimos
+2. Cierra otras aplicaciones pesadas
+3. En Raspberry Pi, desactiva animaciones
+4. Considera usar el modo de almacenamiento SQLite (más rápido)
+
+### 2.6 Siguiente Paso
+
+Una vez instalado, sigue con **Primeros Pasos** (ver sección primeros pasos) para configurar tu TPV.
 
 ---
 
-***
-
-***
-
-## 3. Primeros Pasos
+## 3. Primeros Pasos {#3-primeros-pasos}
 
 Después de instalar TPV El Haido, sigue esta guía para configurar tu sistema y realizar tu primera venta.
 
-### 3.1 Asistente de configuración inicial
+### 3.1 Asistente de Configuración
 
-La primera vez que abras la aplicación, el asistente te guiará:
+La primera vez que abras la aplicación, verás el asistente de configuración:
 
 **Paso 1: Bienvenida**
 
-El asistente te dará la bienvenida. Haz clic en **"Comenzar"** para iniciar.
+El asistente te guiará a través de la configuración inicial. Haz clic en "Comenzar".
 
-**Paso 2: Modo de almacenamiento**
+**Paso 2: Modo de Almacenamiento**
 
 Selecciona cómo quieres guardar tus datos:
 
-| Modo | Descripción | Cuándo usarlo |
-|------|-------------|---------------|
-| **SQLite** | Base de datos local en tu equipo | Un solo terminal (recomendado) |
-| **HTTP** | Conexión a servidor externo | Múltiples terminales sincronizados |
-| **IndexedDB** | Almacenamiento en navegador | Modo web o demostración |
+| Modo | Descripción | Recomendado para |
+|------|-------------|------------------|
+| **SQLite** | Base de datos local | Un solo terminal |
+| **HTTP** | Servidor externo | Múltiples terminales |
+| **IndexedDB** | Navegador | Modo web/demo |
 
-> **💡 Recomendación**
-> Para la mayoría de usuarios, **SQLite** es la mejor opción. Es rápido, fiable y no requiere configuración adicional.
+> 💡 **Tip**
+> 
+> Para la mayoría de usuarios, **SQLite** es la mejor opción. Es rápido y no requiere configuración adicional.
 
-**Paso 3: Crear usuario administrador**
+**Paso 3: Crear Usuario Administrador**
 
-1. Introduce el nombre del usuario (ejemplo: "Admin")
+1. Introduce el nombre del usuario (ej: "Admin")
 2. Selecciona un avatar o sube una foto
 3. Crea un PIN de 4 dígitos
 4. Confirma el PIN
 
-**Paso 4: Tema visual**
+**Paso 4: Tema Visual**
 
 Elige el tema que mejor se adapte a tu negocio:
-
 - **Restaurant Professional**: Colores cálidos y elegantes
 - **Modern Cafe**: Verde minimalista
-- **Night Bar**: Tema oscuro con acentos neón
+- **Night Bar**: Tema oscuro con acentos
 - **High Contrast**: Máxima legibilidad
 
 **Paso 5: Completar**
 
-Haz clic en **"Finalizar"** para completar la configuración.
+Haz clic en "Finalizar" para completar la configuración.
 
-### 3.2 Pantalla de login
+### 3.2 Pantalla de Login
 
-Después de la configuración, verás la pantalla de acceso:
+Después de la configuración, verás la pantalla de login:
 
-![Pantalla de login mostrando avatares de usuarios disponibles para seleccionar](screenshots/01_login.png)
+![Pantalla de login con selección de usuario](/screenshots/01_login.png)
 
-*Imagen 1: Pantalla de login con selección de usuario por avatar*
-
-![Pantalla para introducir el PIN de acceso de 4 dígitos](screenshots/02_login.png)
-
-*Imagen 2: Pantalla de introducción del PIN de acceso*
-
-**Para acceder:**
-
-1. **Toca tu avatar** para seleccionar tu usuario
+1. **Selecciona tu usuario** tocando el avatar
 2. **Introduce tu PIN** de 4 dígitos
-3. **Pulsa Enter** o el botón de acceso
+3. **Accede** al panel principal
 
-> **ℹ️ Múltiples usuarios**
-> Puedes crear más usuarios desde **Ajustes → Usuarios** para que cada empleado tenga su propio acceso.
+> ℹ️ **Info**
+> 
+> Puedes crear más usuarios desde **Ajustes → Usuarios**.
 
-### 3.3 Dashboard principal
+### 3.3 Dashboard Principal
 
-Una vez dentro, verás el panel principal:
+Una vez dentro, verás el dashboard principal con acceso rápido a todas las funciones:
 
-![Dashboard principal mostrando el resumen del día, accesos rápidos y estado de mesas](screenshots/01_home.png)
-
-*Imagen: Dashboard principal de TPV El Haido con información del día*
+![Dashboard principal de TPV El Haido](/screenshots/01_home.png)
 
 Desde aquí puedes:
-
-- Ver el resumen de ventas del día
-- Crear nuevas comandas rápidamente
+- Crear nuevas comandas
 - Ver el estado de las mesas
-- Acceder a cualquier sección del sistema
+- Acceder al catálogo de productos
+- Consultar el historial de ventas
 
-### 3.4 Crear tu primera categoría
+### 3.4 Crear tu Primera Categoría
 
-Antes de añadir productos, necesitas al menos una categoría:
+Antes de añadir productos, crea al menos una categoría:
 
-**Paso 1:** En el menú lateral, haz clic en **Productos**
+**Paso 1: Ir a Productos**
 
-**Paso 2:** Haz clic en el botón **Categorías** o el icono de carpeta
+1. En el menú lateral, haz clic en **Productos**
+2. Haz clic en el botón **Categorías** o el icono de carpeta
 
-**Paso 3:** Haz clic en **Nueva Categoría**
+**Paso 2: Crear Categoría**
 
-![Formulario para crear una nueva categoría con campos de nombre, descripción e icono](screenshots/3.4.png)
+1. Haz clic en **Nueva Categoría**
+2. Introduce el nombre (ej: "Bebidas", "Tapas", "Postres")
+3. Opcionalmente, añade una descripción
+4. Selecciona un icono
+5. Haz clic en **Guardar**
 
-*Imagen 5: Diálogo de creación de categoría*
+### 3.5 Crear tu Primer Producto
 
-**Paso 4:** Rellena los datos:
+**Paso 1: Ir a Nuevo Producto**
 
-| Campo | Ejemplo | Obligatorio |
-|-------|---------|-------------|
-| **Nombre** | Bebidas | Sí |
-| **Descripción** | Refrescos, cervezas, vinos... | No |
-| **Icono** | 🍺 | No |
+1. En la sección **Productos**, haz clic en **Nuevo Producto**
 
-**Paso 5:** Haz clic en **Guardar**
-
-### 3.5 Crear tu primer producto
-
-**Paso 1:** En la sección **Productos**, haz clic en **Nuevo Producto**
-
-**Paso 2:** Rellena la información básica:
+**Paso 2: Rellenar Datos**
 
 | Campo | Ejemplo | Descripción |
 |-------|---------|-------------|
-| **Nombre** | Cerveza | Nombre que verás en el TPV |
-| **Precio** | 2.50 | Precio SIN IVA |
-| **Categoría** | Bebidas | La categoría que creaste |
-| **IVA** | 21% | Tipo impositivo aplicable |
+| **Nombre** | Cerveza | Nombre visible en el TPV |
+| **Precio** | 2.50 | Precio sin IVA |
+| **Categoría** | Bebidas | Categoría creada anteriormente |
+| **IVA** | 21% | Tipo de IVA aplicable |
 
-**Paso 3:** Opcionalmente, añade una imagen o icono
+**Paso 3: Añadir Icono (Opcional)**
 
-**Paso 4:** Haz clic en **Crear Producto**
+- Selecciona un icono predefinido, o
+- Sube una imagen del producto
 
-### 3.6 Realizar tu primera venta
+**Paso 4: Guardar**
 
-**Paso 1: Crear nueva comanda**
+Haz clic en **Crear Producto** para guardarlo.
+
+### 3.6 Realizar tu Primera Venta
+
+**Paso 1: Crear Nueva Comanda**
 
 1. En el menú lateral, haz clic en **Nueva Comanda**
-2. Opcionalmente, selecciona una mesa
+2. (Opcional) Selecciona una mesa
 
-![Interfaz de nueva comanda con categorías a la izquierda, productos en el centro y resumen a la derecha](screenshots/05_newOrder.png)
+![Interfaz de nueva comanda](/screenshots/05_newOrder.png)
 
-*Imagen: Pantalla de Nueva Comanda con el grid de productos*
+**Paso 2: Añadir Productos**
 
-**Paso 2: Añadir productos**
-
-1. Navega por las categorías en la barra lateral izquierda
+1. Navega por las categorías en la barra lateral
 2. Haz clic en los productos para añadirlos
 3. El resumen aparece en el panel derecho
 
-**Paso 3: Ajustar cantidades**
+**Paso 3: Ajustar Cantidades**
 
-- **+** aumenta la cantidad
-- **-** reduce la cantidad
-- **🗑️** elimina el producto
+- **+** / **-**: Aumentar o reducir cantidad
+- **Eliminar**: Quitar producto del pedido
 
 **Paso 4: Cobrar**
 
-1. Haz clic en **Cobrar**
-2. Selecciona el método de pago (Efectivo, Tarjeta, Otro)
+1. Haz clic en el botón **Cobrar**
+2. Selecciona el método de pago:
+   - Efectivo
+   - Tarjeta
+   - Otro
 3. Si es efectivo, introduce el importe recibido
 4. El sistema calcula el cambio automáticamente
-5. Haz clic en **Confirmar Pago**
 
-**Paso 5: Ticket impreso**
+**Paso 5: Finalizar**
 
-El ticket se imprime automáticamente si tienes impresora configurada.
+1. Haz clic en **Confirmar Pago**
+2. El ticket se imprime automáticamente (si hay impresora configurada)
+3. La comanda se guarda en el historial
 
-### 3.7 Resumen de configuración inicial
+### 3.7 Configuración Adicional
 
-Has completado la configuración básica:
+##### Impresora Térmica
+
+Para imprimir tickets, configura tu impresora:
+
+1. Ve a **Ajustes → Impresora**
+2. Selecciona el puerto (USB/Serial)
+3. Configura el ancho de papel (58mm o 80mm)
+4. Haz clic en **Probar Conexión**
+
+Más detalles en **Configurar Impresora** (ver sección impresora).
+
+##### Facturación AEAT
+
+Para enviar facturas a la AEAT:
+
+1. Ve a **Ajustes → VERI*FACTU**
+2. Introduce tus datos fiscales (NIF, Razón Social)
+3. Configura el certificado digital
+4. Activa el envío automático
+
+Más detalles en **Facturación VERI*FACTU** (ver sección facturacion).
+
+##### Mas Usuarios
+
+Para añadir mas operarios:
+
+1. Ve a **Ajustes → Usuarios**
+2. Haz clic en **Nuevo Usuario**
+3. Rellena nombre, avatar y PIN
+
+![Gestion de usuarios en Ajustes](/screenshots/02_settings_usuarios.png)
+
+### 3.8 Resumen
+
+Has completado la configuración inicial:
 
 - [x] Asistente de configuración completado
 - [x] Usuario administrador creado
@@ -504,183 +522,230 @@ Has completado la configuración básica:
 - [x] Primer producto añadido
 - [x] Primera venta realizada
 
-> **✅ ¡Listo!**
-> Tu TPV está operativo. Explora el resto de la documentación para aprovechar todas las funcionalidades.
+> ✅ **Success**
+> 
+> ¡Tu TPV está listo! Explora el resto de la documentación para aprovechar todas las funcionalidades.
+
+### 3.9 Siguiente Paso
+
+- **Gestionar Productos** (ver sección productos) - Catálogo completo
+- **Configurar Impresora** (ver sección impresora) - Tickets térmicos
+- **Facturación AEAT** (ver sección facturacion) - VERI*FACTU
 
 ---
 
-***
+## 4. Gestión de Pedidos {#4-gestion-de-pedidos}
 
-***
+Aprende a crear, modificar y gestionar comandas en TPV El Haido.
 
-## 4. Gestión de Pedidos
+### 4.1 Crear Nueva Comanda
 
-Aprende a crear, modificar y gestionar comandas de forma eficiente.
+**Paso 1: Acceder a Nueva Comanda**
 
-### 4.1 Crear una nueva comanda
+En el menú lateral, haz clic en **Nueva Comanda**.
 
-**Paso 1:** En el menú lateral, haz clic en **Nueva Comanda**
+**Paso 2: Seleccionar Mesa (Opcional)**
 
-**Paso 2:** Si tu negocio usa mesas:
-- Verás un grid con las mesas disponibles
-- Haz clic en una mesa para asignar el pedido
-- O selecciona "Barra" / "Para llevar"
+Si tu negocio usa mesas:
+1. Verás un grid con las mesas disponibles
+2. Haz clic en una mesa para asignar el pedido
+3. O selecciona "Barra" / "Para llevar" si no aplica
 
-**Paso 3:** Añade productos:
+**Paso 3: Añadir Productos**
 
-![Interfaz completa de nueva comanda con navegación por categorías y resumen del pedido](screenshots/05_newOrder.png)
+![Interfaz de nueva comanda con productos](/screenshots/05_newOrder.png)
 
-*Imagen: Pantalla de creación de comanda*
+1. **Navega por categorías** en la barra lateral izquierda
+2. **Haz clic en un producto** para añadirlo al pedido
+3. El producto aparece en el resumen (panel derecho)
+4. **Repite** para añadir más productos
 
-1. **Navega por categorías** en la barra lateral
-2. **Haz clic en un producto** para añadirlo
-3. **Repite** para añadir más productos
+**Paso 4: Revisar Pedido**
 
-**Paso 4:** Revisa el resumen en el panel derecho:
+En el panel de resumen verás:
 - Lista de productos añadidos
-- Cantidad de cada uno
+- Cantidad de cada producto
 - Precio por línea
 - **Total del pedido**
 
-### 4.2 Modificar un pedido
+### 4.2 Modificar Pedido
 
-Desde el panel de resumen del pedido, puedes ajustar cada línea:
+##### Cambiar Cantidades
 
-![Panel derecho del pedido mostrando productos añadidos con controles para aumentar/disminuir cantidades](screenshots/4.2.png)
+| Acción | Cómo |
+|--------|------|
+| **Aumentar cantidad** | Haz clic en el botón **+** junto al producto |
+| **Reducir cantidad** | Haz clic en el botón **-** |
+| **Cantidad específica** | Haz clic en el número y escribe la cantidad |
 
-*Imagen 6: Panel de modificación de pedido con controles de cantidad*
+##### Eliminar Producto
 
-| Acción | Cómo hacerlo |
-|--------|--------------|
-| **Aumentar cantidad** | Botón **+** junto al producto |
-| **Reducir cantidad** | Botón **-** junto al producto |
-| **Cantidad específica** | Clic en el número y escribir la cantidad |
-| **Eliminar producto** | Icono de papelera o reducir a 0 |
-| **Añadir nota** | Clic en el producto → escribir nota (ej: "sin cebolla") |
+1. Haz clic en el icono de papelera junto al producto
+2. O reduce la cantidad a 0
 
-### 4.3 Estados del pedido
+##### Añadir Nota
 
-Los pedidos pasan por diferentes estados:
+Para añadir instrucciones especiales (ej: "sin cebolla"):
+1. Haz clic en el producto en el resumen
+2. Escribe la nota en el campo de texto
+3. Guarda
+
+### 4.3 Estados del Pedido
+
+Los pedidos tienen diferentes estados:
 
 ```mermaid
 graph LR
-    A[En Curso<br/>🔵 Azul] --> B[Pendiente de Pago<br/>🟡 Amarillo]
-    B --> C[Pagado<br/>🟢 Verde]
-    C --> D[Cerrado<br/>⚪ Gris]
-    A --> E[Cancelado<br/>🔴 Rojo]
-
-    style A fill:#e3f2fd
-    style B fill:#fff9c4
-    style C fill:#c8e6c9
-    style D fill:#f5f5f5
-    style E fill:#ffcdd2
+    A[En Curso] --> B[Pendiente de Pago]
+    B --> C[Pagado]
+    C --> D[Cerrado]
+    A --> E[Cancelado]
 ```
 
-| Estado | Descripción |
-|--------|-------------|
-| **En Curso** | Pedido activo, se pueden añadir/quitar productos |
-| **Pendiente de Pago** | Listo para cobrar |
-| **Pagado** | Pago recibido correctamente |
-| **Cerrado** | Pedido finalizado completamente |
-| **Cancelado** | Pedido anulado |
+| Estado | Descripción | Color |
+|--------|-------------|-------|
+| **En Curso** | Pedido activo, se pueden añadir productos | Azul |
+| **Pendiente de Pago** | Listo para cobrar | Amarillo |
+| **Pagado** | Pago recibido | Verde |
+| **Cerrado** | Finalizado completamente | Gris |
+| **Cancelado** | Pedido anulado | Rojo |
 
-### 4.4 Gestión de mesas
+### 4.4 Gestión de Mesas
 
-**Ver estado de mesas:**
+##### Ver Estado de Mesas
 
-En Inicio o Nueva Comanda, cada mesa muestra su estado:
-- **Verde**: Mesa libre
-- **Rojo**: Mesa ocupada
-- **Amarillo**: Pendiente de pago
+1. En **Inicio** o **Nueva Comanda**, verás el mapa de mesas
+2. Cada mesa muestra su estado con colores:
+   - **Verde**: Libre
+   - **Rojo**: Ocupada
+   - **Amarillo**: Pendiente de pago
 
-**Cambiar mesa:**
+##### Cambiar Mesa
 
+Si necesitas mover un pedido a otra mesa:
 1. Abre el pedido activo
 2. Haz clic en **Cambiar Mesa**
 3. Selecciona la nueva mesa
-4. Confirma el cambio
+4. Confirma
 
-**Juntar mesas:**
+##### Juntar Mesas
 
+Para combinar pedidos de varias mesas:
 1. Abre el pedido de la mesa principal
 2. Haz clic en **Añadir Mesa**
 3. Selecciona las mesas a unir
-4. Los pedidos se combinan automáticamente
+4. Los pedidos se combinan en uno solo
 
-### 4.5 Historial de pedidos
+### 4.5 Historial de Pedidos
 
-![Pantalla de historial mostrando lista de pedidos con filtros por fecha, estado y usuario](screenshots/06_orderHistory.png)
+##### Acceder al Historial
 
-*Imagen: Historial de pedidos con opciones de filtrado*
+1. En el menú lateral, haz clic en **Historial**
+2. Verás la lista de pedidos ordenados por fecha
 
-**Acceder:** Menú lateral → **Historial**
+![Historial de pedidos con filtros](/screenshots/06_orderHistory.png)
 
-**Filtros disponibles:**
+##### Filtrar Pedidos
 
 | Filtro | Descripción |
 |--------|-------------|
 | **Fecha** | Selecciona un rango de fechas |
-| **Estado** | Pagado, cancelado, pendiente... |
-| **Usuario** | Filtra por quién creó el pedido |
+| **Estado** | Filtra por estado (pagado, cancelado, etc.) |
+| **Usuario** | Filtra por operario que creó el pedido |
 | **Mesa** | Filtra por número de mesa |
 
-**Ver detalle de un pedido:**
+##### Ver Detalle
 
-Haz clic en cualquier pedido para ver:
-- Productos y cantidades
-- Hora de creación
-- Método de pago
-- Usuario que lo gestionó
+1. Haz clic en un pedido de la lista
+2. Se abrirá el detalle con:
+   - Productos y cantidades
+   - Hora de creación
+   - Método de pago
+   - Usuario que lo gestionó
 
-**Reimprimir ticket:**
+##### Reimprimir Ticket
 
-En el detalle del pedido, haz clic en **Imprimir**.
+1. En el detalle del pedido, haz clic en **Imprimir**
+2. El ticket se envía a la impresora configurada
 
-### 4.6 Operaciones rápidas
+### 4.6 Operaciones Rápidas
 
-**Repetir pedido:** En el historial, abre un pedido anterior y haz clic en **Repetir Pedido**. Se crea una nueva comanda con los mismos productos.
+##### Repetir Pedido
 
-**Dividir cuenta:** Al cobrar, haz clic en **Dividir**:
-- Selecciona el número de partes
-- El sistema divide el total equitativamente
-- O asigna productos específicos a cada cuenta
+Para crear un pedido idéntico a uno anterior:
+1. Ve al historial
+2. Abre el pedido a repetir
+3. Haz clic en **Repetir Pedido**
+4. Se crea una nueva comanda con los mismos productos
 
-### 4.7 Comandas en cocina
+##### Dividir Cuenta
+
+Para dividir el pago entre varios clientes:
+1. En el momento del cobro, haz clic en **Dividir**
+2. Selecciona cuántas partes
+3. El sistema divide el total equitativamente
+4. O asigna productos específicos a cada cuenta
+
+### 4.7 Comandas en Cocina
 
 Si usas impresora de cocina:
 
-1. Los productos de categorías marcadas como "cocina" se envían automáticamente
-2. Puedes reenviar manualmente desde el detalle del pedido
-3. Configura las categorías en **Ajustes → Impresora → Cocina**
+1. Al crear el pedido, los productos de categorías marcadas como "cocina" se envían automáticamente a la impresora de cocina
+2. Puedes reenviar la comanda manualmente desde el detalle del pedido
+
+> ℹ️ **Info**
+> 
+> Configura las categorías de cocina en **Ajustes → Impresora → Cocina**.
+
+### 4.8 Consejos
+
+##### Flujo eficiente
+
+1. Familiarízate con el teclado numérico para cantidades
+2. Usa la búsqueda rápida para productos
+3. Configura productos favoritos para acceso rápido
+
+##### Errores comunes
+
+| Problema | Solución |
+|----------|----------|
+| Producto añadido por error | Usa el botón de eliminar o reduce cantidad a 0 |
+| Mesa equivocada | Usa "Cambiar Mesa" antes de cobrar |
+| Precio incorrecto | Edita el producto en el catálogo |
+
+### 4.9 Siguiente Paso
+
+- **Procesar Pagos** (ver sección pagos)
+- **Configurar Impresora** (ver sección impresora)
 
 ---
 
-***
+## 5. Gestión de Productos {#5-gestion-de-productos}
 
-***
+Aprende a gestionar tu catálogo de productos y categorías en TPV El Haido.
 
-## 5. Gestión de Productos
-
-Aprende a organizar tu catálogo de productos y categorías.
-
-### 5.1 Acceder al catálogo
+### 5.1 Acceder al Catálogo
 
 1. En el menú lateral, haz clic en **Productos**
-2. Verás el grid de productos con opciones de búsqueda y filtrado
+2. Verás el grid de productos con filtros y búsqueda
 
-![Vista del catálogo de productos organizado en grid con información de precio y categoría](screenshots/03_products.png)
+![Vista del catálogo de productos](/screenshots/03_products.png)
 
-*Imagen: Catálogo de productos con vista en cuadrícula*
-
-### 5.2 Gestión de categorías
+### 5.2 Categorías
 
 Las categorías organizan tus productos para facilitar la navegación durante las ventas.
 
-**Crear una categoría:**
+##### Crear Categoría
 
-1. En Productos, haz clic en **Categorías**
-2. Haz clic en **Nueva Categoría**
-3. Completa los campos:
+**Paso 1: Abrir gestión de categorías**
+
+En la sección Productos, haz clic en el botón **Categorías** o el icono de carpeta.
+
+**Paso 2: Nueva categoría**
+
+Haz clic en **Nueva Categoría**.
+
+**Paso 3: Rellenar datos**
 
 | Campo | Descripción | Ejemplo |
 |-------|-------------|---------|
@@ -688,56 +753,105 @@ Las categorías organizan tus productos para facilitar la navegación durante la
 | **Descripción** | Descripción opcional | "Refrescos, zumos, agua..." |
 | **Icono** | Icono visual | 🍺 |
 
-4. Haz clic en **Crear**
+**Paso 4: Guardar**
 
-**Editar/Eliminar:**
+Haz clic en **Crear** para guardar la categoría.
 
-- **Editar**: Icono de lápiz junto a la categoría
-- **Eliminar**: Icono de papelera (los productos pasan a "Sin categoría")
+##### Editar Categoría
 
-### 5.3 Gestión de productos
+1. En la lista de categorías, haz clic en el icono de edición (lápiz)
+2. Modifica los campos necesarios
+3. Haz clic en **Guardar**
 
-**Crear un producto:**
+##### Eliminar Categoría
 
-| Campo | Descripción | Obligatorio |
-|-------|-------------|-------------|
+1. Haz clic en el icono de eliminar (papelera)
+2. Confirma la eliminación
+
+> ⚠️ **Warning**
+> 
+> Al eliminar una categoría, los productos asociados se moverán a "Sin categoría".
+
+### 5.3 Productos
+
+##### Crear Producto
+
+**Paso 1: Abrir formulario**
+
+En la sección Productos, haz clic en **Nuevo Producto**.
+
+**Paso 2: Información básica**
+
+| Campo | Descripción | Requerido |
+|-------|-------------|-----------|
 | **Nombre** | Nombre del producto | Sí |
-| **Precio** | Precio de venta (SIN IVA) | Sí |
+| **Precio** | Precio de venta (sin IVA) | Sí |
 | **Categoría** | Categoría del producto | Sí |
-| **Marca** | Marca del producto | No |
-| **IVA** | Tipo impositivo | Sí |
+| **Marca** | Marca (opcional) | No |
 
-**Configuración de IVA:**
+**Paso 3: Configuración de IVA**
 
-| Tipo | Porcentaje | Aplicación típica |
-|------|------------|-------------------|
+| Tipo | Porcentaje | Aplicación |
+|------|------------|------------|
 | **General** | 21% | Mayoría de productos |
-| **Reducido** | 10% | Alimentación elaborada, transporte |
+| **Reducido** | 10% | Alimentación, transporte |
 | **Superreducido** | 4% | Pan, leche, frutas, verduras |
 
-**Imagen del producto:**
+**Paso 4: Imagen del producto**
 
-Dos opciones:
-1. **Icono predefinido**: Selecciona de la biblioteca
-2. **Imagen personalizada**: Sube una foto (recomendado: 200×200px, PNG o JPG)
+Tienes dos opciones:
+- **Icono predefinido**: Selecciona de la biblioteca de iconos
+- **Imagen personalizada**: Sube una foto del producto
 
-### 5.4 Búsqueda y filtros
+**Paso 5: Guardar**
 
-**Barra de búsqueda:** Busca por nombre, marca o categoría
+Haz clic en **Crear Producto**.
 
-**Filtros por categoría:** Haz clic en una categoría en la barra lateral
+##### Editar Producto
 
-**Ordenación:**
+1. En el grid de productos, haz clic en el producto
+2. Se abrirá el diálogo de edición
+3. Modifica los campos necesarios
+4. Haz clic en **Guardar Cambios**
+
+##### Eliminar Producto
+
+1. En el diálogo del producto, haz clic en **Eliminar**
+2. Confirma la eliminación
+
+> ℹ️ **Info**
+> 
+> Los productos eliminados no aparecerán en nuevas comandas, pero se mantienen en el historial de pedidos anteriores.
+
+### 5.4 Búsqueda y Filtros
+
+##### Barra de búsqueda
+
+Escribe en la barra de búsqueda para encontrar productos por:
+- Nombre
+- Marca
+- Categoría
+
+##### Filtros por categoría
+
+En la barra lateral izquierda:
+1. Haz clic en una categoría para ver solo esos productos
+2. Haz clic en "Todas" para ver todos los productos
+
+##### Ordenación
+
+Ordena los productos por:
 - Nombre (A-Z, Z-A)
 - Precio (menor a mayor, mayor a menor)
 - Más recientes
 
-### 5.5 Importación y exportación
+### 5.5 Importación Masiva
 
-**Importar productos desde CSV:**
+Si tienes muchos productos, puedes importarlos desde un archivo:
 
-1. Prepara un archivo CSV con el formato:
+**Paso 1: Preparar archivo CSV**
 
+Crea un archivo CSV con las columnas:
 ```csv
 nombre,precio,categoria,marca,iva
 Coca-Cola,1.80,Bebidas,Coca-Cola,21
@@ -745,208 +859,336 @@ Café Solo,1.20,Cafés,,21
 Tostada,2.50,Desayunos,,10
 ```
 
-2. Ve a **Ajustes → Importar/Exportar**
-3. Selecciona **Importar Productos**
-4. Carga el archivo y revisa la vista previa
+**Paso 2: Importar**
+
+1. Ve a **Ajustes → Importar/Exportar**
+2. Selecciona **Importar Productos**
+3. Carga tu archivo CSV
+4. Revisa la vista previa
 5. Confirma la importación
 
-**Exportar catálogo:**
+### 5.6 Exportar Catálogo
+
+Para hacer una copia de seguridad o migrar datos:
 
 1. Ve a **Ajustes → Importar/Exportar**
 2. Selecciona **Exportar Productos**
 3. Elige el formato (CSV o JSON)
 4. Descarga el archivo
 
-### 5.6 Consejos para la gestión de productos
+### 5.7 Consejos
 
-**Organización eficiente:**
+##### Organización eficiente
+
 - Crea categorías que reflejen tu carta o menú
 - Usa nombres cortos y claros
 - Los productos más vendidos pueden tener un icono distintivo
 
-**Precios:**
-- Introduce siempre el precio **SIN IVA**
-- El sistema calcula el PVP automáticamente
-- Cambiar precios no afecta a pedidos anteriores
+##### Precios
 
-**Imágenes:**
-- Tamaño recomendado: 200×200px mínimo
-- Formato: PNG o JPG
-- Peso: menos de 500KB
-- Las imágenes cuadradas se muestran mejor
+- Introduce siempre el precio **sin IVA**
+- El sistema calcula el PVP automáticamente
+- Puedes cambiar precios en cualquier momento (no afecta a pedidos anteriores)
+
+##### Imágenes
+
+| Formato | Recomendación |
+|---------|---------------|
+| **Tamaño** | 200x200px mínimo |
+| **Formato** | PNG o JPG |
+| **Peso** | Menos de 500KB |
+
+> 💡 **Tip**
+> 
+> Las imágenes cuadradas se muestran mejor en el grid de productos.
+
+### 5.8 Siguiente Paso
+
+- **Gestionar Pedidos** (ver sección pedidos)
+- **Configurar Pagos** (ver sección pagos)
 
 ---
 
-***
+## 6. Gestión de Clientes {#6-gestion-de-clientes}
 
-***
+TPV El Haido incluye un modulo de gestion de clientes para fidelizar a tus usuarios habituales y generar facturas completas.
 
-## 6. Gestión de Clientes
+![Pantalla de gestion de clientes](/screenshots/04_customers.png)
 
-Mantén una base de datos de clientes para fidelización y facturación completa.
+### 6.1 Acceder a Clientes
 
-![Pantalla de gestión de clientes mostrando lista con opciones de búsqueda y filtrado](screenshots/04_customers.png)
+1. En el menu lateral, haz clic en **Clientes**
+2. Veras la lista de clientes registrados
 
-*Imagen: Pantalla de gestión de clientes*
+### 6.2 Crear Cliente
 
-### 6.1 Acceder a clientes
+**Paso 1: Abrir formulario**
 
-En el menú lateral, haz clic en **Clientes** para ver la lista de clientes registrados.
+Haz clic en **Nuevo Cliente**.
 
-### 6.2 Crear un nuevo cliente
+**Paso 2: Datos basicos**
 
-**Paso 1:** Haz clic en **Nuevo Cliente**
+| Campo | Descripcion | Requerido |
+|-------|-------------|-----------|
+| **Nombre** | Nombre completo o razon social | Si |
+| **NIF/CIF** | Identificacion fiscal | Para facturas |
+| **Email** | Correo electronico | No |
+| **Telefono** | Numero de contacto | No |
 
-**Paso 2:** Completa los datos básicos:
+**Paso 3: Direccion fiscal**
 
-| Campo | Descripción | Obligatorio |
-|-------|-------------|-------------|
-| **Nombre** | Nombre completo o razón social | Sí |
-| **NIF/CIF** | Identificación fiscal | Para facturas |
-| **Email** | Correo electrónico | No |
-| **Teléfono** | Número de contacto | No |
+Para facturas completas (tipo F1):
 
-**Paso 3:** Para facturas completas (tipo F1), añade la dirección fiscal:
-
-| Campo | Descripción |
+| Campo | Descripcion |
 |-------|-------------|
-| **Dirección** | Calle y número |
-| **Código Postal** | CP |
-| **Población** | Ciudad |
+| **Direccion** | Calle y numero |
+| **Codigo Postal** | CP |
+| **Poblacion** | Ciudad |
 | **Provincia** | Provincia |
 
-**Paso 4:** Haz clic en **Crear Cliente**
+**Paso 4: Guardar**
 
-### 6.3 Buscar clientes
+Haz clic en **Crear Cliente**.
 
-**Barra de búsqueda:** Busca por nombre, NIF/CIF, teléfono o email
+### 6.3 Buscar Clientes
 
-**Filtros:**
+##### Barra de busqueda
+
+Busca por:
+- Nombre
+- NIF/CIF
+- Telefono
+- Email
+
+##### Filtros
+
 - **Todos**: Muestra todos los clientes
-- **Frecuentes**: Clientes con más de X pedidos
-- **Recientes**: Últimos clientes añadidos
+- **Frecuentes**: Clientes con mas de X pedidos
+- **Recientes**: Ultimos clientes añadidos
 
-### 6.4 Asignar cliente a un pedido
+### 6.4 Asignar Cliente a Pedido
 
-**Durante la comanda:**
-1. En Nueva Comanda, haz clic en **Asignar Cliente** (icono de persona)
-2. Busca y selecciona el cliente
-3. El nombre aparece en la cabecera del pedido
+**Paso 1: Durante la comanda**
 
-**En el cobro:**
-1. Al procesar el pago, puedes asignar o cambiar el cliente
-2. Útil para facturas con datos completos
+1. En la pantalla de Nueva Comanda
+2. Haz clic en **Asignar Cliente** (o icono de persona)
+3. Busca y selecciona el cliente
+4. El nombre aparece en la cabecera del pedido
 
-### 6.5 Facturas para clientes
+**Paso 2: En el cobro**
+
+1. Al procesar el pago
+2. Puedes asignar o cambiar el cliente
+3. Util para facturas con datos completos
+
+### 6.5 Facturas para Clientes
 
 Cuando asignas un cliente con NIF a un pedido:
+
 - La factura incluye los datos fiscales completos
-- Puede ser tipo F1 (factura completa) si tiene todos los datos
-- El cliente puede recibir copia por email
+- Puede ser tipo F1 (factura completa) si el cliente tiene todos los datos
+- El cliente recibe copia por email (si esta configurado)
 
-> **ℹ️ Facturas tipo F1**
-> Para generar facturas completas (F1), el cliente debe tener NIF y dirección fiscal completa.
+> ℹ️ **Info**
+> 
+> Para generar facturas tipo F1 (completas), el cliente debe tener NIF y direccion fiscal.
 
-### 6.6 Historial del cliente
+### 6.6 Editar Cliente
+
+1. Haz clic en el cliente en la lista
+2. Modifica los campos necesarios
+3. Haz clic en **Guardar**
+
+### 6.7 Eliminar Cliente
+
+1. Abre el cliente
+2. Haz clic en **Eliminar**
+3. Confirma la accion
+
+> ⚠️ **Warning**
+> 
+> Al eliminar un cliente, los pedidos anteriores mantienen los datos fiscales pero el cliente ya no estara disponible para nuevos pedidos.
+
+### 6.8 Historial de Cliente
 
 Al abrir un cliente puedes ver:
+
 - Total de pedidos realizados
 - Importe total gastado
-- Último pedido
-- Productos más comprados
+- Ultimo pedido
+- Productos mas comprados
 
-### 6.7 Importar y exportar clientes
+### 6.9 Exportar Clientes
 
-**Importar desde CSV:**
+Para hacer backup o migrar:
+
+1. Ve a **Ajustes → Importar/Exportar**
+2. Selecciona **Exportar Clientes**
+3. Elige formato (CSV o JSON)
+
+### 6.10 Importar Clientes
+
+Para cargar clientes desde un archivo:
+
+**Paso 1: Preparar CSV**
 
 ```csv
 nombre,nif,email,telefono,direccion,cp,poblacion
-Juan García,12345678A,juan@email.com,600123456,Calle Mayor 1,28001,Madrid
+Juan Garcia,12345678A,juan@email.com,600123456,Calle Mayor 1,28001,Madrid
 Empresa SL,B12345678,info@empresa.com,910000000,Av. Principal 10,08001,Barcelona
 ```
 
-**Exportar:** Ve a **Ajustes → Importar/Exportar → Exportar Clientes**
+**Paso 2: Importar**
+
+1. Ve a **Ajustes → Importar/Exportar**
+2. Selecciona **Importar Clientes**
+3. Carga el archivo CSV
+4. Revisa y confirma
+
+### 6.11 Consejos
+
+##### Datos fiscales
+
+- Siempre pide el NIF si el cliente quiere factura
+- Verifica que el NIF es correcto (letra de control)
+- Guarda la direccion completa para facturas tipo F1
+
+##### Organizacion
+
+- Usa nombres consistentes (Juan Garcia vs Garcia, Juan)
+- Añade el telefono para contactar si hay problemas
+- El email permite enviar facturas automaticamente
+
+### 6.12 Siguiente Paso
+
+- **Gestionar Pedidos** (ver sección pedidos)
+- **Facturacion VERI*FACTU** (ver sección facturacion)
 
 ---
 
-***
-
-***
-
-## 7. Procesamiento de Pagos
+## 7. Procesamiento de Pagos {#7-procesamiento-de-pagos}
 
 Aprende a cobrar pedidos, gestionar métodos de pago e imprimir tickets.
 
-### 7.1 Cobrar un pedido
+### 7.1 Cobrar un Pedido
 
-**Paso 1:** Abre el pedido desde Nueva Comanda o selecciona uno activo
+**Paso 1: Abrir el pedido**
 
-**Paso 2:** Haz clic en **Cobrar** (o en el total del pedido)
+Desde la pantalla de Nueva Comanda o seleccionando un pedido activo.
 
-![Diálogo de cobro mostrando el total del pedido y los métodos de pago disponibles](screenshots/7.1.png)
+**Paso 2: Iniciar cobro**
 
-*Imagen 13: Pantalla de cobro con métodos de pago*
+Haz clic en el botón **Cobrar** (o el total del pedido).
 
-**Paso 3:** Selecciona el método de pago:
+**Paso 3: Seleccionar método de pago**
 
 | Método | Descripción |
 |--------|-------------|
-| **Efectivo** | Pago en metálico con cálculo de cambio |
+| **Efectivo** | Pago en metálico |
 | **Tarjeta** | Pago con tarjeta de crédito/débito |
 | **Otro** | Transferencia, vales, etc. |
 
-**Paso 4:** Completa el pago:
+**Paso 4: Completar pago**
 
 **Para efectivo:**
 1. Introduce el importe recibido
 2. El sistema calcula el cambio automáticamente
 3. Haz clic en **Confirmar**
 
-**Para tarjeta:**
+**Para tarjeta/otro:**
 1. Haz clic en **Confirmar**
-2. Procesa el pago en tu datáfono
+2. Procesa el pago en tu datáfono si lo tienes
 
-**Paso 5:** El ticket se imprime automáticamente
+**Paso 5: Ticket impreso**
 
-### 7.2 Pago en efectivo
+Si tienes impresora configurada, el ticket se imprime automáticamente.
 
-El sistema calcula automáticamente el cambio a devolver:
+### 7.2 Métodos de Pago
 
-![Pantalla de pago en efectivo mostrando el total, importe recibido y cambio calculado](screenshots/7.2.png)
+##### Efectivo
 
-*Imagen 14: Cálculo automático de cambio en pago efectivo*
+El flujo de pago en efectivo incluye:
 
 ```mermaid
 graph LR
-    A["💰 Total: 15.50€"] --> B["💵 Cliente paga: 20.00€"]
-    B --> C["💶 Cambio: 4.50€"]
-    C --> D["🧾 Ticket impreso"]
-
-    style A fill:#ffcdd2
-    style B fill:#fff9c4
-    style C fill:#c8e6c9
-    style D fill:#e1f5fe
+    A[Total: 15.50€] --> B[Cliente paga: 20€]
+    B --> C[Cambio: 4.50€]
+    C --> D[Ticket impreso]
 ```
 
 **Atajos de importe:**
-- Botones rápidos para billetes (5€, 10€, 20€, 50€)
-- Campo para importe exacto
-- Botón "Importe exacto" cuando el cliente paga justo
+- Botones rápidos para billetes comunes (5€, 10€, 20€, 50€)
+- Campo para introducir importe exacto
+- Botón "Importe exacto" para cuando el cliente paga justo
 
-### 7.3 Pago mixto
+##### Tarjeta
+
+1. Selecciona **Tarjeta** como método de pago
+2. Procesa el pago en tu terminal bancario
+3. Confirma en el TPV cuando el pago sea exitoso
+
+> ℹ️ **Info**
+> 
+> La integración directa con datáfonos está en desarrollo. Por ahora, el cobro con tarjeta es manual.
+
+##### Pago Mixto
 
 Para combinar varios métodos de pago:
 
-1. En la pantalla de cobro, haz clic en **Pago Mixto**
-2. Selecciona el primer método (ej: Tarjeta) e introduce el importe parcial
+**Paso 1: Activar pago mixto**
+
+En la pantalla de cobro, haz clic en **Pago Mixto**.
+
+**Paso 2: Añadir primer método**
+
+1. Selecciona el método (ej: Tarjeta)
+2. Introduce el importe parcial
 3. Haz clic en **Añadir**
-4. El resto aparece pendiente
-5. Selecciona otro método (ej: Efectivo) y completa
-6. Confirma cuando la suma cubra el total
 
-### 7.4 Personalizar tickets
+**Paso 3: Añadir segundo método**
 
-En **Ajustes → Impresora → Ticket** puedes configurar:
+1. El resto del importe aparece pendiente
+2. Selecciona otro método (ej: Efectivo)
+3. Introduce el importe
+4. Confirma cuando la suma cubra el total
+
+### 7.3 Apertura de Cajón
+
+##### Apertura automática
+
+El cajón se abre automáticamente al:
+- Completar un pago en efectivo
+- Usar la función "Abrir Cajón" manual
+
+Para activar/desactivar:
+1. Ve a **Ajustes → Impresora**
+2. Activa/desactiva "Abrir cajón automáticamente"
+
+##### Apertura manual
+
+1. En el menú de Ajustes o en la barra de herramientas
+2. Haz clic en **Abrir Cajón**
+3. El cajón se abre (requiere impresora compatible)
+
+### 7.4 Tickets
+
+##### Contenido del Ticket
+
+Un ticket estándar incluye:
+
+| Sección | Contenido |
+|---------|-----------|
+| **Cabecera** | Nombre del negocio, dirección, CIF |
+| **Fecha/Hora** | Momento de la venta |
+| **Productos** | Listado con cantidad, nombre, precio |
+| **Impuestos** | Desglose de IVA |
+| **Total** | Importe total a pagar |
+| **Pago** | Método e importe pagado |
+| **Pie** | Mensaje personalizado, número de ticket |
+
+##### Personalizar Ticket
+
+En **Ajustes → Impresora → Ticket**:
 
 | Opción | Descripción |
 |--------|-------------|
@@ -954,79 +1196,136 @@ En **Ajustes → Impresora → Ticket** puedes configurar:
 | **Nombre** | Nombre del negocio |
 | **Dirección** | Dirección fiscal |
 | **CIF/NIF** | Identificación fiscal |
-| **Teléfono** | Número de contacto |
-| **Mensaje pie** | Texto personalizado al final |
+| **Teléfono** | Contacto |
+| **Mensaje pie** | Texto al final del ticket |
 
-### 7.5 Apertura del cajón
+##### Reimprimir Ticket
 
-**Automática:** El cajón se abre al completar un pago en efectivo (configurable)
+1. Ve a **Historial**
+2. Selecciona el pedido
+3. Haz clic en **Reimprimir Ticket**
 
-**Manual:** Botón **Abrir Cajón** en Ajustes o barra de herramientas
+### 7.5 Devoluciones
 
-### 7.6 Devoluciones
+##### Anular Pedido
 
-**Anular pedido (antes de cerrar):**
+Para anular un pedido antes de cerrarlo:
 1. Abre el pedido
 2. Haz clic en **Anular Pedido**
 3. Introduce el motivo (opcional)
 4. Confirma
 
-**Devolución parcial (después de cobrar):**
+##### Devolución Parcial
+
+Para devolver productos específicos:
 1. Ve al historial y abre el pedido
 2. Haz clic en **Devolución**
 3. Selecciona los productos a devolver
 4. Confirma el importe a reembolsar
 
-> **⚠️ Facturas AEAT**
-> Las devoluciones pueden afectar a las facturas si ya fueron enviadas a la AEAT.
+> ⚠️ **Warning**
+> 
+> Las devoluciones generan un registro para contabilidad y pueden afectar a las facturas AEAT si ya fueron enviadas.
 
-### 7.7 Cierre de caja
+### 7.6 Cierre de Caja
+
+##### Realizar Cierre
 
 Al final del turno o día:
 
-**Paso 1:** Ve a **Ajustes → Caja → Cierre**
+**Paso 1: Acceder a Cierre**
 
-**Paso 2:** Revisa el resumen:
+Ve a **Ajustes → Caja → Cierre**.
+
+**Paso 2: Revisar Resumen**
+
+El sistema muestra:
 - Total de ventas
 - Desglose por método de pago
 - Número de operaciones
+- Diferencia esperado vs. real
 
-**Paso 3:** Introduce el efectivo contado en caja
+**Paso 3: Contar Efectivo**
 
-**Paso 4:** Haz clic en **Cerrar Caja**
+Introduce el efectivo contado en caja.
 
-El informe de cierre incluye ventas por categoría, por producto, por usuario e impuestos recaudados.
+**Paso 4: Confirmar Cierre**
+
+Haz clic en **Cerrar Caja** para registrar el cierre.
+
+##### Informe de Cierre
+
+El informe incluye:
+- Ventas por categoría
+- Ventas por producto
+- Ventas por usuario
+- Impuestos recaudados
+- Métodos de pago utilizados
+
+Puedes imprimir o exportar el informe.
+
+### 7.7 Configuración
+
+##### Tasa de Impuestos
+
+En **Ajustes → General**:
+- Configura el IVA por defecto (21%, 10%, 4%)
+- El IVA se aplica automáticamente según la categoría del producto
+
+##### Redondeo
+
+Por defecto, los totales se redondean a 2 decimales. Esto es configurable en Ajustes.
+
+### 7.8 Consejos
+
+##### Flujo rápido
+
+- Usa los atajos de teclado para cobrar rápidamente
+- Configura botones de importe rápido para billetes comunes
+- El botón "Importe exacto" acelera pagos sin cambio
+
+##### Errores comunes
+
+| Problema | Solución |
+|----------|----------|
+| Cambio incorrecto | Revisa el importe introducido |
+| Ticket no impreso | Verifica conexión de impresora |
+| Cajón no abre | Comprueba configuración y conexión |
+
+### 7.9 Siguiente Paso
+
+- **Configurar Impresora** (ver sección impresora)
+- **Facturación VERI*FACTU** (ver sección facturacion)
 
 ---
 
-***
+## 8. Facturación VERI*FACTU {#8-facturacion-verifactu}
 
-***
-
-## 8. Facturación VERI*FACTU
-
-TPV El Haido incluye integración con el sistema VERI*FACTU de la Agencia Tributaria para el envío automático de facturas electrónicas.
+TPV El Haido incluye integración con el sistema VERI*FACTU de la Agencia Tributaria (AEAT) para el envío automático de facturas electrónicas.
 
 ### 8.1 ¿Qué es VERI*FACTU?
 
-VERI*FACTU es el sistema de la AEAT para verificar facturas electrónicas:
+VERI*FACTU es el sistema de la AEAT para verificar facturas electrónicas. Permite:
 
-- **Envío automático** de facturas a la AEAT
-- **Verificación** mediante CSV (Código Seguro de Verificación)
-- **Cumplimiento** de la normativa española de facturación electrónica
+- Envío automático de facturas a la AEAT
+- Verificación de facturas mediante CSV (Código Seguro de Verificación)
+- Cumplimiento de la normativa española de facturación electrónica
 
-> **⚠️ Consulta con tu asesor**
-> La obligatoriedad de VERI*FACTU depende del tipo y tamaño de tu negocio. Consulta con tu asesor fiscal para determinar si te aplica.
+> ⚠️ **Warning**
+> 
+> La obligatoriedad de VERI*FACTU depende del tipo y tamaño de tu negocio. Consulta con tu asesor fiscal.
 
-### 8.2 Configuración inicial
+### 8.2 Configuración Inicial
 
-**Paso 1:** Ve a **Ajustes → VERI*FACTU**
+**Paso 1: Acceder a Configuración**
 
-![Pantalla de configuración de VERI*FACTU con campos para datos fiscales y certificado](screenshots/08_settings_verifactu.png)
+1. Ve a **Ajustes → VERI*FACTU**
 
-*Imagen: Configuración de VERI*FACTU en Ajustes*
+![Configuración de VERI*FACTU](/screenshots/08_settings_verifactu.png)
 
-**Paso 2:** Introduce los datos del emisor:
+**Paso 2: Datos del Emisor**
+
+Introduce los datos fiscales de tu negocio:
 
 | Campo | Descripción | Ejemplo |
 |-------|-------------|---------|
@@ -1036,163 +1335,246 @@ VERI*FACTU es el sistema de la AEAT para verificar facturas electrónicas:
 | **Código Postal** | CP de la dirección fiscal | 28001 |
 | **Población** | Ciudad | Madrid |
 
-**Paso 3:** Configura la serie de factura:
+**Paso 3: Serie de Factura**
 
+Configura el formato de numeración:
 - **Prefijo**: Identificador de serie (ej: "TPV-", "F2024-")
 - **Número inicial**: Primer número de factura
 
-**Paso 4:** Selecciona el tipo de factura:
+**Paso 4: Tipo de Factura**
 
 | Tipo | Código | Uso |
 |------|--------|-----|
-| **Factura completa** | F1 | Con todos los datos del cliente |
+| **Factura completa** | F1 | Facturas con todos los datos del cliente |
 | **Factura simplificada** | F2 | Tickets sin datos completos del cliente |
 
-> **ℹ️ Tipo F2**
-> La mayoría de TPV usan F2 (factura simplificada) para tickets de venta directa.
+> ℹ️ **Info**
+> 
+> La mayoría de TPV usan **F2** (factura simplificada) para tickets de venta directa.
 
-### 8.3 Certificado digital
+### 8.3 Certificado Digital
 
 Para enviar facturas a la AEAT necesitas un certificado digital válido.
 
-**Tipos de certificado:**
+##### Tipos de Certificado
 
 | Tipo | Formato | Recomendado para |
 |------|---------|------------------|
 | **Personal** | PFX/P12 | Autónomos |
 | **Sello de empresa** | PFX/P12 | Sociedades |
+| **PEM** | .crt + .key | Configuraciones avanzadas |
 
-**Instalar certificado:**
+##### Instalar Certificado
 
-1. Obtén tu certificado en [FNMT](https://www.sede.fnmt.gob.es/) o entidad autorizada
-2. Exporta en formato PFX/P12 con contraseña
-3. En **Ajustes → VERI*FACTU → Certificado**, haz clic en **Cargar Certificado**
-4. Selecciona el archivo PFX/P12
-5. Introduce la contraseña
-6. Haz clic en **Verificar**
+**Paso 1: Obtener certificado**
 
-Si es válido, verás el nombre del titular, fecha de caducidad y estado "Válido".
+1. Solicita tu certificado en [FNMT](https://www.sede.fnmt.gob.es/)
+2. O usa un certificado de otra entidad autorizada
+3. Exporta el certificado en formato PFX/P12 con contraseña
 
-> **⚠️ Contraseña segura**
+**Paso 2: Cargar en TPV El Haido**
+
+1. En **Ajustes → VERI*FACTU → Certificado**
+2. Haz clic en **Cargar Certificado**
+3. Selecciona el archivo PFX/P12
+4. Introduce la contraseña del certificado
+5. Haz clic en **Verificar**
+
+**Paso 3: Confirmar instalación**
+
+Si el certificado es válido, verás:
+- Nombre del titular
+- Fecha de caducidad
+- Estado: "Válido"
+
+> ⚠️ **Warning**
+> 
 > Guarda la contraseña del certificado en un lugar seguro. Sin ella no podrás usarlo.
 
-### 8.4 Modos de operación
+### 8.4 Modos de Operación
 
-| Modo | Descripción | Cuándo usarlo |
-|------|-------------|---------------|
-| **Deshabilitado** | VERI*FACTU desactivado | No envía a AEAT |
-| **Sidecar** | Usa aeat-bridge local (puerto 3001) | Recomendado para un terminal |
+TPV El Haido ofrece tres modos de conexión con AEAT:
+
+| Modo | Descripción | Uso |
+|------|-------------|-----|
+| **Deshabilitado** | VERI*FACTU desactivado | No envía facturas a AEAT |
+| **Sidecar** | Usa aeat-bridge local | Recomendado, proceso local |
 | **Externo** | Servidor AEAT remoto | Multi-terminal, servidor centralizado |
 
-**Modo Sidecar (Recomendado):**
-- El proceso se ejecuta localmente
-- Se inicia automáticamente
+##### Modo Sidecar (Recomendado)
+
+El sidecar `aeat-bridge` se ejecuta localmente en el puerto 3001:
+
+```mermaid
+sequenceDiagram
+    participant TPV as TPV El Haido
+    participant Bridge as aeat-bridge<br/>(Puerto 3001)
+    participant AEAT as AEAT SOAP
+
+    TPV->>Bridge: POST /facturas/alta
+    Bridge->>AEAT: SOAP Request
+    AEAT-->>Bridge: Response + CSV
+    Bridge-->>TPV: Result
+```
+
+Ventajas:
+- Sin dependencia de servidor externo
+- El proceso se inicia automáticamente
 - Funciona offline (cola de envío)
+
+##### Modo Externo
+
+Para conectar a un servidor AEAT Bridge centralizado:
+1. Introduce la URL del servidor (ej: `https://aeat.miempresa.com`)
+2. Configura las credenciales si es necesario
 
 ### 8.5 Entornos
 
-| Entorno | Descripción |
-|---------|-------------|
-| **Pruebas** | Para testing, no tiene efectos legales |
-| **Producción** | Envío real a la AEAT |
+| Entorno | Descripción | URL AEAT |
+|---------|-------------|----------|
+| **Pruebas** | Para testing, no tiene efectos legales | Sandbox AEAT |
+| **Producción** | Envío real a la AEAT | Producción AEAT |
 
-> **❌ Importante**
-> Asegúrate de estar en modo **Producción** cuando operes de forma real. Las facturas en modo Pruebas no son válidas fiscalmente.
+> ❌ **Error**
+> 
+> **Importante**: Asegúrate de estar en modo **Producción** cuando operes de forma real. Las facturas en modo Pruebas no son válidas.
 
-### 8.6 Panel de facturas
+### 8.6 Envío de Facturas
 
-![Panel de facturas AEAT mostrando lista con estados y opciones de envío](screenshots/07_aeatInvoices.png)
+##### Envío Automático
 
-*Imagen: Panel de facturas AEAT*
+Cuando está activado:
+1. Al completar un pago, se genera la factura
+2. Se envía automáticamente a la AEAT
+3. Se recibe el CSV de confirmación
+4. El ticket incluye el CSV
 
-**Acceder:** Menú lateral → **Facturas** (o **AEAT**)
+##### Envío Manual
 
-**Estados de factura:**
+Si prefieres controlar el envío:
+1. Desactiva "Envío automático" en Ajustes
+2. Las facturas quedan en estado "Pendiente"
+3. Ve a **Facturas** para ver las pendientes
+4. Selecciona y haz clic en "Enviar a AEAT"
 
-| Estado | Color | Significado |
+### 8.7 Panel de Facturas
+
+##### Acceder
+
+En el menú lateral, haz clic en **Facturas** (o **AEAT**).
+
+![Panel de facturas AEAT](/screenshots/07_aeatInvoices.png)
+
+##### Estados de Factura
+
+| Estado | Color | Descripción |
 |--------|-------|-------------|
-| **Aceptada** | 🟢 Verde | Enviada y aceptada por AEAT |
-| **Pendiente** | 🟡 Amarillo | Pendiente de envío |
-| **Rechazada** | 🔴 Rojo | Rechazada por AEAT (ver error) |
-| **Sin facturar** | ⚪ Gris | No se ha generado factura |
+| **Aceptada** | Verde | Enviada y aceptada por AEAT |
+| **Pendiente** | Amarillo | Pendiente de envío |
+| **Rechazada** | Rojo | Rechazada por AEAT (ver error) |
+| **Sin facturar** | Gris | No se ha generado factura |
 
-**Detalle de factura:**
+##### Detalle de Factura
 
-![Detalle de una factura mostrando número, fecha, productos, IVA y código CSV](screenshots/09_aeatInvoices_detail.png)
+Al hacer clic en una factura verás el detalle completo:
 
-*Imagen 10: Detalle de factura con CSV de verificación*
+![Detalle de factura AEAT](/screenshots/09_aeatInvoices_detail.png)
 
 Información disponible:
 - Número de factura
 - Fecha de emisión
-- Datos del cliente
-- Desglose de productos e IVA
+- Datos del cliente (si los hay)
+- Desglose de productos
+- Desglose de IVA
 - **CSV**: Código Seguro de Verificación
 - Link para verificar en sede AEAT
 
-### 8.7 Verificación de facturas
+##### Verificar en AEAT
 
-Verifica que tus facturas han sido correctamente enviadas a la AEAT:
+1. Copia el CSV de la factura
+2. Ve a [sede.agenciatributaria.gob.es](https://sede.agenciatributaria.gob.es)
+3. Busca "Verificar CSV"
+4. Introduce el código
+5. Verifica que los datos coinciden
 
-![Pantalla de verificación de factura con código CSV y enlace a sede electrónica](screenshots/Verifactu2.png)
+### 8.8 Resumen de IVA
 
-*Imagen 11: Pantalla de verificación con CSV*
+El panel de facturas muestra:
 
-**Códigos de estado en el detalle:**
+| Tipo IVA | Base Imponible | Cuota |
+|----------|----------------|-------|
+| 21% | Suma de bases al 21% | IVA calculado |
+| 10% | Suma de bases al 10% | IVA calculado |
+| 4% | Suma de bases al 4% | IVA calculado |
+| **Total** | **Suma total** | **Total IVA** |
 
-| Código | Significado |
-|--------|-------------|
-| **CSV correcto** | Factura enviada y validada por AEAT |
-| **Pendiente** | Esperando envío o respuesta de AEAT |
-| **Error** | Rechazada - revisa los datos del emisor |
-- Número de factura
-- Fecha de emisión
-- Datos del cliente
-- Desglose de productos e IVA
-- **CSV**: Código Seguro de Verificación
-- Link para verificar en sede AEAT
+Útil para la declaración trimestral.
 
-### 8.7 Solución de problemas
+### 8.9 Solución de Problemas
+
+##### Factura rechazada
 
 | Error | Causa | Solución |
 |-------|-------|----------|
 | NIF inválido | El NIF del emisor no es válido | Verifica el NIF en Ajustes |
 | Certificado caducado | El certificado ha expirado | Renueva el certificado |
 | Error de conexión | No se puede conectar a AEAT | Verifica conexión a internet |
-| Factura duplicada | Ya existe factura con ese número | Verifica serie y numeración |
+| Factura duplicada | Ya existe una factura con ese número | Verifica la serie y numeración |
+
+##### El sidecar no responde
+
+1. Verifica que el puerto 3001 está disponible
+2. Reinicia la aplicación
+3. Comprueba los logs en **Ajustes → Avanzado → Logs**
+
+##### Certificado no reconocido
+
+1. Verifica que el formato es PFX/P12
+2. Comprueba que la contraseña es correcta
+3. Asegúrate de que el certificado no está revocado
+
+### 8.10 Consejos
+
+##### Numeración de facturas
+
+- Usa un prefijo por año: "F2024-0001"
+- Mantén la secuencia sin saltos
+- No reutilices números de facturas anuladas
+
+##### Backup de certificados
+
+- Guarda una copia del certificado en lugar seguro
+- Anota la fecha de caducidad para renovar a tiempo
+- Nunca compartas el certificado con contraseña
+
+### 8.11 Siguiente Paso
+
+- **Personalizar Temas** (ver sección temas)
+- **Volver a Guía de Usuario** (ver sección guia usuario)
 
 ---
 
-***
-
-***
-
-## 9. Configuración de Impresora
+## 9. Configuración de Impresora {#9-configuracion-de-impresora}
 
 Guía para configurar tu impresora térmica y poder imprimir tickets de venta.
 
-### 9.1 Impresoras compatibles
+### 9.1 Impresoras Compatibles
 
-TPV El Haido soporta cualquier impresora compatible con el protocolo **ESC/POS**:
+TPV El Haido imprime tickets a través del daemon `tickmaster` corriendo en la Raspberry Pi del bar (RPI-BAR), que habla con la impresora matricial Epson TM-U210PD por USB (Prolific PL2305) sobre `bun:ffi` + `libusb-1.0`. El TPV no habla directo con la impresora: usa HTTP por LAN/VPN hacia el daemon.
 
-| Marca | Modelos probados |
-|-------|------------------|
-| **Epson** | TM-T20, TM-T88, TM-T82 |
-| **Star** | TSP100, TSP650, mPOP |
-| **Bixolon** | SRP-330, SRP-350 |
-| **Sewoo** | LK-TL200, LK-TL320 |
-| **Genéricas** | Impresoras USB/Serial 58mm, 80mm |
+> ℹ️ **Info**
+> 
+> Esta guía describe la integración con tickmaster-daemon. Si necesitas configurar el daemon en la RPI, consulta el repositorio `@mks2508/tickmaster`.
 
-> **ℹ️ Compatibilidad**
-> La mayoría de impresoras térmicas de TPV usan el estándar ESC/POS y son compatibles.
+### 9.2 Conexión Física
 
-### 9.2 Conexión USB (Recomendado)
+##### USB (Recomendado)
 
 **Paso 1: Conectar la impresora**
 
 1. Conecta el cable USB de la impresora a tu ordenador
 2. Enciende la impresora
-3. Espera a que el sistema la detecte
+3. Espera a que el sistema operativo la detecte
 
 **Paso 2: Identificar el puerto**
 
@@ -1202,33 +1584,50 @@ TPV El Haido soporta cualquier impresora compatible con el protocolo **ESC/POS**
 - Anota el número COM (ej: COM3)
 
 **macOS/Linux:**
-```bash
-# macOS
-ls /dev/tty.*
+- Abre terminal
+- Ejecuta: `ls /dev/tty.*` (macOS) o `ls /dev/ttyUSB*` (Linux)
+- Anota el dispositivo (ej: `/dev/ttyUSB0`)
 
-# Linux
-ls /dev/ttyUSB*
-```
-Anota el dispositivo (ej: `/dev/ttyUSB0`)
+##### Red (Ethernet/WiFi)
 
-### 9.3 Conexión por Red (Ethernet/WiFi)
+**Paso 1: Configurar IP en la impresora**
 
-**Paso 1:** Configura una IP estática en la impresora (consulta el manual)
+1. Consulta el manual de tu impresora
+2. Configura una IP estática (recomendado)
+3. Ejemplo: `192.168.1.100`
 
-**Paso 2:** En **Ajustes → Impresora**:
-- Tipo de conexión: **Red**
-- IP: (ej: 192.168.1.100)
-- Puerto: 9100 (estándar)
+**Paso 2: Configurar en TPV**
 
-### 9.4 Configuración en TPV El Haido
+1. En **Ajustes → Impresora**
+2. Selecciona tipo de conexión: **Red**
+3. Introduce la IP y puerto (normalmente 9100)
 
-**Paso 1:** En el menú lateral, ve a **Ajustes → Impresora**
+##### Bluetooth
 
-![Panel de configuración de impresora con opciones de conexión, puerto y ancho de papel](screenshots/9.4.png)
+**Paso 1: Emparejar la impresora**
 
-*Imagen 18: Configuración de impresora en Ajustes*
+1. Pon la impresora en modo de emparejamiento
+2. En tu sistema, busca dispositivos Bluetooth
+3. Empareja la impresora
 
-**Paso 2:** Configura la conexión:
+**Paso 2: Configurar en TPV**
+
+1. En **Ajustes → Impresora**
+2. Selecciona tipo de conexión: **Bluetooth**
+3. Selecciona la impresora de la lista
+
+> ⚠️ **Warning**
+> 
+> El soporte Bluetooth puede variar según el sistema operativo y modelo de impresora.
+
+### 9.3 Configuración en TPV El Haido
+
+**Paso 1: Acceder a Ajustes**
+
+1. En el menú lateral, haz clic en **Ajustes**
+2. Ve a la sección **Impresora**
+
+**Paso 2: Configurar conexión**
 
 | Campo | Descripción | Ejemplo |
 |-------|-------------|---------|
@@ -1236,165 +1635,348 @@ Anota el dispositivo (ej: `/dev/ttyUSB0`)
 | **Puerto/IP** | Puerto COM o dirección IP | COM3, 192.168.1.100 |
 | **Puerto de red** | Solo para conexión de red | 9100 |
 
-**Paso 3:** Selecciona el ancho de papel:
+**Paso 3: Ancho de papel**
 
 | Ancho | Caracteres por línea | Uso común |
-|-------|----------------------|-----------|
+|-------|---------------------|-----------|
 | **58mm** | ~32 caracteres | Portátiles, pequeñas |
 | **80mm** | ~48 caracteres | Estándar de mostrador |
 
-**Paso 4:** Haz clic en **Probar Impresora** para imprimir un ticket de prueba
+**Paso 4: Probar conexión**
 
-### 9.5 Personalizar tickets
+Haz clic en **Probar Impresora** para imprimir un ticket de prueba.
+
+### 9.4 Personalizar Tickets
+
+##### Cabecera del Ticket
 
 En **Ajustes → Impresora → Ticket**:
-
-![Ejemplo de ticket impreso con logo, nombre del negocio, dirección, productos, IVA y total](screenshots/9.5.png)
-
-*Imagen 19: Ejemplo de ticket impreso de 80mm*
 
 | Campo | Descripción |
 |-------|-------------|
 | **Nombre negocio** | Se muestra en grande en la cabecera |
-| **Dirección** | Línea de dirección |
+| **Dirección** | Línea 1 de la dirección |
 | **Localidad** | Ciudad y código postal |
 | **CIF/NIF** | Identificación fiscal |
 | **Teléfono** | Número de contacto |
-| **Mensaje pie** | Texto al final (ej: "¡Gracias por su visita!") |
 
-**Añadir logo:**
+##### Logo
 
+Para añadir un logo:
 1. Prepara la imagen en formato **BMP monocromo**
-2. Tamaño: 384px de ancho para 80mm, 256px para 58mm
-3. Haz clic en "Subir logo" y selecciona el archivo
+2. Tamaño recomendado: 384px de ancho para 80mm, 256px para 58mm
+3. En Ajustes, haz clic en "Subir logo"
+4. Selecciona el archivo
 
-> **💡 Mejor impresión**
-> Usa una imagen de alto contraste para mejor calidad en impresión térmica.
+> 💡 **Tip**
+> 
+> Usa una imagen de alto contraste para mejor impresión térmica.
 
-### 9.6 Apertura del cajón portamonedas
+##### Pie del Ticket
 
-**Configurar:**
+Configura un mensaje personalizado al final del ticket:
+- "¡Gracias por su visita!"
+- "Síguenos en @tunegocio"
+- Horario de apertura
+
+### 9.5 Comandos Soportados
+
+TPV El Haido usa el sidecar `thermal-printer-cli` que soporta:
+
+| Comando | Función |
+|---------|---------|
+| **text** | Imprimir texto con formato |
+| **cut** | Cortar papel (si la impresora lo soporta) |
+| **feed** | Avanzar papel (saltos de línea) |
+| **cashdrawer** | Abrir cajón portamonedas |
+| **barcode** | Imprimir código de barras |
+| **qr** | Imprimir código QR |
+| **image** | Imprimir imagen/logo |
+
+### 9.6 Apertura de Cajón
+
+##### Configurar cajón
+
 1. Conecta el cajón al puerto RJ-11 de la impresora
 2. En **Ajustes → Impresora**, activa "Abrir cajón automáticamente"
 
-**Apertura automática:** Al completar pagos en efectivo
+##### Apertura automática
 
-**Apertura manual:** Botón **Abrir Cajón** en la barra de herramientas
+El cajón se abre automáticamente cuando:
+- Se completa un pago en efectivo
+- Configurable para todos los pagos o solo efectivo
 
-### 9.7 Impresora de cocina
+##### Apertura manual
+
+En la barra de herramientas o en Ajustes, botón **Abrir Cajón**.
+
+### 9.7 Impresora de Cocina
 
 Si tienes una segunda impresora para cocina:
 
+**Paso 1: Añadir impresora de cocina**
+
 1. En **Ajustes → Impresora → Impresoras adicionales**
-2. Haz clic en **Añadir impresora** y configura como "Cocina"
-3. En **Categorías**, activa "Enviar a cocina" para las categorías de comida
+2. Haz clic en **Añadir impresora**
+3. Configura como "Cocina"
+4. Introduce los datos de conexión
 
-### 9.8 Solución de problemas
+**Paso 2: Asignar categorías**
 
-**La impresora no imprime:**
+1. Ve a **Categorías**
+2. Para cada categoría de comida, activa "Enviar a cocina"
+3. Los productos de esas categorías se imprimirán en la impresora de cocina
 
-| Sistema | Solución |
-|---------|----------|
-| **Windows** | Verifica puerto COM, reinstala driver, prueba otro cable |
-| **macOS** | Ejecuta: `sudo chmod 666 /dev/tty.*` |
-| **Linux** | Añade usuario al grupo dialout: `sudo usermod -a -G dialout $USER` |
+### 9.8 Solución de Problemas
 
-**Caracteres extraños:** Verifica que el ancho de papel (58mm/80mm) es correcto
+##### La impresora no imprime
 
-**El cajón no abre:** Verifica cable RJ-11 y voltaje del cajón (12V o 24V)
+##### Windows
+
+1. Verifica que el puerto COM es correcto
+2. Comprueba en Administrador de dispositivos que no hay errores
+3. Reinstala el driver si es necesario
+4. Prueba con otro cable USB
+
+##### macOS
+
+1. Verifica permisos: `sudo chmod 666 /dev/tty.*`
+2. Comprueba que la impresora aparece en `/dev/`
+3. Reinicia la impresora
+
+##### Linux
+
+1. Añade tu usuario al grupo dialout: `sudo usermod -a -G dialout $USER`
+2. Cierra sesión y vuelve a entrar
+3. Verifica permisos del dispositivo
+
+##### Caracteres extraños
+
+- Verifica que el ancho de papel es correcto (58mm vs 80mm)
+- Comprueba la codificación (debería ser compatible con tickmaster-daemon / matriz Epson)
+
+##### El cajón no abre
+
+1. Verifica que el cable RJ-11 está bien conectado
+2. Comprueba el voltaje del cajón (12V o 24V)
+3. Algunos cajones requieren configuración específica
+
+##### Impresión lenta
+
+1. Usa conexión USB en lugar de red/Bluetooth
+2. Reduce el tamaño del logo
+3. Simplifica el diseño del ticket
+
+### 9.9 Especificaciones Técnicas
+
+##### Integración con tickmaster-daemon
+
+El TPV envía peticiones HTTP al daemon `tickmaster` corriendo en la RPI, que a su vez controla la Epson TM-U210PD:
+
+```
+POST /print     - Imprimir ticket (cola del daemon)
+GET  /status    - Estado de la impresora y cola
+POST /open-drawer - Apertura del cajón portamonedas
+```
+
+##### Endpoint del daemon
+
+- Default: `http://tickmaster.local:8080` (configurable en Ajustes)
+- Red: Tailscale (preferido) o LAN local
+- Autenticación: API key en header `X-Tickmaster-Key`
+
+### 9.10 Siguiente Paso
+
+- **Facturación VERI*FACTU** (ver sección facturacion)
+- **Personalizar Temas** (ver sección temas)
 
 ---
 
-***
-
-***
-
-## 10. Temas y Personalización
+## 10. Temas y Personalización {#10-temas-y-personalizacion}
 
 TPV El Haido incluye un sistema de temas completo para adaptar la interfaz a tu negocio.
 
-### 10.1 Temas disponibles
+### 10.1 Temas Disponibles
 
 La aplicación incluye 6 temas predefinidos:
 
-| Tema | Estilo | Ideal para |
-|------|--------|------------|
-| **Amethyst Haze** | Violeta elegante | Locales sofisticados |
-| **Bubble** | Rosa vibrante | Ambiente juvenil |
-| **Restaurant Professional** | Dorado cálido | Restaurantes clásicos |
-| **Modern Cafe** | Verde minimalista | Cafeterías modernas |
-| **Night Bar** | Oscuro con neón | Bares nocturnos |
-| **High Contrast** | Blanco/Negro | Máxima legibilidad |
+| ID | Nombre | Estilo | Ideal para |
+|----|--------|--------|------------|
+| `amethyst-haze` | Amethyst Haze | Violeta elegante | Locales sofisticados |
+| `bubble` | Bubble | Rosa vibrante | Ambiente juvenil |
+| `restaurant-professional` | Restaurant Professional | Dorado cálido | Restaurantes clásicos |
+| `modern-cafe` | Modern Cafe | Verde minimalista | Cafeterías modernas |
+| `night-bar` | Night Bar | Oscuro con neón | Bares nocturnos |
+| `accessibility-high-contrast` | High Contrast | Blanco/Negro | Máxima legibilidad |
 
-### 10.2 Cambiar tema
+### 10.2 Cambiar Tema
 
-**Paso 1:** Ve a **Ajustes → Apariencia** (o **Tema**)
+**Paso 1: Acceder a Ajustes**
 
-![Selector de temas mostrando los 6 temas disponibles con vista previa de cada uno](screenshots/12_themes.png)
+1. En el menú lateral, haz clic en **Ajustes**
+2. Ve a la sección **Apariencia** o **Tema**
 
-*Imagen: Selector de temas disponibles*
+**Paso 2: Seleccionar Tema**
 
-**Paso 2:** Haz clic en el tema que prefieras (el cambio se aplica inmediatamente)
+![Selector de temas disponibles](/screenshots/12_themes.png)
 
-**Paso 3:** Elige el modo:
+1. Verás una vista previa de cada tema
+2. Haz clic en el tema que prefieras
+3. El cambio se aplica inmediatamente
+
+**Paso 3: Elegir Modo**
+
+Cada tema soporta modo claro y oscuro:
 - **Claro**: Fondos claros, texto oscuro
 - **Oscuro**: Fondos oscuros, texto claro
 - **Sistema**: Sigue la preferencia del sistema operativo
 
-### 10.3 Vista previa de temas
+### 10.3 Vista Previa de Temas
 
-**Amethyst Haze** — Tema elegante con tonos violeta y púrpura
+##### Amethyst Haze
 
-| Propiedad | Modo claro | Modo oscuro |
-|-----------|------------|-------------|
+Tema elegante con tonos violeta y púrpura.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
 | Fondo | Lavanda suave | Púrpura profundo |
 | Primario | Violeta | Violeta brillante |
 | Acento | Rosa | Magenta |
 
-**Restaurant Professional** — Tema clásico con tonos cálidos y dorados
+##### Bubble
 
-| Propiedad | Modo claro | Modo oscuro |
-|-----------|------------|-------------|
+Tema vibrante con tonos rosados y burbujas.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
+| Fondo | Rosa claro | Rosa oscuro |
+| Primario | Fucsia | Rosa neón |
+| Acento | Coral | Salmón |
+
+##### Restaurant Professional
+
+Tema clásico con tonos cálidos y dorados.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
 | Fondo | Crema | Marrón oscuro |
 | Primario | Dorado | Ámbar |
 | Acento | Terracota | Cobre |
 
-**Night Bar** — Tema oscuro con acentos de neón
+##### Modern Cafe
 
-| Propiedad | Modo claro | Modo oscuro |
-|-----------|------------|-------------|
+Tema minimalista con tonos verdes y naturales.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
+| Fondo | Verde menta | Verde bosque |
+| Primario | Verde esmeralda | Verde lima |
+| Acento | Aguamarina | Turquesa |
+
+##### Night Bar
+
+Tema oscuro con acentos de neón.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
 | Fondo | Gris azulado | Negro |
 | Primario | Azul eléctrico | Cian neón |
 | Acento | Púrpura | Rosa neón |
 
-**High Contrast** — Tema de alto contraste para máxima accesibilidad
+##### High Contrast
 
-| Propiedad | Modo claro | Modo oscuro |
-|-----------|------------|-------------|
+Tema de alto contraste para máxima accesibilidad.
+
+| Propiedad | Claro | Oscuro |
+|-----------|-------|--------|
 | Fondo | Blanco puro | Negro puro |
 | Primario | Negro | Blanco |
 | Acento | Azul oscuro | Amarillo |
 
-### 10.4 Optimizaciones táctiles
+### 10.4 Modo Claro/Oscuro
 
-Todos los temas incluyen optimizaciones para pantallas táctiles:
+##### Cambio Manual
 
-- **Tamaños de botón**: Mínimo 44×44px siguiendo las guías de Apple
-- **Espaciado extra**: Para evitar toques accidentales
-- **Áreas de toque amplias**: Facilitan el uso con el dedo
+1. En **Ajustes → Apariencia**
+2. Selecciona: **Claro**, **Oscuro** o **Sistema**
 
-### 10.5 Accesibilidad
+##### Cambio Rápido
 
-**Modo de alto contraste:** Para usuarios con dificultades visuales, entornos con mucha luz o pantallas de baja calidad.
+- Haz clic en el icono de sol/luna en la barra superior
+- O usa el atajo de teclado (si está configurado)
 
-**Preferencias del sistema detectadas:**
+##### Seguir Sistema
+
+Cuando seleccionas "Sistema":
+- De día: modo claro
+- De noche: modo oscuro
+- Sigue la configuración de tu sistema operativo
+
+### 10.5 Optimizaciones Táctiles
+
+Los temas incluyen optimizaciones para pantallas táctiles:
+
+##### Tamaños de Botón
+
+| Elemento | Tamaño | Variable CSS |
+|----------|--------|--------------|
+| Estándar | 44×44px | `--touch-target-size` |
+| Grande | 48×48px | `--touch-target-large` |
+| Extra grande | 56×56px | `--touch-target-xl` |
+
+Estos tamaños siguen las [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/).
+
+##### Espaciado
+
+Los temas incluyen espaciado extra entre elementos para evitar toques accidentales en pantallas táctiles.
+
+### 10.6 Accesibilidad
+
+##### Modo de Alto Contraste
+
+El tema **High Contrast** está diseñado para:
+- Usuarios con dificultades visuales
+- Entornos con mucha luz
+- Pantallas de baja calidad
+
+##### Respeta Preferencias del Sistema
+
+TPV El Haido detecta automáticamente:
 - `prefers-reduced-motion`: Desactiva animaciones
 - `prefers-contrast: high`: Activa bordes adicionales
-- `prefers-color-scheme`: Modo claro/oscuro automático
+- `prefers-color-scheme`: Modo claro/oscuro
 
-### 10.6 Recomendaciones por tipo de negocio
+##### Navegación por Teclado
 
-| Tu negocio | Tema recomendado |
+Todos los temas mantienen:
+- Focus visible para navegación por teclado
+- Contraste suficiente según WCAG 2.1
+- Tamaños de texto legibles
+
+### 10.7 Variables CSS
+
+Los temas usan variables CSS que puedes inspeccionar:
+
+```css
+:root {
+  --background: ...;
+  --foreground: ...;
+  --primary: ...;
+  --primary-foreground: ...;
+  --secondary: ...;
+  --accent: ...;
+  --muted: ...;
+  --destructive: ...;
+  --border: ...;
+  --ring: ...;
+}
+```
+
+### 10.8 Consejos
+
+##### Elegir el Tema Adecuado
+
+| Tu Negocio | Tema Recomendado |
 |------------|------------------|
 | Restaurante clásico | Restaurant Professional |
 | Cafetería moderna | Modern Cafe |
@@ -1403,78 +1985,28 @@ Todos los temas incluyen optimizaciones para pantallas táctiles:
 | Accesibilidad | High Contrast |
 | Elegante/boutique | Amethyst Haze |
 
-**Consejos adicionales:**
+##### Rendimiento
 
-- En dispositivos lentos, usa High Contrast (menos efectos)
+- En dispositivos lentos, considera usar el tema High Contrast (menos efectos)
 - El modo oscuro puede ahorrar batería en pantallas OLED
+
+##### Consistencia
+
 - Elige un tema y mantenlo para que tu equipo se familiarice
 - El modo oscuro es útil para turnos nocturnos
 
----
+### 10.9 Siguiente Paso
 
-***
-
-***
-
-## 11. Información del Sistema
-
-Consulta la información de tu instalación y versión del software.
-
-![Pantalla de información sobre TPV El Haido con versión, licencia y enlaces](screenshots/10_settings_about.png)
-
-*Imagen 12: Pantalla "Acerca de" con información del sistema*
-
-**Información disponible:**
-
-| Campo | Descripción |
-|-------|-------------|
-| **Versión** | Número de versión instalada |
-| **Licencia** | Estado y tipo de licencia |
-| **Fingerprint** | Identificador único del equipo |
-| **Enlaces** | Documentación, soporte, GitHub |
-
-**Actualizaciones:**
-
-El sistema busca actualizaciones automáticamente al iniciar. Para actualizar manualmente:
-
-1. Ve a **Ajustes → Acerca de**
-2. Haz clic en **Buscar actualizaciones**
-3. Si hay una nueva versión, sigue el asistente
-
-**Copiar fingerprint:**
-
-El fingerprint es útil para:
-- Generar nuevas licencias
-- Soporte técnico
-- Identificar el equipo
-
----
-
-***
-
-***
-
-## Anexo: Atajos de teclado
-
-| Atajo | Acción |
-|-------|--------|
-| `Ctrl/Cmd + N` | Nueva comanda |
-| `Ctrl/Cmd + P` | Imprimir ticket |
-| `Esc` | Cerrar diálogo actual |
-| `Enter` | Confirmar acción |
-| `Tab` | Navegar entre campos |
+- **Volver a Guía de Usuario** (ver sección guia usuario)
+- **Desarrollo** (ver sección desarrollo) - Para desarrolladores
 
 ---
 
 
+---
 
-# ¡Gracias por usar TPV El Haido!
+**Fin del Manual de Usuario**
 
+Para más información, visita la documentación online en [https://docs.elhaido.es](https://docs.elhaido.es)
 
-
-
-
-**TPV El Haido v1.0.0**
-
-© 2026 TPV El Haido.  Marcos Asensio. Todos los derechos reservados.
-
+© 2026 TPV El Haido. Todos los derechos reservados.

@@ -1,6 +1,6 @@
 ---
 title: Impresora Térmica
-description: 'Configurar impresora térmica ESC/POS para tickets en TPV El Haido'
+description: 'Configurar impresión térmica vía daemon tickmaster (HTTP a RPI por LAN/VPN) para tickets en TPV El Haido'
 ---
 
 # Configurar Impresora Térmica
@@ -9,18 +9,10 @@ Guía para configurar tu impresora térmica y poder imprimir tickets de venta.
 
 ## Impresoras Compatibles
 
-TPV El Haido soporta cualquier impresora compatible con el protocolo ESC/POS:
-
-| Marca | Modelos Probados |
-|-------|------------------|
-| **Epson** | TM-T20, TM-T88, TM-T82 |
-| **Star** | TSP100, TSP650, mPOP |
-| **Bixolon** | SRP-330, SRP-350 |
-| **Sewoo** | LK-TL200, LK-TL320 |
-| **Genéricas** | Impresoras USB/Serial 58mm, 80mm |
+TPV El Haido imprime tickets a través del daemon `tickmaster` corriendo en la Raspberry Pi del bar (RPI-BAR), que habla con la impresora matricial Epson TM-U210PD por USB (Prolific PL2305) sobre `bun:ffi` + `libusb-1.0`. El TPV no habla directo con la impresora: usa HTTP por LAN/VPN hacia el daemon.
 
 <Callout type="info">
-  La mayoría de impresoras térmicas de TPV usan el estándar ESC/POS y son compatibles.
+  Esta guía describe la integración con tickmaster-daemon. Si necesitas configurar el daemon en la RPI, consulta el repositorio `@mks2508/tickmaster`.
 </Callout>
 
 ## Conexión Física
@@ -236,7 +228,7 @@ Si tienes una segunda impresora para cocina:
 ### Caracteres extraños
 
 - Verifica que el ancho de papel es correcto (58mm vs 80mm)
-- Comprueba la codificación (debería ser compatible con ESC/POS)
+- Comprueba la codificación (debería ser compatible con tickmaster-daemon / matriz Epson)
 
 ### El cajón no abre
 
@@ -252,22 +244,21 @@ Si tienes una segunda impresora para cocina:
 
 ## Especificaciones Técnicas
 
-### Protocolo ESC/POS
+### Integración con tickmaster-daemon
 
-El sistema envía comandos ESC/POS estándar:
+El TPV envía peticiones HTTP al daemon `tickmaster` corriendo en la RPI, que a su vez controla la Epson TM-U210PD:
 
 ```
-ESC @ - Inicializar impresora
-ESC a - Alineación
-ESC ! - Estilo de texto
-GS V - Cortar papel
-ESC p - Abrir cajón
+POST /print     - Imprimir ticket (cola del daemon)
+GET  /status    - Estado de la impresora y cola
+POST /open-drawer - Apertura del cajón portamonedas
 ```
 
-### Puerto de red
+### Endpoint del daemon
 
-- Puerto estándar: **9100** (raw printing)
-- Protocolo: TCP/IP directo
+- Default: `http://tickmaster.local:8080` (configurable en Ajustes)
+- Red: Tailscale (preferido) o LAN local
+- Autenticación: API key en header `X-Tickmaster-Key`
 
 ## Siguiente Paso
 

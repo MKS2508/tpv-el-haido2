@@ -4,7 +4,9 @@
 ---
 
 **Fecha:** 29-01-2026
-**Versión del software:** [0.1.0]
+**Versión del software:** [0.1.3]
+
+> [edit 2026-08-22: drift fixed post-submission, no resubmission needed — versión y stack térmico actualizados retroactivamente para mantener coherencia con releases reales (v0.1.3 publicado). Capabilities corregidas al stack real (tickmaster-daemon HTTP, protocolo matricial Epson TM-U210PD)]
 
 
 
@@ -375,7 +377,7 @@ Flexibilidad total para adaptarse a diferentes escenarios de uso:
 Soporte completo para impresoras térmicas de punto de venta:
 
 **Protocolos soportados:**
-- ESC/POS (Epson, Star, Bixolon, etc.)
+- tickmaster-daemon (HTTP a RPI por LAN/VPN, broker sobre Epson TM-U210PD)
 - USB directo
 - Red (Ethernet/WiFi)
 - Bluetooth (en desarrollo)
@@ -419,7 +421,7 @@ Soporte completo para impresoras térmicas de punto de venta:
 | Sistema | Descripción | Estado |
 |---------|-------------|--------|
 | **AEAT VERI*FACTU** | Facturación electrónica obligatoria |
-| **Impresoras ESC/POS** | Tickets térmicos |
+| **Impresión térmica** | Tickets vía tickmaster-daemon (HTTP) |
 | **Cajón portamonedas** | Apertura automática |
 | **Lector de códigos** | Escáner de barras | 
 ---

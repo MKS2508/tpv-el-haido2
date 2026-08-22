@@ -6,7 +6,7 @@ Una aplicación TPV (Terminal Punto de Venta) moderna desarrollada con SolidJS +
 
 The TPV El Haido ships with a 7-step GUI installer wizard that handles download, signature verification, install location, and desktop integration. To use it:
 
-1. Download the latest installer bundle from https://github.com/MKS2508/tpv-el-haido2/releases/latest
+1. Download the latest installer bundle from https://haido.releases.mks2508.systems/releases/latest
 2. Extract the archive: `tar -xzf tpv-el-haido-installer-linux-x64.tar.gz`
 3. Run: `bash install-linux.sh` (or `chmod +x install-linux.sh && ./install-linux.sh`)
 
@@ -41,7 +41,7 @@ rm -f ~/.local/share/icons/hicolor/256x256/apps/tpv-el-haido.png
 - **Catálogo de Productos**: CRUD completo con categorías, filtros y búsqueda
 - **Historial de Pedidos**: Vista virtualizada para alto rendimiento con miles de registros
 - **Sistema de Usuarios**: Autenticación por PIN con perfiles personalizables
-- **Impresión Térmica**: Soporte para impresoras ESC/POS y apertura de cajón
+- **Impresión Térmica**: Impresión térmica vía daemon tickmaster (HTTP por LAN/VPN) y apertura de cajón
 
 ### Base de Datos
 - **SQLite Integrado**: Base de datos embebida en Rust para máximo rendimiento
@@ -254,24 +254,23 @@ CREATE TABLE order_items (
 
 ## Instalación en Raspberry Pi
 
-### Paquete DEB (Recomendado)
+### AppImage (Recomendado)
 ```bash
-# Descargar desde GitHub Releases
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/TPV\ El\ Haido_0.1.0_arm64.deb
+# Descargar desde el release-hub
+wget https://haido.releases.mks2508.systems/api/dl/0.1.3/linux/aarch64/tpv-haido-0.1.3-linux-arm64.AppImage
 
-# Instalar
-sudo dpkg -i "TPV El Haido_0.1.0_arm64.deb"
-sudo apt-get install -f  # Resolver dependencias
+# Hacer ejecutable
+chmod +x tpv-haido-0.1.3-linux-arm64.AppImage
 
 # Ejecutar
-tpv-el-haido
+./tpv-haido-0.1.3-linux-arm64.AppImage
 ```
 
 ### Ejecutable Directo
 ```bash
-wget https://github.com/MKS2508/tpv-el-haido2/releases/latest/download/tpv-el-haido
-chmod +x tpv-el-haido
-./tpv-el-haido
+wget https://haido.releases.mks2508.systems/api/dl/0.1.3/linux/aarch64/tpv-haido-0.1.3-linux-arm64.AppImage
+chmod +x tpv-haido-0.1.3-linux-arm64.AppImage
+./tpv-haido-0.1.3-linux-arm64.AppImage
 ```
 
 ### Compilación para RPi

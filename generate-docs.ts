@@ -15,15 +15,15 @@ async function generateDocsAndOpenExplorers() {
       description: "📱 Ejecutable directo ARM64 para Raspberry Pi 3"
     },
     {
-      name: "TPV El Haido_0.1.0_arm64.deb",
-      path: "/home/debian/Documents/tpv-el-haido2/src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/TPV El Haido_0.1.0_arm64.deb",
+      name: "TPV El Haido_0.1.3_arm64.deb",
+      path: "/home/debian/Documents/tpv-el-haido2/src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/TPV El Haido_0.1.3_arm64.deb",
       size: "21MB",
       type: "deb",
       description: "📦 Paquete DEB (RECOMENDADO) - sudo dpkg -i"
     },
     {
-      name: "TPV El Haido-0.1.0-1.aarch64.rpm",
-      path: "/home/debian/Documents/tpv-el-haido2/src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/TPV El Haido-0.1.0-1.aarch64.rpm",
+      name: "TPV El Haido-0.1.3-1.aarch64.rpm",
+      path: "/home/debian/Documents/tpv-el-haido2/src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/rpm/TPV El Haido-0.1.3-1.aarch64.rpm",
       size: "21MB", 
       type: "rpm",
       description: "📦 Paquete RPM - sudo rpm -i"
@@ -74,8 +74,8 @@ ${buildFiles.map((file, index) => `
 - **Ruta completa**: \`${file.path}\`
 - **Tamaño**: ${file.size}
 - **Tipo**: ${file.type.toUpperCase()}
-${file.type === 'deb' ? '- **Instalación RPi**: `sudo dpkg -i "TPV El Haido_0.1.0_arm64.deb"`' : ''}
-${file.type === 'rpm' ? '- **Instalación RPi**: `sudo rpm -i "TPV El Haido-0.1.0-1.aarch64.rpm"`' : ''}
+${file.type === 'deb' ? '- **Instalación RPi**: `sudo dpkg -i "TPV El Haido_0.1.3_arm64.deb"`' : ''}
+${file.type === 'rpm' ? '- **Instalación RPi**: `sudo rpm -i "TPV El Haido-0.1.3-1.aarch64.rpm"`' : ''}
 ${file.type === 'executable' ? '- **Ejecución directa**: `chmod +x tpv-el-haido && ./tpv-el-haido`' : ''}
 ${file.type === 'appimage' ? '- **Ejecutable interno**: `/usr/bin/tpv-el-haido` (funcional)' : ''}
 `).join('\n')}
@@ -200,7 +200,7 @@ Info Looking up installed tauri packages to check mismatched versions...
    Compiling unicode-ident v1.0.18
    Compiling serde v1.0.219
    ... [294 crates compiled] ...
-   Compiling tpv-el-haido v0.1.0 (/home/debian/Documents/tpv-el-haido2/src-tauri)
+   Compiling tpv-el-haido v0.1.3 (/home/debian/Documents/tpv-el-haido2/src-tauri)
     Finished \`release\` profile [optimized] target(s) in 1m 56s
        Built application at: /home/debian/Documents/tpv-el-haido2/src-tauri/target/aarch64-unknown-linux-gnu/release/tpv-el-haido
 \`\`\`
@@ -208,11 +208,11 @@ Info Looking up installed tauri packages to check mismatched versions...
 ### ✅ Bundle Generation
 \`\`\`
         Info Patching binary "tpv-el-haido" for type deb
-    Bundling TPV El Haido_0.1.0_arm64.deb (21,669,662 bytes)
+    Bundling TPV El Haido_0.1.3_arm64.deb (21,669,662 bytes)
         Info Patching binary "tpv-el-haido" for type rpm  
-    Bundling TPV El Haido-0.1.0-1.aarch64.rpm (21,670,964 bytes)
+    Bundling TPV El Haido-0.1.3-1.aarch64.rpm (21,670,964 bytes)
         Info Patching binary "tpv-el-haido" for type appimage
-    Bundling TPV El Haido_0.1.0_aarch64.AppImage (/path/to/AppImage)
+    Bundling TPV El Haido_0.1.3_aarch64.AppImage (/path/to/AppImage)
 failed to bundle project: \`failed to run linuxdeploy\`
 \`\`\`
 
@@ -237,11 +237,11 @@ couldn't find a square icon to use as AppImage icon
 ### Opción 1: Paquete DEB (Más Recomendado)
 \`\`\`bash
 # 1. Copiar archivo al Raspberry Pi
-scp "TPV El Haido_0.1.0_arm64.deb" pi@192.168.1.XXX:/home/pi/
+scp "TPV El Haido_0.1.3_arm64.deb" pi@192.168.1.XXX:/home/pi/
 
 # 2. Conectar al RPi e instalar
 ssh pi@192.168.1.XXX
-sudo dpkg -i "TPV El Haido_0.1.0_arm64.deb"
+sudo dpkg -i "TPV El Haido_0.1.3_arm64.deb"
 
 # 3. Si hay dependencias faltantes
 sudo apt-get update
@@ -288,8 +288,8 @@ cd "TPV El Haido.AppDir"
 - **Tamaño chunks**: Frontend > 500kB (optimizable)
 
 ### 🔗 Archivos Generados:
-- **DEB**: \`TPV El Haido_0.1.0_arm64.deb\` (instalable)
-- **RPM**: \`TPV El Haido-0.1.0-1.aarch64.rpm\` (instalable)  
+- **DEB**: \`TPV El Haido_0.1.3_arm64.deb\` (instalable)
+- **RPM**: \`TPV El Haido-0.1.3-1.aarch64.rpm\` (instalable)  
 - **Ejecutable**: \`tpv-el-haido\` (portable)
 - **AppDir**: Directorio con ejecutable funcional
 

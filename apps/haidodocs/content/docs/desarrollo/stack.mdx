@@ -92,13 +92,12 @@ Sidecar Node.js para comunicación con AEAT:
 
 ### thermal-printer-cli
 
-Sidecar Node.js para impresión:
+Cliente HTTP al daemon tickmaster (externo en RPI):
 
 | Dependencia | Uso |
 |-------------|-----|
-| escpos | Protocolo ESC/POS |
-| usb | Comunicación USB |
-| serialport | Comunicación serie |
+| @mks2508/tickmaster/sdk | Cliente HTTP al daemon tickmaster en RPI |
+| — | (Daemon corre en RPI, no es sidecar del TPV) |
 
 ## Versiones de package.json
 

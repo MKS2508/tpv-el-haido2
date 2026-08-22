@@ -32,7 +32,7 @@ graph TB
 
     subgraph External["Servicios Externos"]
         AEATWS[AEAT SOAP API]
-        PrinterHW[Impresora ESC/POS]
+        PrinterHW[Impresora Epson TM-U210PD vía tickmaster-daemon]
     end
 
     UI --> Hooks
@@ -72,7 +72,7 @@ graph TB
 | Sidecar | Función | Puerto |
 |---------|---------|--------|
 | **aeat-bridge** | Comunicación SOAP con AEAT | 3001 |
-| **thermal-printer-cli** | Impresión ESC/POS | CLI |
+| **tickmaster-daemon** (externo) | HTTP a RPI para impresión térmica | HTTP |
 
 ## Flujo de Datos
 
