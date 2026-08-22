@@ -29,7 +29,10 @@ impl ReleaseHubClient {
         // Si se queda corto, el frontend ya habrá mostrado un error HTTP 408.
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(300))
-            .user_agent("tpv-el-haido-installer/0.1")
+            .user_agent(concat!(
+                "tpv-el-haido-installer/",
+                env!("CARGO_PKG_VERSION")
+            ))
             .build()
             .expect("reqwest client build should not fail with valid defaults");
 
