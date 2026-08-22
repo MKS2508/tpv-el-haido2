@@ -1057,7 +1057,7 @@ async function authLogout(): Promise<Result<void, ResultError>> {
  *   - A binary file ending in `.app.tar.gz` (macOS) or `.nsis.zip` (Windows)
  *   - A corresponding `.sig` file
  *
- * @param version - App version string (e.g. "0.1.0").
+ * @param version - App version string (e.g. "0.1.3").
  * @param target  - CLI target label.
  * @returns Artifact paths + sig content, or an error.
  */

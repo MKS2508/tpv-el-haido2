@@ -112,7 +112,7 @@ export interface IBuildResult {
   readonly sigContent: string;
   /**
    * Destination path inside releases/<version>/<target>/ for the OTA bundle
-   * (after canonical rename — e.g. tpv-haido-0.1.0-macos-arm64.app.tar.gz).
+   * (after canonical rename — e.g. tpv-haido-0.1.3-macos-arm64.app.tar.gz).
    */
   readonly destPath: string;
   /**
@@ -209,11 +209,11 @@ const BUILD_TARGETS: Readonly<Record<ReleaseTarget, IBuildTarget>> = {
  * Format: `tpv-haido-<version>-<target><ext>`
  *
  * Examples:
- *   - `tpv-haido-0.1.0-macos-arm64.app.tar.gz`
- *   - `tpv-haido-0.1.0-macos-arm64.app.tar.gz.sig`
- *   - `tpv-haido-0.1.0-macos-arm64.dmg`
- *   - `tpv-haido-0.1.0-windows-x64.nsis.zip`
- *   - `tpv-haido-0.1.0-windows-x64-setup.exe`
+ *   - `tpv-haido-0.1.3-macos-arm64.app.tar.gz`
+ *   - `tpv-haido-0.1.3-macos-arm64.app.tar.gz.sig`
+ *   - `tpv-haido-0.1.3-macos-arm64.dmg`
+ *   - `tpv-haido-0.1.3-windows-x64.nsis.zip`
+ *   - `tpv-haido-0.1.3-windows-x64-setup.exe`
  *
  * @param version - App semver string from tauri.conf.json
  * @param target  - Release target label (e.g. "macos-arm64")
@@ -802,7 +802,7 @@ export async function loadSigningKeys(): Promise<Result<ISigningKeys, ResultErro
 /**
  * Reads the application version from `src-tauri/tauri.conf.json`.
  *
- * @returns The version string (e.g. "0.1.0") or an error.
+ * @returns The version string (e.g. "0.1.3") or an error.
  */
 export function readAppVersion(): Result<string, ResultError> {
   const confPath = resolve(PROJECT_ROOT, 'src-tauri', 'tauri.conf.json');
@@ -1331,9 +1331,9 @@ async function patchAppImageGtkHook(
  *
  * Layout: `<outputDir>/<version>/<target-label>/<canonical-name>`
  *
- * Renames Tauri's verbose default filenames (e.g. `TPV El Haido_0.1.0_aarch64.app.tar.gz`,
+ * Renames Tauri's verbose default filenames (e.g. `TPV El Haido_0.1.3_aarch64.app.tar.gz`,
  * with spaces and arch instead of label) to a stable, URL-friendly canonical
- * naming (`tpv-haido-0.1.0-macos-arm64.app.tar.gz`) so haidodocs can hardcode
+ * naming (`tpv-haido-0.1.3-macos-arm64.app.tar.gz`) so haidodocs can hardcode
  * predictable download links per version.
  *
  * Always copies:
