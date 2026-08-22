@@ -1,5 +1,25 @@
+import type { Result, ResultError } from '@mks2508/no-throw';
+import type {
+  IAuditLog,
+  IAuditLogCreateRequest,
+  IAuditLogExportOptions,
+  IAuditLogExportResult,
+  IAuditLogFilter,
+} from '@/models/AuditLog';
 import type Order from '@/models/Order';
 import type { LicenseStatus } from '@/types/license';
+
+/**
+ * Generic platform-level error code. Audit methods map to a small set of
+ * platform-runtime failure modes (UNSUPPORTED_PLATFORM, BACKEND_FAILED, etc.).
+ */
+export type PlatformErrorCode = 'UNSUPPORTED_PLATFORM' | 'BACKEND_FAILED' | 'INVALID_PAYLOAD';
+
+/** Structured error returned by PlatformService methods. */
+export type PlatformError = ResultError<PlatformErrorCode>;
+
+/** Audit method return shape (mirrors existing audit.service.ts). */
+export type AuditPlatformResult<T> = Promise<Result<T, PlatformError>>;
 
 export interface PlatformService {
   // ================================
@@ -116,4 +136,39 @@ export interface PlatformService {
    * @returns Machine fingerprint string
    */
   getMachineFingerprint(): Promise<string>;
+
+  // ================================
+  // AUDIT LOGS (AEAT VERI*FACTU regulatory surface)
+  // ================================
+  /**
+   * Create an audit log entry.
+   * In Tauri: persists to SQLite via `create_audit_log` command.
+   * In PWA: stub returning `UNSUPPORTED_PLATFORM` so compliance gaps stay visible.
+   * @returns Result with the created log row id, or platform-level error.
+   */
+  createAuditLog(request: IAuditLogCreateRequest): AuditPlatformResult<number>;
+
+  /**
+   * Query audit logs with optional filters.
+   * In Tauri: queries SQLite via `get_audit_logs` command.
+   * In PWA: stub returning `UNSUPPORTED_PLATFORM`.
+   * @returns Result with array of audit logs, or platform-level error.
+   */
+  getAuditLogs(filter?: IAuditLogFilter): AuditPlatformResult<IAuditLog[]>;
+
+  /**
+   * Export audit logs in CSV or JSON format.
+   * In Tauri: invokes `export_audit_logs` (returns content or file path).
+   * In PWA: stub returning `UNSUPPORTED_PLATFORM`.
+   * @returns Result with export payload, or platform-level error.
+   */
+  exportAuditLogs(options: IAuditLogExportOptions): AuditPlatformResult<IAuditLogExportResult>;
+
+  /**
+   * Delete audit logs older than the cutoff date.
+   * In Tauri: invokes `cleanup_audit_logs` (returns deleted row count).
+   * In PWA: stub returning `UNSUPPORTED_PLATFORM`.
+   * @returns Result with deleted row count, or platform-level error.
+   */
+  cleanupAuditLogs(cutoffDate: string): AuditPlatformResult<number>;
 }
