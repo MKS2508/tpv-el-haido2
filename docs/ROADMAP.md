@@ -2,7 +2,7 @@
 
 # Roadmap — tpv-el-haido
 
-modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 16 tracks · 0 spikes · 14 milestones
+modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 16 tracks · 0 spikes · 15 milestones
 
 ⚠ 1 violación(es) de governance derivable(s) — detalle al final.
 
@@ -104,6 +104,8 @@ deps: (ninguna)
 ### track/wizard-linux-build  ● in_progress  ⚠ sin gate (governance)
 Wizard Linux GUI installer — Tauri sidecar pattern (r7)
 deps: (ninguna)
+milestones:
+  ▸ track/wizard-linux-build/e2e-smoke  ○ queued — TR-19.E — E2E smoke del wizard Linux (download AppImage real desde release-hub, install, verify .desktop registry + xdg-mime). Desbloqueado: hub confirmo GET /api/updates + HEAD /api/dl sanos con release Linux 0.1.3 real (verificacion cruzada 2026-08-22, ver progress-log)
 
 ### track/lint-baseline-residual-svgs  ○ queued
 Lint residuales — SVG title + aria-label (6 trivial)

@@ -4,6 +4,34 @@ Log de progreso por fase. Mantenido al día con cada milestone completado.
 
 ---
 
+## 2026-08-22 (tarde) — TR-19.E desbloqueado — hub confirmó que no lo bloquea (verificación cruzada
+desde la sesión axon del hub)
+
+**Qué**: la sesión axon-v2 de `desktop-release-hub` verificó en producción, en vivo, las dos
+rutas concretas que necesita el smoke E2E del wizard Linux (`docs/task-requests/TR-19-*.md`):
+download AppImage real desde `release-hub`, install, verify `.desktop` registry + `xdg-mime`.
+
+```
+GET  https://haido.releases.mks2508.systems/api/updates/linux/x86_64/0.0.1
+  → 200, version 0.1.3, url + signature válidos
+
+HEAD https://haido.releases.mks2508.systems/api/dl/0.1.3/linux/x86_64/tpv-haido-0.1.3-linux-x64.AppImage
+  → 200, content-range 136.8MB, binario real
+```
+
+Ninguno de los cambios que el hub hizo hoy (P0 de auth M2M, CLI CRUD, artifact-ingest para
+Docker builds) tocó estas rutas tenant públicas — el "bloqueado por Waxin arreglando hub" que
+tenía esta entrada era correcto como precaución operativa (no pisarse mientras el hub estaba en
+flujo de cambios de auth), no una dependencia técnica real que siguiera rota.
+
+**SSOT**: añadido `track/wizard-linux-build/e2e-smoke` (`queued`, listo para ejecutar) vía
+`axon add-node`, con la evidencia de arriba en el título del nodo. `axon gen` + `check:roadmap`
+verdes.
+
+**Siguiente**: TR-19.E puede lanzarse ya — nada pendiente del lado del hub.
+
+---
+
 ## 2026-08-22 (evening, cont. 3) — TR-20 windows-x64-deploy.yml + TR-release-publish-bundle (CI coverage 100% native + OTA)
 
 **Milestone**: cierra los 2 gaps estructurales de CI que FIX H flageó en su entry (la noche

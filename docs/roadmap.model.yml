@@ -355,6 +355,11 @@ nodes:
     title: 'Wizard Linux GUI installer — Tauri sidecar pattern (r7)'
     status: in_progress
     dependsOn: []
+    milestones:
+      - id: track/wizard-linux-build/e2e-smoke
+        title: 'TR-19.E — E2E smoke del wizard Linux (download AppImage real desde release-hub, install, verify .desktop registry + xdg-mime). Desbloqueado: hub confirmo GET /api/updates + HEAD /api/dl sanos con release Linux 0.1.3 real (verificacion cruzada 2026-08-22, ver progress-log)'
+        status: queued
+        dependsOn: []
 
   - id: track/lint-baseline-residual-svgs
     kind: track
