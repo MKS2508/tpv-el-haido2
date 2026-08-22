@@ -1483,3 +1483,79 @@ trail.
   commit + merge). Pendiente push con OK explícito.
 - Typecheck EXIT 0 confirmado en main post-merge.
 - Tareas #25 (FIX H) → completed.
+
+## 2026-08-22 (cont. 4) — Multi-session sync (Waxin hub delta) + FIX J + FIX K
+
+### Multi-session delta detectado (waxin desde otra sesión del hub)
+
+Waxin editó manualmente `docs/roadmap.model.yml` desde otra sesión del hub (commit
+`730f96b`), añadiendo milestone `track/wizard-linux-build/e2e-smoke` — bloqueado previamente
+por gate cerrado en main, ahora desbloqueado.
+
+Detección: `git log origin/main..main` mostraba 1 commit ahead desconocido. Reconciliación:
+
+- `check:roadmap` EXIT 0 — SSOT coherente (Waxin dijo "Queda como está", acepta manual
+  edit por pragmatismo; guard valida que el modelo sigue parseable + no rompe gates).
+- Header del spec sigue diciendo "Mutaciones SOLO vía axon CLI" — Waxin es consciente de la
+  violación, asume el riesgo con guard verde.
+
+### FIX I follow-up — J (User-Agent) + K (cosmetic JSDoc/CLI)
+
+Waxin aprobó dispatch de FIX J + acumulación con FIX K antes de push.
+
+**FIX J — installer User-Agent uses CARGO_PKG_VERSION**:
+
+- Drift detectado: `release_hub.rs` hardcodeaba `"tpv-el-haido-installer/0.1"` mientras la
+  app real es 0.1.3. Diagnóstico silencioso en el hub logs.
+- Fix: 1 call site, `concat!("tpv-el-haido-installer/", env!("CARGO_PKG_VERSION"))`.
+- 1 file, 4 insertions, 1 deletion. `cargo check` EXIT 0 (4 warnings pre-existentes en
+  `src/models*.rs`, no introducidas). `bun run typecheck` EXIT 0.
+- Branch `fix/installer-user-agent-pkg-version` @ `bba5cae`, merge `--no-ff` → `79ea9a9`.
+
+**FIX K — cosmetic version bump (0.1.0 → 0.1.3) en JSDoc/CLI examples**:
+
+- 9 single-character edits en 3 files: `scripts/build-bundle.ts:10`,
+  `scripts/build-release.ts:{115,212-216,805,1334-1336}`, `scripts/release.ts:1060`.
+- Total: 3 files, 11 insertions(+), 11 deletions(-). Todos JSDoc/CLI usage strings —
+  CERO cambios funcionales, config, test, seed o fixtures.
+- Agente bloqueado por worktree isolation (sub-agent isolation no podía escribir a la
+  branch destino tras `EnterWorktree`). Recovery por el orquestador: commit en la branch
+  del spawn worktree (7221541), cherry-pick a `fix/cosmetic-version-examples-0.1.3` (dfba50e),
+  merge --no-ff a main (8e68726), cleanup del worktree vacío + orphan branch.
+- `bun run typecheck` EXIT 0 (LSP diagnostics de `Bun`/`oauth4webapi`/`ImportMeta` son
+  pre-existentes false positives confirmados por tsgo EXIT 0).
+
+### Commits
+
+- `730f96b` (Waxin, multi-session) — docs: desbloquea TR-19.E e2e-smoke
+- `988202f` fix(installer): wizard stub URL — /api/releases → /releases/latest *(FIX I)*
+- `2f4f409` merge: FIX I *(FIX I merge)*
+- `9011d02` docs(progress-log): entry evening cont.4 *(FIX I progress-log sync)*
+- `bba5cae` fix(installer): User-Agent uses CARGO_PKG_VERSION macro *(FIX J)*
+- `79ea9a9` merge: FIX J *(FIX J merge)*
+- `7221541` docs(scripts): bump example versions in JSDoc/CLI to 0.1.3 (cosmetic) *(FIX K en branch huérfana)*
+- `dfba50e` docs(scripts): bump example versions in JSDoc/CLI to 0.1.3 (cosmetic) *(FIX K re-aplicado en branch correcta, cherry-pick de 7221541)*
+- `8e68726` merge: FIX K *(FIX K merge)*
+- Co-author audit: ✓ CLEAN (ningún trailer Co-Authored-By, ninguna atribución AI)
+
+### Reportes de agente
+
+- `/tmp/fix-i-wizard-stub-url-report.md` (persisted pre-terminate)
+- `/tmp/fix-j-installer-user-agent-report.md` (persisted pre-terminate)
+- `/tmp/fix-k-cosmetic-version-report.md` (re-persisted por orquestador tras recovery;
+  el original en worktree se eliminó con el cleanup)
+
+### Estado final de main
+
+- **4 commits ahead de origin/main** (FIX I merge + progress-log, FIX J fix + merge, FIX K
+  fix + merge). Pendiente push con OK explícito de Waxin.
+- Typecheck EXIT 0 confirmado en main post-merge.
+- Tareas #28 (FIX I) → completed, #30 (FIX J) → completed, #31 (FIX K) → completed.
+
+### Cleanup worktrees post-recovery
+
+- `agent-fix-k-cosmetic-version` → force-removed (branch bind liberado).
+- `agent-adababdb4223d7853` → force-removed, branch huérfana `worktree-agent-*` eliminada.
+- Worktrees de lanes previas FIX I/J (`agent-a3a5927*`, `agent-ac98475*`) preservados por
+  si Waxin quiere inspeccionar; pueden limpiarse con `git worktree remove --force` cuando
+  ya no aporten trazabilidad.
