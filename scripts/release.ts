@@ -126,6 +126,51 @@ export interface ITargetMapping {
   readonly serverArch: string;
 }
 
+/**
+ * Bundle metadata resolved from either CLI flags or the `manifest.json`
+ * sidecar emitted by `scripts/build-bundle.ts pack`.
+ *
+ * Fields map 1:1 to the multipart form fields the hub expects at
+ * `POST /api/admin/projects/{slug}/bundles` (see `scripts/build-bundle.ts:166-168`
+ * and the manual `curl` snippet `ota-bundle-deploy.yml` used to ship before
+ * this sub-command existed).
+ */
+export interface IBundleMetadata {
+  readonly bundleVersion: string;
+  readonly minNativeVersion: string;
+  readonly maxNativeVersion: string;
+  /** ed25519 signature of the zip, base64. NOT minisign. */
+  readonly signature: string;
+}
+
+/**
+ * Parsed CLI options for the `publish-bundle` sub-command.
+ *
+ * Mirrors `IPublishOptions` but replaces the per-target `targets[]` / `notes`
+ * with per-bundle fields; bundles are single uploads with explicit metadata.
+ */
+export interface IPublishBundleOptions {
+  readonly bundlePath: string;
+  readonly slug: string;
+  readonly hub: string;
+  readonly bundleVersion: string;
+  readonly minNativeVersion: string;
+  readonly maxNativeVersion: string;
+  readonly signature: string;
+  readonly clientCredentials: boolean;
+  readonly dryRun: boolean;
+}
+
+/**
+ * Result of uploading a single OTA bundle to the admin API.
+ */
+export interface IBundleUploadResult {
+  readonly bundleVersion: string;
+  readonly bundleFilename: string;
+  readonly url?: string;
+  readonly dryRun: boolean;
+}
+
 // ─────────────────────────────── Target mapping ──────────────────────────────
 
 /**
@@ -179,12 +224,29 @@ Commands:
                   No PKCE cache needed; no token written to disk.
     --dry-run  Log what would be uploaded, no POST
 
+  publish-bundle --slug <slug> [--bundle <path>] [options]
+    Upload a single OTA bundle (channel JS parcial) to the hub admin API.
+    Bundles are produced by \`scripts/build-bundle.ts pack\` (ed25519 signed).
+
+    --slug              Project slug in release-hub (e.g. "haido")     (required)
+    --bundle            Path to the bundle.zip to upload.
+                        If omitted, scans releases/bundles/*/bundle.zip and picks the most recent.
+    --bundle-version    Override manifest.bundleVersion (else read from sibling manifest.json)
+    --min-native-version   Override manifest.minNativeVersion
+    --max-native-version   Override manifest.maxNativeVersion
+    --signature         Override manifest.signature (ed25519 base64)
+    --hub               Admin API base URL (default: ${DEFAULT_HUB_URL})
+    --client-credentials  Same semantics as \`publish\` — headless CI auth
+    --dry-run           Log the request shape, no POST
+
 Examples:
   bun run scripts/release.ts auth login
   bun run scripts/release.ts auth status
   bun run scripts/release.ts publish --target macos-arm64 --slug haido --dry-run
   bun run scripts/release.ts publish --target all --slug haido --skip-build
   bun run scripts/release.ts publish --target macos-arm64 --slug haido --client-credentials --dry-run
+  bun run scripts/release.ts publish-bundle --slug haido --bundle releases/bundles/2026.08.22-1/bundle.zip
+  bun run scripts/release.ts publish-bundle --slug haido --client-credentials --dry-run
 `);
 }
 
@@ -231,6 +293,46 @@ function parsePublishOptions(argv: string[]): Result<IPublishOptions, ResultErro
     hub: get('--hub') ?? DEFAULT_HUB_URL,
     notes: get('--notes') ?? '',
     skipBuild: has('--skip-build'),
+    clientCredentials: has('--client-credentials'),
+    dryRun: has('--dry-run'),
+  });
+}
+
+/**
+ * Parses `process.argv` for the `publish-bundle` sub-command.
+ *
+ * Recognised flags:
+ *   --slug, --hub, --bundle, --bundle-version, --min-native-version,
+ *   --max-native-version, --signature, --client-credentials, --dry-run
+ *
+ * Bundle metadata fields (`bundleVersion` / `minNativeVersion` /
+ * `maxNativeVersion` / `signature`) are optional at the CLI level here —
+ * `loadBundleMetadata()` will fall back to the sibling `manifest.json`
+ * if any of them are missing.
+ *
+ * @param argv - Raw argument array (post-slice).
+ * @returns Parsed publish-bundle options or an error.
+ */
+function parsePublishBundleOptions(argv: string[]): Result<IPublishBundleOptions, ResultError> {
+  const get = (flag: string): string | undefined => {
+    const i = argv.indexOf(flag);
+    return i !== -1 && i + 1 < argv.length ? argv[i + 1] : undefined;
+  };
+  const has = (flag: string): boolean => argv.includes(flag);
+
+  const slug = get('--slug');
+  if (!slug) {
+    return err(resultError('MISSING_SLUG', '--slug is required for publish-bundle. Use --help.'));
+  }
+
+  return ok({
+    bundlePath: get('--bundle') ?? '',
+    slug,
+    hub: get('--hub') ?? DEFAULT_HUB_URL,
+    bundleVersion: get('--bundle-version') ?? '',
+    minNativeVersion: get('--min-native-version') ?? '',
+    maxNativeVersion: get('--max-native-version') ?? '',
+    signature: get('--signature') ?? '',
     clientCredentials: has('--client-credentials'),
     dryRun: has('--dry-run'),
   });
@@ -1350,6 +1452,399 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
   return ok(undefined);
 }
 
+// ─────────────────────────────── Bundle discovery ────────────────────────────
+
+/**
+ * Discovers OTA bundle zips under `releases/bundles/{version}/bundle.zip`.
+ *
+ * Returns the path with the lexicographically largest version directory.
+ * Naming `YYYY.MM.DD-N` sorts chronologically under lex order.
+ *
+ * @param explicitPath - If non-empty, used as the path verbatim (resolved against cwd).
+ * @returns The selected bundle zip path or an error.
+ */
+export function discoverBundlePath(
+  explicitPath: string,
+): Result<string, ResultError> {
+  if (explicitPath) {
+    const resolved = resolve(explicitPath);
+    if (!existsSync(resolved)) {
+      return err(
+        resultError(
+          'BUNDLE_NOT_FOUND',
+          `--bundle path does not exist: ${resolved}`,
+        ),
+      );
+    }
+    return ok(resolved);
+  }
+
+  const bundlesRoot = join(PROJECT_ROOT, 'releases', 'bundles');
+  if (!existsSync(bundlesRoot)) {
+    return err(
+      resultError(
+        'BUNDLE_NOT_FOUND',
+        `No bundle path given via --bundle and no bundles found under ${bundlesRoot}.\n` +
+          `Run scripts/build-bundle.ts pack first, or pass --bundle <path>.`,
+      ),
+    );
+  }
+
+  const entries = readdirSync(bundlesRoot, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort()
+    .reverse();
+
+  if (entries.length === 0) {
+    return err(
+      resultError(
+        'BUNDLE_NOT_FOUND',
+        `No version directories under ${bundlesRoot}. Run scripts/build-bundle.ts pack first.`,
+      ),
+    );
+  }
+
+  for (const versionDir of entries) {
+    const candidate = join(bundlesRoot, versionDir, 'bundle.zip');
+    if (existsSync(candidate)) {
+      log.info(`Auto-discovered bundle: ${candidate}`);
+      return ok(candidate);
+    }
+  }
+
+  return err(
+    resultError(
+      'BUNDLE_NOT_FOUND',
+      `Found ${entries.length} bundle dir(s) under ${bundlesRoot} but none contain bundle.zip.`,
+    ),
+  );
+}
+
+/**
+ * Loads `manifest.json` from the directory next to a bundle zip.
+ *
+ * Used as the source of truth for `bundleVersion` / `minNativeVersion` /
+ * `maxNativeVersion` / `signature` when those are not passed as explicit
+ * CLI flags.
+ *
+ * @param bundlePath - Absolute path to the bundle zip.
+ * @returns Parsed manifest, or an error if not found / malformed / missing required fields.
+ */
+export function loadBundleManifest(bundlePath: string): Result<IBundleMetadata, ResultError> {
+  const dir = resolve(bundlePath, '..');
+  const manifestPath = join(dir, 'manifest.json');
+  if (!existsSync(manifestPath)) {
+    return err(
+      resultError(
+        'MANIFEST_NOT_FOUND',
+        `No manifest.json next to bundle at ${manifestPath}. ` +
+          `Re-run scripts/build-bundle.ts pack, or pass --bundle-version / --min-native-version / --max-native-version / --signature flags explicitly.`,
+      ),
+    );
+  }
+
+  const parseResult = tryCatch(() => {
+    const raw = readFileSync(manifestPath, 'utf-8');
+    return JSON.parse(raw) as Record<string, unknown>;
+  }, 'MANIFEST_PARSE_FAILED');
+
+  if (isErr(parseResult)) {
+    return err(
+      resultError(
+        'MANIFEST_PARSE_FAILED',
+        `Cannot parse ${manifestPath}: ${parseResult.error.message}`,
+      ),
+    );
+  }
+
+  const manifest = parseResult.value;
+  const requireField = (key: string): Result<string, ResultError> => {
+    const v = manifest[key];
+    if (typeof v !== 'string' || !v) {
+      return err(
+        resultError(
+          'MANIFEST_FIELD_MISSING',
+          `manifest.json missing required field "${key}" (got ${typeof v})`,
+        ),
+      );
+    }
+    return ok(v);
+  };
+
+  const bundleVersion = requireField('bundleVersion');
+  if (isErr(bundleVersion)) return err(bundleVersion.error);
+  const minNativeVersion = requireField('minNativeVersion');
+  if (isErr(minNativeVersion)) return err(minNativeVersion.error);
+  const maxNativeVersion = requireField('maxNativeVersion');
+  if (isErr(maxNativeVersion)) return err(maxNativeVersion.error);
+  const signature = requireField('signature');
+  if (isErr(signature)) return err(signature.error);
+
+  return ok({
+    bundleVersion: bundleVersion.value,
+    minNativeVersion: minNativeVersion.value,
+    maxNativeVersion: maxNativeVersion.value,
+    signature: signature.value,
+  });
+}
+
+/**
+ * Resolves bundle metadata by merging CLI flags over the manifest sidecar.
+ *
+ * Every field is required for the eventual upload (the hub needs them all);
+ * flags override manifest values. If both CLI and manifest are missing for a
+ * given field, the call fails.
+ *
+ * @param opts - Parsed publish-bundle options (CLI flags).
+ * @param bundlePath - Resolved bundle zip path (used to find manifest.json).
+ * @returns Fully resolved metadata or an error.
+ */
+export function resolveBundleMetadata(
+  opts: IPublishBundleOptions,
+  bundlePath: string,
+): Result<IBundleMetadata, ResultError> {
+  const manifestResult = loadBundleManifest(bundlePath);
+  const manifest: Partial<IBundleMetadata> = isOk(manifestResult)
+    ? manifestResult.value
+    : {
+        bundleVersion: '',
+        minNativeVersion: '',
+        maxNativeVersion: '',
+        signature: '',
+      };
+
+  const pick = (flagValue: string, manifestValue: string, field: string): Result<string, ResultError> => {
+    if (flagValue) return ok(flagValue);
+    if (manifestValue) return ok(manifestValue);
+    return err(
+      resultError(
+        'BUNDLE_METADATA_INCOMPLETE',
+        `No source for "${field}": pass --${field.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)} or ensure manifest.json has it next to the bundle.`,
+      ),
+    );
+  };
+
+  const bundleVersion = pick(opts.bundleVersion, manifest.bundleVersion ?? '', 'bundleVersion');
+  if (isErr(bundleVersion)) return err(bundleVersion.error);
+  const min = pick(opts.minNativeVersion, manifest.minNativeVersion ?? '', 'minNativeVersion');
+  if (isErr(min)) return err(min.error);
+  const max = pick(opts.maxNativeVersion, manifest.maxNativeVersion ?? '', 'maxNativeVersion');
+  if (isErr(max)) return err(max.error);
+  const sig = pick(opts.signature, manifest.signature ?? '', 'signature');
+  if (isErr(sig)) return err(sig.error);
+
+  return ok({
+    bundleVersion: bundleVersion.value,
+    minNativeVersion: min.value,
+    maxNativeVersion: max.value,
+    signature: sig.value,
+  });
+}
+
+// ─────────────────────────────── Bundle upload ────────────────────────────────
+
+/**
+ * Uploads a single OTA bundle to the admin API via multipart/form-data.
+ *
+ * Auth strategy follows the same rules as `publish()`:
+ *   - dryRun without clientCredentials: PKCE cache (or dry-run placeholder).
+ *   - live OR clientCredentials: `mintAccessToken()` (real token).
+ *
+ * Field names (`bundleVersion` / `minNativeVersion` / `maxNativeVersion` /
+ * `signature` / `bundle`) follow the documented contract — see TR caveat
+ * "DOCUMENTED-FIELDS-ASSUMED" for source (this repo's docs + inline comments
+ * in `build-bundle.ts` + the manual snippet the workflow used to ship).
+ *
+ * @param opts          - Parsed publish-bundle options (CLI flags + paths).
+ * @param metadata      - Resolved bundle metadata.
+ * @param accessToken   - Bearer token for Authorization header.
+ * @param zipPath       - Absolute path to the bundle zip.
+ * @returns Upload result or an error.
+ */
+async function uploadBundle(
+  opts: IPublishBundleOptions,
+  metadata: IBundleMetadata,
+  accessToken: string,
+  zipPath: string,
+): Promise<Result<IBundleUploadResult, ResultError>> {
+  const filename = basename(zipPath);
+
+  if (opts.dryRun) {
+    const sigPreview = metadata.signature.length > 32
+      ? `${metadata.signature.slice(0, 32)}…`
+      : metadata.signature;
+    log.info(`[DRY-RUN] Would upload bundle:`);
+    log.info(`  File:              ${zipPath}`);
+    log.info(`  Filename:          ${filename}`);
+    log.info(`  Endpoint:          POST ${opts.hub}/api/admin/projects/${opts.slug}/bundles`);
+    log.info(`  bundleVersion:     ${metadata.bundleVersion}`);
+    log.info(`  minNativeVersion:  ${metadata.minNativeVersion}`);
+    log.info(`  maxNativeVersion:  ${metadata.maxNativeVersion}`);
+    log.info(`  signature:         ${sigPreview}  (ed25519 base64, ${metadata.signature.length} chars)`);
+    log.info(`  bundle (file):     <binary ${filename}>`);
+    log.info(`  Authorization:     Bearer <elided (${accessToken.length} chars)>`);
+    return ok({
+      bundleVersion: metadata.bundleVersion,
+      bundleFilename: filename,
+      dryRun: true,
+    });
+  }
+
+  log.info(`Uploading ${filename} (bundleVersion=${metadata.bundleVersion}) to ${opts.hub}…`);
+
+  const uploadResult = await tryCatchAsync(async (): Promise<{ url?: string }> => {
+    const fileContent = readFileSync(zipPath);
+    const blob = new Blob([fileContent]);
+
+    const formData = new FormData();
+    formData.append('bundleVersion', metadata.bundleVersion);
+    formData.append('minNativeVersion', metadata.minNativeVersion);
+    formData.append('maxNativeVersion', metadata.maxNativeVersion);
+    formData.append('signature', metadata.signature);
+    formData.append('bundle', blob, filename);
+
+    const url = `${opts.hub}/api/admin/projects/${opts.slug}/bundles`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw Object.assign(
+        new Error(`Server returned ${response.status}: ${body}`),
+        { status: response.status },
+      );
+    }
+
+    const json = await response.json().catch(() => ({})) as Record<string, unknown>;
+    const bundleUrl =
+      (json.url as string | undefined) ??
+      (json.data as Record<string, unknown> | undefined)?.url as string | undefined;
+    return { url: bundleUrl };
+  }, 'UPLOAD_FAILED');
+
+  if (isErr(uploadResult)) {
+    return err(
+      resultError(
+        'UPLOAD_FAILED',
+        `Bundle upload failed for ${metadata.bundleVersion}: ${uploadResult.error.message}`,
+      ),
+    );
+  }
+
+  log.success(`Uploaded ${filename} → ${opts.slug} bundleVersion=${metadata.bundleVersion}`);
+  if (uploadResult.value.url) {
+    log.info(`  Bundle URL: ${uploadResult.value.url}`);
+  }
+
+  return ok({
+    bundleVersion: metadata.bundleVersion,
+    bundleFilename: filename,
+    url: uploadResult.value.url,
+    dryRun: false,
+  });
+}
+
+// ─────────────────────────────── publish-bundle ───────────────────────────────
+
+/**
+ * Orchestrates the OTA bundle publish flow:
+ *   1. Resolve access token (PKCE cache OR client_credentials grant).
+ *   2. Resolve bundle path (--bundle flag or auto-discover from releases/bundles/).
+ *   3. Resolve bundle metadata (CLI flags override manifest.json sidecar).
+ *   4. Upload the bundle via multipart/form-data (or log if --dry-run).
+ *
+ * `@param opts - Parsed publish-bundle options.
+ * @returns `ok(undefined)` on success or dry-run, `err(...)` on failure.
+ */
+async function publishBundle(opts: IPublishBundleOptions): Promise<Result<void, ResultError>> {
+  log.header('Release Hub — publish-bundle', opts.dryRun ? 'DRY-RUN' : 'LIVE');
+
+  // 1. Auth — same dispatch as `publish()` (TR-15 semantics: live OR
+  //    --client-credentials → real token, even with --dry-run).
+  let accessToken: string;
+  if (opts.dryRun && !opts.clientCredentials) {
+    const cacheResult = readTokenCache();
+    if (isOk(cacheResult)) {
+      accessToken = cacheResult.value.access_token;
+      log.info(`[DRY-RUN] Using cached token for ${cacheResult.value.email}`);
+    } else {
+      accessToken = 'dry-run-no-token';
+      log.warn('[DRY-RUN] No token cached — upload would fail in live mode. Run: auth login');
+    }
+  } else {
+    const miniOpts: IPublishOptions = {
+      targets: [],
+      slug: opts.slug,
+      hub: opts.hub,
+      notes: '',
+      skipBuild: true,
+      clientCredentials: opts.clientCredentials,
+      dryRun: opts.dryRun,
+    };
+    const tokenResult = await mintAccessToken(miniOpts);
+    if (isErr(tokenResult)) {
+      return err(
+        resultError(
+          'AUTH_REQUIRED',
+          `Not authenticated: ${tokenResult.error.message}\n` +
+            (opts.clientCredentials
+              ? 'Set RELEASE_HUB_CLIENT_ID + RELEASE_HUB_CLIENT_SECRET env vars.'
+              : 'Run: bun run release:auth-login'),
+        ),
+      );
+    }
+    accessToken = tokenResult.value.accessToken;
+    if (opts.clientCredentials) {
+      log.success(`Authenticated via client_credentials (sub=${tokenResult.value.sub ?? 'unknown'}).`);
+    } else {
+      log.success(`Authenticated as: ${tokenResult.value.email ?? 'unknown'}`);
+    }
+  }
+
+  // 2. Bundle path
+  const pathResult = discoverBundlePath(opts.bundlePath);
+  if (isErr(pathResult)) {
+    return err(pathResult.error);
+  }
+  const bundlePath = pathResult.value;
+
+  log.info(`Bundle:   ${bundlePath}`);
+  log.info(`Hub:      ${opts.hub}`);
+  log.info(`Slug:     ${opts.slug}`);
+  log.info(`Auth:     ${opts.clientCredentials ? 'client_credentials' : 'PKCE cache'}`);
+
+  // 3. Metadata
+  const metaResult = resolveBundleMetadata(opts, bundlePath);
+  if (isErr(metaResult)) {
+    return err(metaResult.error);
+  }
+  const metadata = metaResult.value;
+  log.info(`Version:  ${metadata.bundleVersion} (min=${metadata.minNativeVersion}, max=${metadata.maxNativeVersion})`);
+
+  // 4. Upload
+  const uploadResult = await uploadBundle(opts, metadata, accessToken, bundlePath);
+  if (isErr(uploadResult)) {
+    return err(uploadResult.error);
+  }
+
+  const result = uploadResult.value;
+  log.divider();
+  log.header('Publish-bundle Summary', metadata.bundleVersion);
+  if (result.dryRun) {
+    log.info(`[DRY-RUN] ${metadata.bundleVersion} → would upload ${result.bundleFilename}`);
+  } else {
+    log.success(`${metadata.bundleVersion} → ${result.bundleFilename}${result.url ? ` (${result.url})` : ''}`);
+  }
+
+  return ok(undefined);
+}
+
 // ─────────────────────────────── Main ────────────────────────────────────────
 
 /**
@@ -1411,6 +1906,25 @@ async function main(): Promise<void> {
     }
 
     const result = await publish(optsResult.value);
+    if (isErr(result)) {
+      log.error(result.error.message);
+      process.exit(1);
+    }
+    process.exit(0);
+  }
+
+  // ── publish-bundle ──
+  if (cmd === 'publish-bundle') {
+    // Re-include subCmd (may be a flag like --slug) plus rest
+    const publishBundleArgv = subCmd ? [subCmd, ...rest] : rest;
+    const optsResult = parsePublishBundleOptions(publishBundleArgv);
+    if (isErr(optsResult)) {
+      log.error(`publish-bundle: ${optsResult.error.message}`);
+      printHelp();
+      process.exit(1);
+    }
+
+    const result = await publishBundle(optsResult.value);
     if (isErr(result)) {
       log.error(result.error.message);
       process.exit(1);
