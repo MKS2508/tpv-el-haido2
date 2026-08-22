@@ -4,6 +4,34 @@ Log de progreso por fase. Mantenido al día con cada milestone completado.
 
 ---
 
+## 2026-08-22 (evening, cont. 2) — FIX E: plataformas/platforms.mdx updater endpoint (R1)
+
+**Milestone**: follow-up del FIX D — cerraba el último scope pendiente de los dev-guide pages con 6 hits outdated (3 por archivo). El más crítico: línea 344 de cada archivo era el Tauri updater endpoint example con la URL vieja estática `latest.json` — actively misleading per R1 decision.
+
+**Commit mergeado**:
+- `a87580e` → (merge E) — `docs(haidodocs): fix plataformas.mdx updater endpoint + version sample + download URL (R1)`
+
+**Archivos tocados** (2):
+- `apps/haidodocs/content/docs/desarrollo/plataformas.mdx` (ES)
+- `apps/haidodocs/content/en/docs/development/platforms.mdx` (EN)
+
+Cada uno con 3 hunks:
+- L158: `wget .../releases/latest/download/tpv-el-haido_arm64.deb` → `wget https://haido.releases.mks2508.systems/releases/latest/download/tpv-el-haido_arm64.deb`
+- L238: `"version": "0.1.0"` → `"version": "0.1.3"`
+- L344: `https://github.com/.../releases/latest/download/latest.json` → `https://haido.releases.mks2508.systems/api/updates/{{target}}/{{arch}}/{{current_version}}` (template Tauri 2 dinámico per R1)
+
+`pubkey` y `windows.installMode` preservados intactos.
+
+**Verification final**:
+- `bun run build` exit 0 (Next.js 16.2.2, 71 static pages)
+- Grep `github.com/MKS2508/tpv-el-haido2/releases` across `apps/haidodocs/content/` → **0 hits globally** — fully cleaned en todos los docs
+- Grep `haido.releases.mks2508.systems/api/updates/{{target}}/{{arch}}/{{current_version}}` → 2 hits (uno por archivo)
+- Grep `0.1.0` remaining: solo en historical changelog entries (correct records, no son stale refs)
+
+**Estado del sweep docs**: ✅ 100% completo. 8 archivos de docs web sincronizados con el estado real del proyecto (release-hub + v0.1.3 + wizard Linux + Tauri 2 endpoint template).
+
+---
+
 ## 2026-08-22 (evening, cont.) — FIX D: haidodocs download links alineados (release-hub + v0.1.3 + Linux available)
 
 **Pedido de Waxin**: "para la web de docs donde está lo de descargar ajusta los enlaces pls".
