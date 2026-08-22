@@ -14,7 +14,7 @@ import type { IAuditContext } from '@/services/audit.service';
 import * as audit from '@/services/audit.service';
 import { HttpStorageAdapter } from '@/services/http-storage-adapter';
 import { IndexedDbStorageAdapter } from '@/services/indexeddb-storage-adapter';
-import { isTauri } from '@/services/platform';
+import { getPlatformService, isTauri } from '@/services/platform';
 import { SqliteStorageAdapter } from '@/services/sqlite-storage-adapter';
 import type { IStorageAdapter, StorageMode } from '@/services/storage-adapter.interface';
 import type { LicenseStatus } from '@/types/license';
@@ -86,7 +86,7 @@ export interface AppState {
 }
 
 // Initialize storage adapters
-const sqliteAdapter = new SqliteStorageAdapter();
+const sqliteAdapter = new SqliteStorageAdapter(getPlatformService());
 const httpAdapter = new HttpStorageAdapter();
 const indexedDbAdapter = new IndexedDbStorageAdapter();
 

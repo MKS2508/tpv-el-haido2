@@ -11,10 +11,18 @@ import type {
   IAuditLogExportResult,
   IAuditLogFilter,
 } from '@/models/AuditLog';
+import type Category from '@/models/Category';
 import type Order from '@/models/Order';
+import type Product from '@/models/Product';
+import type Table from '@/models/Table';
+import type User from '@/models/User';
 import { loadPrinterConfig, printOrder } from '@/services/thermal-printer.service';
 import type { LicenseStatus } from '@/types/license';
-import type { AuditPlatformResult, PlatformService } from './PlatformService';
+import type {
+  AuditPlatformResult,
+  PlatformService,
+  StoragePlatformResult,
+} from './PlatformService';
 
 const log = createContextLogger('TauriPlatformService');
 
@@ -237,5 +245,102 @@ export class TauriPlatformService implements PlatformService {
       () => invoke<number>('cleanup_audit_logs', { cutoffDate }),
       'BACKEND_FAILED'
     );
+  }
+
+  // ================================
+  // STORAGE CRUD (SQLite via Tauri commands)
+  // ================================
+  // 1:1 port of the 23 raw `invoke()` calls previously in
+  // src/services/sqlite-storage-adapter.ts. Same Tauri command strings,
+  // same payload shapes (e.g. `{ product }`, `{ id: x.id }`, `{ data }`).
+  // Wrapped in `tryCatchAsync` with `PlatformError` for unified Result shape.
+
+  // Products
+  async getProducts(): StoragePlatformResult<Product[]> {
+    return tryCatchAsync(() => invoke<Product[]>('get_products'), 'BACKEND_FAILED');
+  }
+  async createProduct(product: Product): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('create_product', { product }), 'BACKEND_FAILED');
+  }
+  async updateProduct(product: Product): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('update_product', { product }), 'BACKEND_FAILED');
+  }
+  async deleteProduct(product: Product): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('delete_product', { id: product.id }), 'BACKEND_FAILED');
+  }
+
+  // Categories
+  async getCategories(): StoragePlatformResult<Category[]> {
+    return tryCatchAsync(() => invoke<Category[]>('get_categories'), 'BACKEND_FAILED');
+  }
+  async createCategory(category: Category): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('create_category', { category }), 'BACKEND_FAILED');
+  }
+  async updateCategory(category: Category): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('update_category', { category }), 'BACKEND_FAILED');
+  }
+  async deleteCategory(category: Category): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('delete_category', { id: category.id }), 'BACKEND_FAILED');
+  }
+
+  // Orders
+  async getOrders(): StoragePlatformResult<Order[]> {
+    return tryCatchAsync(() => invoke<Order[]>('get_orders'), 'BACKEND_FAILED');
+  }
+  async createOrder(order: Order): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('create_order', { order }), 'BACKEND_FAILED');
+  }
+  async updateOrder(order: Order): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('update_order', { order }), 'BACKEND_FAILED');
+  }
+  async deleteOrder(order: Order): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('delete_order', { id: order.id }), 'BACKEND_FAILED');
+  }
+
+  // Tables
+  async getTables(): StoragePlatformResult<Table[]> {
+    return tryCatchAsync(() => invoke<Table[]>('get_tables'), 'BACKEND_FAILED');
+  }
+  async createTable(table: Table): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('create_table', { table }), 'BACKEND_FAILED');
+  }
+  async updateTable(table: Table): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('update_table', { table }), 'BACKEND_FAILED');
+  }
+  async deleteTable(table: Table): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('delete_table', { id: table.id }), 'BACKEND_FAILED');
+  }
+
+  // Users
+  async getUsers(): StoragePlatformResult<User[]> {
+    return tryCatchAsync(() => invoke<User[]>('get_users'), 'BACKEND_FAILED');
+  }
+  async createUser(user: User): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('create_user', { user }), 'BACKEND_FAILED');
+  }
+  async updateUser(user: User): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('update_user', { user }), 'BACKEND_FAILED');
+  }
+  async deleteUser(user: User): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('delete_user', { id: user.id }), 'BACKEND_FAILED');
+  }
+
+  // Utility
+  async clearAllData(): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('clear_all_data'), 'BACKEND_FAILED');
+  }
+  async exportData(): StoragePlatformResult<{
+    products: Product[];
+    categories: Category[];
+    orders: Order[];
+  }> {
+    return tryCatchAsync(() => invoke('export_data'), 'BACKEND_FAILED');
+  }
+  async importData(data: {
+    products: Product[];
+    categories: Category[];
+    orders: Order[];
+  }): StoragePlatformResult<void> {
+    return tryCatchAsync(() => invoke('import_data', { data }), 'BACKEND_FAILED');
   }
 }

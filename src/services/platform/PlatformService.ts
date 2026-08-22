@@ -6,12 +6,17 @@ import type {
   IAuditLogExportResult,
   IAuditLogFilter,
 } from '@/models/AuditLog';
+import type Category from '@/models/Category';
 import type Order from '@/models/Order';
+import type Product from '@/models/Product';
+import type Table from '@/models/Table';
+import type User from '@/models/User';
 import type { LicenseStatus } from '@/types/license';
 
 /**
- * Generic platform-level error code. Audit methods map to a small set of
- * platform-runtime failure modes (UNSUPPORTED_PLATFORM, BACKEND_FAILED, etc.).
+ * Generic platform-level error code. Surface method results (storage CRUD, audit)
+ * map to a small set of platform-runtime failure modes (UNSUPPORTED_PLATFORM,
+ * BACKEND_FAILED, INVALID_PAYLOAD).
  */
 export type PlatformErrorCode = 'UNSUPPORTED_PLATFORM' | 'BACKEND_FAILED' | 'INVALID_PAYLOAD';
 
@@ -20,6 +25,9 @@ export type PlatformError = ResultError<PlatformErrorCode>;
 
 /** Audit method return shape (mirrors existing audit.service.ts). */
 export type AuditPlatformResult<T> = Promise<Result<T, PlatformError>>;
+
+/** Storage CRUD method return shape (mirrors the audit pattern). */
+export type StoragePlatformResult<T> = Promise<Result<T, PlatformError>>;
 
 export interface PlatformService {
   // ================================
@@ -171,4 +179,56 @@ export interface PlatformService {
    * @returns Result with deleted row count, or platform-level error.
    */
   cleanupAuditLogs(cutoffDate: string): AuditPlatformResult<number>;
+
+  // ================================
+  // STORAGE CRUD (SQLite via Tauri commands)
+  // ================================
+  // 1:1 port of the 23 raw `invoke()` calls previously in
+  // src/services/sqlite-storage-adapter.ts. Each method maps to a single
+  // Tauri command. Wrapped in `tryCatchAsync` with `PlatformError` so the
+  // adapter can convert to its own `StorageResult<T>` via a small
+  // `toStorageError<T>()` bridge, mirroring the audit pattern.
+
+  // Products
+  getProducts(): StoragePlatformResult<Product[]>;
+  createProduct(product: Product): StoragePlatformResult<void>;
+  updateProduct(product: Product): StoragePlatformResult<void>;
+  deleteProduct(product: Product): StoragePlatformResult<void>;
+
+  // Categories
+  getCategories(): StoragePlatformResult<Category[]>;
+  createCategory(category: Category): StoragePlatformResult<void>;
+  updateCategory(category: Category): StoragePlatformResult<void>;
+  deleteCategory(category: Category): StoragePlatformResult<void>;
+
+  // Orders
+  getOrders(): StoragePlatformResult<Order[]>;
+  createOrder(order: Order): StoragePlatformResult<void>;
+  updateOrder(order: Order): StoragePlatformResult<void>;
+  deleteOrder(order: Order): StoragePlatformResult<void>;
+
+  // Tables
+  getTables(): StoragePlatformResult<Table[]>;
+  createTable(table: Table): StoragePlatformResult<void>;
+  updateTable(table: Table): StoragePlatformResult<void>;
+  deleteTable(table: Table): StoragePlatformResult<void>;
+
+  // Users
+  getUsers(): StoragePlatformResult<User[]>;
+  createUser(user: User): StoragePlatformResult<void>;
+  updateUser(user: User): StoragePlatformResult<void>;
+  deleteUser(user: User): StoragePlatformResult<void>;
+
+  // Utility
+  clearAllData(): StoragePlatformResult<void>;
+  exportData(): StoragePlatformResult<{
+    products: Product[];
+    categories: Category[];
+    orders: Order[];
+  }>;
+  importData(data: {
+    products: Product[];
+    categories: Category[];
+    orders: Order[];
+  }): StoragePlatformResult<void>;
 }

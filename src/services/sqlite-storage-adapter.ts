@@ -1,224 +1,162 @@
-import { err, ok, tryCatchAsync } from '@mks2508/no-throw';
-import { invoke } from '@tauri-apps/api/core';
+import { err, type Result } from '@mks2508/no-throw';
 import { StorageErrorCode } from '@/lib/error-codes';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
 import type Table from '@/models/Table';
 import type User from '@/models/User';
+import { getPlatformService } from '@/services/platform';
+import type { PlatformError, PlatformService } from '@/services/platform/PlatformService';
 import type { IStorageAdapter, StorageResult } from './storage-adapter.interface';
 
 /**
- * SQLite storage adapter that uses Tauri commands to interact with
+ * Bridges a `PlatformError` into a `StorageResultError`, preserving the
+ * message + cause so ops still see what failed. Each call site picks the
+ * appropriate `StorageErrorCode` fallback for its operation.
+ *
+ * Mirrors the `toAuditError<T>()` bridge in `audit.service.ts` (R2).
+ */
+function toStorageError<T>(
+  platformResult: Result<T, PlatformError>,
+  fallbackCode: StorageErrorCode
+): StorageResult<T> {
+  if (platformResult.ok) return platformResult;
+  return err({
+    code: fallbackCode,
+    message: platformResult.error.message,
+    cause: platformResult.error.cause,
+  });
+}
+
+/**
+ * SQLite storage adapter that uses PlatformService to interact with
  * the embedded SQLite database in the Rust backend.
+ *
+ * All 23 Tauri commands are routed through `PlatformService` instead of
+ * direct `@tauri-apps/api/core` `invoke()` calls. The platform service
+ * wraps each call in `tryCatchAsync` and returns `Result<T, PlatformError>`,
+ * which we bridge into the adapter's own `StorageResult<T>` via
+ * `toStorageError<T>()`.
  */
 export class SqliteStorageAdapter implements IStorageAdapter {
+  private platform: PlatformService;
+
+  constructor(platform: PlatformService = getPlatformService()) {
+    this.platform = platform;
+  }
+
   // ==================== Products ====================
 
   async getProducts(): Promise<StorageResult<Product[]>> {
-    return tryCatchAsync(
-      async () => invoke<Product[]>('get_products'),
-      StorageErrorCode.ReadFailed
-    );
+    return toStorageError(await this.platform.getProducts(), StorageErrorCode.ReadFailed);
   }
 
   async createProduct(product: Product): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('create_product', { product }),
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return toStorageError(await this.platform.createProduct(product), StorageErrorCode.WriteFailed);
   }
 
   async updateProduct(product: Product): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('update_product', { product }),
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return toStorageError(await this.platform.updateProduct(product), StorageErrorCode.WriteFailed);
   }
 
   async deleteProduct(product: Product): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('delete_product', { id: product.id }),
+    return toStorageError(
+      await this.platform.deleteProduct(product),
       StorageErrorCode.DeleteFailed
     );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // ==================== Categories ====================
 
   async getCategories(): Promise<StorageResult<Category[]>> {
-    return tryCatchAsync(
-      async () => invoke<Category[]>('get_categories'),
-      StorageErrorCode.ReadFailed
-    );
+    return toStorageError(await this.platform.getCategories(), StorageErrorCode.ReadFailed);
   }
 
   async createCategory(category: Category): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('create_category', { category }),
+    return toStorageError(
+      await this.platform.createCategory(category),
       StorageErrorCode.WriteFailed
     );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async updateCategory(category: Category): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('update_category', { category }),
+    return toStorageError(
+      await this.platform.updateCategory(category),
       StorageErrorCode.WriteFailed
     );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
   }
 
   async deleteCategory(category: Category): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('delete_category', { id: category.id }),
+    return toStorageError(
+      await this.platform.deleteCategory(category),
       StorageErrorCode.DeleteFailed
     );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
   }
 
   // ==================== Orders ====================
 
   async getOrders(): Promise<StorageResult<Order[]>> {
-    return tryCatchAsync(async () => invoke<Order[]>('get_orders'), StorageErrorCode.ReadFailed);
+    return toStorageError(await this.platform.getOrders(), StorageErrorCode.ReadFailed);
   }
 
   async createOrder(order: Order): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('create_order', { order }),
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return toStorageError(await this.platform.createOrder(order), StorageErrorCode.WriteFailed);
   }
 
   async updateOrder(order: Order): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('update_order', { order }),
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return toStorageError(await this.platform.updateOrder(order), StorageErrorCode.WriteFailed);
   }
 
   async deleteOrder(order: Order): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('delete_order', { id: order.id }),
-      StorageErrorCode.DeleteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    return toStorageError(await this.platform.deleteOrder(order), StorageErrorCode.DeleteFailed);
   }
 
   // ==================== Tables ====================
 
   async getTables(): Promise<StorageResult<Table[]>> {
-    return tryCatchAsync(async () => invoke<Table[]>('get_tables'), StorageErrorCode.ReadFailed);
+    return toStorageError(await this.platform.getTables(), StorageErrorCode.ReadFailed);
   }
 
   async createTable(table: Table): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('create_table', { table }),
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return toStorageError(await this.platform.createTable(table), StorageErrorCode.WriteFailed);
   }
 
   async updateTable(table: Table): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('update_table', { table }),
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return toStorageError(await this.platform.updateTable(table), StorageErrorCode.WriteFailed);
   }
 
   async deleteTable(table: Table): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('delete_table', { id: table.id }),
-      StorageErrorCode.DeleteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    return toStorageError(await this.platform.deleteTable(table), StorageErrorCode.DeleteFailed);
   }
 
   // ==================== Users ====================
 
   async getUsers(): Promise<StorageResult<User[]>> {
-    return tryCatchAsync(async () => invoke<User[]>('get_users'), StorageErrorCode.ReadFailed);
+    return toStorageError(await this.platform.getUsers(), StorageErrorCode.ReadFailed);
   }
 
   async createUser(user: User): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('create_user', { user }),
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return toStorageError(await this.platform.createUser(user), StorageErrorCode.WriteFailed);
   }
 
   async updateUser(user: User): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('update_user', { user }),
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return toStorageError(await this.platform.updateUser(user), StorageErrorCode.WriteFailed);
   }
 
   async deleteUser(user: User): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('delete_user', { id: user.id }),
-      StorageErrorCode.DeleteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    return toStorageError(await this.platform.deleteUser(user), StorageErrorCode.DeleteFailed);
   }
 
   // ==================== Utility ====================
 
   async clearAllData(): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('clear_all_data'),
-      StorageErrorCode.DeleteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.DeleteFailed, message: result.error.message });
+    return toStorageError(await this.platform.clearAllData(), StorageErrorCode.DeleteFailed);
   }
 
   async exportData(): Promise<
     StorageResult<{ products: Product[]; categories: Category[]; orders: Order[] }>
   > {
-    return tryCatchAsync(
-      async () =>
-        invoke<{ products: Product[]; categories: Category[]; orders: Order[] }>('export_data'),
-      StorageErrorCode.ReadFailed
-    );
+    return toStorageError(await this.platform.exportData(), StorageErrorCode.ReadFailed);
   }
 
   async importData(data: {
@@ -226,12 +164,6 @@ export class SqliteStorageAdapter implements IStorageAdapter {
     categories: Category[];
     orders: Order[];
   }): Promise<StorageResult<void>> {
-    const result = await tryCatchAsync(
-      async () => invoke('import_data', { data }),
-      StorageErrorCode.WriteFailed
-    );
-    return result.ok
-      ? ok(undefined)
-      : err({ code: StorageErrorCode.WriteFailed, message: result.error.message });
+    return toStorageError(await this.platform.importData(data), StorageErrorCode.WriteFailed);
   }
 }
