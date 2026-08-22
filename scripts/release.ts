@@ -34,13 +34,7 @@ import { join, basename, resolve } from 'node:path';
 import { homedir, platform } from 'node:os';
 import * as oauth from 'oauth4webapi';
 import logger from '@mks2508/better-logger';
-import {
-  createProvider,
-  createReleasePrompt,
-  type IAutoReleaseInfo,
-  type IGeminiPromptConfig,
-  type IVersionData,
-} from 'gemini-commit-wizard';
+import { createProvider } from 'gemini-commit-wizard';
 import {
   ok,
   err,
@@ -227,10 +221,12 @@ Commands:
     --slug     Project slug in release-hub (e.g. "haido")     (required)
     --hub      Admin API base URL (default: ${DEFAULT_HUB_URL})
     --notes    Release notes / changelog text
-    --ai-notes Generate release notes with AI (gemini-commit-wizard) from the
-                  commits since the last git tag. Ignored when --notes is given.
-                  Needs GEMINI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY or the
-                  \`gemini\` CLI; degrades to empty notes with a warning if absent.
+    --ai-notes Generate release notes with AI from the commits since the last
+                  git tag. Uses a TPV-specific prompt template that calls out
+                  architectural changes, fixes (con hash), y CI/devops con detalle
+                  técnico. Ignored when --notes is given. Needs GEMINI_API_KEY /
+                  GROQ_API_KEY / OPENROUTER_API_KEY or the \`gemini\` CLI; degrades
+                  to empty notes with a warning if absent.
     --skip-build  Skip bun run build-release; assumes artifacts exist
     --client-credentials  Headless auth via OAuth2 client_credentials grant (CI mode).
                   Requires RELEASE_HUB_CLIENT_ID + RELEASE_HUB_CLIENT_SECRET env vars.
@@ -1318,25 +1314,38 @@ function gitCapture(args: string[]): Result<string, ResultError> {
 }
 
 /**
- * Extracts the `## 📝 NOTAS DE RELEASE` section from a raw AI response.
+ * Normalises the AI response body to the release-notes markdown we ship.
  *
- * The prompt built by `createReleasePrompt` asks for a markdown document with
- * four `##` sections; only the release-notes one is meant for end users.
+ * The custom `buildTPVHaidoReleasePrompt()` already tells the model to output
+ * the notes inline (starting with `## ✨ Cambios principales`), so most of the
+ * time we just trim and return. The legacy `## 📝 NOTAS DE RELEASE` regex
+ * stays as a safety net for models that wrap their answer inside an outer
+ * `markdown` fence.
  *
  * @param response - Raw AI response text.
- * @returns The section body, or an error when the section is absent.
+ * @returns The trimmed release-notes body, or an error when the model returns
+ *   nothing usable.
  */
 function extractReleaseNotesSection(response: string): Result<string, ResultError> {
-  const match = response.match(/## 📝 NOTAS DE RELEASE\s*\n([\s\S]*?)(?=\n## |\n*$)/);
-  const body = match?.[1]
-    ?.replace(/```\s*$/, '')
+  const wrapperMatch = response.match(
+    /## 📝 NOTAS DE RELEASE\s*\n([\s\S]*?)(?=\n## |\n*$)/,
+  );
+  const fenced = response.match(/```markdown\s*\n([\s\S]*?)\n```/);
+
+  const candidate =
+    wrapperMatch?.[1] ??
+    (fenced?.[1]?.includes('## ✨ Cambios principales') ? fenced[1] : undefined) ??
+    response;
+
+  const body = candidate
+    .replace(/```\s*$/, '')
     .trim();
 
-  if (!body) {
+  if (!body || body.length < 20) {
     return err(
       resultError(
         'AI_NOTES_UNPARSEABLE',
-        'AI response did not contain a "## 📝 NOTAS DE RELEASE" section.',
+        'AI response did not contain any recognisable release-notes content.',
       ),
     );
   }
@@ -1344,16 +1353,106 @@ function extractReleaseNotesSection(response: string): Result<string, ResultErro
 }
 
 /**
- * Generates release notes with the `gemini-commit-wizard` AI provider system.
+ * Builds the project-specific prompt sent to the AI provider for release notes.
+ *
+ * Why a custom template (instead of `createReleasePrompt()` from
+ * `gemini-commit-wizard`): the SDK template is generic and asks Gemini for a
+ * 4-section marketing-flavoured markdown (RESUMEN / CHANGELOG / VERSION /
+ * NOTAS DE RELEASE). In practice it omits the actual architectural changes
+ * (e.g. refactors, command additions, dependency swaps) — concrete things
+ * users and reviewers need to see. This template forces technical depth,
+ * Spanish output, and a flexible section layout that skips empty buckets.
+ *
+ * @param version - Version being released, e.g. "0.1.4".
+ * @param lastTag - Previous git tag (range base), e.g. "v0.1.3".
+ * @param commits - Commit lines (`%h %s`) between `lastTag` and HEAD.
+ * @param changedFiles - Repo-relative paths touched in the range.
+ * @returns The full prompt string ready for `provider.generate()`.
+ */
+function buildTPVHaidoReleasePrompt(
+  version: string,
+  lastTag: string,
+  commits: string[],
+  changedFiles: string[],
+): string {
+  const commitsBlock = commits.map((c) => `- ${c}`).join('\n');
+  const filesBlock = changedFiles.map((f) => `- ${f}`).join('\n');
+
+  return `Eres un ingeniero senior escribiendo las notas de release oficiales de TPV El Haido ${version} para usuarios técnicos y hosteleros profesionales. Las notas aparecen en la pantalla de actualización OTA de la app y en la release de GitHub — la gente decidirá si actualiza basándose en ellas.
+
+**PROYECTO**: TPV El Haido es un Punto de Venta (TPV/POS) desktop para restaurantes y bares en España. Stack: Tauri 2 + SolidJS + TypeScript en frontend, Rust backend con SQLite embebido, runtime Bun. Tiene sidecar AEAT-bridge para VerificaTu (compliance fiscal español), auto-updater vía release-hub (\`haido.releases.mks2508.systems\`), builds para macOS / Windows / Linux x64+arm64, y una PWA deployada en \`/tpv/\`. Idioma de las notas: **español**.
+
+**INPUTS**
+- Versión: \`${version}\` (tag anterior: \`${lastTag}\`)
+- ${commits.length} commits desde \`${lastTag}\`:
+${commitsBlock}
+- Archivos cambiados:
+${filesBlock}
+
+**FORMATO DE SALIDA** (objetivo ~1200 caracteres TOTAL — sé conciso)
+
+Cada sección debe caber en 2-4 frases (~200-300 chars). Si una sección crecería más de 3 bullets o 300 chars, recortá y priorizá lo más específico.
+
+\`\`\`
+## ✨ Cambios principales
+[1-2 frases describiendo QUÉ cambió en la app. Cita 1-2 hashes cortos o refs a TR cuando los commits los mencionan. ~150-250 chars.]
+
+## 🏗️ Arquitectura
+[SOLO si hubo cambios de arquitectura, refactor mayor, migraciones de API, comandos Tauri añadidos/renombrados, o consolidación de platform layer. 2-4 bullets, nombra archivos / módulos / comandos Tauri / rutas afectados. Si no hay, OMITE esta sección entera.]
+
+## 🐛 Correcciones
+[Bullets concisos en formato \`- hash …\`: cada fix con su hash corto o número de TR cuando aplique. MÁXIMO 4 bullets; si hay más de 4 fixes, agrupá por área (\`- hash…\` ×N en storage, \`- hash…\` ×N en instalador, etc.). Si no hay commits \`fix(...)\` relevantes, OMITE.]
+
+## ⚙️ CI / DevOps
+[SOLO si cambiaron workflows (\`.github/workflows/*.yml\`, \`apps/*/Dockerfile\`, manifests Coolify), scripts (\`scripts/*.ts\`), o pipeline de release. 2-3 bullets nombrando los workflows/archivos. Si no hay, OMITE.]
+
+## 📦 Miscelánea
+[MÁXIMO 3 bullets — agrupa cambios no arquitectónicos (themes, deps, docs, refactors cosméticos). Si no hay, OMITE.]
+\`\`\`
+
+**REGLAS DURAS**
+- ESPAÑOL. Tono técnico profesional, tuteo neutro. Sin emojis decorativos fuera de las secciones listadas arriba.
+- **LÍMITE DE LONGITUD**: el total NO debe superar ~1500 caracteres. Si ves que crece, recortá bullets genéricos antes que específico; si aún así no entra, OMITE la sección de menor impacto (normalmente 📦 Miscelánea).
+- **PROHIBIDAS** las muletillas huecas que suenan a marketing: "mejoras significativas", "varias mejoras", "numerosas correcciones", "se han realizado mejoras", "se han introducido mejoras", "se realizó una migración", "sienta las bases para", "refuerza el compromiso", "consolida la experiencia", "allana el camino", "marca un hito". Si no podés decir algo concreto del commit, OMITE la sección.
+- CADA afirmación debe ser verificable desde los commits o archivos. Si el commit lo dice, dilo con su hash corto. Si NO lo dice, **NO lo inventes** — la honestidad brutal es lo que diferencia unas release notes útiles de copy vacío.
+- No repitas el changelog al final ni añadas secciones no listadas arriba. La salida son SOLO las secciones que apliquen, en markdown plano, sin envoltorio \`\`\`markdown\`.
+- Si el rango tiene menos de 3 commits o son todos \`chore(release): version bump\`, dilo explícitamente y termina con UNA sola frase.
+
+**EJEMPLO DE PROFUNDIDAD ESPERADA** (no copies el contenido — solo la estructura y profundidad; la realidad manda):
+
+\`\`\`
+## ✨ Cambios principales
+Migración completa del platform layer: \`sqlite-storage-adapter\` y \`audit.service\` ya no llaman \`invoke()\` directamente, pasan por \`PlatformService\` (TR-19, 27 invocaciones consolidadas, commits \`51ad0a0\` + \`d7b26a6\`). Habilita el run-mode PWA+iOS sin reescritura.
+
+## 🏗️ Arquitectura
+- \`PlatformService\`: nueva interfaz estable para Tauri/PWA/runtime mock (3 implementaciones en \`src/services/platform/\`).
+- \`TauriPlatformService\`: 23 métodos refactorizados (\`getProducts\`, \`createOrder\`, …). No breaking en lo expuesto — son detalles internos.
+- Eliminados 5 \`isTauri()\` ad-hoc en \`src/services/\` y \`src/hooks/\`.
+
+## ⚙️ CI / DevOps
+- \`.github/workflows/linux-x64-deploy.yml\`: añadido step de \`publish --client-credentials\` tras \`build-bundle\`.
+- \`scripts/release.ts\`: nuevo sub-comando \`publish-bundle\` con flag \`--client-credentials\` para CI headless.
+
+## 📦 Miscelánea
+- \`docs/progress-log.md\`: entradas cont.3–cont.5 desde la sync multi-sesión.
+- Bump cosmético de versión \`0.1.0 → 0.1.3\` en JSDoc y CLI examples.
+\`\`\`
+
+Ahora escribe las notas de release para **TPV El Haido ${version}** basándote ÚNICAMENTE en los commits y archivos de arriba. Empieza directo con \`## ✨ Cambios principales\` — sin saludo introductorio ni resumen al final.`;
+}
+
+/**
+ * Generates release notes for the auto-update channel with an AI provider.
  *
  * Uses `createProvider()` (auto-detects GEMINI_API_KEY > GROQ_API_KEY >
- * OPENROUTER_API_KEY > `gemini` binary) plus `createReleasePrompt()` directly —
- * `AutoReleaseManagerAI` is bypassed on purpose because it hardcodes a
- * `gemini` CLI spawn and ignores the multi-provider selection.
+ * OPENROUTER_API_KEY > \`gemini\` CLI binary) and feeds the project-specific
+ * `buildTPVHaidoReleasePrompt()` template directly — bypasses
+ * `createReleasePrompt()` on purpose because the SDK's generic template
+ * produces marketing-flavoured prose that drops architectural details.
  *
- * The git range is `<last tag>..HEAD`. Every failure mode (no provider
- * configured, no tags yet, AI error, unparseable response) is returned as an
- * error so callers can degrade gracefully instead of failing the release.
+ * Git range is \`<last tag>..HEAD\`. Every failure mode (no provider, no
+ * tags yet, empty range, AI error, unparseable body) is returned as an error
+ * so callers can degrade gracefully instead of failing the release.
  *
  * @param version - Version string being released (e.g. "0.1.4").
  * @returns The release-notes markdown, or an error describing why not.
@@ -1397,40 +1496,10 @@ export async function generateReleaseNotesWithAI(
     );
   }
 
-  const [major = 0, minor = 0, patch = 0] = version.split('.').map((n) => Number.parseInt(n, 10));
-  const releaseInfo: IAutoReleaseInfo = { version, prefix: '', major, minor, patch };
-  const versionInfo: IVersionData = {
-    version,
-    date: new Date().toISOString().slice(0, 10),
-    type: 'patch',
-    title: `TPV El Haido ${version}`,
-    changes: [],
-    technical_notes: '',
-    breaking_changes: [],
-  };
-
-  const promptConfig: IGeminiPromptConfig = {
-    projectContext: {
-      name: 'TPV El Haido',
-      description: 'Point of Sale desktop app for restaurants/bars (Tauri 2 + SolidJS)',
-      version,
-      techStack: ['Tauri 2', 'SolidJS', 'TypeScript', 'Rust', 'Bun'],
-      targetPlatform: 'Desktop (macOS, Windows, Linux)',
-    },
-    analysisType: 'release',
-    specificContext: `Release ${version} — ${commits.length} commits since ${lastTag}.`,
-    data: {
-      releaseInfo,
-      versionInfo,
-      previousTag: lastTag,
-      commits,
-      changedFiles,
-      date: new Date().toISOString(),
-    },
-  };
+  const prompt = buildTPVHaidoReleasePrompt(version, lastTag, commits, changedFiles);
 
   const responseResult = await tryCatchAsync(
-    async () => provider.generate(createReleasePrompt(promptConfig)),
+    async () => provider.generate(prompt),
     'AI_GENERATION_FAILED',
   );
   if (isErr(responseResult)) {
