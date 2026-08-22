@@ -4,6 +4,117 @@ Log de progreso por fase. Mantenido al día con cada milestone completado.
 
 ---
 
+## 2026-08-22 (evening, cont. 3) — TR-20 windows-x64-deploy.yml + TR-release-publish-bundle (CI coverage 100% native + OTA)
+
+**Milestone**: cierra los 2 gaps estructurales de CI que FIX H flageó en su entry (la noche
+estaba "verde" pero faltaban Windows nativo + OTA publish). Waxin dio luz verde: *"push y
+sigue con lo demás, y ya no está bloqueado hub"* — el hub está vivo (verificado: `/api/updates`
+200, `/api/admin/projects/haido/bundles` 401 gated correctamente, `/releases/latest` 200),
+así que se dispatcharon las 2 lanes en paralelo.
+
+### Commits mergeados a `main` (2 merges `--no-ff`)
+
+- `93f3642` → `37eb8e6` → `2f0e25d` — **TR-20 windows-x64-deploy.yml**: pattern-follow
+  exacto de `linux-x64-deploy.yml`, deviations Windows-only justificadas (windows-latest,
+  pwsh verify MSVC+WebView2 pre-installed, choco install minisign, bash explícito en los 3
+  steps que lo necesitan, verify target `*.nsis.zip`, list step verifica 4 patterns vs 1 del
+  Linux). Pubkey minisign idéntica (`RWSxu04zRL8L250wN61H4xvaSW8GmAGBOIPtqmRbKw6C9ZNlC9VrlUUU`),
+  TR-15 publish + manual-fallback wired, sin tocar ningún archivo existente.
+  Refs: `docs/task-requests/TR-windows-x64-deploy.md` (TR-20, 134 líneas).
+- `0a14d4e` → `073d966` → `a4d374a` — **TR-release-publish-bundle**: cierra el OTA bundle
+  publish manual deferido por TR-15 paso 2.7. Surgical extension de `scripts/release.ts`:
+  nuevos types `IPublishBundleOptions` / `IBundleMetadata` / `IBundleUploadResult`, helpers
+  `parsePublishBundleOptions`, `discoverBundlePath`, `loadBundleManifest`, `resolveBundleMetadata`,
+  `uploadBundle`, `publishBundle` orchestrator, branch en `main()` dispatcher. **Zero diff en
+  el flow `publish` existente** (ni `parsePublishOptions`, ni `uploadArtifact()`, ni OIDC
+  helpers) — puramente aditivo. Rewire de `ota-bundle-deploy.yml` al patrón TR-15 (tag gate +
+  env check + `publish-bundle --client-credentials --skip-build` + manual fallback).
+  Endpoint: `POST ${hub}/api/admin/projects/${slug}/bundles` (multipart: `bundleVersion`,
+  `minNativeVersion`, `maxNativeVersion`, `signature`, `bundle`).
+  Refs: `docs/task-requests/TR-release-publish-bundle.md` (141 líneas).
+
+### Verification
+
+- `bun run typecheck` (tsgo --noEmit) → **EXIT 0** en main post-merge.
+- `actionlint .github/workflows/windows-x64-deploy.yml` → clean (0 errors, 0 warnings) desde
+  el worktree del agente (v1.7.12 homebrew). Mi verificación adicional desde el path del
+  worktree confirma exit 0.
+- `actionlint .github/workflows/ota-bundle-deploy.yml` → 1 warning pre-existente línea 56
+  (`SC2129` shellcheck sobre `GITHUB_OUTPUT` redirects del step "Resolve version window",
+  no introducido por Lane B — verificado por el agente con `git stash`).
+- `bun run scripts/release.ts publish-bundle --dry-run --slug haido --bundle /tmp/test-bundle-dir/bundle.zip
+  --bundle-version 2026.08.22-test-override` → EXIT 0, request shape correcto (URL, headers,
+  multipart fields), bundleVersion desde CLI override + min/max/signature desde manifest sidecar
+  fallback (cubre ambos code paths).
+- 7/7 helper probe green (`/tmp/probe-publish-bundle.ts`, NO commiteado):
+  `discoverBundlePath` (explicit + bogus-fail), `loadBundleManifest` (happy + missing-manifest-fail),
+  `resolveBundleMetadata` (CLI-overrides-win + manifest-sidecar-wins + missing-all-fail).
+- **DOCUMENTED-FIELDS-ASSUMED caveat** (re-flagged del TR): los multipart field names
+  (`bundleVersion`/`minNativeVersion`/`maxNativeVersion`/`signature`/`bundle`) vienen de la doc
+  inline en este repo (`scripts/build-bundle.ts:166-168` + step summary del workflow previo).
+  El código de `desktop-release-hub` no se pudo leer (no clonado en este entorno); mismatch
+  sale como `400 missing field` y es un fix quirúrgico de 1 línea (líneas ~1672-1677 de
+  `release.ts`). Aceptable: la doc es coherente entre 2 fuentes internas y el primer smoke real
+  contra el hub (en el siguiente tag `v*` post-merge) lo confirma.
+
+### Co-author audit
+
+- `git log -3 --format='%B' | grep -iE "co-author|claude|anthropic|AI|generated with"` en cada
+  branch → **0 hits** en ambos. Conventional commits only, default git config `MKS2508`.
+
+### Estado del sweep CI
+
+- **Cobertura CI nativa 100%**: linux-x64 ✓ (TR-12+15, v0.1.3 verificado end-to-end real),
+  linux-arm64 ✓ (TR-15, mismo wiring), **windows-x64 ✓ (TR-20, primer merge, primer run será
+  el smoke real)**.
+- **OTA bundle publish 100% automatizado**: `release.ts publish-bundle --client-credentials`
+  wired en `ota-bundle-deploy.yml`, mismo gating que nativos. El snippet de `curl` manual en
+  el step summary (que era el fallback interim de TR-14) reemplazado por el patrón
+  TR-15 con fallback manual si fallan los secrets.
+
+### Tareas
+
+- `#26` TR-windows-x64-deploy.yml → completed
+- `#27` TR-release-publish-bundle → completed
+
+### Reportes de agente (persistidos ANTES de terminar, per waxin lock 2026-08-18)
+
+- `/tmp/tr-windows-x64-deploy-report.md` (Lane A)
+- `/tmp/tr-release-publish-bundle-report.md` (Lane B)
+- `/tmp/probe-publish-bundle.ts` (helper unit probe, NO commiteado — bajo `/tmp/`)
+
+### Deferred / pendiente batches waxin-side (update)
+
+- `TR-19.E` (E2E smoke contra hub real con tag `v*` + download del bundle desde el cliente) —
+  ahora **unblocked**, candidatos los 2 nuevos workflows (windows-x64-deploy y
+  ota-bundle-deploy con publish-bundle) en el próximo tag. Pequeño, ~30 min, puede ser
+  inline en la próxima sesión si Waxin dispara un tag de prueba (`v0.1.4-rc` o similar).
+- `#10` npm dist-tags polluted — deferred (cosmetic).
+- `#24` FIX G tpv-cloud app version placeholders review — deferred.
+- **Wizard stub latent bug**: `src/installer/services/release-hub.ts:fetchLatestArtifact`
+  devuelve URL con path `/api/releases/${slug}/latest/${target}` que 404ea; el path correcto
+  es `/releases/latest/${slug}/${target}`. Latent porque el runtime del wizard delega al
+  IPC Rust `installer:download` (no usa el stub). 1 línea de fix, candidato a FIX I inline.
+
+### Perma-defer / nice-to-have (sin cambios)
+
+### Commits summary (este entry)
+
+- `93f3642 feat(ci): windows-x64-deploy.yml — pattern-follow linux-x64 + TR-15 publish wiring`
+- `37eb8e6 docs(task-requests): TR-windows-x64-deploy task-request — CI gap closing Windows production target`
+- `2f0e25d merge: TR-20 windows-x64-deploy.yml — pattern-follow linux-x64 + TR-15 publish wiring` (merge `--no-ff`)
+- `0a14d4e feat(release): add publish-bundle subcommand for OTA bundles + ota-bundle-deploy.yml wiring`
+- `073d966 docs(task-requests): TR-release-publish-bundle task-request - closes ota-bundle CI manual fallback`
+- `a4d374a merge: TR-release-publish-bundle — publish-bundle subcommand + ota-bundle-deploy.yml wiring` (merge `--no-ff`)
+
+### Estado final de main
+
+- **7 commits ahead de origin/main** (FIX F commit+merge+log + FIX H commit+merge+log +
+  TR-20 + TR-release-publish-bundle merge). Pendiente push.
+- Typecheck EXIT 0 confirmado en main post-merge.
+
+---
+
 ## 2026-08-22 (evening, cont. 2) — FIX E: plataformas/platforms.mdx updater endpoint (R1)
 
 **Milestone**: follow-up del FIX D — cerraba el último scope pendiente de los dev-guide pages con 6 hits outdated (3 por archivo). El más crítico: línea 344 de cada archivo era el Tauri updater endpoint example con la URL vieja estática `latest.json` — actively misleading per R1 decision.
