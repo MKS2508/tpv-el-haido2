@@ -5,6 +5,7 @@ mod models;
 mod ota;
 mod license;
 mod screenshot;
+mod installer;
 
 use std::fs;
 use std::sync::Mutex;
@@ -678,86 +679,72 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-/// Modo installer — TR-19.A.2 (sidecar pattern, ver r7).
+/// Modo installer — TR-19.A.2 + TR-19.B (sidecar pattern, ver r7).
 ///
 /// `./tpv-el-haido --install` monta el wizard installer en lugar del POS. La
 /// diferencia con `run()`:
 ///
 /// 1. WebviewWindow con label `"installer"` (POS usa `"main"`) — el frontend
 ///    distingue modo por label y monta `<InstallerApp />` en `src/main.tsx`.
-/// 2. No monta la DB ni el OTA poller — el installer es stateless hasta que
-///    TR-19.B enchufe la instalación real. Mantener el setup mínimo reduce
-///    blast radius y deja claro que el installer es ortogonal al runtime POS.
-/// 3. `invoke_handler` registra sólo stubs de IPC (`installer_stub::*`) que
-///    devuelven `Err("not wired yet")`. TR-19.B los reemplaza por handlers
-///    reales (download con checksum, install con file ops, rollback, uninstall).
+/// 2. No monta la DB ni el OTA poller — el installer es stateless y vive sólo
+///    lo que tarde la operación de download/install. El poller OTA sería
+///    misleading dentro de un install.
+/// 3. `invoke_handler` registra los IPC handlers reales de `installer::*`
+///    (`download`/`install`/`rollback`/`uninstall`). El frontend los invoca
+///    con prefijo `installer:download`, `installer:install`, etc.
 ///
 /// Capabilities de los IPC NO se exponen vía `tauri.conf.json` en este TR — eso
-/// es TR-19.A.3. Mientras tanto los stubs están registrados en el builder pero
-/// el frontend los invocará sin permiso explícito (Tauri 2 los deja pasar si
-/// están en `invoke_handler`).
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run_installer_mode() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_dialog::init())
-        .setup(|app| {
-            tauri::WebviewWindowBuilder::new(
-                app,
-                "installer",
-                tauri::WebviewUrl::App("index.html".into()),
-            )
-            .title("TPV El Haido — Installer")
-            .inner_size(800.0, 600.0)
-            .resizable(false)
-            .center()
-            .build()?;
-
-            println!("[installer] sidecar wizard mounted — waiting for frontend bootstrap");
-
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![
-            installer_stub::download,
-            installer_stub::install,
-            installer_stub::rollback,
-            installer_stub::uninstall,
-        ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application in installer mode");
-}
-
-/// Stubs IPC del installer — TR-19.B enchufa los handlers reales.
+/// es TR-19.A.3. Mientras tanto los handlers están registrados en el builder
+/// y Tauri 2 los deja pasar si están en `invoke_handler` (default allowlist).
 ///
-/// El contrato con el frontend (ver `src/installer/contracts.ts`) está
-/// congelado por nombre y shape; sólo cambia la implementación. Mantener los
-/// stubs centralizados aquí hace que el grep de "qué falta por wirear" sea
-/// trivial — `grep -r 'not wired yet' src-tauri/`.
-mod installer_stub {
-    #[tauri::command]
-    pub fn download(url: String, checksum_sha256: String) -> Result<String, String> {
-        let _ = (url, checksum_sha256);
-        Err("installer:download not wired yet — see TR-19.B".into())
+/// ## Sobre la firma (`Context` por parámetro)
+///
+/// A diferencia de `run()`, esta función recibe el `Context` ya construido
+/// desde fuera. Razón: el macro `tauri::generate_context!()` emite un static
+/// por call-site (e.g. `_EMBED_INFO_PLIST`); si `run()` y
+/// `run_installer_mode()` lo invocan ambos, el linker falla por símbolo
+/// duplicado. `main.rs` es el único sitio que debe llamarlo (la matriz es
+/// 1 binario × 1 contexto). Tests saltan este path bajo `cfg(not(test))`.
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run_installer_mode(context: tauri::Context) {
+    #[cfg(not(test))]
+    {
+        tauri::Builder::default()
+            .plugin(tauri_plugin_opener::init())
+            .plugin(tauri_plugin_dialog::init())
+            .setup(|app| {
+                tauri::WebviewWindowBuilder::new(
+                    app,
+                    "installer",
+                    tauri::WebviewUrl::App("index.html".into()),
+                )
+                .title("TPV El Haido — Installer")
+                .inner_size(800.0, 600.0)
+                .resizable(false)
+                .center()
+                .build()?;
+
+                println!("[installer] sidecar wizard mounted (real IPC handlers — TR-19.B)");
+
+                Ok(())
+            })
+            .invoke_handler(tauri::generate_handler![
+                installer::download,
+                installer::install,
+                installer::rollback,
+                installer::uninstall,
+            ])
+            .run(context)
+            .expect("error while running tauri application in installer mode");
     }
 
-    #[tauri::command]
-    pub fn install(options: serde_json::Value) -> Result<String, String> {
-        let _ = options;
-        Err("installer:install not wired yet — see TR-19.B".into())
-    }
-
-    #[tauri::command]
-    pub fn rollback(state: serde_json::Value) -> Result<(), String> {
-        let _ = state;
-        // Rollback es no-op mientras no haya install real — pero devolvemos Ok
-        // para que el frontend no rompa flujos idempotentes (cancelar el wizard
-        // antes de instalar no debe dejar estado roto).
-        Ok(())
-    }
-
-    #[tauri::command]
-    pub fn uninstall(install_path: String) -> Result<(), String> {
-        let _ = install_path;
-        Err("installer:uninstall not wired yet — see TR-19.B.2".into())
+    #[cfg(test)]
+    {
+        // No-op: la lógica real está probada a nivel de módulo (`mod installer`).
+        // El builder de Tauri no se puede instanciar dentro de
+        // `cargo test --lib` sin chocar con `run()` por el static que
+        // `generate_context!()` emite en cada call site.
+        let _ = context;
+        eprintln!("[installer] run_installer_mode: skipped in test build");
     }
 }
