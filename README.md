@@ -1,6 +1,38 @@
 # TPV El Haido - Point of Sale System
 
-Una aplicación TPV (Terminal Punto de Venta) moderna desarrollada con React 19 + Tauri v2, optimizada para rendimiento y usabilidad en dispositivos táctiles.
+Una aplicación TPV (Terminal Punto de Venta) moderna desarrollada con SolidJS + Tauri v2, optimizada para rendimiento y usabilidad en dispositivos táctiles.
+
+## Installation (recommended wizard)
+
+The TPV El Haido ships with a 7-step GUI installer wizard that handles download, signature verification, install location, and desktop integration. To use it:
+
+1. Download the latest installer bundle from https://github.com/MKS2508/tpv-el-haido2/releases/latest
+2. Extract the archive: `tar -xzf tpv-el-haido-installer-linux-x64.tar.gz`
+3. Run: `bash install-linux.sh` (or `chmod +x install-linux.sh && ./install-linux.sh`)
+
+The wizard walks through language selection -> download -> install path -> optional components -> review -> install -> done.
+
+### Install steps (ASCII preview)
+
+```
+[ Welcome ]  ->  es/en toggle
+[ Download ] ->  fetch signed AppImage (95 MB, sha256 verified)
+[ Path    ]  ->  ~/.local/bin/tpv-el-haido (default) | custom
+[ Comps. ]  ->  .desktop entry + icon + PATH symlink (all ON by default)
+[ Review ]  ->  summary table
+[ Install]  ->  progress bar + cancel
+[ Done   ]  ->  "Launch TPV" button
+```
+
+## Uninstallation
+
+```bash
+bash scripts/uninstall-linux.sh
+# or manually:
+rm -f ~/.local/bin/tpv-el-haido{,.AppImage}
+rm -f ~/.local/share/applications/tpv-el-haido.desktop
+rm -f ~/.local/share/icons/hicolor/256x256/apps/tpv-el-haido.png
+```
 
 ## Características
 
