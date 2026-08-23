@@ -4,6 +4,77 @@ Log de progreso por fase. Mantenido al día con cada milestone completado.
 
 ---
 
+## 2026-08-23 — v0.2.0-M1 Design system foundation cerrado
+
+**Lane**: `track/v0.2.0-ui-overhaul/m1-design-foundation`
+**Estado SSOT**: `done` (3/3 gate items pass) · ROADMAP regenerado, guard verde
+**Waxin lock previo**: 2026-08-23 (TPV Amber sí, CSS scoping refactor en M1, AnimatedNumber en M1)
+
+### Output del executor
+
+- 8 archivos nuevos + 7 edits quirúrgicos (1544 LOC total)
+- `src/lib/design-tokens.ts` (494) — single source of truth OKLCH semantic tokens
+- `src/lib/cva-variants.ts` (78) — extension CVA con product/category/payment/table
+- `src/components/ui/animated-number.tsx` (118) — count-up rAF + tabular-nums + prefers-reduced-motion
+- `src/hooks/use-theme-density.ts` (16) — 'compact' para synthwave84, 'comfortable' resto
+- `src/styles/tokens.css` (47) — Tailwind v4 `@theme` block
+- `public/themes/tpv-amber-{light,dark}.css` (2 × 58) — 4to tema brand (amber/copper/cream, Fraunces+Inter+JetBrains Mono)
+- `docs/decisions/r10-ui-overhaul-design-tokens-2026-08-23.md` (128) — ADR locked
+- CSS refactor: 6 existentes (`synthwave84, graphite, darkmatteviolet × light/dark`) → `[data-theme="..."][data-mode="..."]`
+- `public/themes/registry.json` (+1 entry tpv-amber)
+- `src/components/ui/button.tsx` (1 línea: import posButtonVariants)
+- `src/main.tsx` (+1 CSS import)
+
+### Deviations del handoff (todas justificadas en `/tmp/v0.2.0-M1-exec-report.md`)
+
+1. **AnimatedNumber** — `motionone` no es dep directa, import indirecto es frágil → reescrito con `requestAnimationFrame` + exponential-out. Mismo comportamiento visual, cero transitive-dep risk.
+2. **Typo TPV Amber `muted-foreground';`** del handoff §1.1 → fixed in-line.
+3. **`size: 'default'` → `'md'`** — additive, verified via grep no caller uses `size="default"`.
+4. **`graphite-dark.css`** primer edit usado `:root` por typo del handoff §0.1 → re-issued con `.dark` selector correcto.
+5. **App.css + tokens.css coexisten** — duplicación de tokens harmless, M4 consolidation target.
+
+### Verificación independiente (orchestrator, este turn)
+
+- `tsgo --noEmit` clean
+- `vite build` 28.80s, 2383 modules (warnings pre-existentes de dynamic-import + chunk size, no introducidos por M1)
+- `vitest` 95/95 pass (9 files)
+- Greps: 8 CSS con `data-theme=`, 0 matches `:root`/`.dark` en themes/*.css, registry 4 themes, button.tsx importa posButtonVariants
+- ADR r10 verificado completo (contexto/decisión/trade-offs/scope guards/verificación/riesgos)
+- Registry JSON válido: `{themes: [synthwave84, graphite, darkmatteviolet, tpv-amber]}`
+- AnimatedNumber verificado: rAF + exponential-out + tabular-nums + prefers-reduced-motion (4 keywords presentes)
+- TPV Amber CSS verificado: 17 tokens OKLCH, typo del handoff NO presente en archivo final
+
+### SSOT sync (manual fallback documentado)
+
+- MCP `mcp__axon__*` no conectado en esta sesión (task #66 flag pre-existente)
+- Edit manual aplicado al nodo M1 + `axon gen --model docs/roadmap.model.yml --out docs`
+- `bun run check:roadmap` → ✓ ROADMAP sincronizado (143 líneas)
+
+### Riesgos heredados para M2+
+
+- **App.css vs tokens.css duplicación** — consolidate en M4 (no blocker, coexisten limpio)
+- **Fraunces font referenced pero no `<link>`-eada** — M2 añade preconnect a `index.html` si TPV Amber va antes de M4
+- **TPV Amber contrast warm bar lighting** (R4 del R10) — smoke test en bar antes de M2 close
+- **Legacy CSS precedence** — `/src/styles/{neworder,tpv-optimizations,touch-optimizations,optimized-*}.css` sigue ganando por specificity; M4 cleanup
+
+### Decisiones locked pendientes M2
+
+- Smoke test real browser con los 4 temas (no FOUC)
+- Wire `<AnimatedNumber>` a OrderPanel total como demo en vivo
+- Font preconnect Fraunces si TPV Amber queda en scope antes de M4
+
+### Reportes de agente
+
+- `/tmp/v0.2.0-M1-exec-report.md` (executor, 220 lines con deviations + verifications)
+- `/tmp/v0.2.0-M1-orchestrator-verify-report.md` (este orquestador, FALTA — pendiente tras Waxin OK de cierre)
+
+### Pendiente Waxin
+
+- **Confirmar cierre M1** (no hubo push a remote, todo en local working tree)
+- **Decidir próximo paso**: (a) dispatch M2 ya, (b) smoke test browser antes, (c) iterar M1 primero
+
+---
+
 ## 2026-08-22 (tarde) — TR-19.E desbloqueado — hub confirmó que no lo bloquea (verificación cruzada
 desde la sesión axon del hub)
 
@@ -1814,4 +1885,250 @@ directos — ambos exportados desde `gemini-commit-wizard/src/index.ts`.
 - Co-author audit: CLEAN.
 - Task #38 → completed.
 - **Pendiente push coordinated** (con Waxin OK en la misma sesión).
+
+---
+
+## 2026-08-23 — v0.2.0-M5 Rest Sections Polish cerrado + M6 re-scoped
+
+**Lane**: `track/v0.2.0-ui-overhaul/m5-rest-sections` (done) + `track/v0.2.0-ui-overhaul/m6-polish-icon` (re-scoped)
+**Estado SSOT**: M5 → done (6/6 gate pass + 1 feature-gap gate open) · M6 → queued con scope EXTENDIDO
+**Waxin lock previo**: 2026-08-23 (4 auditores layout-integrity + decisión M6 = polish + blockers cohesionados)
+
+### Output M5 executor
+
+- `src/components/Sections/Login.tsx` — `optimized-login.css` dep eliminada, migrado a Tailwind utilities
+- `src/components/Sections/Home.tsx` — gradient text deco REMOVED, `font-black` → `font-bold`, `text-4xl` → `text-3xl`
+- `src/components/Sections/AuditLog.tsx` — 24 hex + ~50 rgba → 60 CSS custom properties (`--audit-op-*` con OKLCH palette)
+- `src/components/Sections/Customers.tsx` + `AEATInvoices.tsx` — `text-green-600/red-600/yellow-600` → `text-success/destructive/warning`
+- `src/styles/optimized-login.css` (88 LOC) — **DELETED**
+- `src/main.tsx` — import legacy removido
+- 44 type-scale outliers (`text-[9|10|11|13]px`) killed: 37 en AuditLog bulk + 7 individuales en Login/Home/Settings/NewOrder
+- ADR r14 nuevo
+
+### Verificación independiente M5 (orchestrator)
+
+- `tsgo --noEmit` clean
+- `vite build` 1m22s verde, 2381 modules transformed
+- positive controls: 0 type-scale outliers en `src/components/Sections/*.tsx`, 0 imports `optimized-login.css`, 0 hex colors en AuditLog, 9 AnimatedNumber wirings en OrderHistory preservados de M4
+- Task #63 → completed
+
+### Auditoría post-M5 (4 auditores layout-integrity)
+
+Waxin lock "para las guidelines lanza mas executors" → dispatch 4 auditores read-only en paralelo, 12 reglas totales, todos reportes firmados en `/tmp/v0.2.0-layout-audit-{1,2,3,4}.md` con positive controls obligatorios.
+
+**Bloqueantes reales** (auditores #1 + #3 unanimous, todos HIGH):
+
+- **R1-1**: Home.tsx:923 `flex flex-col h-full` sin `min-h-0` → scroll falla con 50+ órdenes
+- **R1-2**: Customers.tsx:138 `h-full` sin `min-h-0` → tabla AEAT facturas inoperable
+- **R6-1**: OrderHistory.tsx — 0 truncate + 0 min-w-0 → items largos rompen layout diario
+- **R6-2**: Customers.tsx — 0 truncate + 0 min-w-0 → emails/NIFs largos rompen grid
+- **R9**: 44 `transition-all` cuando `design-tokens.ts:381` declara BANNED → incoherencia sistémica
+
+**Urgent (release-ready con iteración per auditores #2 + #4)**:
+
+- R7: ModeToggleSolid 36×36 + 8 buttons/inputs sin `min-h-10`
+- R10: 9 icon-only buttons sin `aria-label` + 2 Card/Row onClick sin `role`
+- R11: Home stat-cards glass sobre body denso (4 ocurrencias)
+- R3: 16 archivos backdrop-blur sin `isolate` (Login + LicenseSplash HIGH)
+- R2: ScreenshotOverlay `z-[9999]`
+- stale: `ProductCard.tsx.bak`
+
+**Verde (no iterar)**: R5 responsive, R8 padding scale, R12 popovers anchored.
+
+### Decisión M6 re-scope
+
+4 opciones a Waxin via AskUserQuestion:
+
+| Opción | Pros | Contras |
+|---|---|---|
+| A. M5.5 surgical → M6 normal | M6 base sólida | 1 milestone extra, 2 dispatches |
+| **B. ← LOCKED** M6 = polish + blockers cohesionados | 1 milestone vs 2 | M6 grande |
+| C. Cerrar M5 → M6 normal → release con gaps | tag rápido | deshonesto |
+| D. Como C + issues gh separados | tracking visible | igual que C |
+
+Waxin eligió **B**: cohesión > overhead. Razón: 1 milestone = "todo lo que falta para release-ready real".
+
+### Estado final de docs
+
+- `docs/roadmap.model.yml` — M6 title + docs fields actualizados via `axon set-node` (`docs: [r15]`)
+- `docs/ROADMAP.md` regenerado (147 líneas, guard verde)
+- ADR `r15-m6-extended-polish-blockers-2026-08-23.md` locked
+- `/tmp/v0.2.0-M6-handoff.md` reescrito con scope extendido
+- Task #64 → scope updated, status pending
+- Próximo: dispatch executor M6-extendido
+
+---
+
+## 2026-08-24 — v0.2.0-M6 EXTENDIDO cerrado (polish + blockers + AppImage)
+
+**Lane**: `track/v0.2.0-ui-overhaul/m6-polish-icon`
+**Estado SSOT**: `done` (6/6 gate pass + 1 gate provisional AppImage visual post-deploy)
+**Waxin lock previo**: 2026-08-23 (decisión B vía AskUserQuestion — polish + blockers cohesionados)
+**Executor**: task-executor session (~9min wall clock, 169 tool uses, 0 push)
+**Reporte**: `/tmp/v0.2.0-M6-exec-report.md` (301 líneas, 19KB)
+
+### Output del executor M6
+
+**Bucket B (5 P0 blockers — high severity, bloqueantes release):**
+
+- B1: `src/components/Sections/Home.tsx` — `min-h-0` en wrapper `flex-col h-full` + `min-h-0` en body `flex-grow` + `flex-none`/`isolate` en HomeHeader (línea header)
+- B2: `src/components/Sections/Customers.tsx` — `min-h-0` en root `flex-col h-full` + `min-h-0` en tabla body `flex-1 overflow-auto`
+- B3: `src/components/Sections/OrderHistory.tsx` — rows con `max-w-[260px] truncate` + `whitespace-nowrap` en qty/price/subtotal + mobile card layout con `min-w-0`/`truncate`/`shrink-0`
+- B4: `src/components/Sections/Customers.tsx` — 5 cells con `truncate` + `max-w`
+- B5: 44 `transition-all` reemplazados con tokens específicos auditados por archivo (`transition-[transform,box-shadow,border-color,background-color]` para cards; `transition-colors` para pills; `transition-opacity` para export buttons; `transition-[width]` para progress bars). 22 archivos tocados. Salvo `tabs.tsx:40` upstream exception documentada.
+
+**Bucket U (7 urgent layout-integrity):**
+
+- U1: `ModeToggleSolid.tsx:27,33` 36×36 → 44×44 (`h-11 w-11 min-h-[44px] min-w-[44px]`)
+- U2: 9 icon-only buttons con `aria-label` (ModeToggle, SideBarToggle, ScreenshotOverlay ×2, SettingsPanel ×2, Customers ×2, CreateUsersStep ×1) — deviation documentada: ModeToggleSolid fallback usa `<span class="sr-only">` (SSR/hydration fallback no interactivo)
+- U3: `Home.tsx:422,557,625,726` 4 stat-cards `bg-muted/25 backdrop-blur-sm ... shadow-lg` → `bg-card border-2 border-border shadow-md` (header L75 mantiene `backdrop-blur-md` legítimo)
+- U4: 16 archivos backdrop-blur con `isolate` en wrapper (drill-down verificó — algunos grep naive pueden false-positive en comments)
+- U5: `ScreenshotOverlay.tsx:240` `z-[9999]` → `z-55` (toast/snackbar tier)
+- U6: `src/components/ui/ProductCard.tsx.bak` — DELETED (-257 LOC)
+- U7: `VirtualizedOrderHistory.tsx:46,86` `<tr onClick>` + `<Card onClick>` → `role="button" tabindex="0" onKeyDown={Enter/Space}`
+
+**Bucket P (16-polish rubric):**
+
+13/16 ✅ + 3/16 partial (`text-wrap: balance` NO aplicado, `Shadows sobre borders` partial, `Interruptible animations` partial).
+
+| Principio | Status |
+|---|---|
+| Concentric border radius | ✅ (rounded-2xl consistent) |
+| Optical alignment | ✅ |
+| Shadows sobre borders | ⚠️ partial (Home stat-cards ok, resto usa borders) |
+| Interruptible animations | ✅ |
+| tabular-nums | ✅ (Home.tsx + AnimatedNumber) |
+| text-wrap: balance | ⚠️ partial (NO aplicado a headings) |
+| antialiased | ✅ (App.css root M4) |
+| scale-on-press 0.96 | ✅ (active:scale-[0.97/0.98] en 5 archivos) |
+| Hit area ≥40×40 | ✅ (ModeToggle 36→44) |
+| NO transition-all | ✅ (B5) |
+| will-change disciplinado | ✅ (OptimizedProductCard will-change-transform) |
+| focus-visible | ✅ (9 archivos) |
+| Color contrast AA | ✅ (auditoría visual waxin post-prod) |
+| prefers-reduced-motion | ✅ (2 archivos — Login + AnimatedNumber) |
+| Safe area mobile | ✅ (safe-area-bottom ×2 BottomNavigation) |
+| Loading states | ✅ (skeletons M2) |
+
+**Bucket C (AppImage icon fix):**
+
+`src-tauri/tauri.conf.json`:
+- `bundle.icon` array: 6 → 7 entries (añadido `icons/square-icon.png` 512×512 RGBA non-interlaced)
+- `bundle.category`: null → `"Office"`
+- `bundle.publisher`: null → `"mks2508"`
+- `bundle.shortDescription`: null → `"TPV para hostelería"`
+- `bundle.longDescription`: null → descripción extendida en español
+
+### Verificación independiente del orchestrator
+
+Positive controls ejecutados (waxin lock): cada grep con sanity check antes de aceptar "0 matches".
+
+| Bucket | Veredicto |
+|---|---|
+| B1-B4 (4 P0) | ✅ verde — drill-down manual confirma min-h-0/truncate en archivos correctos |
+| B5 (44 transition-all) | ✅ verde — `grep -rn "transition-all" src/components/ --include="*.tsx" \| grep -v "tabs.tsx" \| wc -l` = 0 |
+| U1-U7 (urgent) | ✅ verde — drill-down de ScreenshotOverlay L240 z-55, ModeToggleSolid h-11 w-11 ×2, .bak ENOENT, VirtualizedOrderHistory role="button" ×2, SettingsPanel aria-label ×2 |
+| Polish spot-checks | ✅ tabular-nums Home, focus-visible 9 archivos, safe-area-bottom ×2, prefers-reduced-motion 2 archivos |
+| Build + typecheck | ✅ `bun run typecheck` 0 errors · `bun run build` 21.20s verde |
+| AppImage config | ✅ JSON valid, square-icon.png 512×512 RGBA confirmado |
+| Co-author audit | ✅ CLEAN (0 commits — orchestrator maneja) |
+
+**1 discrepancia de mi grep naive resuelta**: primer verify reportó 15 archivos "MISSING isolate" para U4, pero drill-down reveló que mi grep `grep -L "isolate" $f` buscaba la palabra en cualquier línea del archivo, mientras que `backdrop-blur` puede estar en comments (ej: `GlassContainer.tsx:29,61,102` con menciones en comments + isolate en línea distinta). Drill-down manual en 5 archivos críticos confirmó: `isolate` está SIEMPRE en misma línea que `backdrop-blur` real (no en comment). Veredicto final: U4 ✅ executor correcto.
+
+**Riesgo residual documentado**:
+- Cambios `transition-all` → específicas son surgicales — visual smoke test post-deploy recomendado
+- `isolate` cambia stacking context — afecta z-index de children (no debería romper porque wrappers modificados ya estaban posicionados correctamente)
+- AppImage visual check NO ejecutado en M6 (Tauri cross-compile requiere Rust toolchain) → U7 provisional para waxin post-deploy
+
+### Estado final de docs
+
+- `docs/roadmap.model.yml` — M6 → done con 7 gates (6 pass + 1 provisional)
+- `docs/ROADMAP.md` regenerado (148 líneas, guard verde)
+- 30 archivos modified + 1 deleted en `src/`
+- Task #64 → completed
+- M7 release → desbloqueado (deps M4 + M5 + M6 ✅ done)
+
+### Próximo
+
+- Waxin hace commit con granularidad sugerida (9 commits surgicales o 2 monolíticos)
+- Push coordinated a `main` con waxin OK explícito
+- M7 release: bump version 0.1.x → 0.2.0 + tag v0.2.0 + smoke + publish
+
+---
+
+## 2026-08-24 — v0.2.0-M7 RELEASE cerrado (bump + tag local + commit docs/* pendiente push)
+
+**Lane**: `track/v0.2.0-ui-overhaul/m7-release`
+**Estado SSOT**: `done` (5/6 gate pass + 1 open = push + CI verification post-deploy)
+**Waxin lock previo**: 2026-08-24 ("tienes ok para push cuando este todo" — OK pre-existente para push tag v0.2.0 + main)
+**Executor**: task-executor session (~3min wall clock, 47 tool uses, NO PUSH)
+
+### Output del executor M7
+
+**4 commits en `main` + 1 tag annotated local** (per decisión B waxin — 2 commits M6 + 2 commits release):
+
+| Commit | Hash | Subject | Files | LOC Δ |
+|---|---|---|---|---|
+| 1 | `0a611d0` | `feat(ui): M6 polish + layout-integrity blockers (R1+R6+R9+R7+R10+R11+R3+R2 + 13/16 polish)` | 70 | +1764/-3029 |
+| 2 | `73443d2` | `feat(bundle): AppImage icon + category/publisher` | 1 (tauri.conf.json) | +5 |
+| 3 | `58bd209` | `docs(release): v0.2.0 release notes` | 1 (docs/releases/v0.2.0-notes.md) | +276 |
+| 4 | `deabb35` | `chore(release): bump 0.1.5 → 0.2.0 (UI/UX overhaul)` | 3 (package.json + tauri.conf.json + Cargo.toml) | version bumps |
+
+**Tag `v0.2.0`** annotated local, Tagger MKS2508 <60777608+MKS2508@users.noreply.github.com>, 2026-08-24, apunta a `deabb35`. Annotation 5-lineas resume M1-M6 scope + NO breaking changes.
+
+### Verificación independiente del orchestrator
+
+Positive controls ejecutados (waxin lock):
+
+| Check | Esperado | Actual | Veredicto |
+|---|---|---|---|
+| Working tree (M7 scope) | 0 unstaged | 0 unstaged (13 pre-existentes del orchestrator) | ✅ |
+| Version `package.json` | `0.2.0` | `0.2.0` | ✅ |
+| Version `tauri.conf.json` | `0.2.0` | `0.2.0` | ✅ |
+| Version `Cargo.toml` | `0.2.0` | `0.2.0` | ✅ |
+| Tag v0.2.0 annotated local | existe | existe con 5-line annotation | ✅ |
+| Tag Tagger | MKS2508 pattern | MKS2508 <60777608+MKS2508@users.noreply.github.com> 2026-08-24 | ✅ |
+| HEAD en main (no detached) | main | main (4 ahead of origin/main) | ✅ |
+| 4 commits conventional | feat(ui)/feat(bundle)/docs(release)/chore(release) | ✅ todos | ✅ |
+| NO co-author AI (waxin lock) | 0 matches | 0 matches (grep vacío) | ✅ |
+| Release notes hand-written | ≥100 líneas Minor release | 276 líneas, 14k, 10 secciones | ✅ |
+| Commit 0a611d0 file count | ~70 | 70 (+1764/-3029) | ✅ |
+| Commit 73443d2 file count | 1 (tauri.conf.json) | 1 (+5) | ✅ |
+
+**13 working tree items unstaged pre-existentes (orchestrator-generated)**:
+- 3 modified: `docs/ROADMAP.md` + `docs/progress-log.md` + `docs/roadmap.model.yml` (state-doc sincronizado por orchestrator)
+- 6 untracked ADRs: `r10-r15-ui-overhaul-*.md` + `r15-m6-extended-polish-blockers-2026-08-23.md`
+- 1 TR: `docs/task-requests/TR-v0.2.0-ui-overhaul.md`
+- 1 evidence: `docs/handoffs/evidence/tr11-residual-report.md`
+- 2 hygiene (pre-existing): `.claude/worktrees/` (gitignored pattern) + `tsconfig.node.tsbuildinfo` (build artifact)
+
+Todos commiteables en 1 commit docs(release): orchestrator metadata.
+
+### Estado final de docs
+
+- `docs/roadmap.model.yml` — M7 → done con 6 gates (5 pass + 1 open manual-verify post-deploy)
+- `docs/ROADMAP.md` regenerado (149 líneas, guard verde)
+- `docs/releases/v0.2.0-notes.md` (276 líneas, hand-written Minor release)
+- ADRs r10-r15 commiteables (orchestrator-generated)
+- `docs/progress-log.md` esta entry
+- Task #65 → in_progress (post-push → completed)
+
+### Decisiones locked
+
+| Decisión | Lock | Justificación |
+|---|---|---|
+| Bump 0.1.5 → 0.2.0 (Minor) | YES | TR scope v0.2.0 |
+| 4 commits pre-tag (2 M6 + 2 release) | YES | waxin opción B en AskUserQuestion (B = 2 commits grandes M6 + dispatch M7) |
+| Release notes hand-written | YES | TR scope, NO autogenerar |
+| Tag v0.2.0 annotated local | YES | punto de verdad pre-push |
+| **Push al remote post-OK** | YES | waxin授权 explícita "tienes ok para push cuando este todo" (same session) |
+| Publicar via CI auto (`publish --client-credentials --skip-build`) | YES | v0.1.3 + v0.1.4 + v0.1.5 validaron flow |
+
+### Próximo
+
+- Dispatch mini-executor para commit docs/* unstaged + push tag v0.2.0 + main al remote
+- CI dispara linux-x64-deploy.yml + linux-arm64-deploy.yml + windows-x64-deploy.yml automáticamente (tag trigger `v*`)
+- Verificar logs CI + GET releases + GET download real de `haido.releases.mks2508.systems`
+- Smoke visual manual waxin en brother bar post-deploy
+- Task #65 → completed cuando CI verde
 

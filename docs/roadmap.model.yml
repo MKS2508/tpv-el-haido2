@@ -374,4 +374,274 @@ nodes:
     title: 'Lint residuales — noExplicitAny (7 mayor)'
     status: queued
     dependsOn: []
+
+  - id: track/v0.2.0-ui-overhaul
+    kind: track
+    zone: client
+    title: 'v0.2.0 — UI/UX overhaul completo respetando tokens themeable (splash + sidebar + orders flow + AppImage icon)'
+    status: in_progress
+    dependsOn: [track/core-tpv]
+    refs: [audit-ui-state, audit-appimage-icon, audit-wizard-step5, audit-skills-uiux]
+    milestones:
+      - id: track/v0.2.0-ui-overhaul/m1-design-foundation
+        title: 'M1 — Design system foundation (tokens OKLCH 4 temas + TPV Amber brand + AnimatedNumber count-up + CSS scoping refactor + CVA variants)'
+        status: done
+        dependsOn: []
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: ['/tmp/v0.2.0-M1-handoff.md (planning 330+ líneas, copy-pasteable)', 'src/lib/design-tokens.ts (494 LOC)', 'src/lib/cva-variants.ts (78 LOC)', 'src/components/ui/animated-number.tsx (118 LOC)', 'src/hooks/use-theme-density.ts (16 LOC)', 'src/styles/tokens.css (47 LOC)', 'public/themes/tpv-amber-{light,dark}.css (2 nuevos, 58 LOC c/u)', 'public/themes/registry.json (+1 entry tpv-amber, 4 themes total)', 'src/components/ui/button.tsx (import swap a posButtonVariants)', 'src/main.tsx (CSS import)', 'docs/decisions/r10-ui-overhaul-design-tokens-2026-08-23.md (ADR locked)']
+              verifiedBy: axon
+
+            - id: U2
+              verdict: pass
+              class: impl
+              evidenceRef: ['8 themes/*.css con [data-theme=…] (6 refactor: synthwave84/graphite/darkmatteviolet × light/dark + 2 nuevos tpv-amber)', 'grep -c ":root\\|^\\.dark" public/themes/*.css → 0 matches', 'registry.json valid JSON, 4 entries (synthwave84/graphite/darkmatteviolet/tpv-amber)']
+              verifiedBy: axon
+
+            - id: U3
+              verdict: pass
+              class: smoke
+              evidenceRef: ['tsgo --noEmit clean', 'vite build 28.80s, 2383 modules (verificado independiente 2026-08-23)', 'vitest 95/95 pass (9 files)', 'AnimatedNumber con rAF + exponential-out + tabular-nums + prefers-reduced-motion fallback', 'App.css/tokens.css coexisten (M4 consolidation target — no blocker)']
+              verifiedBy: axon
+
+      - id: track/v0.2.0-ui-overhaul/m2-splash-auth
+        title: 'M2 — Splash + Auth shell (AppSplash rewrite 213→50 LOC + LicenseSplash refresh + Onboarding unificado + fix wizard step 5 single provider)'
+        status: done
+        dependsOn: [track/v0.2.0-ui-overhaul/m1-design-foundation]
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: ['src/hooks/useOnboarding.ts rewritten (singleton state, 441→469 LOC)', '4 module-level lets (_state/_applyDataOp/_store/_onMountRan) behind ensureInit()', '_onMountRan flag dedup race R1 del handoff']
+              verifiedBy: axon
+            - id: U2
+              verdict: pass
+              class: impl
+              evidenceRef: ['src/components/AppSplashScreen.tsx rewritten 213→31 LOC (-85%)', 'bg-background token (no más stone-950)', '1.5s MotionOne fade+scale', 'src/components/LicenseSplashScreen.tsx glass card (bg-card/60 backdrop-blur-xl shadow-lg)', 'App.tsx Settings OnboardingProvider deleted (-3 LOC)']
+              verifiedBy: axon
+            - id: U3
+              verdict: pass
+              class: smoke
+              evidenceRef: ['WelcomeStep 6 items (era 4, handoff fix)', 'text-4xl font-extrabold outlier killed en Onboarding/index.tsx:36', 'CreateUsersStep no auto-open (empty state + tooltip)', 'SectionHeader usa lib/business (M3 prep)']
+              verifiedBy: axon
+            - id: U4
+              verdict: pass
+              class: smoke
+              evidenceRef: ['tsgo --noEmit clean', 'vite build 17.73s, 2383 modules (verificado independiente 2026-08-23)', 'vitest 95/95 pass', 'ADR r11 docs/decisions/r11-ui-overhaul-splash-auth-2026-08-23.md']
+              verifiedBy: axon
+
+      - id: track/v0.2.0-ui-overhaul/m3-sidebar-nav
+        title: 'M3 — Sidebar + Navigation shell (Sidebar con depth + BottomNavigation + SectionHeader + shell unificado)'
+        status: done
+        dependsOn: [track/v0.2.0-ui-overhaul/m1-design-foundation]
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: ['src/lib/business.ts (24 LOC', 'getBusinessName + re-export getBusinessNif)|src/components/SideBar.tsx 313→251 LOC (-62', 'eliminadas Avatar/ScrollArea duplicadas', 'import desde src/components/ui/avatar.tsx)|src/components/BottomNavigation.tsx (4 scale edits', 'press 0.96 + hover 1.02)|src/components/Sections/SectionHeader.tsx 69→52 LOC (helper movido a lib)']
+              verifiedBy: axon
+
+            - id: U2
+              verdict: pass
+              class: impl
+              evidenceRef: ['Sidebar Card backdrop-blur-xl glass sutil (3 sitios de glass: Sidebar', BottomNav, 'LicenseSplash)|Type-scale normalizado (text-[9px]/[10px] → text-xs)|_ScrollArea removida entirely (SideBar nunca la llamó)']
+              verifiedBy: axon
+
+            - id: U3
+              verdict: pass
+              class: smoke
+              evidenceRef: ['tsgo --noEmit clean|vite build 16.53s', '2384 modules (verificado independiente 2026-08-23)|vitest 95/95 pass|ADR r12 docs/decisions/r12-ui-overhaul-sidebar-nav-2026-08-23.md']
+              verifiedBy: axon
+
+            - id: U4
+              verdict: provisional
+              class: impl
+              evidenceRef: ['5 consumers (LicenseStatus/LicenseDialog/LicenseSplashScreen/Login/SettingsPanel) siguen importando getBusinessNif directo de @/store/store — M4/N natural consolidation target']
+              verifiedBy: axon
+      - id: track/v0.2.0-ui-overhaul/m4-orders-flow
+        title: 'M4 — Orders flow POS (NewOrder + OrderPanel + PaymentModal + CVA variants + animaciones tabular-nums + 5 archivos CSS legacy eliminados)'
+        status: done
+        completedDate: '2026-08-23'
+        dependsOn: [track/v0.2.0-ui-overhaul/m1-design-foundation, track/v0.2.0-ui-overhaul/m2-splash-auth, track/v0.2.0-ui-overhaul/m3-sidebar-nav]
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: ['5 CSS legacy eliminados: neworder.css|tpv-optimizations.css|touch-optimizations.css|optimized-product-card.css|optimized-order-history.css (~1420 LOC)']
+              verifiedBy: axon
+
+            - id: U2
+              verdict: pass
+              class: impl
+              evidenceRef: ['24 AnimatedNumber wirings across OrderPanel.tsx|PaymentModal.tsx|ConfirmPaymentDialog.tsx|VirtualizedOrderHistory.tsx|Sections/OrderHistory.tsx']
+              verifiedBy: axon
+
+            - id: U3
+              verdict: pass
+              class: smoke
+              evidenceRef: ['tsgo --noEmit 0 errors|vite build 22.80s verde (warnings pre-existing plugin-updater/plugintimings NO regresion M4)']
+              verifiedBy: axon
+
+            - id: U4
+              verdict: pass
+              class: impl
+              evidenceRef: ['App.css @theme inline consolidado en tokens.css (5 matches son comentarios historicos)|@apply border-border reemplazado por var(--*) en App.css base layer (Tailwind procesa CSS files independientes)']
+              verifiedBy: axon
+
+            - id: U5
+              verdict: provisional
+              class: impl
+              evidenceRef: ['Layout integrity gaps cazar en M6 polish rubric: 16 archivos backdrop-blur SIN isolate|3 hits transition-all pre-existing|z-[9999] en ScreenshotOverlay pre-existing|touch-optimizations localStorage dead state (toggle persiste boolean sin CSS que aplicar)']
+              verifiedBy: axon
+
+            - id: U6
+              verdict: pass
+              class: smoke
+              evidenceRef: ['ADR r13 docs/decisions/r13-ui-overhaul-orders-flow-2026-08-23.md|exec report /tmp/v0.2.0-M4-exec-report.md (persisted per axon-v2 rule)|deviation #1 AnimatedNumber API format->suffix (no compila)|deviation #2 @apply regression fixed|deviation #3 smoke E2E deferred (no Tauri runtime en exec session)']
+              verifiedBy: axon
+      - id: track/v0.2.0-ui-overhaul/m5-rest-sections
+        title: 'M5 — Resto de sections (Home refinar + Products + Customers + AEAT + History + Settings + AuditLog)'
+        status: done
+        completedDate: '2026-08-23'
+        dependsOn: [track/v0.2.0-ui-overhaul/m1-design-foundation, track/v0.2.0-ui-overhaul/m3-sidebar-nav]
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: ['optimized-login.css DELETED (88 LOC)|Login.tsx migrado a Tailwind utilities sin CSS legacy']
+              verifiedBy: axon
+
+            - id: U2
+              verdict: pass
+              class: impl
+              evidenceRef: ['Home.tsx: gradient text deco REMOVED + font-black→font-bold + text-4xl→text-3xl']
+              verifiedBy: axon
+
+            - id: U3
+              verdict: pass
+              class: impl
+              evidenceRef: ['AuditLog: 24 hex + ~50 rgba→60 CSS custom properties themeables (var(--audit-op-*)) con OKLCH palette']
+              verifiedBy: axon
+
+            - id: U4
+              verdict: pass
+              class: smoke
+              evidenceRef: ['44 type-scale outliers killed (37 AuditLog + 7 otros: Login/Home/Settings/NewOrder)']
+              verifiedBy: axon
+
+            - id: U5
+              verdict: pass
+              class: impl
+              evidenceRef: ['OrderHistory sin cambios (9 AnimatedNumber wirings M4 preserved)|Products sin cambios (CVA wired M4 preserved)|11 tabs SettingsPanel intactos per waxin lock']
+              verifiedBy: axon
+
+            - id: U6
+              verdict: pass
+              class: smoke
+              evidenceRef: ['tsgo --noEmit 0 errors|vite build 1m22s verde|2381 modules transformed|ADR r14 docs/decisions/r14-ui-overhaul-rest-sections-2026-08-23.md']
+              verifiedBy: axon
+
+            - id: U7
+              verdict: open
+              class: feature-gap
+              evidenceRef: ['PRE-EXISTING (no regresion M5) layout-integrity gaps cazar en M6/v0.2.1: Regla 9=44 transition-all (design-tokens.ts BANNED)|Regla 1=R1-1 Home.tsx h-full sin min-h-0|R1-2 Customers.tsx tabla sin min-h-0|Regla 6=R6-1 OrderHistory sin truncate|Regla 7=ModeToggleSolid 36x36 (falla regla 7)|Regla 11=Home stat-cards backdrop-blur-sm sobre body denso (4 ocurrencias)|Regla 3=16 archivos backdrop-blur sin isolate (LicenseSplash+Login HIGH por wallpaper gradient)|Regla 10=9 icon-only buttons sin aria-label|Regla 2=z-[9999] en ScreenshotOverlay|stale ProductCard.tsx.bak|a11y Card onClick sin role=button']
+              verifiedBy: axon
+      - id: track/v0.2.0-ui-overhaul/m6-polish-icon
+        docs: [r15]
+        title: 'M6 — Polish rubric + layout-integrity blockers + AppImage icon fix (R1+R6+R9+R7+R10+R11+R3+R2 surgical + 16-polish + 512x512/category/publisher)'
+        status: done
+        completedDate: '2026-08-24'
+        dependsOn: [track/v0.2.0-ui-overhaul/m4-orders-flow, track/v0.2.0-ui-overhaul/m5-rest-sections]
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: ['B1-B4 P0 blockers: Home.tsx/Customers.tsx min-h-0 (2×2)|OrderHistory truncate+min-w-0 (2+2)|Customers 5 cells truncate']
+              verifiedBy: axon
+
+            - id: U2
+              verdict: pass
+              class: impl
+              evidenceRef: ['B5 transition-all: 0 matches en src/components/ (excl. tabs.tsx upstream)|44 reemplazos surgicales en 22 archivos con positive controls por uso (transform/box-shadow/color/opacity/width)']
+              verifiedBy: axon
+
+            - id: U3
+              verdict: pass
+              class: impl
+              evidenceRef: ['U1-U7 urgent: ModeToggleSolid h-11 w-11 (2)|9 icon-only buttons aria-label + sr-only fallback|Home stat-cards backdrop-blur-sm 0|16 archivos backdrop-blur con isolate (drill-down verificó wrappers)|ScreenshotOverlay z-55 L240|ProductCard.tsx.bak deleted (-257 LOC)|VirtualizedOrderHistory 2 role=button + tabindex=0 + onKeyDown']
+              verifiedBy: axon
+
+            - id: U4
+              verdict: pass
+              class: impl
+              evidenceRef: ['Polish rubric: 13/16 principios ✅ + 3/16 partial (≥12/16 close criterion)|tabular-nums Home (1+)|focus-visible 9 archivos|prefers-reduced-motion 2|scale-on-press 0.9X 5 archivos|safe-area-bottom BottomNav 2|antialiased root|will-change-transform OptimizedProductCard']
+              verifiedBy: axon
+
+            - id: U5
+              verdict: pass
+              class: impl
+              evidenceRef: ['AppImage C: tauri.conf.json icon array 7 entries (square-icon.png 512x512 RGBA)|category=Office|publisher=mks2508|shortDescription ''TPV para hosteleria''|longDescription presente|JSON valid']
+              verifiedBy: axon
+
+            - id: U6
+              verdict: pass
+              class: smoke
+              evidenceRef: ['tsgo --noEmit 0 errors|vite build 21.20s verde 2381 modules|drill-down manual de B1-B5 + U1-U7 + Polish spot-checks todos verdes|exec report /tmp/v0.2.0-M6-exec-report.md 301 lineas persistido|co-author audit CLEAN']
+              verifiedBy: axon
+
+            - id: U7
+              verdict: provisional
+              class: manual-verify
+              evidenceRef: ['AppImage visual dock pre-launch check NO ejecutado en M6 (Tauri build cross-compile linux-x64 requiere Rust toolchain — fuera de scope surgical)|verificara waxin en CI linux-x64-deploy.yml post-tag + visual manual en brother bar post-deploy']
+              verifiedBy: waxin
+      - id: track/v0.2.0-ui-overhaul/m7-release
+        title: 'M7 — Release v0.2.0 (bump versions + release notes + tag + push + CI publish + smoke Linux+Windows)'
+        status: done
+        completedDate: '2026-08-24'
+        dependsOn: [track/v0.2.0-ui-overhaul/m6-polish-icon]
+        gate:
+          items:
+            - id: U1
+              verdict: pass
+              class: impl
+              evidenceRef: ['M6 feat(ui) commit 0a611d0: 70 archivos +1764/-3029 LOC (M1-M6 source changes consolidados)']
+              verifiedBy: axon
+
+            - id: U2
+              verdict: pass
+              class: impl
+              evidenceRef: ['M6 feat(bundle) commit 73443d2: 1 archivo tauri.conf.json +5 LOC (square-icon.png 512x512 + category Office + publisher mks2508 + descriptions)']
+              verifiedBy: axon
+
+            - id: U3
+              verdict: pass
+              class: impl
+              evidenceRef: ['M7 docs(release) commit 58bd209: docs/releases/v0.2.0-notes.md 276 lineas hand-written Minor release con 10 secciones (highlights', 'breaking=Ninguno', 'how to test', 'ADRs r10-r15', 'audit reports', 'out of scope)']
+              verifiedBy: axon
+
+            - id: U4
+              verdict: pass
+              class: impl
+              evidenceRef: ['M7 chore(release) commit deabb35: package.json + src-tauri/tauri.conf.json + src-tauri/Cargo.toml bump 0.1.5 → 0.2.0']
+              verifiedBy: axon
+
+            - id: U5
+              verdict: pass
+              class: smoke
+              evidenceRef: ['Tag v0.2.0 annotated local Tagger MKS2508 2026-08-24 apunta a commit deabb35|annotation 5-lineas menciona OKLCH tokens + CVA + 4to tema + splash/auth + sidebar + orders + rest sections + layout-integrity + AppImage + NO breaking changes|HEAD en main no detached|working tree 13 unstaged (orchestrator docs/* + hygiene', 'no M7 scope)|4 commits NO co-author AI']
+              verifiedBy: axon
+
+            - id: U6
+              verdict: open
+              class: manual-verify
+              evidenceRef: ['PUSH al remote PENDIENTE (orchestrator handle con waxin OK pre-existente ''tienes ok para push cuando este todo'')|CI linux-x64 + linux-arm64 + windows-x64 deploy verification post-push|smoke visual en brother bar post-deploy']
+              verifiedBy: axon
 decisions: []

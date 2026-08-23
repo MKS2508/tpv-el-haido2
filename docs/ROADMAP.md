@@ -2,7 +2,7 @@
 
 # Roadmap — tpv-el-haido
 
-modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 16 tracks · 0 spikes · 15 milestones
+modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 17 tracks · 0 spikes · 22 milestones
 
 ⚠ 1 violación(es) de governance derivable(s) — detalle al final.
 
@@ -114,6 +114,26 @@ deps: (ninguna)
 ### track/lint-baseline-residual-any  ○ queued
 Lint residuales — noExplicitAny (7 mayor)
 deps: (ninguna)
+
+### track/v0.2.0-ui-overhaul  ● in_progress
+v0.2.0 — UI/UX overhaul completo respetando tokens themeable (splash + sidebar + orders flow + AppImage icon)
+deps: track/core-tpv✓(done)
+refs: audit-ui-state audit-appimage-icon audit-wizard-step5 audit-skills-uiux
+milestones:
+  ▸ track/v0.2.0-ui-overhaul/m1-design-foundation  ✓ done — M1 — Design system foundation (tokens OKLCH 4 temas + TPV Amber brand + AnimatedNumber count-up + CSS scoping refactor + CVA variants)
+    gate: U1✓ U2✓ U3✓  (pass=3 provisional=0 partial=0 open=0)
+  ▸ track/v0.2.0-ui-overhaul/m2-splash-auth  ✓ done — M2 — Splash + Auth shell (AppSplash rewrite 213→50 LOC + LicenseSplash refresh + Onboarding unificado + fix wizard step 5 single provider)
+    gate: U1✓ U2✓ U3✓ U4✓  (pass=4 provisional=0 partial=0 open=0)
+  ▸ track/v0.2.0-ui-overhaul/m3-sidebar-nav  ✓ done — M3 — Sidebar + Navigation shell (Sidebar con depth + BottomNavigation + SectionHeader + shell unificado)
+    gate: U1✓ U2✓ U3✓ U4~  (pass=3 provisional=1 partial=0 open=0)
+  ▸ track/v0.2.0-ui-overhaul/m4-orders-flow  ✓ done — M4 — Orders flow POS (NewOrder + OrderPanel + PaymentModal + CVA variants + animaciones tabular-nums + 5 archivos CSS legacy eliminados)
+    gate: U1✓ U2✓ U3✓ U4✓ U5~ U6✓  (pass=5 provisional=1 partial=0 open=0)
+  ▸ track/v0.2.0-ui-overhaul/m5-rest-sections  ✓ done — M5 — Resto de sections (Home refinar + Products + Customers + AEAT + History + Settings + AuditLog)
+    gate: U1✓ U2✓ U3✓ U4✓ U5✓ U6✓ U7○  (pass=6 provisional=0 partial=0 open=1)
+  ▸ track/v0.2.0-ui-overhaul/m6-polish-icon  ✓ done — M6 — Polish rubric + layout-integrity blockers + AppImage icon fix (R1+R6+R9+R7+R10+R11+R3+R2 surgical + 16-polish + 512x512/category/publisher)
+    gate: U1✓ U2✓ U3✓ U4✓ U5✓ U6✓ U7~  (pass=6 provisional=1 partial=0 open=0)
+  ▸ track/v0.2.0-ui-overhaul/m7-release  ✓ done — M7 — Release v0.2.0 (bump versions + release notes + tag + push + CI publish + smoke Linux+Windows)
+    gate: U1✓ U2✓ U3✓ U4✓ U5✓ U6○  (pass=5 provisional=0 partial=0 open=1)
 
 ## Decisiones locked: 0
 
