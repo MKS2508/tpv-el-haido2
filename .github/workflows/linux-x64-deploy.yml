@@ -76,29 +76,13 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish to release-hub (auto si hay secrets, fallback manual — TR-15)
+      - name: Publish to release-hub (API key preferred, client_credentials fallback, fail-loud — r8)
         if: startsWith(github.ref, 'refs/tags/')
         env:
+          RELEASE_HUB_API_KEY: ${{ secrets.RELEASE_HUB_API_KEY }}
           RELEASE_HUB_CLIENT_ID: ${{ secrets.RELEASE_HUB_CLIENT_ID }}
           RELEASE_HUB_CLIENT_SECRET: ${{ secrets.RELEASE_HUB_CLIENT_SECRET }}
         run: |
-          manual_instructions() {
-            {
-              echo "## Publish al release-hub (manual, interim — TR-12 opción 3 / fallback TR-15)"
-              echo ""
-              echo "1. Descargar el artifact \`linux-x64-release\` de este run."
-              echo "2. Colocarlo en \`releases/<version>/linux-x64/\` en tu checkout local."
-              echo "3. \`bun run scripts/release.ts auth login\` (si no hay sesión activa)."
-              echo "4. \`bun run scripts/release.ts publish --target linux-x64 --slug haido --skip-build\`"
-            } >> "$GITHUB_STEP_SUMMARY"
-          }
-
-          if [ -z "$RELEASE_HUB_CLIENT_ID" ] || [ -z "$RELEASE_HUB_CLIENT_SECRET" ]; then
-            echo "RELEASE_HUB_CLIENT_ID/SECRET no están seteados — fallback manual (TR-15 paso 2)."
-            manual_instructions
-            exit 0
-          fi
-
           # Release notes: read from docs/releases/<version>-notes.md if present, else empty.
           # Generated locally by `bun run scripts/release.ts publish --ai-notes` and committed
           # next to the workflow. Pattern: releases/ in .gitignore unanchored → exception !docs/releases/
@@ -108,9 +92,34 @@ jobs:
             echo "::warning::Notes file $NOTES_FILE not found — publishing without --notes."
           fi
           NOTES_CONTENT="$(cat "$NOTES_FILE" 2>/dev/null || echo '')"
-          if bun run scripts/release.ts publish --client-credentials --skip-build --target linux-x64 --slug haido --notes "$NOTES_CONTENT"; then
-            echo "## Publish al release-hub: OK (automático, client_credentials — TR-15)" >> "$GITHUB_STEP_SUMMARY"
+
+          publish_ok=false
+          if [ -n "$RELEASE_HUB_API_KEY" ]; then
+            echo "Publishing via API key (preferred path)..."
+            if bun run scripts/release.ts publish --skip-build --target linux-x64 --slug haido --notes "$NOTES_CONTENT"; then
+              echo "## Publish al release-hub: OK (API key, preferred path — r8)" >> "$GITHUB_STEP_SUMMARY"
+              publish_ok=true
+            else
+              echo "::error::Publish via API key failed"
+            fi
+          elif [ -n "$RELEASE_HUB_CLIENT_ID" ] && [ -n "$RELEASE_HUB_CLIENT_SECRET" ]; then
+            echo "Publishing via client_credentials (fallback — known broken since auth-oidc-elysia@0.2.0, kept for emergency only)..."
+            if bun run scripts/release.ts publish --client-credentials --skip-build --target linux-x64 --slug haido --notes "$NOTES_CONTENT"; then
+              echo "## Publish al release-hub: OK (client_credentials fallback)" >> "$GITHUB_STEP_SUMMARY"
+              publish_ok=true
+            else
+              echo "::error::Publish via client_credentials failed"
+            fi
           else
-            echo "Publish automático falló — fallback a instrucciones manuales (TR-15 paso 2)."
-            manual_instructions
+            echo "RELEASE_HUB_API_KEY + RELEASE_HUB_CLIENT_ID/SECRET no están seteados — manual fallback"
+            {
+              echo "## Publish al release-hub (manual, interim)"
+              echo ""
+              echo "1. Download artifact \`linux-x64-release\` de este run"
+              echo "2. \`bun run scripts/release.ts publish --api-key \$RELEASE_HUB_API_KEY --skip-build --target linux-x64 --slug haido\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ "$publish_ok" = "false" ]; then
+            exit 1
           fi

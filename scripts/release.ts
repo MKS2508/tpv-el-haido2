@@ -1529,7 +1529,25 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
 
   // 1. Auth
   let accessToken: string;
-  if (opts.dryRun && !opts.clientCredentials) {
+
+  // NEW: API key auth path (CI-friendly, bypasses Pocket ID M2M gate entirely).
+  // The hub's apiKeyOrAdminGuard validates rhk_ prefix before the auth plugin's
+  // audience/allowedClientIds gate (see hub apps/server/src/lib/api-key-auth.ts),
+  // so a per-project API key with scope `releases:write` is the intended path
+  // for `publish` from headless CI. Env var precedence: explicit > env > cache.
+  const apiKeyFromEnv = process.env.RELEASE_HUB_API_KEY?.trim();
+  if (apiKeyFromEnv) {
+    if (!apiKeyFromEnv.startsWith('rhk_')) {
+      return err(
+        resultError(
+          'INVALID_API_KEY',
+          'RELEASE_HUB_API_KEY is set but does not start with "rhk_" — refusing to use as Bearer token.',
+        ),
+      );
+    }
+    accessToken = apiKeyFromEnv;
+    log.success('Authenticated via API key (RELEASE_HUB_API_KEY env var).');
+  } else if (opts.dryRun && !opts.clientCredentials) {
     // Dry-run without --client-credentials: keep PKCE-style behaviour
     // (placeholder if no cache) so existing CI smokes that fake auth stay green.
     const cacheResult = readTokenCache();
