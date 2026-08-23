@@ -40,9 +40,14 @@
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/square-icon-256.png",
+      "icons/square-icon.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "category": "Office",
+    "publisher": "mks2508",
+    "shortDescription": "TPV para hostelería",
+    "longDescription": "Sistema de punto de venta para restaurantes y bares, con cumplimiento fiscal AEAT VerificaTu, gestión de productos, impresión térmica y autenticación por PIN.",
     "linux": {
       "appimage": {
         "bundleMediaFramework": false
