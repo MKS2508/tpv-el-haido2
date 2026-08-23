@@ -19,6 +19,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import DebugIndicator from '@/components/DebugIndicator';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LicenseSplashScreen from '@/components/LicenseSplashScreen';
+import Onboarding from '@/components/Onboarding';
 import { OnboardingProvider } from '@/components/Onboarding/OnboardingProvider';
 import PWAStatus from '@/components/PWAStatus';
 import ScreenshotOverlay from '@/components/ScreenshotOverlay';
@@ -35,6 +36,7 @@ import Sidebar from '@/components/SideBar';
 import UpdateChecker from '@/components/UpdateChecker';
 import { Toaster } from '@/components/ui/toaster';
 import { useAboutDialog } from '@/hooks/useAboutDialog';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import { config } from '@/lib/config';
 import { createContextLogger } from '@/lib/logger';
 import { ASSET_PATHS } from '@/lib/paths';
@@ -53,6 +55,7 @@ const log = createContextLogger('App');
 function App() {
   const store = useStore();
   const _appTheme = useAppTheme();
+  const onboarding = useOnboarding();
 
   // App splash state
   const [showAppSplash, setShowAppSplash] = createSignal(true);
@@ -430,11 +433,33 @@ function App() {
         <LicenseSplashScreen onComplete={handleLicenseComplete} />
       </Show>
 
-      {/* Main Content - Only show if both splashes are done */}
+      {/* Onboarding wizard — shown before login, after both splashes */}
+      <Show when={onboarding.shouldShow() && !showAppSplash() && !showLicenseSplash()}>
+        <Presence>
+          <Motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            class="absolute inset-0 z-50 bg-background"
+          >
+            <OnboardingProvider>
+              <Onboarding />
+            </OnboardingProvider>
+          </Motion.div>
+        </Presence>
+      </Show>
+
+      {/* Main Content - Only show if both splashes are done and wizard is not active */}
       <Show
-        when={!showAppSplash() && !showLicenseSplash() && store.state.selectedUser}
+        when={
+          !showAppSplash() &&
+          !showLicenseSplash() &&
+          !onboarding.shouldShow() &&
+          store.state.selectedUser
+        }
         fallback={
-          <Show when={!showAppSplash() && !showLicenseSplash()}>
+          <Show when={!showAppSplash() && !showLicenseSplash() && !onboarding.shouldShow()}>
             <Presence>
               <Motion.div
                 initial={{ opacity: 0, y: 20 }}

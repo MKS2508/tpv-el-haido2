@@ -26,6 +26,63 @@ import type Product from '@/models/Product';
 import type User from '@/models/User';
 import type { StorageMode } from '@/services/storage-adapter.interface';
 import useStore from '@/store/store';
+import { getAppState, setAppState } from './useAppState';
+
+// ==================== Helpers mirroring App.tsx seeding logic ====================
+
+function getFallbackProducts(): Product[] {
+  const fallbackProducts = seedData.products as Product[];
+  return fallbackProducts.map((product) => ({
+    ...product,
+    icon: iconOptions.find((option) => option.value === product.selectedIcon)?.icon || BeerIcon,
+  })) as Product[];
+}
+
+function getFallbackCategories(): Category[] {
+  const fallbackProducts = seedData.products as Product[];
+  const uniqueCategories = [...new Set(fallbackProducts.map((product) => product.category))].filter(
+    Boolean
+  );
+  return uniqueCategories.map((categoryName, index) => ({
+    id: index + 1,
+    name: categoryName,
+    description: `Categoria ${categoryName}`,
+    icon: undefined,
+  }));
+}
+
+async function seedProductsIfNeeded(store: ReturnType<typeof useStore>) {
+  const result = await store.storageAdapter().getProducts();
+  if (result.ok && result.value.length === 0) {
+    log.info('Seeding products from fallback');
+    const fallbackProds = getFallbackProducts();
+    for (const product of fallbackProds) {
+      await store.storageAdapter().createProduct(product);
+    }
+    const reloaded = await store.storageAdapter().getProducts();
+    if (reloaded.ok) {
+      store.setProducts(reloaded.value);
+      store.setBackendConnected(true);
+      log.success('Seeded products to database', { count: reloaded.value.length });
+    }
+  }
+}
+
+async function seedCategoriesIfNeeded(store: ReturnType<typeof useStore>) {
+  const result = await store.storageAdapter().getCategories();
+  if (result.ok && result.value.length === 0) {
+    log.info('Seeding categories from fallback');
+    const fallbackCats = getFallbackCategories();
+    for (const category of fallbackCats) {
+      await store.storageAdapter().createCategory(category);
+    }
+    const reloaded = await store.storageAdapter().getCategories();
+    if (reloaded.ok) {
+      store.setCategories(reloaded.value);
+      log.success('Seeded categories to database', { count: reloaded.value.length });
+    }
+  }
+}
 
 // ==================== Logger ====================
 
@@ -76,19 +133,28 @@ export function useOnboarding(): UseOnboardingReturn {
 
   const store = useStore();
 
-  // Check localStorage for completion status on mount
-  onMount(() => {
+  // Check app_state for completion status on mount, with one-shot migration from localStorage
+  onMount(async () => {
+    // One-shot migration: if key exists in localStorage but not in app_state, copy it over
     try {
-      const completed = localStorage.getItem(ONBOARDING_STORAGE_KEY);
-      if (completed === 'true') {
-        setState((prev) => ({ ...prev, isActive: false }));
+      const legacy = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+      const existing = await getAppState('wizard.completed');
+      if (legacy === 'true' && existing === null) {
+        await setAppState('wizard.completed', 'true');
+        localStorage.removeItem(ONBOARDING_STORAGE_KEY);
       }
     } catch {
-      // Ignore localStorage errors
+      // Ignore migration errors
+    }
+
+    // Read persisted completion from app_state
+    const completed = await getAppState('wizard.completed');
+    if (completed === 'true') {
+      setState((prev) => ({ ...prev, isActive: false }));
     }
   });
 
-  // Determine if onboarding should be shown
+  // Determine if onboarding should be shown — only the persistent flag + forceOnboarding
   const shouldShow = createMemo(() => {
     const currentState = state();
     if (!currentState.isActive) return false;
@@ -96,8 +162,6 @@ export function useOnboarding(): UseOnboardingReturn {
     return shouldShowOnboarding({
       forceOnboarding: config.onboarding?.forceOnboarding ?? false,
       onboardingCompleted: !currentState.isActive,
-      productsCount: store.state.products.length,
-      usersCount: store.state.users.length,
     });
   });
 
@@ -329,26 +393,22 @@ export function useOnboarding(): UseOnboardingReturn {
   };
 
   // Completion actions
-  const completeOnboarding = () => {
-    try {
-      localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
-    } catch {
-      // Ignore localStorage errors
-    }
+  const completeOnboarding = async () => {
+    await setAppState('wizard.completed', 'true');
 
     setState((prev) => ({
       ...prev,
       isActive: false,
       completedSteps: [...prev.completedSteps, prev.currentStep],
     }));
+
+    // Seed products and categories AFTER wizard completes
+    await seedCategoriesIfNeeded(store);
+    await seedProductsIfNeeded(store);
   };
 
-  const restartOnboarding = () => {
-    try {
-      localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-    } catch {
-      // Ignore localStorage errors
-    }
+  const restartOnboarding = async () => {
+    await setAppState('wizard.completed', '');
 
     setState(INITIAL_ONBOARDING_STATE);
   };

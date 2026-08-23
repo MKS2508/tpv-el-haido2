@@ -490,6 +490,22 @@ async fn clear_license(state: State<'_, DbState>) -> Result<(), String> {
     db.clear_license().map_err(|e| e.to_string())
 }
 
+// ==================== App State ====================
+
+#[tauri::command]
+async fn get_app_state(state: State<'_, DbState>, key: String) -> Result<Option<String>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.get_app_state(&key).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn set_app_state(state: State<'_, DbState>, key: String, value: String) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.set_app_state(&key, &value).map_err(|e| e.to_string())
+}
+
 // ==================== Audit Logs ====================
 
 #[tauri::command]
@@ -666,6 +682,9 @@ pub fn run() {
             validate_and_activate_license,
             get_machine_fingerprint,
             clear_license,
+            // App State
+            get_app_state,
+            set_app_state,
             // Screenshot
             save_screenshot_from_base64,
             get_screenshots_dir,

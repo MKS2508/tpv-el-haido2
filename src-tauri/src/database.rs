@@ -101,6 +101,12 @@ impl Database {
                 license_type TEXT NOT NULL
             );
 
+            -- App state table (key-value store for app-level state like onboarding completion)
+            CREATE TABLE IF NOT EXISTS app_state (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+
             -- Audit logs table
             CREATE TABLE IF NOT EXISTS audit_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -623,6 +629,27 @@ impl Database {
     pub fn clear_license(&self) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute("DELETE FROM licenses", [])?;
+        Ok(())
+    }
+
+    // ==================== App State ====================
+
+    pub fn get_app_state(&self, key: &str) -> Result<Option<String>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT value FROM app_state WHERE key = ?1")?;
+        let mut rows = stmt.query(params![key])?;
+        match rows.next()? {
+            Some(row) => Ok(Some(row.get(0)?)),
+            None => Ok(None),
+        }
+    }
+
+    pub fn set_app_state(&self, key: &str, value: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO app_state (key, value) VALUES (?1, ?2)",
+            params![key, value],
+        )?;
         Ok(())
     }
 

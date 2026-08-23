@@ -220,15 +220,15 @@ export function mergeImportData<T extends { id: number }>(existing: T[], importe
 }
 
 /**
- * Check if onboarding should be shown based on app state
+ * Check if onboarding should be shown based on app state.
+ * The only real trigger is the persistent completion flag + forceOnboarding env var.
+ * Heuristics based on data counts are defeated by seedProductsIfNeeded running at mount.
  */
 export function shouldShowOnboarding(params: {
   forceOnboarding: boolean;
   onboardingCompleted: boolean;
-  productsCount: number;
-  usersCount: number;
 }): boolean {
-  const { forceOnboarding, onboardingCompleted, productsCount, usersCount } = params;
+  const { forceOnboarding, onboardingCompleted } = params;
 
   // Force onboarding via env var
   if (forceOnboarding) return true;
@@ -236,11 +236,6 @@ export function shouldShowOnboarding(params: {
   // Already completed
   if (onboardingCompleted) return false;
 
-  // No data exists - show onboarding
-  if (productsCount === 0 && usersCount === 0) return true;
-
-  // Only users exist, no products - show onboarding
-  if (productsCount === 0) return true;
-
-  return false;
+  // No flag set — first install, show wizard
+  return true;
 }
