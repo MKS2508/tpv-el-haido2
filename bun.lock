@@ -10,7 +10,7 @@
         "@mks2508/better-logger": "0.18.3",
         "@mks2508/no-throw": "^0.3.7",
         "@mks2508/shadcn-basecoat-theme-manager": "^4.3.2",
-        "@mks2508/tickmaster": "^0.1.0",
+        "@mks2508/tickmaster": "^0.1.2",
         "@motionone/solid": "^10.13.2",
         "@tanstack/solid-virtual": "^3.13.23",
         "@tauri-apps/api": "^2.10.1",
@@ -302,7 +302,7 @@
 
     "@mks2508/shadcn-basecoat-theme-manager": ["@mks2508/shadcn-basecoat-theme-manager@4.3.2", "", { "peerDependencies": { "@mks2508/better-logger": "^5.0.1" } }, "sha512-2fK1xBQRcD1wwzPL0DK8yIUlJeLVdfxMHnPv9mJ+GRiQMoUE2el3DQho0DBOwOGweVOVpMqafA9RFB0ycczPFA=="],
 
-    "@mks2508/tickmaster": ["@mks2508/tickmaster@0.1.1", "", { "dependencies": { "@elysiajs/eden": "1.4.9", "@mks2508/no-throw": "^0.3.7", "elysia": "1.4.29" } }, "sha512-Nt6zs6Amq0ex3aESZvMzoGR2qhGTzwjMYBJhFDKzwLqPnk+mYvB6AHA6zZnw8E4000QzQEe1kw+GSk7/tIf4IA=="],
+    "@mks2508/tickmaster": ["@mks2508/tickmaster@0.1.2", "", { "dependencies": { "@elysiajs/eden": "1.4.9", "@mks2508/no-throw": "^0.3.7", "elysia": "1.4.29" } }, "sha512-+2zherYadr6fZjlBGomLSYwsOyvaMRk23SCVEzrvgVHx7qA9shnP++mKGVOzwEnSEgg5iTF4lV6UW6UB/3bhgg=="],
 
     "@motionone/animation": ["@motionone/animation@10.18.0", "", { "dependencies": { "@motionone/easing": "^10.18.0", "@motionone/types": "^10.17.1", "@motionone/utils": "^10.18.0", "tslib": "^2.3.1" } }, "sha512-9z2p5GFGCm0gBsZbi8rVMOAJCtw1WqBTIPw3ozk06gDvZInBPIsQcHgYogEJ4yuHJ+akuW8g1SEIOpTOvYs8hw=="],
 
