@@ -18,7 +18,7 @@ interface ThemeStepProps {
 
 export function ThemeStep(props: ThemeStepProps) {
   return (
-    <Card class="w-full max-w-lg mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl">
+    <Card class="isolate w-full max-w-lg mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl">
       <CardHeader>
         <div class="flex items-center gap-3 mb-2">
           <div class="p-2 rounded-lg bg-pink-500/10 text-pink-500">

@@ -60,7 +60,7 @@ export function StorageModeStep(props: StorageModeStepProps) {
                 type="button"
                 onClick={() => props.onSelectMode(mode.id)}
                 class={cn(
-                  'flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-all hover:bg-accent',
+                  'flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-[background-color,border-color] hover:bg-accent',
                   props.selectedMode === mode.id
                     ? 'border-primary bg-primary/5'
                     : 'border-muted hover:border-muted-foreground'

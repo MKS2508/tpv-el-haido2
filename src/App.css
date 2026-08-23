@@ -4,134 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Import touch optimizations */
-@import './styles/touch-optimizations.css';
-
-/* Import TPV-specific optimizations */
-@import './styles/tpv-optimizations.css';
-
-/* Import NewOrder component styles */
-@import './styles/neworder.css';
-
-/* Base styles for theme transitions - themes are loaded dynamically by ThemeCore */
-
-/* Tailwind v4 Theme Configuration */
-@theme inline {
-  /* Border radius */
-  --radius: var(--radius, 0.625rem);
-  --radius-xl: calc(var(--radius, 0.625rem) + 4px);
-  --radius-lg: var(--radius, 0.625rem);
-  --radius-md: calc(var(--radius, 0.625rem) - 2px);
-  --radius-sm: calc(var(--radius, 0.625rem) - 4px);
-
-  /* Colors */
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
-
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-
-  /* Fonts */
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
-  --font-mono: var(--font-mono);
-
-  /* Touch spacing */
-  --spacing-touch-target: var(--touch-target-size);
-  --spacing-touch-target-lg: var(--touch-target-large);
-  --spacing-touch-target-xl: var(--touch-target-xl);
-  --spacing-touch: var(--touch-spacing);
-  --spacing-touch-md: var(--touch-spacing-md);
-  --spacing-touch-lg: var(--touch-spacing-lg);
-
-  /* Shadows */
-  --shadow-2xs: var(--shadow-2xs);
-  --shadow-xs: var(--shadow-xs);
-  --shadow-sm: var(--shadow-sm);
-  --shadow: var(--shadow);
-  --shadow-md: var(--shadow-md);
-  --shadow-lg: var(--shadow-lg);
-  --shadow-xl: var(--shadow-xl);
-  --shadow-2xl: var(--shadow-2xl);
-
-  /* Spacing */
-  --spacing: var(--spacing);
-
-  /* Letter spacing / tracking */
-  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
-  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
-  --tracking-normal: var(--tracking-normal);
-  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
-  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
-  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
-
-  /* Animations */
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
-  --animate-touch-feedback: scale var(--touch-feedback-duration) ease-in-out;
-  --animate-ripple: ripple var(--touch-ripple-duration) linear;
-  --animate-spin: spin 1s linear infinite;
-}
-
-@keyframes accordion-down {
-  from { height: 0; }
-  to { height: var(--radix-accordion-content-height); }
-}
-
-@keyframes accordion-up {
-  from { height: var(--radix-accordion-content-height); }
-  to { height: 0; }
-}
-
-@keyframes ripple {
-  0% { width: 0; height: 0; opacity: 0.15; }
-  100% { width: 300px; height: 300px; opacity: 0; }
-}
+/* NOTE: Design tokens (colors, radii, spacing, motion) live in src/styles/tokens.css
+ * as the single source of truth. The legacy @theme inline block previously here was
+ * consolidated into tokens.css during M4 (v0.2.0). This file now only contains
+ * base/reset styles, font-face, scrollbar utilities, and performance-mode classes.
+ */
 
 /* Utilidades para truncar texto */
 .line-clamp-2 {
@@ -179,7 +56,7 @@ html, body {
     --white: #ffffff;
     --background-day: linear-gradient(skyblue, cadetblue);
     --background-night: linear-gradient(-45deg, #222, #000030);
-    
+
     /* Typography and spacing that remain constant */
     --font-sans: Geist, sans-serif;
     --font-serif: "Lora", Georgia, serif;
@@ -200,25 +77,27 @@ html, body {
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
     transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
                 color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
                 border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
                 fill 0.2s cubic-bezier(0.4, 0, 0.2, 1),
                 stroke 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   /* Faster transitions when theme is actively changing */
   .theme-transitioning * {
-    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
-                color 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
                 border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
                 fill 0.15s cubic-bezier(0.4, 0, 0.2, 1),
                 stroke 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
-  
+
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
 

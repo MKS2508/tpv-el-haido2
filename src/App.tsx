@@ -592,18 +592,16 @@ function App() {
                       fallbackTitle="Error en Ajustes"
                       fallbackMessage="No se ha podido cargar la pantalla de ajustes."
                     >
-                      <OnboardingProvider>
-                        <SettingsPanel
-                          users={store.state.users}
-                          selectedUser={store.state.selectedUser!}
-                          handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
-                          thermalPrinterOptions={store.state.thermalPrinterOptions}
-                          isSidebarOpen={isSidebarOpen()}
-                          setSelectedUser={store.setSelectedUser}
-                          setUsers={store.setUsers}
-                          forceAboutTab={forceAboutTab()}
-                        />
-                      </OnboardingProvider>
+                      <SettingsPanel
+                        users={store.state.users}
+                        selectedUser={store.state.selectedUser!}
+                        handleThermalPrinterOptionsChange={handleThermalPrinterOptionsChange}
+                        thermalPrinterOptions={store.state.thermalPrinterOptions}
+                        isSidebarOpen={isSidebarOpen()}
+                        setSelectedUser={store.setSelectedUser}
+                        setUsers={store.setUsers}
+                        forceAboutTab={forceAboutTab()}
+                      />
                     </ErrorBoundary>
                   </div>
                 </Match>

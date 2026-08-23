@@ -1,4 +1,4 @@
-:root {
+[data-theme="synthwave84"][data-mode="light"] {
   --background: oklch(0.9640 0.0085 304.2185);
   --foreground: oklch(0.2338 0.0651 299.8496);
   --card: oklch(0.9459 0.0128 304.1508);

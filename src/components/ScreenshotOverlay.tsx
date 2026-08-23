@@ -237,11 +237,12 @@ function ScreenshotOverlay(props: ScreenshotOverlayProps) {
   });
 
   return (
-    <div class="fixed bottom-24 right-4 z-[9999] md:bottom-4 screenshot-hide">
+    <div class="fixed bottom-24 right-4 z-55 md:bottom-4 screenshot-hide">
       {/* Botón flotante */}
       <Show when={!isExpanded()}>
         <Button
           onClick={handleExpand}
+          aria-label="Abrir overlay de captura"
           class={cn(
             'h-14 w-14 rounded-full shadow-lg',
             showSuccess() && 'bg-green-500 hover:bg-green-600'
@@ -261,7 +262,12 @@ function ScreenshotOverlay(props: ScreenshotOverlayProps) {
               <CameraIcon class="h-4 w-4" />
               Captura de Pantalla
             </h3>
-            <Button variant="ghost" size="icon" onClick={() => setIsExpanded(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Cerrar overlay"
+              onClick={() => setIsExpanded(false)}
+            >
               <XIcon class="h-4 w-4" />
             </Button>
           </div>

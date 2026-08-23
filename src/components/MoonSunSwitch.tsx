@@ -51,13 +51,13 @@ const MoonSunSwitch: Component<MoonSunSwitchProps> = (props) => {
           onClick={handleToggle2State}
         />
         <span
-          class={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-all duration-600 ease-out overflow-hidden z-[1] rounded-full`}
+          class={`${styles.slider} ${styles.round} absolute cursor-pointer inset-0 bg-gradient-to-b from-sky-400 to-cyan-800 shadow-inner transition-[transform,background-color] duration-600 ease-out overflow-hidden z-[1] rounded-full`}
         >
           <div
-            class={`${styles.background} absolute w-1.5 h-1.5 bg-white rounded-full bottom-0 right-0 transition-all duration-600 ease-out`}
+            class={`${styles.background} absolute w-1.5 h-1.5 bg-white rounded-full bottom-0 right-0 transition-[transform,opacity] duration-600 ease-out`}
           />
-          <div class={`${styles.star} scale-0 transition-all duration-600 ease-out`} />
-          <div class={`${styles.star} scale-0 transition-all duration-600 ease-out`} />
+          <div class={`${styles.star} scale-0 transition-[transform,opacity] duration-600 ease-out`} />
+          <div class={`${styles.star} scale-0 transition-[transform,opacity] duration-600 ease-out`} />
         </span>
       </label>
     </div>

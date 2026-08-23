@@ -103,7 +103,7 @@ const GlassContainer = (props: GlassContainerProps) => {
           <Motion.div
             class={cn(
               baseClasses,
-              'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl',
+              'isolate bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl',
               'border border-white/20 dark:border-gray-700/30 shadow-2xl',
               props.class
             )}

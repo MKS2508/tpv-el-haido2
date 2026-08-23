@@ -29,30 +29,42 @@ export function WelcomeStep(props: WelcomeStepProps) {
         <p class="text-muted-foreground">
           Este asistente te guiara a traves de la configuracion inicial:
         </p>
-        <ul class="text-sm text-left space-y-2 max-w-xs mx-auto">
-          <li class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium">
+        <ul class="text-sm text-left space-y-3 max-w-sm mx-auto">
+          <li class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
               1
             </span>
-            <span>Seleccionar modo de almacenamiento</span>
+            <span class="text-foreground">Bienvenida y bienvenida</span>
           </li>
-          <li class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium">
+          <li class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
               2
             </span>
-            <span>Importar productos y categorias</span>
+            <span class="text-foreground">Seleccionar modo de almacenamiento</span>
           </li>
-          <li class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium">
+          <li class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
               3
             </span>
-            <span>Crear usuarios</span>
+            <span class="text-foreground">Importar productos y categorías</span>
           </li>
-          <li class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium">
+          <li class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
               4
             </span>
-            <span>Personalizar apariencia</span>
+            <span class="text-foreground">Crear usuarios</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
+              5
+            </span>
+            <span class="text-foreground">Personalizar apariencia</span>
+          </li>
+          <li class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
+              6
+            </span>
+            <span class="text-foreground">Finalizar y empezar a usar TPV</span>
           </li>
         </ul>
       </CardContent>

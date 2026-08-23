@@ -96,9 +96,10 @@ const CategoryCard: Component<CategoryCardProps> = (props) => {
           onClick={() => {
             local.onAction?.(local.category.name);
           }}
-          variant="ghost"
+          variant="category"
+          size="sm"
           class={cn(
-            'category-button w-full justify-start gap-2 px-2 py-1.5 text-left font-medium rounded-md h-8',
+            'w-full justify-start gap-2 px-2 py-1.5 text-left rounded-md',
             local.isSelected
               ? local.isFavorite
                 ? 'bg-warning text-warning-foreground shadow-sm border-warning'
@@ -106,7 +107,7 @@ const CategoryCard: Component<CategoryCardProps> = (props) => {
               : local.isFavorite
                 ? 'bg-warning/10 text-warning border-warning/30 hover:bg-warning/20'
                 : 'bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-            'border border-sidebar-border transition-all duration-200 cursor-pointer',
+            'border border-sidebar-border transition-colors duration-200 cursor-pointer',
             local.class
           )}
         >
@@ -121,7 +122,7 @@ const CategoryCard: Component<CategoryCardProps> = (props) => {
       {/* Mode 'manage' - for Products page */}
       <Motion.div
         class={cn(
-          'relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-150',
+          'relative overflow-hidden rounded-2xl cursor-pointer transition-[transform,box-shadow,border-color] duration-150',
           'border border-foreground/[0.08] hover:border-foreground/20 hover:shadow-lg',
           'shadow-sm',
           `bg-gradient-to-br ${getCategoryColors(local.category.name)}`,

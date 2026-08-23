@@ -125,12 +125,12 @@ const ProductCard = (props: ProductCardProps) => {
 
   const getCardStyles = () => {
     const base =
-      'relative flex flex-col overflow-hidden rounded-2xl cursor-pointer transition-all duration-150 border border-foreground/[0.08]';
+      'isolate relative flex flex-col overflow-hidden rounded-2xl cursor-pointer transition-[transform,box-shadow,border-color,background-color] duration-150 border border-foreground/[0.08] active:translate-y-px';
 
     if (local.mode === 'order') {
       return cn(
         base,
-        'touch-enhanced shadow-md',
+        'shadow-md',
         isAdding()
           ? 'border-success shadow-success/30'
           : showSuccess()
@@ -180,7 +180,7 @@ const ProductCard = (props: ProductCardProps) => {
         )}
 
         {local.showCategory && local.product.category && (
-          <div class="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
+          <div class="isolate absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
             {local.product.category}
           </div>
         )}
@@ -223,7 +223,7 @@ const ProductCard = (props: ProductCardProps) => {
               <Button
                 variant="ghost"
                 size="sm"
-                class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+                class="isolate p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
                 onClick={handleFavoriteClick}
               >
                 <Star

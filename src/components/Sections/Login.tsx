@@ -158,7 +158,7 @@ const Login = (props: LoginProps) => {
                   else handlePinInput(digit);
                 }}
                 variant="outline"
-                class={`w-full font-semibold bg-white/50 dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 border-gray-300/50 dark:border-gray-600/50 transition-all hover:scale-105 active:scale-95 touch-manipulation ${
+                class={`w-full font-semibold bg-white/50 dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-700/70 border border-border transition-[transform,background-color] hover:scale-105 active:scale-95 touch-manipulation ${
                   isDesktopLayout()
                     ? 'h-12 lg:h-14 text-lg lg:text-xl' // Smaller for desktop to fit better
                     : responsive.isMobile()
@@ -186,7 +186,7 @@ const Login = (props: LoginProps) => {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: index * 0.05, duration: 0.2 }}
-                class={`${dotSize} rounded-full border-2 border-gray-400/50 dark:border-gray-600/50 bg-white/30 dark:bg-gray-800/30`}
+                class={`${dotSize} rounded-full border-2 border-border bg-white/30 dark:bg-gray-800/30`}
               >
                 <Presence>
                   <Show when={pin().length > index}>
@@ -212,7 +212,7 @@ const Login = (props: LoginProps) => {
       when={!isLoading()}
       fallback={
         <div
-          class="h-screen w-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-fixed"
+          class="isolate h-screen w-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-fixed"
           style={{ 'background-image': `url('${ASSET_PATHS.wallpaper}')` }}
         >
           <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 z-0" />
@@ -223,7 +223,7 @@ const Login = (props: LoginProps) => {
       }
     >
       <div
-        class="h-screen w-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-fixed"
+        class="isolate h-screen w-screen flex flex-col items-center justify-center p-4 bg-cover bg-center bg-fixed"
         style={{ 'background-image': `url('${ASSET_PATHS.wallpaper}')` }}
       >
         <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 z-0" />
@@ -262,24 +262,24 @@ const Login = (props: LoginProps) => {
               <h1
                 class={
                   responsive.isMobile()
-                    ? 'text-xl font-bold text-gray-900 dark:text-white'
-                    : 'text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white'
+                    ? 'text-xl font-bold text-foreground'
+                    : 'text-2xl sm:text-3xl font-bold text-foreground'
                 }
               >
                 El Haido TPV
               </h1>
               <p
-                class={`text-gray-500 dark:text-gray-400 mt-0.5 ${responsive.isMobile() ? 'text-[10px]' : 'text-xs'}`}
+                class={`text-muted-foreground mt-0.5 ${responsive.isMobile() ? 'text-xs' : 'text-sm'}`}
               >
                 Software de digitalización y gestión para Bar El Haido
               </p>
               <p
-                class={`text-gray-500 dark:text-gray-400 mt-0.5 ${responsive.isMobile() ? 'text-[10px]' : 'text-xs'}`}
+                class={`text-muted-foreground mt-0.5 ${responsive.isMobile() ? 'text-xs' : 'text-sm'}`}
               >
                 GERMAN ASENSIO BLASCO · NIF 16639695T
               </p>
               <p
-                class={`text-gray-700 dark:text-gray-300 mt-1 font-medium ${responsive.isMobile() ? 'text-xs' : 'text-sm'}`}
+                class={`text-foreground/80 mt-1 font-medium ${responsive.isMobile() ? 'text-xs' : 'text-sm'}`}
               >
                 {currentTime().toLocaleTimeString([], {
                   hour: '2-digit',
@@ -294,7 +294,7 @@ const Login = (props: LoginProps) => {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              class={`font-semibold text-center text-gray-800 dark:text-gray-200 ${
+              class={`font-semibold text-center text-foreground ${
                 responsive.isMobile() ? 'text-base mb-4' : 'text-lg sm:text-xl mb-6'
               }`}
             >
@@ -319,15 +319,15 @@ const Login = (props: LoginProps) => {
                           <button
                             type="button"
                             onClick={() => handleUserSelect(user)}
-                            class="user-card flex flex-col items-center cursor-pointer p-4 rounded-2xl bg-transparent border-none"
+                            class="user-card group flex flex-col items-center cursor-pointer p-4 rounded-2xl bg-transparent border-none will-change-transform backface-hidden touch-manipulation transition-[transform,background-color] duration-200 ease-out hover:scale-[1.02] hover:bg-white/30 dark:hover:bg-gray-800/30 active:scale-[0.98] active:duration-100 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100 motion-reduce:hover:bg-white/10 dark:motion-reduce:hover:bg-gray-800/10"
                           >
-                            <Avatar class="w-32 h-32 sm:w-40 sm:h-40 ring-4 ring-white/50 dark:ring-gray-700/50 hover:ring-primary/50 transition-all shadow-xl">
+                            <Avatar class="w-32 h-32 sm:w-40 sm:h-40 ring-4 ring-white/50 dark:ring-gray-700/50 group-hover:ring-primary/50 transition-[box-shadow] shadow-xl">
                               <AvatarImage src={user.profilePicture} alt={user.name} />
                               <AvatarFallback class="bg-gradient-to-br from-primary to-primary/70 text-white text-xl sm:text-2xl font-bold">
                                 {user.name.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
-                            <p class="mt-3 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                            <p class="mt-3 text-base sm:text-lg font-semibold text-foreground">
                               {user.name}
                             </p>
                           </button>
@@ -375,14 +375,14 @@ const Login = (props: LoginProps) => {
                                 </AvatarFallback>
                               </Avatar>
                               <p
-                                class={`font-semibold text-gray-900 dark:text-white ${
+                                class={`font-semibold text-foreground ${
                                   responsive.isMobile() ? 'mt-1 text-sm' : 'mt-3 text-lg sm:text-xl'
                                 }`}
                               >
                                 {user().name}
                               </p>
                               <p
-                                class={`text-gray-600 dark:text-gray-400 mt-1 ${
+                                class={`text-muted-foreground mt-1 ${
                                   responsive.isMobile() ? 'text-xs' : 'text-xs sm:text-sm'
                                 }`}
                               >
@@ -437,10 +437,10 @@ const Login = (props: LoginProps) => {
                               </AvatarFallback>
                             </Avatar>
                             <div class="text-center space-y-1">
-                              <p class="text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white">
+                              <p class="text-xl lg:text-2xl font-semibold text-foreground">
                                 {user().name}
                               </p>
-                              <p class="text-gray-600 dark:text-gray-400 text-xs lg:text-sm">
+                              <p class="text-muted-foreground text-xs lg:text-sm">
                                 Introduce tu PIN de seguridad
                               </p>
                             </div>
@@ -498,7 +498,7 @@ const Login = (props: LoginProps) => {
                         <Button
                           variant="ghost"
                           onClick={() => setSelectedUser(null)}
-                          class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/20 dark:hover:bg-gray-800/20"
+                          class="text-foreground/80 hover:text-foreground hover:bg-white/20 dark:hover:bg-gray-800/20"
                         >
                           {'\u2190'} Cambiar usuario
                         </Button>
@@ -537,7 +537,7 @@ const Login = (props: LoginProps) => {
                   };
                   void toggleFullscreen();
                 }}
-                class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-800/80 shadow-lg border border-white/20"
+                class="isolate bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl text-foreground/80 hover:bg-white/80 dark:hover:bg-gray-800/80 shadow-lg border border-white/20"
               >
                 Pantalla completa
               </Button>

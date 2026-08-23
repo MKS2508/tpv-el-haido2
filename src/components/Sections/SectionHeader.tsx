@@ -1,6 +1,6 @@
 import { Show, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
-import { getBusinessNif } from '@/store/store';
+import { getBusinessName, getBusinessNif } from '@/lib/business';
 
 interface MenuItem {
   id: string;
@@ -12,23 +12,6 @@ interface SectionHeaderProps {
   menuItems: MenuItem[];
   activeSection: string;
 }
-
-/**
- * Obtiene la razón social del negocio desde la configuración AEAT en localStorage.
- * @returns Razón social o cadena vacía
- */
-const getBusinessName = (): string => {
-  try {
-    const saved = localStorage.getItem('tpv-aeat-config');
-    if (saved) {
-      const aeatConfig = JSON.parse(saved);
-      return aeatConfig?.businessData?.nombreRazon ?? '';
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return '';
-};
 
 function SectionHeader(props: SectionHeaderProps) {
   const [local] = splitProps(props, ['menuItems', 'activeSection']);

@@ -1,6 +1,6 @@
 import { Motion, Presence } from '@motionone/solid';
 import { PlusIcon, Trash2Icon, UserPlusIcon, UsersIcon } from 'lucide-solid';
-import { createEffect, createSignal, For, Show } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -24,17 +24,13 @@ interface CreateUsersStepProps {
 export function CreateUsersStep(props: CreateUsersStepProps) {
   const [isAddingUser, setIsAddingUser] = createSignal(false);
 
-  createEffect(() => {
-    setIsAddingUser(props.users.length === 0);
-  });
-
   const handleSubmit = (userData: Omit<User, 'id'>) => {
     props.onCreateUser(userData);
     setIsAddingUser(false);
   };
 
   return (
-    <Card class="w-full max-w-2xl mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl overflow-hidden">
+    <Card class="isolate w-full max-w-2xl mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl overflow-hidden">
       <CardHeader class="bg-primary/5 pb-8">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -47,7 +43,12 @@ export function CreateUsersStep(props: CreateUsersStepProps) {
             </div>
           </div>
           <Show when={!isAddingUser()}>
-            <Button onClick={() => setIsAddingUser(true)} size="sm" class="gap-2">
+            <Button
+              onClick={() => setIsAddingUser(true)}
+              size="sm"
+              class="gap-2"
+              title={props.users.length === 0 ? 'Crear el primer usuario' : 'Añadir otro usuario'}
+            >
               <PlusIcon class="h-4 w-4" />
               Nuevo Usuario
             </Button>
@@ -71,10 +72,11 @@ export function CreateUsersStep(props: CreateUsersStepProps) {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      class="text-center py-12 border-2 border-dashed rounded-xl text-muted-foreground"
+                      class="text-center py-12 border-2 border-dashed rounded-xl text-muted-foreground space-y-2"
                     >
-                      <UserPlusIcon class="h-8 w-8 mx-auto mb-2 opacity-20" />
-                      <p>No hay usuarios todavia</p>
+                      <UserPlusIcon class="h-8 w-8 mx-auto opacity-50" />
+                      <p class="text-sm">Aún no has creado usuarios</p>
+                      <p class="text-xs">Pulsa "Nuevo Usuario" arriba para empezar</p>
                     </Motion.div>
                   }
                 >
@@ -84,7 +86,7 @@ export function CreateUsersStep(props: CreateUsersStepProps) {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.9 }}
-                        class="group flex items-center justify-between p-3 rounded-xl bg-accent/50 border border-transparent hover:border-primary/20 hover:bg-accent transition-all duration-200"
+                        class="group flex items-center justify-between p-3 rounded-xl bg-accent/50 border border-transparent hover:border-primary/20 hover:bg-accent transition-[background-color,border-color] duration-200"
                       >
                         <div class="flex items-center gap-3">
                           <div class="h-10 w-10 rounded-full border-2 border-primary/10 overflow-hidden bg-background">
@@ -105,8 +107,9 @@ export function CreateUsersStep(props: CreateUsersStepProps) {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Eliminar usuario ${user.name}`}
                           onClick={() => props.onDeleteUser(user.id)}
-                          class="opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
+                          class="opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 transition-opacity"
                         >
                           <Trash2Icon class="h-4 w-4" />
                         </Button>

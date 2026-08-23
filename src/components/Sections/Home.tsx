@@ -72,7 +72,7 @@ interface HomeHeaderProps {
 const HomeHeader: Component<HomeHeaderProps> = (props) => (
   <Motion.div
     class={cn(
-      'flex-none bg-background/80 backdrop-blur-md border-b border-border',
+      'isolate flex-none bg-background/80 backdrop-blur-md border-b border-border',
       props.isMobile ? 'p-4 pb-3' : 'p-6 pb-4'
     )}
     initial={{ opacity: 0, y: -20 }}
@@ -83,11 +83,8 @@ const HomeHeader: Component<HomeHeaderProps> = (props) => (
       <div class={props.isMobile ? 'text-center' : ''}>
         <h2
           class={cn(
-            'font-black tracking-tight',
-            'bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent',
-            'bg-[length:300%_100%]',
-            'animate-gradient',
-            props.isMobile ? 'text-2xl' : 'text-4xl'
+            'font-bold tracking-tight text-foreground',
+            props.isMobile ? 'text-2xl' : 'text-3xl'
           )}
         >
           ¡Hola {props.userName}!
@@ -183,7 +180,7 @@ const StatCard: Component<StatCardProps> = (props) => {
     >
       <div
         class={cn(
-          'group relative bg-card rounded-2xl border-2 border-border transition-all duration-500',
+          'group relative bg-card rounded-2xl border-2 border-border transition-[transform,box-shadow,border-color] duration-500',
           variantStyles().container,
           'hover:shadow-lg',
           variantStyles().glow,
@@ -193,17 +190,12 @@ const StatCard: Component<StatCardProps> = (props) => {
         <div class={cn('p-5', responsive.isMobile() && 'p-4')}>
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1 min-w-0">
-              <p
-                class={cn(
-                  'text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1',
-                  responsive.isMobile() && 'text-[10px]'
-                )}
-              >
+              <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                 {props.title}
               </p>
               <Motion.div
                 class={cn(
-                  'font-black tracking-tight',
+                  'font-bold tracking-tight text-card-foreground',
                   responsive.isMobile() ? 'text-2xl' : 'text-3xl'
                 )}
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -221,7 +213,7 @@ const StatCard: Component<StatCardProps> = (props) => {
 
             <div
               class={cn(
-                'flex-shrink-0 p-2.5 rounded-xl transition-all duration-300',
+                'flex-shrink-0 p-2.5 rounded-xl transition-[transform,background-color] duration-300',
                 variantStyles().iconBg,
                 'group-hover:scale-105 group-hover:rotate-5'
               )}
@@ -427,7 +419,7 @@ const LineChartCard: Component<LineChartCardProps> = (props) => {
     >
       <Card
         class={cn(
-          'bg-muted/25 backdrop-blur-sm border-2 border-foreground/10 shadow-lg shadow-black/10 transition-all duration-500',
+          'bg-card border-2 border-border shadow-md transition-[transform,box-shadow,border-color] duration-500',
           'hover:shadow-lg hover:border-primary/20',
           responsive.isMobile() && 'hover:shadow-md'
         )}
@@ -562,7 +554,7 @@ const PieChartCard: Component<PieChartCardProps> = (props) => {
     >
       <Card
         class={cn(
-          'bg-muted/25 backdrop-blur-sm border-2 border-foreground/10 shadow-lg shadow-black/10 transition-all duration-500',
+          'bg-card border-2 border-border shadow-md transition-[transform,box-shadow,border-color] duration-500',
           'hover:shadow-lg hover:border-accent/20',
           responsive.isMobile() && 'hover:shadow-md'
         )}
@@ -630,7 +622,7 @@ const RecentOrdersTable: Component<RecentOrdersTableProps> = (props) => {
     >
       <Card
         class={cn(
-          'bg-muted/25 backdrop-blur-sm border-2 border-foreground/10 shadow-lg shadow-black/10 transition-all duration-500',
+          'bg-card border-2 border-border shadow-md transition-[transform,box-shadow,border-color] duration-500',
           'hover:shadow-lg hover:border-accent/20'
         )}
       >
@@ -731,7 +723,7 @@ const TopProductsCard: Component<TopProductsCardProps> = (props) => {
     >
       <Card
         class={cn(
-          'bg-muted/25 backdrop-blur-sm border-2 border-foreground/10 shadow-lg shadow-black/10 transition-all duration-500',
+          'bg-card border-2 border-border shadow-md transition-[transform,box-shadow,border-color] duration-500',
           'hover:shadow-lg hover:border-warning/20'
         )}
       >
@@ -928,7 +920,7 @@ const Home: Component<HomeProps> = (props) => {
   };
 
   return (
-    <div class="flex flex-col h-full overflow-hidden bg-background">
+    <div class="flex flex-col h-full min-h-0 overflow-hidden bg-background">
       <HomeHeader
         userName={props.userName}
         dateRange={dateRange()}
@@ -938,7 +930,7 @@ const Home: Component<HomeProps> = (props) => {
 
       <div
         class={cn(
-          'flex-grow overflow-y-auto',
+          'flex-grow min-h-0 overflow-y-auto',
           responsive.isMobile() ? 'p-4 space-y-4' : 'p-6 space-y-6'
         )}
       >

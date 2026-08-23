@@ -2,6 +2,7 @@ import { createVirtualizer } from '@tanstack/solid-virtual';
 import { CheckCircle, CreditCard, Loader2, XCircle } from 'lucide-solid';
 import type { JSX } from 'solid-js';
 import { For, Show } from 'solid-js';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -12,6 +13,8 @@ interface VirtualizedOrderHistoryProps {
   onOrderSelect: (order: Order) => void;
   height?: number;
 }
+
+// EUR currency formatting handled via AnimatedNumber's suffix prop (locale 'es-ES' gives "1.234,56").
 
 interface RowProps {
   orders: Order[];
@@ -39,8 +42,16 @@ const OrderRow = (props: RowProps & { order: Order }) => {
           <table class="w-full">
             <tbody>
               <tr
+                role="button"
+                tabindex="0"
                 class="cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
                 onClick={() => props.onOrderSelect(props.order)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    props.onOrderSelect(props.order);
+                  }
+                }}
               >
                 <td class="border border-border p-3">
                   <div class="flex items-center gap-2">
@@ -52,7 +63,11 @@ const OrderRow = (props: RowProps & { order: Order }) => {
                   <span class="text-sm">{new Date(props.order.date).toLocaleString()}</span>
                 </td>
                 <td class="border border-border p-3 text-right">
-                  <span class="font-bold text-success">{props.order.total.toFixed(2)}€</span>
+                  <AnimatedNumber
+                    value={props.order.total}
+                    suffix=" €"
+                    class="font-bold text-success"
+                  />
                 </td>
                 <td class="border border-border p-3 text-center">
                   <span class="text-sm">
@@ -75,8 +90,16 @@ const OrderRow = (props: RowProps & { order: Order }) => {
     >
       <div class="px-3 py-2">
         <Card
-          class="order-card cursor-pointer hover:shadow-md"
+          role="button"
+          tabindex="0"
+          class="cursor-pointer hover:shadow-md transition-shadow duration-200 will-change-transform"
           onClick={() => props.onOrderSelect(props.order)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              props.onOrderSelect(props.order);
+            }
+          }}
         >
           <CardHeader class="pb-3">
             <div class="flex items-center justify-between">
@@ -94,7 +117,11 @@ const OrderRow = (props: RowProps & { order: Order }) => {
             <div class="space-y-2">
               <div class="flex justify-between items-center">
                 <span class="text-sm text-muted-foreground">Total:</span>
-                <span class="font-bold text-lg text-success">{props.order.total.toFixed(2)}€</span>
+                <AnimatedNumber
+                  value={props.order.total}
+                  suffix=" €"
+                  class="font-bold text-lg text-success"
+                />
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm text-muted-foreground">Elementos:</span>
@@ -158,7 +185,7 @@ const VirtualizedOrderHistory = (props: VirtualizedOrderHistoryProps): JSX.Eleme
         <div
           ref={parentRef!}
           style={{ height: `${containerHeight() - (isMobile() ? 0 : 50)}px`, overflow: 'auto' }}
-          class="virtualized-order-list"
+          class="scrollbar-thin scroll-smooth"
         >
           <div
             style={{

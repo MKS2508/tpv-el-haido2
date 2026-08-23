@@ -1,6 +1,9 @@
 import logger from '@mks2508/better-logger';
 import { ThemeCore } from '@mks2508/shadcn-basecoat-theme-manager';
 import { render } from 'solid-js/web';
+// CSS imports must come BEFORE App so tokens.css defines `--color-*` before
+// App.css's `@apply border-border outline-ring/50` is evaluated by Tailwind.
+import './styles/tokens.css';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ErrorBoundary';
 import { InstallerApp } from '@/installer';
 import { initializeLogger } from '@/lib/logger-init';
@@ -10,9 +13,6 @@ import { ASSET_PATHS, getSwPath, getSwScope } from '@/lib/paths';
 import { ThemeProvider } from '@/lib/theme-context';
 import { isTauri } from '@/services/platform/PlatformDetector';
 import App from './App';
-import './styles/optimized-product-card.css';
-import './styles/optimized-order-history.css';
-import './styles/optimized-login.css';
 
 // Initialize logger with transports and log levels FIRST
 initializeLogger();

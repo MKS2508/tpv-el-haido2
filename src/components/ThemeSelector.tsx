@@ -268,7 +268,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
               <Button
                 variant="outline"
                 onClick={() => setIsImportDialogOpen(true)}
-                class="flex-1 touch-target touch-feedback"
+                class="flex-1 min-h-[var(--spacing-touch-target)] transition-transform duration-150 active:scale-[0.96]"
               >
                 <Upload class="mr-2 h-4 w-4" />
                 Importar URL
@@ -277,7 +277,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                 variant="outline"
                 onClick={loadTweakCNThemes}
                 disabled={isLoadingTweakCN()}
-                class="flex-1 touch-target touch-feedback"
+                class="flex-1 min-h-[var(--spacing-touch-target)] transition-transform duration-150 active:scale-[0.96]"
               >
                 <Show when={isLoadingTweakCN()} fallback={<ExternalLink class="mr-2 h-4 w-4" />}>
                   <Loader2 class="mr-2 h-4 w-4 animate-spin" />
@@ -309,7 +309,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                   {(theme) => (
                     <Button
                       variant="outline"
-                      class="h-auto py-3 px-3 flex flex-col items-start text-left touch-feedback"
+                      class="h-auto py-3 px-3 flex flex-col items-start text-left transition-transform duration-150 active:scale-[0.96]"
                       onClick={() => handleInstallTweakCNTheme(theme)}
                       disabled={isImporting()}
                     >
@@ -333,7 +333,11 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
             <div class="p-3 bg-primary/10 border border-primary/20 rounded-lg">
               <p class="text-sm font-medium mb-2">Vista previa activa</p>
               <div class="flex gap-2">
-                <Button size="sm" onClick={handleConfirmPreview} class="touch-target">
+                <Button
+                  size="sm"
+                  onClick={handleConfirmPreview}
+                  class="min-h-[var(--spacing-touch-target)]"
+                >
                   <Check class="mr-1 h-3 w-3" />
                   Aplicar
                 </Button>
@@ -341,7 +345,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
                   size="sm"
                   variant="outline"
                   onClick={handleCancelPreview}
-                  class="touch-target"
+                  class="min-h-[var(--spacing-touch-target)]"
                 >
                   Cancelar
                 </Button>
@@ -356,7 +360,7 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
               <For each={appTheme.availableThemes()}>
                 {(theme) => (
                   <Card
-                    class={`cursor-pointer transition-all touch-enhanced ${
+                    class={`cursor-pointer transition-[transform,box-shadow] rounded-md hover:shadow-md active:translate-y-px ${
                       currentTheme() === theme.id
                         ? 'ring-2 ring-primary shadow-md'
                         : 'hover:shadow-md'
@@ -426,21 +430,21 @@ const ThemeSelector = (props: ThemeSelectorProps) => {
               placeholder="https://tweakcn.com/themes/..."
               value={importUrl()}
               onInput={(e) => setImportUrl(e.currentTarget.value)}
-              class="touch-input"
+              class="min-h-[var(--spacing-touch-target)] px-4 py-3 text-base rounded-lg"
             />
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setIsImportDialogOpen(false)}
-              class="touch-target"
+              class="min-h-[var(--spacing-touch-target)]"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleImportFromTweakCN}
               disabled={isImporting() || !importUrl()}
-              class="touch-target"
+              class="min-h-[var(--spacing-touch-target)]"
             >
               <Show
                 when={isImporting()}

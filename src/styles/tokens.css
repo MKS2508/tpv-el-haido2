@@ -1,0 +1,161 @@
+/* src/styles/tokens.css — Tailwind v4 token bridge for v0.2.0 design system.
+ * Imports OKLCH CSS variables emitted by ThemeCore's per-theme stylesheets
+ * (under [data-theme="..."][data-mode="..."]) and re-exports them as Tailwind
+ * colors via @theme so utilities like `bg-primary`, `text-pos-total` resolve.
+ *
+ * Consolidates M1's POS tokens (`pos-total`, `pos-success`, `pos-pending`)
+ * + motion/radius variables consumed by the CVA Button extensions, plus the
+ * historical App.css @theme inline block (radii, colors, fonts, spacing,
+ * shadows, tracking, animations). Single source of truth for the design
+ * system token bridge.
+ */
+
+@import "tailwindcss";
+
+@theme {
+  /* Border radius (from App.css @theme inline) */
+  --radius: var(--radius, 0.625rem);
+  --radius-xl: calc(var(--radius, 0.625rem) + 4px);
+  --radius-lg: var(--radius, 0.625rem);
+  --radius-md: calc(var(--radius, 0.625rem) - 2px);
+  --radius-sm: calc(var(--radius, 0.625rem) - 4px);
+
+  /* Semantic color tokens (from App.css @theme inline + M1 POS additions) */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* POS semantic tokens (M1) */
+  --color-pos-total: var(--pos-total);
+  --color-pos-success: var(--pos-success);
+  --color-pos-pending: var(--pos-pending);
+
+  /* Fonts */
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+
+  /* Hit area tokens (M1) — replaced legacy --touch-target-* */
+  --spacing-touch-target: 2.75rem;     /* 44px — Apple HIG minimum */
+  --spacing-touch-target-lg: 3rem;     /* 48px — Larger for primary actions */
+  --spacing-touch-target-xl: 3.5rem;   /* 56px — Extra large for critical */
+
+  /* Shadows */
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  /* Spacing */
+  --spacing: var(--spacing);
+
+  /* Letter spacing / tracking */
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+
+  /* Motion (M1) — replaces legacy --touch-feedback-duration / --touch-ripple-duration */
+  --animate-fast: 120ms;
+  --animate-base: 200ms;
+  --animate-slow: 320ms;
+  --ease-out-quad: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Legacy animations (preserved from App.css @theme inline) */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-spin: spin 1s linear infinite;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* M4: slide-in-stagger — used by NewOrder table button entrance animation.
+ * Animation-delay is set inline per item (index * 30ms) for the cascade.
+ * Respects prefers-reduced-motion via the .reduced-motion body class set
+ * by usePerformanceConfig. */
+@keyframes slide-in-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

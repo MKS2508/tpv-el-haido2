@@ -135,7 +135,7 @@ function Customers() {
   };
 
   return (
-    <div class="flex flex-col h-full space-y-4 p-4">
+    <div class="flex flex-col h-full min-h-0 space-y-4 p-4">
       {/* Header */}
       <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div class="relative flex-1 w-full sm:max-w-md">
@@ -154,7 +154,7 @@ function Customers() {
       </div>
 
       {/* Table */}
-      <div class="flex-1 overflow-auto rounded-lg border border-border">
+      <div class="flex-1 min-h-0 overflow-auto rounded-lg border border-border">
         <Show
           when={filteredCustomers().length > 0}
           fallback={
@@ -223,15 +223,19 @@ function Customers() {
               <For each={filteredCustomers()}>
                 {(customer) => (
                   <tr class="border-b transition-colors hover:bg-muted/50">
-                    <td class="p-4 align-middle font-mono text-sm">{customer.cifNif}</td>
-                    <td class="p-4 align-middle font-medium">{customer.nombreFiscal}</td>
-                    <td class="p-4 align-middle hidden md:table-cell text-muted-foreground">
+                    <td class="p-4 align-middle font-mono text-sm max-w-[140px] truncate">
+                      {customer.cifNif}
+                    </td>
+                    <td class="p-4 align-middle font-medium max-w-[200px] truncate">
+                      {customer.nombreFiscal}
+                    </td>
+                    <td class="p-4 align-middle hidden md:table-cell text-muted-foreground max-w-[180px] truncate">
                       {customer.nombreComercial || '-'}
                     </td>
-                    <td class="p-4 align-middle hidden lg:table-cell">
+                    <td class="p-4 align-middle hidden lg:table-cell max-w-[140px] truncate">
                       {customer.telefono || '-'}
                     </td>
-                    <td class="p-4 align-middle hidden lg:table-cell text-muted-foreground">
+                    <td class="p-4 align-middle hidden lg:table-cell text-muted-foreground max-w-[220px] truncate">
                       {customer.email || '-'}
                     </td>
                     <td class="p-4 align-middle">
@@ -239,8 +243,8 @@ function Customers() {
                         class={cn(
                           'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
                           customer.activo
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            ? 'bg-success/15 text-success'
+                            : 'bg-destructive/15 text-destructive'
                         )}
                       >
                         {customer.activo ? 'Activo' : 'Inactivo'}
@@ -251,6 +255,7 @@ function Customers() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Editar cliente ${customer.nombreFiscal}`}
                           onClick={() => openEditDialog(customer)}
                         >
                           <PencilIcon class="h-4 w-4" />
@@ -258,6 +263,7 @@ function Customers() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Eliminar cliente ${customer.nombreFiscal}`}
                           onClick={() => openDeleteDialog(customer)}
                         >
                           <TrashIcon class="h-4 w-4 text-destructive" />

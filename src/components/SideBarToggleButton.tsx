@@ -20,8 +20,9 @@ const SidebarToggleButton: Component<SidebarToggleButtonProps> = (props) => {
     >
       <button
         type="button"
-        class="flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 hover:shadow-xl hover:scale-110 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        class="flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 hover:shadow-xl hover:scale-110 transition-[transform,box-shadow] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         onClick={local.toggleSidebar}
+        aria-label={local.isSidebarOpen ? 'Cerrar sidebar' : 'Abrir sidebar'}
       >
         {local.isSidebarOpen ? (
           <ChevronLeftIcon class="h-4 w-4" />

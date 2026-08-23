@@ -107,7 +107,7 @@ const GlassEffect = (props: GlassEffectProps) => {
         </defs>
       </svg>
       <Motion.div
-        class={`relative overflow-hidden ${props.class ?? ''}`}
+        class={`isolate relative overflow-hidden ${props.class ?? ''}`}
         style={{
           width: `${props.width ?? 400}px`,
           height: `${props.height ?? 300}px`,

@@ -104,91 +104,87 @@ export default function LicenseSplashScreen(props: LicenseSplashScreenProps) {
   });
 
   return (
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+    <div class="fixed inset-0 z-40 flex items-center justify-center bg-background">
+      {/* Subtle background tint */}
+      <div class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
+
       <Motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        class="w-full max-w-md mx-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, easing: [0.16, 1, 0.3, 1] }}
+        class="isolate relative z-10 w-full max-w-md mx-4 p-8 rounded-2xl border border-border bg-card/60 backdrop-blur-xl shadow-lg space-y-6"
       >
-        <div class="bg-card border rounded-3xl shadow-2xl p-8 space-y-6">
-          <Show when={!isChecking()}>
-            <div class="text-center space-y-4">
-              <div class="flex justify-center">
-                <img src="/logo.svg" alt="TPV El Haido" class="h-24 w-32" />
-              </div>
-              <h1 class="text-3xl font-bold">TPV El Haido</h1>
-              <p class="text-muted-foreground">Activa tu licencia para comenzar</p>
+        <Show when={!isChecking()}>
+          {/* Brand header */}
+          <div class="text-center space-y-2">
+            <img src="/logo.svg" alt="TPV El Haido" class="h-16 w-32 mx-auto" />
+            <h1 class="text-2xl font-semibold text-foreground">Activar Licencia</h1>
+            <p class="text-sm text-muted-foreground">Introduce tus credenciales para continuar</p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <Label for="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="tu@email.com"
+                value={email()}
+                onInput={(e) => setEmail(e.currentTarget.value)}
+                disabled={isLoading()}
+              />
             </div>
 
-            <div class="space-y-4">
-              <div class="space-y-2">
-                <Label for="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="tu@email.com"
-                  value={email()}
-                  onInput={(e) => setEmail(e.currentTarget.value)}
-                  disabled={isLoading()}
-                />
-              </div>
-
-              <div class="space-y-2">
-                <Label for="key">Clave de Licencia</Label>
-                <Input
-                  id="key"
-                  type="text"
-                  placeholder="XXXX-XXXX-XXXX-XXXX"
-                  value={key()}
-                  onInput={handleKeyInput}
-                  disabled={isLoading()}
-                  class="uppercase font-mono text-center tracking-wider"
-                  maxlength={19}
-                />
-                <p class="text-xs text-muted-foreground text-center">
-                  Formato: XXXX-XXXX-XXXX-XXXX
-                </p>
-              </div>
-
-              <Button onClick={handleActivate} disabled={isLoading()} class="w-full" size="lg">
-                <Show when={isLoading()} fallback="Activar Licencia">
-                  <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-                  Activando...
-                </Show>
-              </Button>
+            <div class="space-y-2">
+              <Label for="key">Clave de Licencia</Label>
+              <Input
+                id="key"
+                type="text"
+                placeholder="XXXX-XXXX-XXXX-XXXX"
+                value={key()}
+                onInput={handleKeyInput}
+                disabled={isLoading()}
+                class="uppercase font-mono text-center tracking-wider"
+                maxlength={19}
+              />
+              <p class="text-xs text-muted-foreground text-center">Formato: XXXX-XXXX-XXXX-XXXX</p>
             </div>
 
-            <div class="text-center text-sm text-muted-foreground">
-              <p>¿No tienes una licencia?</p>
-              <a href="mailto:soporte@elhaido.com" class="text-primary hover:underline">
-                Contacta con soporte
-              </a>
-            </div>
+            <Button onClick={handleActivate} disabled={isLoading()} class="w-full" size="lg">
+              <Show when={isLoading()} fallback="Activar Licencia">
+                <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+                Activando...
+              </Show>
+            </Button>
+          </div>
 
-            {/* Debug Mode: Show master credentials hint */}
-            <Show when={config.debug.enabled}>
-              <div class="pt-4 border-t border-border">
-                <p class="text-xs text-muted-foreground text-center">
-                  Modo desarrollo activo (VITE_DEBUG_MODE=true)
-                </p>
-                <p class="text-xs text-muted-foreground text-center mt-1">
-                  Master: {config.debug.masterEmail}
-                </p>
-                <p class="text-xs text-muted-foreground text-center">
-                  Key: {config.debug.masterKey}
-                </p>
-              </div>
-            </Show>
-          </Show>
+          <div class="text-center text-sm text-muted-foreground">
+            <p>¿No tienes una licencia?</p>
+            <a href="mailto:soporte@elhaido.com" class="text-primary hover:underline">
+              Contacta con soporte
+            </a>
+          </div>
 
-          <Show when={isChecking()}>
-            <div class="flex flex-col items-center justify-center py-12 space-y-4">
-              <Loader2 class="h-16 w-16 animate-spin text-primary" />
-              <p class="text-muted-foreground">Verificando licencia...</p>
+          {/* Debug Mode: Show master credentials hint */}
+          <Show when={config.debug.enabled}>
+            <div class="pt-4 border-t border-border">
+              <p class="text-xs text-muted-foreground text-center">
+                Modo desarrollo activo (VITE_DEBUG_MODE=true)
+              </p>
+              <p class="text-xs text-muted-foreground text-center mt-1">
+                Master: {config.debug.masterEmail}
+              </p>
+              <p class="text-xs text-muted-foreground text-center">Key: {config.debug.masterKey}</p>
             </div>
           </Show>
-        </div>
+        </Show>
+
+        <Show when={isChecking()}>
+          <div class="flex flex-col items-center justify-center py-12 space-y-4">
+            <Loader2 class="h-16 w-16 animate-spin text-primary" />
+            <p class="text-muted-foreground">Verificando licencia...</p>
+          </div>
+        </Show>
       </Motion.div>
     </div>
   );

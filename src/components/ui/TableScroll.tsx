@@ -29,7 +29,7 @@ interface TableScrollProps {
  * ```tsx
  * <TableScroll showFadeIndicator={() => items.length > 6}>
  *   <For each={items}>{item => (
- *     <div class="neworder-scroll-snap-item">{item}</div>
+ *     <div class="snap-start">{item}</div>
  *   )}</For>
  * </TableScroll>
  * ```
@@ -93,13 +93,29 @@ const TableScroll: Component<TableScrollProps> = (props) => {
     <div class="relative min-h-[2.25rem] flex items-center overflow-hidden">
       <div
         ref={scrollContainerRef}
-        class={cn('neworder-scroll-container flex gap-1 pb-1 -mb-1 flex-nowrap', props.class)}
+        class={cn(
+          'flex gap-1 pb-1 -mb-1 flex-nowrap',
+          'overflow-x-auto overflow-y-hidden',
+          'snap-x snap-mandatory',
+          'scroll-smooth',
+          '[-webkit-overflow-scrolling:touch]',
+          'scrollbar-thin',
+          props.class
+        )}
+        style={{
+          'scrollbar-color': 'color-mix(in oklch, var(--muted-foreground) / 0.3) transparent',
+        }}
       >
         {props.children}
       </div>
 
       {/* Fade indicator */}
-      {showFade() && <div class="neworder-scroll-fade" aria-hidden="true" />}
+      {showFade() && (
+        <div
+          class="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none"
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 };

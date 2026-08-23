@@ -1,4 +1,4 @@
-.dark {
+[data-theme="synthwave84"][data-mode="dark"] {
   --background: oklch(0.2173 0.0342 302.0199);
   --foreground: oklch(0.9314 0.0114 304.1690);
   --card: oklch(0.2453 0.0414 301.8378);

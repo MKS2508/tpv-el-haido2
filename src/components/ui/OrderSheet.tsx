@@ -76,7 +76,7 @@ const OrderSheet: Component<OrderSheetProps> = (props) => {
     <>
       {/* Peek Button - Always visible when sheet is closed */}
       <Show when={!props.open() && itemCount() > 0}>
-        <div class="neworder-sheet__peek">
+        <div class="isolate fixed bottom-0 left-0 right-0 z-40 p-3 pb-4 bg-background/95 backdrop-blur border-t border-border flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => props.onOpenChange(true)}
@@ -87,7 +87,7 @@ const OrderSheet: Component<OrderSheetProps> = (props) => {
               'font-medium text-sm',
               'px-4 py-2.5',
               'rounded-lg',
-              'transition-all duration-150',
+              'transition-[transform,background-color] duration-150',
               'active:scale-[0.98]',
               'touch-manipulation'
             )}
@@ -107,19 +107,24 @@ const OrderSheet: Component<OrderSheetProps> = (props) => {
         <SheetPortal>
           <SheetContent
             side="bottom"
-            class={cn('neworder-sheet', 'max-h-[70vh]', 'rounded-t-3xl', 'p-0', 'flex flex-col')}
+            class={cn(
+              'fixed bottom-0 left-0 right-0 z-50',
+              'bg-background',
+              'border-t border-border rounded-t-2xl',
+              'shadow-[0_-4px_6px_-1px_rgb(0_0_0_/_0.1),0_-2px_4px_-2px_rgb(0_0_0_/_0.1)]',
+              'max-h-[70vh]',
+              'p-0 flex flex-col'
+            )}
           >
             {/* Drag Handle */}
             <div
               class={cn(
-                'neworder-sheet__handle',
+                'w-12 h-1 rounded-full bg-muted-foreground/30 mx-auto mt-3 mb-4 flex-shrink-0',
                 'cursor-grab',
                 'active:cursor-grabbing',
                 'touch-manipulation'
               )}
-            >
-              <div class="w-12 h-1.5 bg-muted-foreground/30 rounded-full mx-auto" />
-            </div>
+            />
 
             {/* Order Panel Content */}
             <div class="flex-1 min-h-0 overflow-hidden">
@@ -141,19 +146,18 @@ const OrderSheet: Component<OrderSheetProps> = (props) => {
 
             {/* Footer with quick complete button */}
             <Show when={props.selectedOrder && props.selectedOrder.items.length > 0}>
-              <div class="sticky bottom-0 flex-shrink-0 px-4 py-3 border-t border-border bg-card/95 backdrop-blur-sm z-10">
+              <div class="isolate sticky bottom-0 flex-shrink-0 px-4 py-3 border-t border-border bg-card/95 backdrop-blur-sm z-10">
                 <Motion.button
                   type="button"
                   onClick={handlePaymentStart}
                   class={cn(
-                    'payment-button',
-                    'w-full h-12',
+                    'w-full min-h-[var(--spacing-touch-target-xl)]',
                     'bg-primary hover:bg-primary/90',
                     'text-primary-foreground',
                     'font-bold text-base',
                     'shadow-lg',
                     'rounded-lg',
-                    'transition-all duration-150',
+                    'transition-[transform,background-color] duration-150',
                     'active:scale-[0.98]',
                     'touch-manipulation',
                     'flex items-center justify-center gap-2'

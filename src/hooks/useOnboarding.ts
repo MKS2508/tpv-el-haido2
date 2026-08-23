@@ -28,6 +28,26 @@ import type { StorageMode } from '@/services/storage-adapter.interface';
 import useStore from '@/store/store';
 import { getAppState, setAppState } from './useAppState';
 
+// ==================== Singleton module-level state ====================
+// Single source of truth: all calls to useOnboarding() share this state.
+// Critical fix for "wizard step 5 stuck" bug — was 3 independent instances before.
+// Each hook call returns references to these module-level lets, so any mutation
+// (e.g. completeOnboarding setting isActive:false) is visible to ALL call sites.
+
+let _state: ReturnType<typeof createSignal<OnboardingState>> | null = null;
+let _applyDataOp: ReturnType<typeof createOperationStateSignal<void>> | null = null;
+let _store: ReturnType<typeof useStore> | null = null;
+let _initialized = false;
+let _onMountRan = false;
+
+function ensureInit() {
+  if (_state && _applyDataOp && _store && _initialized) return;
+  _state = createSignal<OnboardingState>(INITIAL_ONBOARDING_STATE);
+  _applyDataOp = createOperationStateSignal<void>();
+  _store = useStore();
+  _initialized = true;
+}
+
 // ==================== Helpers mirroring App.tsx seeding logic ====================
 
 function getFallbackProducts(): Product[] {
@@ -128,13 +148,21 @@ interface UseOnboardingReturn {
 }
 
 export function useOnboarding(): UseOnboardingReturn {
-  const [state, setState] = createSignal<OnboardingState>(INITIAL_ONBOARDING_STATE);
-  const applyDataOp = createOperationStateSignal<void>();
+  ensureInit();
 
-  const store = useStore();
+  // Type-narrowing after ensureInit
+  const [state, setState] = _state!;
+  const applyDataOp = _applyDataOp!;
+  const store = _store!;
 
-  // Check app_state for completion status on mount, with one-shot migration from localStorage
+  // Check app_state for completion status on mount, with one-shot migration from localStorage.
+  // Guarded by _onMountRan because the singleton is shared across multiple useOnboarding()
+  // call sites — without this flag we'd run the migration/persistence read 3+ times and
+  // race against completeOnboarding's setAppState('wizard.completed', 'true').
   onMount(async () => {
+    if (_onMountRan) return;
+    _onMountRan = true;
+
     // One-shot migration: if key exists in localStorage but not in app_state, copy it over
     try {
       const legacy = localStorage.getItem(ONBOARDING_STORAGE_KEY);

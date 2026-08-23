@@ -23,7 +23,7 @@ function DialogOverlay(props: DialogOverlayProps) {
     <KobalteDialog.Overlay
       ref={local.ref}
       class={cn(
-        'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0',
+        'isolate fixed inset-0 z-50 bg-black/80 backdrop-blur-sm data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0',
         local.class
       )}
       {...others}

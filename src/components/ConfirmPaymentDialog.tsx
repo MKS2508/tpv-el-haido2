@@ -1,5 +1,6 @@
 import { Receipt } from 'lucide-solid';
 import { Show } from 'solid-js';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,14 +18,6 @@ interface ConfirmPaymentDialogProps {
   onConfirm: () => void;
   order: Order | null;
   paymentMethod: string;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-  }).format(value);
 }
 
 function ConfirmPaymentDialog(props: ConfirmPaymentDialogProps) {
@@ -77,7 +70,11 @@ function ConfirmPaymentDialog(props: ConfirmPaymentDialogProps) {
 
               <div class="flex items-center justify-between p-3 bg-primary/10 rounded-lg border-2 border-primary">
                 <span class="text-sm font-medium">Total a cobrar:</span>
-                <span class="text-xl font-bold text-primary">{formatCurrency(total())}</span>
+                <AnimatedNumber
+                  value={total()}
+                  suffix=" €"
+                  class="text-xl font-bold text-primary"
+                />
               </div>
             </div>
           )}

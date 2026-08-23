@@ -36,7 +36,6 @@ import {
 import AEATSettings from '@/components/AEATSettings';
 import DemoDataLoader from '@/components/DemoDataLoader';
 import LicenseStatusCard from '@/components/LicenseStatus';
-import { useOnboardingContext } from '@/components/Onboarding/OnboardingProvider';
 import AuditLog from '@/components/Sections/AuditLog';
 import { ThemeDebugger } from '@/components/ThemeDebugger';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
@@ -63,6 +62,7 @@ import {
 import { Switch as SwitchUI } from '@/components/ui/switch.tsx';
 import { toast } from '@/components/ui/use-toast.ts';
 import VersionInfo from '@/components/VersionInfo';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import {
   getStoredPerformanceMode,
   isGlassEffectEnabled,
@@ -124,7 +124,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     setTaxRate,
     setLicenseStatus,
   } = store;
-  const { restartOnboarding } = useOnboardingContext();
+  const { restartOnboarding } = useOnboarding();
   const appTheme = useAppTheme();
 
   const [isUserDialogOpen, setIsUserDialogOpen] = createSignal(false);
@@ -531,7 +531,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                           <HardDrive class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                           <div class="space-y-0.5">
                             <p class="text-xs font-medium">SQLite</p>
-                            <p class="text-[10px] text-muted-foreground">
+                            <p class="text-xs text-muted-foreground">
                               Nativa, mejor rendimiento, sin conexión
                             </p>
                           </div>
@@ -540,7 +540,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                           <Cloud class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                           <div class="space-y-0.5">
                             <p class="text-xs font-medium">HTTP API</p>
-                            <p class="text-[10px] text-muted-foreground">
+                            <p class="text-xs text-muted-foreground">
                               Centralizados, requiere servidor
                             </p>
                           </div>
@@ -549,7 +549,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                           <Database class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                           <div class="space-y-0.5">
                             <p class="text-xs font-medium">IndexedDB</p>
-                            <p class="text-[10px] text-muted-foreground">
+                            <p class="text-xs text-muted-foreground">
                               Navegador, fallback desarrollo
                             </p>
                           </div>
@@ -774,6 +774,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                                     variant="ghost"
                                     size="icon"
                                     class="h-8 w-8"
+                                    aria-label={`Editar usuario ${user.name}`}
                                     onClick={() => handleEditUser(user)}
                                   >
                                     <Pencil class="h-4 w-4 text-muted-foreground" />
@@ -782,6 +783,7 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                                     variant="ghost"
                                     size="icon"
                                     class="h-8 w-8 hover:text-destructive"
+                                    aria-label={`Eliminar usuario ${user.name}`}
                                     onClick={() => handleDeleteUser(user.id)}
                                   >
                                     <Trash2 class="h-4 w-4 text-muted-foreground" />

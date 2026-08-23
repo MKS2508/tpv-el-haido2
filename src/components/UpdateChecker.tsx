@@ -78,7 +78,7 @@ export function UpdateChecker(props: UpdateCheckerProps) {
               </div>
               <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
-                  class="h-full bg-primary transition-all duration-300"
+                  class="h-full bg-primary transition-[width] duration-300"
                   style={{ width: `${progressPercent()}%` }}
                 />
               </div>

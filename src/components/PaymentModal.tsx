@@ -1,6 +1,7 @@
 import { Motion, Presence } from '@motionone/solid';
 import { ClockIcon, CreditCardIcon, EuroIcon, PrinterIcon, XIcon } from 'lucide-solid';
 import { createEffect, createMemo, createSignal, For, onCleanup, Show } from 'solid-js';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Button } from '@/components/ui/button.tsx';
 import { Card, CardContent } from '@/components/ui/card.tsx';
 import {
@@ -35,13 +36,7 @@ interface PaymentModalProps {
   handleTicketPrintingComplete: (shouldPrintTicket: boolean) => void;
 }
 
-// Currency formatter for EUR
-const currencyFormatter = new Intl.NumberFormat('es-ES', {
-  minimumFractionDigits: 2,
-  style: 'currency',
-  currency: 'EUR',
-  currencyDisplay: 'symbol',
-});
+// EUR currency formatting handled via AnimatedNumber's suffix prop (locale 'es-ES' gives "1.234,56").
 
 function PaymentModal(props: PaymentModalProps) {
   const { isMobile } = useResponsive();
@@ -245,7 +240,7 @@ function PaymentModal(props: PaymentModalProps) {
                               variant="outline"
                               onClick={() => handleLocalCashInput(key)}
                               class={cn(
-                                'w-full bg-input border border-foreground/10 font-bold hover:bg-foreground/10 transition-all duration-150 touch-manipulation',
+                                'w-full bg-input border border-foreground/10 font-bold hover:bg-foreground/10 transition-colors duration-150 touch-manipulation',
                                 isMobile()
                                   ? 'h-16 text-2xl active:scale-95'
                                   : 'h-20 text-3xl hover:scale-102 active:scale-95'
@@ -265,43 +260,40 @@ function PaymentModal(props: PaymentModalProps) {
                             <span class={cn('font-semibold', isMobile() ? 'text-2xl' : 'text-4xl')}>
                               Total:
                             </span>
-                            <span
+                            <AnimatedNumber
+                              value={props.newOrder.total}
+                              suffix=" €"
                               class={cn(
                                 'font-bold text-primary bg-primary/10 px-3 py-1 rounded-md',
                                 isMobile() ? 'text-3xl' : 'text-7xl'
                               )}
-                              style={{ 'font-variant-numeric': 'tabular-nums' }}
-                            >
-                              {currencyFormatter.format(props.newOrder.total)}
-                            </span>
+                            />
                           </div>
                           <div class="flex justify-between items-center">
                             <span class={cn('font-semibold', isMobile() ? 'text-lg' : 'text-2xl')}>
                               Cantidad Ingresada:
                             </span>
-                            <span
+                            <AnimatedNumber
+                              value={parseFloat(localCashAmount() || '0') || 0}
+                              suffix=" €"
                               class={cn(
                                 'font-bold text-card-foreground bg-card px-3 py-1 rounded-md border border-border',
                                 isMobile() ? 'text-xl' : 'text-2xl'
                               )}
-                              style={{ 'font-variant-numeric': 'tabular-nums' }}
-                            >
-                              {currencyFormatter.format(parseFloat(localCashAmount() || '0') || 0)}
-                            </span>
+                            />
                           </div>
                           <div class="flex justify-between items-center">
                             <span class={cn('font-semibold', isMobile() ? 'text-lg' : 'text-2xl')}>
                               Cambio:
                             </span>
-                            <span
+                            <AnimatedNumber
+                              value={parseFloat(calculateLocalChange())}
+                              suffix=" €"
                               class={cn(
                                 'font-bold text-accent-foreground bg-accent px-3 py-1 rounded-md',
                                 isMobile() ? 'text-xl' : 'text-2xl'
                               )}
-                              style={{ 'font-variant-numeric': 'tabular-nums' }}
-                            >
-                              {currencyFormatter.format(parseFloat(calculateLocalChange()))}
-                            </span>
+                            />
                           </div>
                         </div>
                       </CardContent>

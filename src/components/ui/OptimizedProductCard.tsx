@@ -131,8 +131,11 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
   };
 
   const getCardStyles = () => {
+    // M4: replaces legacy .product-card (was in optimized-product-card.css).
+    // - Hardware acceleration via transform/translate-z preserved via will-change-transform utility
+    // - Touch feedback via active:scale-[0.98] (mifb #12 = 0.96 floor)
     const base =
-      'product-card relative flex flex-col overflow-hidden rounded-2xl cursor-pointer touch-manipulation h-full border border-foreground/[0.08] transition-all duration-150';
+      'isolate relative flex flex-col overflow-hidden rounded-2xl cursor-pointer touch-manipulation h-full border border-foreground/[0.08] transition-[transform,box-shadow,background-color,border-color] duration-150 will-change-transform';
 
     if (mode() === 'order') {
       return cn(
@@ -140,9 +143,9 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
         isTouch() && 'touch-optimized',
         'shadow-md',
         isAdding()
-          ? 'border-success shadow-success/30'
+          ? 'border-success shadow-success/30 scale-[1.03] ring-2 ring-success/30'
           : showSuccess()
-            ? 'border-success/50'
+            ? 'border-success/50 shadow-lg shadow-success/20'
             : 'hover:border-foreground/20 hover:shadow-lg',
         props.class
       );
@@ -194,9 +197,9 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
         <Show when={!isRealImage()}>
           <div
             class={cn(
-              'product-icon flex items-center justify-center h-full',
+              'flex items-center justify-center h-full transition-transform duration-150',
               mode() === 'order' ? 'text-4xl sm:text-5xl' : 'text-3xl',
-              isAdding() && 'adding'
+              isAdding() && 'scale-[1.08]'
             )}
           >
             {props.product.icon && typeof props.product.icon === 'function' ? (
@@ -209,7 +212,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
 
         {/* Category badge */}
         <Show when={showCategory() && props.product.category}>
-          <div class="absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
+          <div class="isolate absolute top-2 left-2 px-2 py-1 bg-primary/90 backdrop-blur-md text-xs font-bold text-primary-foreground rounded-md shadow-lg">
             {props.product.category}
           </div>
         </Show>
@@ -219,11 +222,11 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
           {mode() === 'order' ? (
             <Motion.div
               class={cn(
-                'action-btn rounded-full p-2 shadow-2xl',
+                'rounded-full p-2 shadow-2xl transition-transform duration-200',
                 showSuccess()
-                  ? 'bg-success text-success-foreground success'
+                  ? 'bg-success text-success-foreground'
                   : isAdding()
-                    ? 'bg-primary text-primary-foreground adding'
+                    ? 'bg-primary text-primary-foreground'
                     : 'bg-accent text-accent-foreground'
               )}
               animate={
@@ -246,7 +249,7 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
             <Show when={props.onFavoriteToggle}>
               <button
                 type="button"
-                class="p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm rounded-md transition-all duration-150"
+                class="isolate p-1 h-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm rounded-md transition-colors duration-150"
                 onClick={handleFavoriteClick}
               >
                 <Star
@@ -296,7 +299,10 @@ function OptimizedProductCard(props: OptimizedProductCardProps) {
         {/* Price Section */}
         <div class="flex items-end justify-between">
           <Motion.div
-            class={cn('product-price flex flex-col', isAdding() && 'adding')}
+            class={cn(
+              'flex flex-col transition-transform duration-150',
+              isAdding() && 'scale-[1.08] text-success drop-shadow-md'
+            )}
             animate={perf.enableAnimations && isAdding() ? { scale: 1.08 } : {}}
             transition={{ duration: perf.transitionDuration }}
           >

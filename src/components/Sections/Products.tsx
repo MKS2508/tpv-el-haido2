@@ -273,9 +273,8 @@ function Products() {
                     <h3 class="text-sm font-medium">Categorias</h3>
                     <For each={availableCategories()}>
                       {(category, index) => (
-                        <div class="flex items-center space-x-2 bg-destructive/10 border border-destructive/30 rounded p-2">
+                        <div class="flex items-center space-x-2 rounded p-2 hover:bg-muted/50 transition-colors">
                           <Checkbox
-                            class="border-red-500"
                             id={`category-${category}-${index()}`}
                             checked={selectedCategories().includes(category)}
                             onChange={() => handleCategorySelect(category)}
@@ -297,7 +296,6 @@ function Products() {
                         <div class="flex items-center space-x-2">
                           <Checkbox
                             id={`brand-${brand}-${index()}`}
-                            class="border-red-500"
                             checked={selectedBrands().includes(brand)}
                             onChange={() => handleBrandSelect(brand)}
                           />

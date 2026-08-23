@@ -27,7 +27,6 @@ import type { OrderItem } from '@/models/Order';
 import type Product from '@/models/Product';
 import { printOrder } from '@/services/thermal-printer.service';
 import useStore from '@/store/store';
-import '@/styles/neworder.css';
 
 const log = createContextLogger('NewOrder');
 
@@ -212,18 +211,18 @@ function NewOrder() {
         type="button"
         onClick={() => handleTableClick(entry)}
         class={cn(
-          'table-button',
-          'neworder-scroll-snap-item',
+          'snap-start',
           'group relative',
           'flex items-center gap-1.5',
+          'min-h-[var(--spacing-touch-target)]',
           'px-3 py-1.5',
           'text-xs font-medium',
           'rounded-lg',
           'border',
-          'transition-all duration-200 ease-out',
+          'transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out',
           'active:scale-[0.97]',
           'flex-shrink-0 min-w-0',
-          // State-based styles
+          // State-based styles (M4 — replaces legacy .table-button--available/selected/active)
           entry.state === 'available' &&
             'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border hover:bg-sidebar-accent/80 hover:border-sidebar-foreground/20 shadow-sm',
           entry.state === 'selected-empty' &&
@@ -233,10 +232,16 @@ function NewOrder() {
           // Selected ring for items
           isSelected &&
             entry.state === 'has-items' &&
-            'ring-2 ring-primary/50 ring-offset-1 ring-offset-background',
-          perf.enableAnimations && 'neworder-stagger-item'
+            'ring-2 ring-primary/50 ring-offset-1 ring-offset-background'
         )}
-        style={perf.enableAnimations ? { 'animation-delay': `${index * 30}ms` } : {}}
+        style={
+          perf.enableAnimations
+            ? {
+                animation: `slide-in-stagger 0.2s ease-out backwards`,
+                'animation-delay': `${index * 30}ms`,
+              }
+            : {}
+        }
       >
         {/* Status indicator dot */}
         <span
@@ -255,7 +260,7 @@ function NewOrder() {
         <Show when={entry.itemCount > 0}>
           <span
             class={cn(
-              'ml-auto text-[10px] font-semibold',
+              'ml-auto text-xs font-semibold',
               'bg-primary-foreground/20 px-1.5 py-0.5 rounded-full',
               'min-w-[1.25rem] text-center',
               'transition-transform duration-200',
@@ -383,8 +388,8 @@ function NewOrder() {
       >
         {/* Desktop Layout - 3 optimized columns */}
         <div class="flex-1 flex min-h-0 w-full max-w-full overflow-hidden">
-          {/* Categories - Fixed width */}
-          <div class="neworder-categories--desktop overflow-hidden flex">
+          {/* Categories - Fixed width (lg:w-40, xl:w-48) */}
+          <div class="hidden lg:flex w-[10rem] xl:w-[12rem] min-w-[10rem] xl:min-w-[12rem] max-w-[14rem] border-r border-foreground/10 overflow-hidden bg-foreground/[0.03]">
             <CategorySidebar
               categories={store.state.categories}
               selectedCategory={selectedCategory()}
@@ -393,7 +398,7 @@ function NewOrder() {
           </div>
 
           {/* Products - Takes available space */}
-          <div class="neworder-products--desktop flex flex-col border-r border-foreground/10 overflow-hidden flex-shrink">
+          <div class="flex-1 min-w-0 flex flex-col border-r border-foreground/10 overflow-hidden">
             <div class="h-12 px-3 border-b border-foreground/10 bg-foreground/[0.03] flex items-center gap-2 flex-shrink-0">
               <Package class="w-4 h-4 text-sidebar-foreground" />
               <div class="flex-1 min-w-0">
@@ -430,8 +435,8 @@ function NewOrder() {
             </div>
           </div>
 
-          {/* Order Summary - Fixed width */}
-          <div class="neworder-order-panel--desktop flex-shrink-0 overflow-hidden">
+          {/* Order Summary - Fixed width (lg:w-[22rem] xl:w-[24rem]) */}
+          <div class="hidden lg:flex w-[22rem] xl:w-[24rem] min-w-[22rem] xl:min-w-[24rem] max-w-[26rem] flex-shrink-0 overflow-hidden">
             <OrderPanel
               activeOrders={store.state.activeOrders}
               selectedOrder={store.state.selectedOrder}

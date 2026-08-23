@@ -24,20 +24,26 @@ export function ModeToggle() {
     <Show
       when={mounted()}
       fallback={
-        <Button variant="ghost" size="icon" disabled class="h-9 w-9">
-          <Sun class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all" />
+        <Button variant="ghost" size="icon" disabled class="h-11 w-11 min-h-[44px] min-w-[44px]">
+          <Sun class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-[transform] duration-200" />
           <span class="sr-only">Toggle theme</span>
         </Button>
       }
     >
-      <Button variant="ghost" size="icon" onClick={handleToggle2State} class="h-9 w-9">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleToggle2State}
+        aria-label="Cambiar tema"
+        class="h-11 w-11 min-h-[44px] min-w-[44px]"
+      >
         <Show
           when={isDark()}
           fallback={
-            <Sun class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Sun class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-[transform] duration-200 dark:-rotate-90 dark:scale-0" />
           }
         >
-          <Moon class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <Moon class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-[transform] duration-200 dark:rotate-0 dark:scale-100" />
         </Show>
         <span class="sr-only">Toggle theme</span>
       </Button>

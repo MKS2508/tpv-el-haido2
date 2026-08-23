@@ -1,75 +1,13 @@
 import { Motion, Presence } from '@motionone/solid';
 import { ChevronLeft, ChevronRight, LogOut } from 'lucide-solid';
-import { type Component, For, type JSX, Show, splitProps } from 'solid-js';
+import { type Component, For, Show, splitProps } from 'solid-js';
 
 import MoonSunSwitch from '@/components/MoonSunSwitch.tsx';
 import { useResponsive } from '@/hooks/useResponsive';
 import { cn } from '@/lib/utils';
 import type User from '@/models/User';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardContent } from './ui/card';
-
-// Simple Avatar components for SolidJS (replacing Radix-based ones)
-interface AvatarProps extends JSX.HTMLAttributes<HTMLDivElement> {
-  children?: JSX.Element;
-}
-
-function Avatar(props: AvatarProps) {
-  const [local, others] = splitProps(props, ['class', 'children']);
-  return (
-    <div
-      class={cn('relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full', local.class)}
-      {...others}
-    >
-      {local.children}
-    </div>
-  );
-}
-
-interface AvatarImageProps extends JSX.ImgHTMLAttributes<HTMLImageElement> {}
-
-function AvatarImage(props: AvatarImageProps) {
-  const [local, others] = splitProps(props, ['class', 'alt']);
-  return (
-    <img
-      alt={local.alt || ''}
-      class={cn('aspect-square h-full w-full object-cover', local.class)}
-      {...others}
-    />
-  );
-}
-
-interface AvatarFallbackProps extends JSX.HTMLAttributes<HTMLSpanElement> {
-  children?: JSX.Element;
-}
-
-function AvatarFallback(props: AvatarFallbackProps) {
-  const [local, others] = splitProps(props, ['class', 'children']);
-  return (
-    <span
-      class={cn(
-        'flex h-full w-full items-center justify-center rounded-full bg-muted',
-        local.class
-      )}
-      {...others}
-    >
-      {local.children}
-    </span>
-  );
-}
-
-// Simple ScrollArea for SolidJS
-interface ScrollAreaProps extends JSX.HTMLAttributes<HTMLDivElement> {
-  children?: JSX.Element;
-}
-
-function _ScrollArea(props: ScrollAreaProps) {
-  const [local, others] = splitProps(props, ['class', 'children']);
-  return (
-    <div class={cn('relative overflow-auto', local.class)} {...others}>
-      {local.children}
-    </div>
-  );
-}
 
 // MenuItem with icon as Component type (function) instead of ReactElement
 type MenuItem = {
@@ -134,7 +72,7 @@ function Sidebar(props: SidebarProps) {
       >
         <Card
           class={cn(
-            'h-full border border-foreground/10 rounded-2xl overflow-hidden',
+            'isolate h-full border border-foreground/10 rounded-2xl overflow-hidden backdrop-blur-xl',
             'bg-[color-mix(in_oklch,var(--sidebar)_85%,var(--foreground)_15%)]',
             isTablet()
               ? local.isSidebarOpen
@@ -152,7 +90,7 @@ function Sidebar(props: SidebarProps) {
                 src="/logo.svg"
                 alt="El Haido Logo"
                 class={cn(
-                  'transition-all duration-200',
+                  'transition-[height,width] duration-200',
                   local.isSidebarOpen ? (isTablet() ? 'h-14 w-20' : 'h-16 w-24') : 'h-8 w-8'
                 )}
               />
@@ -165,10 +103,10 @@ function Sidebar(props: SidebarProps) {
                     transition={{ duration: 0.15 }}
                     class="text-center"
                   >
-                    <p class="text-[10px] text-sidebar-foreground/50 leading-tight">
+                    <p class="text-xs text-sidebar-foreground/50 leading-tight">
                       GERMAN ASENSIO BLASCO
                     </p>
-                    <p class="text-[9px] text-sidebar-foreground/40 leading-tight">NIF 16639695T</p>
+                    <p class="text-xs text-sidebar-foreground/40 leading-tight">NIF 16639695T</p>
                   </Motion.div>
                 </Show>
               </Presence>
@@ -225,7 +163,7 @@ function Sidebar(props: SidebarProps) {
                     <button
                       type="button"
                       class={cn(
-                        'w-full flex-1 transition-all duration-150',
+                        'w-full flex-1 transition-[background-color,padding] duration-150',
                         'flex items-center rounded-xl',
                         'font-medium text-[15px]',
                         'focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',

@@ -268,16 +268,16 @@ const AEATInvoices: Component = () => {
             <div class="text-xs text-muted-foreground">Total pedidos</div>
           </Card>
           <Card class="p-3">
-            <div class="text-2xl font-bold text-green-600">{stats().accepted}</div>
+            <div class="text-2xl font-bold text-success">{stats().accepted}</div>
             <div class="text-xs text-muted-foreground">Aceptadas</div>
           </Card>
           <Show when={!responsive.isMobile()}>
             <Card class="p-3">
-              <div class="text-2xl font-bold text-yellow-600">{stats().pending}</div>
+              <div class="text-2xl font-bold text-warning">{stats().pending}</div>
               <div class="text-xs text-muted-foreground">Pendientes</div>
             </Card>
             <Card class="p-3">
-              <div class="text-2xl font-bold text-red-600">{stats().rejected}</div>
+              <div class="text-2xl font-bold text-destructive">{stats().rejected}</div>
               <div class="text-xs text-muted-foreground">Rechazadas</div>
             </Card>
             <Card class="p-3">

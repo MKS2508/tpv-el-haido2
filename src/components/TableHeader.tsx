@@ -18,7 +18,7 @@ function TableHeader(props: TableHeaderProps) {
             : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
         }
         border-2 ${isSelected ? 'border-primary' : 'border-border hover:border-border/80'}
-        transition-all duration-200 active:scale-95
+        transition-[transform,background-color,border-color,box-shadow] duration-200 active:scale-95
     `;
 
   const nonBarTables = () => props.tables.filter((table) => table.id !== 0);

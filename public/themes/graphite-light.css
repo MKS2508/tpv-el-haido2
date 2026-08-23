@@ -1,4 +1,4 @@
-:root {
+[data-theme="graphite"][data-mode="light"] {
   --background: oklch(0.9551 0 0);
   --foreground: oklch(0.3211 0 0);
   --card: oklch(0.9702 0 0);

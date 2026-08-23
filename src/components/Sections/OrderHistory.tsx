@@ -21,6 +21,7 @@ import {
 import { renderTicketPreview } from '@/assets/utils/utils.ts';
 import { InvoiceStatusBadge } from '@/components/InvoiceStatusBadge';
 import PaymentModal from '@/components/PaymentModal.tsx';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -58,6 +59,8 @@ import type Order from '@/models/Order.ts';
 import useStore from '@/store/store';
 
 const log = createContextLogger('OrderHistory');
+
+// EUR currency formatting handled via AnimatedNumber's suffix prop (locale 'es-ES' gives "1.234,56").
 
 interface OrderHistoryProps {
   setActiveSection: (section: string) => void;
@@ -345,9 +348,11 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
           <div class="space-y-2">
             <div class="flex justify-between items-center">
               <span class="text-sm text-muted-foreground">Total:</span>
-              <span class="font-bold text-lg text-success">
-                {cardProps.order.total.toFixed(2)}€
-              </span>
+              <AnimatedNumber
+                value={cardProps.order.total}
+                suffix=" €"
+                class="font-bold text-lg text-success"
+              />
             </div>
             <div class="flex justify-between items-center">
               <span class="text-sm text-muted-foreground">Articulos:</span>
@@ -473,7 +478,13 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                   {(order) => (
                     <TableRow class="hover:bg-muted/50 touch-manipulation">
                       <TableCell class="border border-border">{order.date}</TableCell>
-                      <TableCell class="border border-border">{order.total.toFixed(2)}€</TableCell>
+                      <TableCell class="border border-border">
+                        <AnimatedNumber
+                          value={order.total}
+                          suffix=" €"
+                          class="font-bold text-success"
+                        />
+                      </TableCell>
                       <TableCell class="border border-border">{order.itemCount}</TableCell>
                       <TableCell class="border border-border">
                         {order.tableNumber === 0 ? 'Barra' : order.tableNumber}
@@ -591,14 +602,14 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                         </div>
                         <div>
                           <Label class="text-sm">Total</Label>
-                          <Input
-                            value={`${selectedOrder().total.toFixed(2)}€`}
-                            readOnly
+                          <div
                             class={cn(
-                              'bg-muted font-semibold text-success',
+                              'bg-muted rounded-md border border-input px-3 py-2 font-semibold text-success',
                               responsive.isMobile() ? 'h-10 text-sm' : ''
                             )}
-                          />
+                          >
+                            <AnimatedNumber value={selectedOrder().total} suffix=" €" />
+                          </div>
                         </div>
                         <div>
                           <Label class="text-sm">Estado</Label>
@@ -660,17 +671,25 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                                 <For each={selectedOrder().items}>
                                   {(item) => (
                                     <TableRow class="hover:bg-muted/50 touch-manipulation">
-                                      <TableCell class="border border-border">
+                                      <TableCell class="border border-border max-w-[260px] truncate">
                                         {item.name}
                                       </TableCell>
-                                      <TableCell class="border border-border">
+                                      <TableCell class="border border-border whitespace-nowrap">
                                         {item.quantity}
                                       </TableCell>
-                                      <TableCell class="border border-border">
-                                        {item.price.toFixed(2)}€
+                                      <TableCell class="border border-border whitespace-nowrap">
+                                        <AnimatedNumber
+                                          value={item.price}
+                                          suffix=" €"
+                                          class="font-medium"
+                                        />
                                       </TableCell>
-                                      <TableCell class="border border-border">
-                                        {(item.price * item.quantity).toFixed(2)}€
+                                      <TableCell class="border border-border whitespace-nowrap">
+                                        <AnimatedNumber
+                                          value={item.price * item.quantity}
+                                          suffix=" €"
+                                          class="font-semibold text-success"
+                                        />
                                       </TableCell>
                                     </TableRow>
                                   )}
@@ -685,17 +704,24 @@ const OrderHistory: Component<OrderHistoryProps> = (props) => {
                               {(item) => (
                                 <Card class="bg-muted/50">
                                   <CardContent class="p-3">
-                                    <div class="flex justify-between items-center">
-                                      <div class="flex-1">
-                                        <p class="font-medium text-sm">{item.name}</p>
-                                        <p class="text-xs text-muted-foreground">
-                                          {item.quantity}x {item.price.toFixed(2)}€
+                                    <div class="flex justify-between items-center gap-3 min-w-0">
+                                      <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-sm truncate">{item.name}</p>
+                                        <p class="text-xs text-muted-foreground whitespace-nowrap">
+                                          {item.quantity}x{' '}
+                                          <AnimatedNumber
+                                            value={item.price}
+                                            suffix=" €"
+                                            class="text-xs"
+                                          />
                                         </p>
                                       </div>
-                                      <div class="text-right">
-                                        <p class="font-semibold text-success">
-                                          {(item.price * item.quantity).toFixed(2)}€
-                                        </p>
+                                      <div class="text-right shrink-0">
+                                        <AnimatedNumber
+                                          value={item.price * item.quantity}
+                                          suffix=" €"
+                                          class="font-semibold text-success"
+                                        />
                                       </div>
                                     </div>
                                   </CardContent>

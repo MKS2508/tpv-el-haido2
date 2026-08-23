@@ -36,185 +36,185 @@ const OP_META: Record<
 > = {
   login: {
     label: 'Login',
-    color: '#60a5fa',
-    bg: 'rgba(96,165,250,0.12)',
-    border: 'rgba(96,165,250,0.35)',
+    color: 'var(--audit-op-auth)',
+    bg: 'var(--audit-op-auth-bg)',
+    border: 'var(--audit-op-auth-border)',
     category: 'auth',
   },
   logout: {
     label: 'Logout',
-    color: '#93c5fd',
-    bg: 'rgba(147,197,253,0.10)',
-    border: 'rgba(147,197,253,0.30)',
+    color: 'var(--audit-op-auth-soft)',
+    bg: 'var(--audit-op-auth-soft-bg)',
+    border: 'var(--audit-op-auth-soft-border)',
     category: 'auth',
   },
   product_create: {
     label: 'Prod +',
-    color: '#34d399',
-    bg: 'rgba(52,211,153,0.12)',
-    border: 'rgba(52,211,153,0.35)',
+    color: 'var(--audit-op-product)',
+    bg: 'var(--audit-op-product-bg)',
+    border: 'var(--audit-op-product-border)',
     category: 'product',
   },
   product_update: {
     label: 'Prod ~',
-    color: '#6ee7b7',
-    bg: 'rgba(110,231,183,0.10)',
-    border: 'rgba(110,231,183,0.30)',
+    color: 'var(--audit-op-product-soft)',
+    bg: 'var(--audit-op-product-soft-bg)',
+    border: 'var(--audit-op-product-soft-border)',
     category: 'product',
   },
   product_delete: {
     label: 'Prod −',
-    color: '#f87171',
-    bg: 'rgba(248,113,113,0.12)',
-    border: 'rgba(248,113,113,0.35)',
+    color: 'var(--audit-op-danger)',
+    bg: 'var(--audit-op-danger-bg)',
+    border: 'var(--audit-op-danger-border)',
     category: 'product',
   },
   category_create: {
     label: 'Cat +',
-    color: '#2dd4bf',
-    bg: 'rgba(45,212,191,0.12)',
-    border: 'rgba(45,212,191,0.35)',
+    color: 'var(--audit-op-category)',
+    bg: 'var(--audit-op-category-bg)',
+    border: 'var(--audit-op-category-border)',
     category: 'category',
   },
   category_update: {
     label: 'Cat ~',
-    color: '#5eead4',
-    bg: 'rgba(94,234,212,0.10)',
-    border: 'rgba(94,234,212,0.30)',
+    color: 'var(--audit-op-category-soft)',
+    bg: 'var(--audit-op-category-soft-bg)',
+    border: 'var(--audit-op-category-soft-border)',
     category: 'category',
   },
   category_delete: {
     label: 'Cat −',
-    color: '#f87171',
-    bg: 'rgba(248,113,113,0.12)',
-    border: 'rgba(248,113,113,0.35)',
+    color: 'var(--audit-op-danger)',
+    bg: 'var(--audit-op-danger-bg)',
+    border: 'var(--audit-op-danger-border)',
     category: 'category',
   },
   order_create: {
     label: 'Pedido +',
-    color: '#fbbf24',
-    bg: 'rgba(251,191,36,0.12)',
-    border: 'rgba(251,191,36,0.35)',
+    color: 'var(--audit-op-order)',
+    bg: 'var(--audit-op-order-bg)',
+    border: 'var(--audit-op-order-border)',
     category: 'order',
   },
   order_update: {
     label: 'Pedido ~',
-    color: '#fde68a',
-    bg: 'rgba(253,230,138,0.10)',
-    border: 'rgba(253,230,138,0.30)',
+    color: 'var(--audit-op-order-soft)',
+    bg: 'var(--audit-op-order-soft-bg)',
+    border: 'var(--audit-op-order-soft-border)',
     category: 'order',
   },
   order_delete: {
     label: 'Pedido −',
-    color: '#f87171',
-    bg: 'rgba(248,113,113,0.12)',
-    border: 'rgba(248,113,113,0.35)',
+    color: 'var(--audit-op-danger)',
+    bg: 'var(--audit-op-danger-bg)',
+    border: 'var(--audit-op-danger-border)',
     category: 'order',
   },
   order_complete: {
     label: 'Cobrado',
-    color: '#4ade80',
-    bg: 'rgba(74,222,128,0.12)',
-    border: 'rgba(74,222,128,0.35)',
+    color: 'var(--audit-op-success)',
+    bg: 'var(--audit-op-success-bg)',
+    border: 'var(--audit-op-success-border)',
     category: 'order',
   },
   order_cancel: {
     label: 'Cancelado',
-    color: '#fb923c',
-    bg: 'rgba(251,146,60,0.12)',
-    border: 'rgba(251,146,60,0.35)',
+    color: 'var(--audit-op-warning)',
+    bg: 'var(--audit-op-warning-bg)',
+    border: 'var(--audit-op-warning-border)',
     category: 'order',
   },
   payment_process: {
     label: 'Pago',
-    color: '#a78bfa',
-    bg: 'rgba(167,139,250,0.12)',
-    border: 'rgba(167,139,250,0.35)',
+    color: 'var(--audit-op-payment)',
+    bg: 'var(--audit-op-payment-bg)',
+    border: 'var(--audit-op-payment-border)',
     category: 'payment',
   },
   table_assign: {
     label: 'Mesa ↗',
-    color: '#38bdf8',
-    bg: 'rgba(56,189,248,0.12)',
-    border: 'rgba(56,189,248,0.35)',
+    color: 'var(--audit-op-table)',
+    bg: 'var(--audit-op-table-bg)',
+    border: 'var(--audit-op-table-border)',
     category: 'table',
   },
   table_clear: {
     label: 'Mesa ↙',
-    color: '#7dd3fc',
-    bg: 'rgba(125,211,252,0.10)',
-    border: 'rgba(125,211,252,0.30)',
+    color: 'var(--audit-op-table-soft)',
+    bg: 'var(--audit-op-table-soft-bg)',
+    border: 'var(--audit-op-table-soft-border)',
     category: 'table',
   },
   user_create: {
     label: 'User +',
-    color: '#f472b6',
-    bg: 'rgba(244,114,182,0.12)',
-    border: 'rgba(244,114,182,0.35)',
+    color: 'var(--audit-op-user)',
+    bg: 'var(--audit-op-user-bg)',
+    border: 'var(--audit-op-user-border)',
     category: 'user',
   },
   user_update: {
     label: 'User ~',
-    color: '#f9a8d4',
-    bg: 'rgba(249,168,212,0.10)',
-    border: 'rgba(249,168,212,0.30)',
+    color: 'var(--audit-op-user-soft)',
+    bg: 'var(--audit-op-user-soft-bg)',
+    border: 'var(--audit-op-user-soft-border)',
     category: 'user',
   },
   user_delete: {
     label: 'User −',
-    color: '#f87171',
-    bg: 'rgba(248,113,113,0.12)',
-    border: 'rgba(248,113,113,0.35)',
+    color: 'var(--audit-op-danger)',
+    bg: 'var(--audit-op-danger-bg)',
+    border: 'var(--audit-op-danger-border)',
     category: 'user',
   },
   data_export: {
     label: 'Export',
-    color: '#fb923c',
-    bg: 'rgba(251,146,60,0.12)',
-    border: 'rgba(251,146,60,0.35)',
+    color: 'var(--audit-op-warning)',
+    bg: 'var(--audit-op-warning-bg)',
+    border: 'var(--audit-op-warning-border)',
     category: 'data',
   },
   data_import: {
     label: 'Import',
-    color: '#fdba74',
-    bg: 'rgba(253,186,116,0.10)',
-    border: 'rgba(253,186,116,0.30)',
+    color: 'var(--audit-op-warning-soft)',
+    bg: 'var(--audit-op-warning-soft-bg)',
+    border: 'var(--audit-op-warning-soft-border)',
     category: 'data',
   },
   settings_change: {
     label: 'Config ~',
-    color: '#94a3b8',
-    bg: 'rgba(148,163,184,0.10)',
-    border: 'rgba(148,163,184,0.25)',
+    color: 'var(--audit-op-muted)',
+    bg: 'var(--audit-op-muted-bg)',
+    border: 'var(--audit-op-muted-border)',
     category: 'settings',
   },
   license_activate: {
     label: 'Licencia ✓',
-    color: '#818cf8',
-    bg: 'rgba(129,140,248,0.12)',
-    border: 'rgba(129,140,248,0.35)',
+    color: 'var(--audit-op-license)',
+    bg: 'var(--audit-op-license-bg)',
+    border: 'var(--audit-op-license-border)',
     category: 'license',
   },
   license_deactivate: {
     label: 'Licencia ✗',
-    color: '#f87171',
-    bg: 'rgba(248,113,113,0.12)',
-    border: 'rgba(248,113,113,0.35)',
+    color: 'var(--audit-op-danger)',
+    bg: 'var(--audit-op-danger-bg)',
+    border: 'var(--audit-op-danger-border)',
     category: 'license',
   },
 };
 
 const CATEGORY_COLOR: Record<string, string> = {
-  auth: '#60a5fa',
-  product: '#34d399',
-  category: '#2dd4bf',
-  order: '#fbbf24',
-  payment: '#a78bfa',
-  table: '#38bdf8',
-  user: '#f472b6',
-  settings: '#94a3b8',
-  license: '#818cf8',
-  data: '#fb923c',
+  auth: 'var(--audit-op-auth)',
+  product: 'var(--audit-op-product)',
+  category: 'var(--audit-op-category)',
+  order: 'var(--audit-op-order)',
+  payment: 'var(--audit-op-payment)',
+  table: 'var(--audit-op-table)',
+  user: 'var(--audit-op-user)',
+  settings: 'var(--audit-op-muted)',
+  license: 'var(--audit-op-license)',
+  data: 'var(--audit-op-warning)',
 };
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -322,14 +322,14 @@ const OpBadge: Component<{ op: string }> = (props) => {
   const meta = () =>
     OP_META[props.op] ?? {
       label: props.op,
-      color: '#94a3b8',
-      bg: 'rgba(148,163,184,0.10)',
-      border: 'rgba(148,163,184,0.25)',
+      color: 'var(--audit-op-muted)',
+      bg: 'var(--audit-op-muted-bg)',
+      border: 'var(--audit-op-muted-border)',
       category: 'other',
     };
   return (
     <span
-      class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold tracking-wide border whitespace-nowrap"
+      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-semibold tracking-wide border whitespace-nowrap"
       style={{
         color: meta().color,
         'background-color': meta().bg,
@@ -346,7 +346,7 @@ const UserChip: Component<{ name: string }> = (props) => {
   return (
     <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
       <span
-        class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0"
+        class="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
         style={{ 'background-color': color() }}
       >
         {userInitials(props.name)}
@@ -360,7 +360,7 @@ const UserChip: Component<{ name: string }> = (props) => {
 
 const StatCard: Component<{ label: string; value: string | number; accent?: string }> = (props) => (
   <div class="flex flex-col gap-1 px-3 py-2.5 rounded-lg border border-border/50 bg-card">
-    <span class="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+    <span class="text-xs font-mono uppercase tracking-widest text-muted-foreground">
       {props.label}
     </span>
     <span
@@ -379,8 +379,9 @@ interface LogRowProps {
 }
 
 const LogRow: Component<LogRowProps> = (props) => {
-  const meta = () => OP_META[props.log.operationType] ?? { color: '#94a3b8', category: 'other' };
-  const catColor = () => CATEGORY_COLOR[meta().category] ?? '#94a3b8';
+  const meta = () =>
+    OP_META[props.log.operationType] ?? { color: 'var(--audit-op-muted)', category: 'other' };
+  const catColor = () => CATEGORY_COLOR[meta().category] ?? 'var(--audit-op-muted)';
 
   const oldVal = () => parseJson(props.log.oldValues);
   const newVal = () => parseJson(props.log.newValues);
@@ -388,7 +389,7 @@ const LogRow: Component<LogRowProps> = (props) => {
 
   return (
     <div
-      class="group relative border-b transition-all duration-150 cursor-pointer"
+      class="group relative border-b transition-colors duration-150 cursor-pointer"
       style={{
         'border-color': 'var(--audit-border)',
         background: props.expanded ? 'var(--audit-surface-active)' : 'transparent',
@@ -410,10 +411,12 @@ const LogRow: Component<LogRowProps> = (props) => {
         <div
           class="w-1.5 h-1.5 rounded-full shrink-0"
           style={{
-            'background-color': props.log.success ? '#4ade80' : '#f87171',
+            'background-color': props.log.success
+              ? 'var(--audit-op-success)'
+              : 'var(--audit-op-danger)',
             'box-shadow': props.log.success
-              ? '0 0 6px rgba(74,222,128,0.5)'
-              : '0 0 6px rgba(248,113,113,0.5)',
+              ? '0 0 6px var(--audit-op-success-bg)'
+              : '0 0 6px var(--audit-op-danger-bg)',
           }}
         />
 
@@ -425,7 +428,7 @@ const LogRow: Component<LogRowProps> = (props) => {
           >
             {formatTime(props.log.timestamp)}
           </span>
-          <span class="text-[10px] font-mono" style={{ color: 'var(--audit-text-muted)' }}>
+          <span class="text-xs font-mono" style={{ color: 'var(--audit-text-muted)' }}>
             {formatDate(props.log.timestamp)}
           </span>
         </div>
@@ -450,30 +453,30 @@ const LogRow: Component<LogRowProps> = (props) => {
             </Show>
             <Show when={props.log.entityId}>
               <span
-                class="font-mono text-[10px] px-1.5 py-0 rounded"
+                class="font-mono text-xs px-1.5 py-0 rounded"
                 style={{ color: 'var(--audit-text-muted)', background: 'var(--audit-badge-bg)' }}
               >
                 #{props.log.entityId}
               </span>
             </Show>
             <Show when={props.log.tableNumber}>
-              <span class="text-[10px]" style={{ color: 'var(--audit-text-muted)' }}>
+              <span class="text-xs" style={{ color: 'var(--audit-text-muted)' }}>
                 · Mesa {props.log.tableNumber}
               </span>
             </Show>
             <Show when={props.log.paymentMethod}>
-              <span class="text-[10px] capitalize" style={{ color: '#a78bfa' }}>
+              <span class="text-xs capitalize" style={{ color: 'var(--audit-op-payment)' }}>
                 · {props.log.paymentMethod}
               </span>
             </Show>
           </div>
           <Show when={props.log.operationDetails}>
-            <span class="text-[11px] truncate mt-0.5" style={{ color: 'var(--audit-text-muted)' }}>
+            <span class="text-xs truncate mt-0.5" style={{ color: 'var(--audit-text-muted)' }}>
               {props.log.operationDetails}
             </span>
           </Show>
           <Show when={props.log.errorMessage}>
-            <span class="text-[11px] truncate mt-0.5" style={{ color: '#f87171' }}>
+            <span class="text-xs truncate mt-0.5" style={{ color: 'var(--audit-op-danger)' }}>
               ✗ {props.log.errorMessage}
             </span>
           </Show>
@@ -482,7 +485,7 @@ const LogRow: Component<LogRowProps> = (props) => {
         {/* Relative time + expand */}
         <div class="flex items-center gap-2 shrink-0">
           <span
-            class="text-[10px] font-mono w-8 text-right"
+            class="text-xs font-mono w-8 text-right"
             style={{ color: 'var(--audit-text-muted)' }}
           >
             {relativeTime(props.log.timestamp)}
@@ -511,7 +514,7 @@ const LogRow: Component<LogRowProps> = (props) => {
               style={{ 'border-color': 'var(--audit-border-subtle)' }}
             >
               <span
-                class="text-[10px] font-mono uppercase tracking-wider"
+                class="text-xs font-mono uppercase tracking-wider"
                 style={{ color: 'var(--audit-text-muted)' }}
               >
                 Detalles
@@ -529,13 +532,13 @@ const LogRow: Component<LogRowProps> = (props) => {
             <Show when={oldVal()}>
               <div class="p-3">
                 <div
-                  class="text-[10px] font-mono uppercase tracking-wider mb-2"
-                  style={{ color: '#f87171' }}
+                  class="text-xs font-mono uppercase tracking-wider mb-2"
+                  style={{ color: 'var(--audit-op-danger)' }}
                 >
                   Antes
                 </div>
                 <pre
-                  class="text-[10px] font-mono leading-relaxed overflow-auto max-h-32 whitespace-pre-wrap break-all"
+                  class="text-xs font-mono leading-relaxed overflow-auto max-h-32 whitespace-pre-wrap break-all"
                   style={{ color: 'var(--audit-text-secondary)' }}
                 >
                   {formatJson(oldVal())}
@@ -545,13 +548,13 @@ const LogRow: Component<LogRowProps> = (props) => {
             <Show when={newVal()}>
               <div class="p-3">
                 <div
-                  class="text-[10px] font-mono uppercase tracking-wider mb-2"
-                  style={{ color: '#4ade80' }}
+                  class="text-xs font-mono uppercase tracking-wider mb-2"
+                  style={{ color: 'var(--audit-op-success)' }}
                 >
                   Después
                 </div>
                 <pre
-                  class="text-[10px] font-mono leading-relaxed overflow-auto max-h-32 whitespace-pre-wrap break-all"
+                  class="text-xs font-mono leading-relaxed overflow-auto max-h-32 whitespace-pre-wrap break-all"
                   style={{ color: 'var(--audit-text-secondary)' }}
                 >
                   {formatJson(newVal())}
@@ -576,7 +579,7 @@ const FilterPill: Component<{
   <button
     type="button"
     onClick={props.onClick}
-    class="px-2 py-0.5 rounded text-[10px] font-mono border transition-all"
+    class="px-2 py-0.5 rounded text-xs font-mono border transition-colors"
     style={{
       color: props.active
         ? (props.color ?? 'var(--audit-text-primary)')
@@ -1063,6 +1066,79 @@ const AuditLog: Component = () => {
           --audit-text-secondary: var(--muted-foreground);
           --audit-text-muted:     color-mix(in oklch, var(--muted-foreground) 55%, transparent);
           --audit-scrollbar:      var(--border);
+
+          /* Operation category palette — themeable via tokens.css semantics.
+           * OKLCH color values ensure consistent appearance across themes.
+           * These mirror the historical tailwind palette but route through CSS
+           * custom properties so the design system can swap themes globally. */
+          --audit-op-auth:               oklch(0.72 0.16 250);
+          --audit-op-auth-bg:            oklch(0.72 0.16 250 / 0.12);
+          --audit-op-auth-border:        oklch(0.72 0.16 250 / 0.35);
+          --audit-op-auth-soft:          oklch(0.80 0.10 250);
+          --audit-op-auth-soft-bg:       oklch(0.80 0.10 250 / 0.10);
+          --audit-op-auth-soft-border:   oklch(0.80 0.10 250 / 0.30);
+
+          --audit-op-product:            oklch(0.74 0.16 162);
+          --audit-op-product-bg:         oklch(0.74 0.16 162 / 0.12);
+          --audit-op-product-border:     oklch(0.74 0.16 162 / 0.35);
+          --audit-op-product-soft:       oklch(0.82 0.10 162);
+          --audit-op-product-soft-bg:    oklch(0.82 0.10 162 / 0.10);
+          --audit-op-product-soft-border:oklch(0.82 0.10 162 / 0.30);
+
+          --audit-op-category:           oklch(0.76 0.14 184);
+          --audit-op-category-bg:        oklch(0.76 0.14 184 / 0.12);
+          --audit-op-category-border:    oklch(0.76 0.14 184 / 0.35);
+          --audit-op-category-soft:      oklch(0.84 0.09 184);
+          --audit-op-category-soft-bg:   oklch(0.84 0.09 184 / 0.10);
+          --audit-op-category-soft-border:oklch(0.84 0.09 184 / 0.30);
+
+          --audit-op-order:              oklch(0.78 0.16 80);
+          --audit-op-order-bg:           oklch(0.78 0.16 80 / 0.12);
+          --audit-op-order-border:       oklch(0.78 0.16 80 / 0.35);
+          --audit-op-order-soft:         oklch(0.88 0.10 80);
+          --audit-op-order-soft-bg:      oklch(0.88 0.10 80 / 0.10);
+          --audit-op-order-soft-border:  oklch(0.88 0.10 80 / 0.30);
+
+          --audit-op-success:            oklch(0.76 0.16 142);
+          --audit-op-success-bg:         oklch(0.76 0.16 142 / 0.12);
+          --audit-op-success-border:     oklch(0.76 0.16 142 / 0.35);
+
+          --audit-op-warning:            oklch(0.74 0.16 50);
+          --audit-op-warning-bg:         oklch(0.74 0.16 50 / 0.12);
+          --audit-op-warning-border:     oklch(0.74 0.16 50 / 0.35);
+          --audit-op-warning-soft:       oklch(0.82 0.10 50);
+          --audit-op-warning-soft-bg:    oklch(0.82 0.10 50 / 0.10);
+          --audit-op-warning-soft-border:oklch(0.82 0.10 50 / 0.30);
+
+          --audit-op-danger:             oklch(0.70 0.18 25);
+          --audit-op-danger-bg:          oklch(0.70 0.18 25 / 0.12);
+          --audit-op-danger-border:      oklch(0.70 0.18 25 / 0.35);
+
+          --audit-op-payment:            oklch(0.74 0.16 290);
+          --audit-op-payment-bg:         oklch(0.74 0.16 290 / 0.12);
+          --audit-op-payment-border:     oklch(0.74 0.16 290 / 0.35);
+
+          --audit-op-table:              oklch(0.76 0.14 220);
+          --audit-op-table-bg:           oklch(0.76 0.14 220 / 0.12);
+          --audit-op-table-border:       oklch(0.76 0.14 220 / 0.35);
+          --audit-op-table-soft:         oklch(0.84 0.10 220);
+          --audit-op-table-soft-bg:      oklch(0.84 0.10 220 / 0.10);
+          --audit-op-table-soft-border:  oklch(0.84 0.10 220 / 0.30);
+
+          --audit-op-user:               oklch(0.74 0.16 340);
+          --audit-op-user-bg:            oklch(0.74 0.16 340 / 0.12);
+          --audit-op-user-border:        oklch(0.74 0.16 340 / 0.35);
+          --audit-op-user-soft:          oklch(0.82 0.10 340);
+          --audit-op-user-soft-bg:       oklch(0.82 0.10 340 / 0.10);
+          --audit-op-user-soft-border:   oklch(0.82 0.10 340 / 0.30);
+
+          --audit-op-license:            oklch(0.74 0.16 270);
+          --audit-op-license-bg:         oklch(0.74 0.16 270 / 0.12);
+          --audit-op-license-border:     oklch(0.74 0.16 270 / 0.35);
+
+          --audit-op-muted:              oklch(0.70 0.04 250);
+          --audit-op-muted-bg:           oklch(0.70 0.04 250 / 0.10);
+          --audit-op-muted-border:       oklch(0.70 0.04 250 / 0.25);
         }
         .audit-scroll::-webkit-scrollbar       { width: 4px; }
         .audit-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -1095,11 +1171,11 @@ const AuditLog: Component = () => {
               <div
                 class="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{
-                  background: 'rgba(129,140,248,0.15)',
-                  border: '1px solid rgba(129,140,248,0.3)',
+                  background: 'var(--audit-op-license-bg)',
+                  border: '1px solid var(--audit-op-license-border)',
                 }}
               >
-                <Shield size={15} style={{ color: '#818cf8' }} />
+                <Shield size={15} style={{ color: 'var(--audit-op-license)' }} />
               </div>
               <div>
                 <h1
@@ -1108,10 +1184,7 @@ const AuditLog: Component = () => {
                 >
                   Registro de Auditoría — TPV El Haido
                 </h1>
-                <p
-                  class="text-[10px] font-mono mt-0.5"
-                  style={{ color: 'var(--audit-text-muted)' }}
-                >
+                <p class="text-xs font-mono mt-0.5" style={{ color: 'var(--audit-text-muted)' }}>
                   GERMAN ASENSIO BLASCO · NIF {nif()} · Bar El Haido
                 </p>
               </div>
@@ -1123,8 +1196,8 @@ const AuditLog: Component = () => {
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  class="h-7 px-2 text-[11px] font-mono"
-                  style={{ color: '#f87171' }}
+                  class="h-7 px-2 text-xs font-mono"
+                  style={{ color: 'var(--audit-op-danger)' }}
                 >
                   <X size={11} class="mr-1" /> Limpiar
                 </Button>
@@ -1144,7 +1217,7 @@ const AuditLog: Component = () => {
                 size="sm"
                 onClick={() => setFilterOpen((v) => !v)}
                 class="h-7 px-2"
-                style={{ color: filterOpen() ? '#60a5fa' : 'var(--audit-text-muted)' }}
+                style={{ color: filterOpen() ? 'var(--audit-op-auth)' : 'var(--audit-text-muted)' }}
               >
                 <Filter size={13} />
               </Button>
@@ -1154,13 +1227,13 @@ const AuditLog: Component = () => {
           {/* Stats */}
           <div class="grid grid-cols-4 gap-2">
             <StatCard label="Total registros" value={stats().total} />
-            <StatCard label="Hoy" value={stats().today} accent="#60a5fa" />
+            <StatCard label="Hoy" value={stats().today} accent="var(--audit-op-auth)" />
             <StatCard
               label="Errores 24h"
               value={stats().errors}
-              accent={stats().errors > 0 ? '#f87171' : 'var(--audit-text-muted)'}
+              accent={stats().errors > 0 ? 'var(--audit-op-danger)' : 'var(--audit-text-muted)'}
             />
-            <StatCard label="Usuarios" value={stats().users} accent="#34d399" />
+            <StatCard label="Usuarios" value={stats().users} accent="var(--audit-op-product)" />
           </div>
         </div>
 
@@ -1172,7 +1245,7 @@ const AuditLog: Component = () => {
               <div class="p-3 space-y-4">
                 {/* Search */}
                 <div>
-                  <label class="text-[10px] font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
+                  <label class="text-xs font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
                     Buscar
                   </label>
                   <div class="relative">
@@ -1185,14 +1258,14 @@ const AuditLog: Component = () => {
                       placeholder="usuario, operación…"
                       value={search()}
                       onInput={(e) => setSearch(e.currentTarget.value)}
-                      class="w-full h-7 pl-6 pr-2 rounded text-[11px] font-mono border border-border/60 outline-none bg-background text-foreground placeholder:text-muted-foreground/40"
+                      class="w-full h-7 pl-6 pr-2 rounded text-xs font-mono border border-border/60 outline-none bg-background text-foreground placeholder:text-muted-foreground/40"
                     />
                   </div>
                 </div>
 
                 {/* Date range */}
                 <div>
-                  <label class="text-[10px] font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
+                  <label class="text-xs font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
                     Período
                   </label>
                   <div class="space-y-1.5">
@@ -1200,20 +1273,20 @@ const AuditLog: Component = () => {
                       type="date"
                       value={startDate()}
                       onInput={(e) => setStartDate(e.currentTarget.value)}
-                      class="w-full h-7 px-2 rounded text-[11px] font-mono border border-border/60 outline-none bg-background text-foreground"
+                      class="w-full h-7 px-2 rounded text-xs font-mono border border-border/60 outline-none bg-background text-foreground"
                     />
                     <input
                       type="date"
                       value={endDate()}
                       onInput={(e) => setEndDate(e.currentTarget.value)}
-                      class="w-full h-7 px-2 rounded text-[11px] font-mono border border-border/60 outline-none bg-background text-foreground"
+                      class="w-full h-7 px-2 rounded text-xs font-mono border border-border/60 outline-none bg-background text-foreground"
                     />
                   </div>
                 </div>
 
                 {/* Result filter */}
                 <div>
-                  <label class="text-[10px] font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
+                  <label class="text-xs font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
                     Resultado
                   </label>
                   <div class="flex flex-wrap gap-1">
@@ -1225,13 +1298,13 @@ const AuditLog: Component = () => {
                     <FilterPill
                       label="✓ OK"
                       active={filterSuccess() === true}
-                      color="#4ade80"
+                      color="var(--audit-op-success)"
                       onClick={() => setFilterSuccess(true)}
                     />
                     <FilterPill
                       label="✗ Error"
                       active={filterSuccess() === false}
-                      color="#f87171"
+                      color="var(--audit-op-danger)"
                       onClick={() => setFilterSuccess(false)}
                     />
                   </div>
@@ -1239,7 +1312,7 @@ const AuditLog: Component = () => {
 
                 {/* Operation filter */}
                 <div>
-                  <label class="text-[10px] font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
+                  <label class="text-xs font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
                     Operación
                   </label>
                   <div class="flex flex-wrap gap-1">
@@ -1261,7 +1334,7 @@ const AuditLog: Component = () => {
 
                 {/* Entity filter */}
                 <div>
-                  <label class="text-[10px] font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
+                  <label class="text-xs font-mono uppercase tracking-widest block mb-1.5 text-muted-foreground/60">
                     Entidad
                   </label>
                   <div class="flex flex-wrap gap-1">
@@ -1280,7 +1353,7 @@ const AuditLog: Component = () => {
                 {/* Export */}
                 <div class="pt-2 border-t border-border/50 space-y-1.5">
                   <label
-                    class="text-[10px] font-mono uppercase tracking-widest block mb-2"
+                    class="text-xs font-mono uppercase tracking-widest block mb-2"
                     style={{ color: 'var(--audit-text-muted)' }}
                   >
                     Exportar
@@ -1289,11 +1362,11 @@ const AuditLog: Component = () => {
                     type="button"
                     disabled={exporting()}
                     onClick={() => void handleExport('json')}
-                    class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded border text-[11px] font-mono transition-all hover:opacity-80"
+                    class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs font-mono transition-opacity hover:opacity-80"
                     style={{
-                      background: 'rgba(251,146,60,0.08)',
-                      'border-color': 'rgba(251,146,60,0.25)',
-                      color: '#fb923c',
+                      background: 'var(--audit-op-warning-bg)',
+                      'border-color': 'var(--audit-op-warning-border)',
+                      color: 'var(--audit-op-warning)',
                     }}
                   >
                     <Download size={11} /> JSON
@@ -1302,11 +1375,11 @@ const AuditLog: Component = () => {
                     type="button"
                     disabled={exporting()}
                     onClick={() => void handleExport('csv')}
-                    class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded border text-[11px] font-mono transition-all hover:opacity-80"
+                    class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs font-mono transition-opacity hover:opacity-80"
                     style={{
-                      background: 'rgba(52,211,153,0.08)',
-                      'border-color': 'rgba(52,211,153,0.25)',
-                      color: '#34d399',
+                      background: 'var(--audit-op-product-bg)',
+                      'border-color': 'var(--audit-op-product-border)',
+                      color: 'var(--audit-op-product)',
                     }}
                   >
                     <Download size={11} /> CSV
@@ -1321,19 +1394,19 @@ const AuditLog: Component = () => {
             {/* Column headers */}
             <div class="shrink-0 flex items-center gap-3 pl-4 pr-3 py-2 border-b border-border/60 bg-card">
               <div class="w-1.5 shrink-0" />
-              <div class="text-[9px] font-mono uppercase tracking-widest w-[72px] text-right shrink-0 text-muted-foreground/50">
+              <div class="text-xs font-mono uppercase tracking-widest w-[72px] text-right shrink-0 text-muted-foreground/50">
                 Hora
               </div>
-              <div class="text-[9px] font-mono uppercase tracking-widest w-[130px] shrink-0 text-muted-foreground/50">
+              <div class="text-xs font-mono uppercase tracking-widest w-[130px] shrink-0 text-muted-foreground/50">
                 Empleado
               </div>
-              <div class="text-[9px] font-mono uppercase tracking-widest shrink-0 text-muted-foreground/50">
+              <div class="text-xs font-mono uppercase tracking-widest shrink-0 text-muted-foreground/50">
                 Operación
               </div>
-              <div class="text-[9px] font-mono uppercase tracking-widest flex-1 text-muted-foreground/50">
+              <div class="text-xs font-mono uppercase tracking-widest flex-1 text-muted-foreground/50">
                 Detalle
               </div>
-              <div class="text-[9px] font-mono uppercase tracking-widest w-12 text-right shrink-0 text-muted-foreground/50">
+              <div class="text-xs font-mono uppercase tracking-widest w-12 text-right shrink-0 text-muted-foreground/50">
                 {filtered().length} reg.
               </div>
             </div>
@@ -1384,22 +1457,25 @@ const AuditLog: Component = () => {
               <div class="flex items-center gap-3">
                 <div class="flex items-center gap-1.5">
                   <div
-                    class="w-1.5 h-1.5 rounded-full bg-green-400"
-                    style={{ 'box-shadow': '0 0 4px rgba(74,222,128,0.6)' }}
+                    class="w-1.5 h-1.5 rounded-full"
+                    style={{
+                      'background-color': 'var(--audit-op-success)',
+                      'box-shadow': '0 0 4px var(--audit-op-success-bg)',
+                    }}
                   />
-                  <span class="text-[10px] font-mono" style={{ color: 'var(--audit-text-muted)' }}>
+                  <span class="text-xs font-mono" style={{ color: 'var(--audit-text-muted)' }}>
                     {filtered().length} de {logs().length} registros
                   </span>
                 </div>
                 <Show when={hasFilters()}>
-                  <span class="text-[10px] font-mono" style={{ color: '#fbbf24' }}>
+                  <span class="text-xs font-mono" style={{ color: 'var(--audit-op-order)' }}>
                     · filtros activos
                   </span>
                 </Show>
               </div>
               <div class="flex items-center gap-1.5">
                 <Activity size={10} style={{ color: 'var(--audit-text-muted)' }} />
-                <span class="text-[10px] font-mono" style={{ color: 'var(--audit-text-muted)' }}>
+                <span class="text-xs font-mono" style={{ color: 'var(--audit-text-muted)' }}>
                   TPV El Haido · VERI*FACTU
                 </span>
               </div>

@@ -21,7 +21,7 @@ export function CompleteStep(props: CompleteStepProps) {
   const storageMode = () => props.state.selectedStorageMode?.toUpperCase() || 'NO DEFINIDO';
 
   return (
-    <Card class="w-full max-w-lg mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl overflow-hidden">
+    <Card class="isolate w-full max-w-lg mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl overflow-hidden">
       <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-pink-500 to-primary animate-gradient-x" />
       <CardHeader class="text-center pt-10">
         <Motion.div
@@ -97,7 +97,7 @@ export function CompleteStep(props: CompleteStepProps) {
         <Button
           onClick={props.onComplete}
           size="lg"
-          class="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+          class="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-transform"
         >
           Empezar a usar TPV
         </Button>

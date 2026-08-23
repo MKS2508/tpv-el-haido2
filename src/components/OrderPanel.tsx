@@ -2,6 +2,7 @@ import { Motion } from '@motionone/solid';
 import { Receipt, UtensilsCrossed, X } from 'lucide-solid';
 import { createEffect, createMemo, createSignal, Show } from 'solid-js';
 import OrderTable from '@/components/OrderTable';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type Order from '@/models/Order';
@@ -24,40 +25,7 @@ interface OrderPanelProps {
   disableAnimations?: boolean;
 }
 
-// Helper function to format currency
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-  }).format(value);
-}
-
-// Counter component for total display
-function AnimatedCounter(props: { value: number; animate?: boolean }) {
-  const shouldAnimate = () => props.animate !== false;
-
-  return (
-    <Motion.span
-      style={{
-        'font-variant-numeric': 'tabular-nums',
-      }}
-      animate={
-        shouldAnimate()
-          ? {
-              scale: [1, 1.05, 1],
-            }
-          : {}
-      }
-      transition={{
-        duration: shouldAnimate() ? 0.2 : 0,
-        easing: 'ease-out',
-      }}
-    >
-      {formatCurrency(props.value)}
-    </Motion.span>
-  );
-}
+// EUR currency formatting handled via AnimatedNumber's suffix prop (locale 'es-ES' gives "1.234,56").
 
 function OrderPanel(props: OrderPanelProps) {
   const [previousTotal, setPreviousTotal] = createSignal(0);
@@ -159,9 +127,11 @@ function OrderPanel(props: OrderPanelProps) {
               >
                 <div class="flex justify-between items-center mb-2">
                   <span class="text-sm font-semibold text-foreground">Total:</span>
-                  <span class="text-lg font-bold text-primary">
-                    <AnimatedCounter value={total()} animate={!props.disableAnimations} />
-                  </span>
+                  <AnimatedNumber
+                    value={total()}
+                    suffix=" €"
+                    class="text-lg font-bold text-primary"
+                  />
                 </div>
                 <div class="flex gap-2">
                   <Button
@@ -173,22 +143,21 @@ function OrderPanel(props: OrderPanelProps) {
                     <X class="w-4 h-4" />
                   </Button>
                   <Button
+                    variant="payment"
+                    size="touch"
                     onClick={props.onPaymentStart}
                     disabled={itemCount() === 0}
                     class={cn(
-                      'payment-button flex-1 h-11 min-w-0',
-                      'bg-primary hover:bg-primary/90',
-                      'text-primary-foreground',
-                      'font-semibold text-sm',
-                      'transition-all duration-150',
-                      'active:scale-[0.98]',
-                      itemCount() === 0 && 'opacity-50 cursor-not-allowed'
+                      'flex-1 min-w-0 font-semibold text-sm',
+                      itemCount() === 0 && 'opacity-50'
                     )}
                   >
                     <span class="truncate">Completar</span>
-                    <span class="ml-1 flex-shrink-0">
-                      <AnimatedCounter value={total()} animate={!props.disableAnimations} />
-                    </span>
+                    <AnimatedNumber
+                      value={total()}
+                      suffix=" €"
+                      class="ml-1 flex-shrink-0 font-semibold"
+                    />
                   </Button>
                 </div>
               </Show>

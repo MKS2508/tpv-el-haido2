@@ -33,7 +33,6 @@ export function Onboarding() {
       </div>
       <div class="w-full max-w-4xl relative z-10 space-y-8">
         <div class="text-center space-y-2">
-          <h1 class="text-4xl font-extrabold tracking-tight text-primary">Haido Onboarding</h1>
           <p class="text-muted-foreground">Configura tu experiencia en segundos</p>
         </div>
 

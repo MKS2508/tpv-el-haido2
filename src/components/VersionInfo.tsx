@@ -211,7 +211,7 @@ export function VersionInfo(props: VersionInfoProps) {
             </div>
             <div class="h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
-                class="h-full bg-primary transition-all duration-300 ease-out"
+                class="h-full bg-primary transition-[width] duration-300 ease-out"
                 style={{ width: `${progressPercent()}%` }}
               />
             </div>

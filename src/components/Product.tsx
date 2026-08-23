@@ -48,7 +48,9 @@ function ProductGrid(props: ProductGridProps) {
       >
         <div class="h-full w-full max-w-full overflow-hidden">
           <div class="h-full overflow-y-auto overflow-x-hidden p-3">
-            <div class={cn('neworder-product-grid', gridColumns())}>
+            <div
+              class={cn('grid gap-3 w-full max-w-full auto-rows-fr items-stretch', gridColumns())}
+            >
               <For each={props.products}>
                 {(product) => (
                   <ProductCard

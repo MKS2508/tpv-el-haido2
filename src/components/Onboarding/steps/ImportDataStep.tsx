@@ -32,7 +32,7 @@ export function ImportDataStep(props: ImportDataStepProps) {
   };
 
   return (
-    <Card class="w-full max-w-2xl mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl">
+    <Card class="isolate w-full max-w-2xl mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl">
       <CardHeader>
         <div class="flex items-center gap-3 mb-2">
           <div class="p-2 rounded-lg bg-primary/10 text-primary">
@@ -78,7 +78,7 @@ export function ImportDataStep(props: ImportDataStepProps) {
                 <div class="flex-1 flex items-center justify-center border-2 border-dashed rounded-lg p-6 bg-primary/5 border-primary/20">
                   <Button
                     variant="outline"
-                    class="bg-background hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                    class="bg-background hover:bg-primary hover:text-primary-foreground transition-colors duration-300"
                     onClick={props.onLoadSeedData}
                   >
                     <DatabaseIcon class="mr-2 h-4 w-4" />
