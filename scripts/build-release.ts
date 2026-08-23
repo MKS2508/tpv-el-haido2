@@ -28,7 +28,17 @@
  *   - If `bw status` returns "unauthenticated", the script errors out — run `bw login` first.
  */
 
-import { existsSync, mkdirSync, cpSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  cpSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+  copyFileSync,
+  lstatSync,
+  unlinkSync,
+} from 'node:fs';
 import { join, resolve, basename } from 'node:path';
 import { homedir } from 'node:os';
 import logger from '@mks2508/better-logger';
@@ -1327,6 +1337,88 @@ async function patchAppImageGtkHook(
 }
 
 /**
+ * Reemplaza el `.DirIcon` symlink roto y añade el icono 512×512 al hicolor theme
+ * dentro del AppDir. El re-pack + re-firma NO se hace aquí: lo delega a
+ * `patchAppImageGtkHook`, que corre después. Esta función SOLO modifica el
+ * AppDir; cualquier pack aquí duplicaría trabajo.
+ *
+ * Por qué existe: el bundler deja `.DirIcon` como symlink absoluto al path del
+ * build cache del CI runner (p.ej. `/home/<dev>/<repo>/src-tauri/target/...`).
+ * En cualquier otra máquina ese path no existe → el file manager cae al icono
+ * genérico. La fix es copiar el icono real como `.DirIcon` dentro del AppDir.
+ *
+ * Además: aunque M6 añadió `src-tauri/icons/square-icon.png` (512×512) para que
+ * `bundle.icon` lo declarase, `linuxdeploy-plugin-appimage` no crea
+ * `usr/share/icons/hicolor/512x512/apps/<id>.png` por sí solo — hay que copiarlo
+ * explícitamente al AppDir. Sin esto, el file manager cae al 256×256 (HiDPI se ve
+ * pixelado).
+ *
+ * El orden importa: este patch DEBE correr antes que `patchAppImageGtkHook`,
+ * para que el gtk hook re-empaquete y firme sobre un AppDir ya parcheado.
+ *
+ * @param target - Build target (sólo se actúa en linux-x64 / linux-arm64).
+ * @returns `ok(undefined)` también cuando no hay nada que parchear (no es un error).
+ */
+async function patchAppImageBundle(
+  target: IBuildTarget,
+): Promise<Result<void, ResultError>> {
+  const bundleDir = resolve(
+    PROJECT_ROOT, 'src-tauri', 'target', target.triple, 'release', 'bundle', 'appimage',
+  );
+  if (!existsSync(bundleDir)) {
+    return err(resultError('BUNDLE_DIR_NOT_FOUND', `AppImage bundle dir not found: ${bundleDir}`));
+  }
+
+  const appDirName = readdirSync(bundleDir).find((f) => f.endsWith('.AppDir'));
+  if (!appDirName) {
+    log.warn('No se encontró el .AppDir tras el build — se omite el parche de iconos.');
+    return ok(undefined);
+  }
+  const appDirPath = join(bundleDir, appDirName);
+
+  // Source icon: square-icon.png (512x512, M6). Fallback al icon.png source si no existe.
+  const sourceIcon = existsSync(join(PROJECT_ROOT, 'src-tauri', 'icons', 'square-icon.png'))
+    ? join(PROJECT_ROOT, 'src-tauri', 'icons', 'square-icon.png')
+    : join(PROJECT_ROOT, 'src-tauri', 'icons', 'icon.png');
+  if (!existsSync(sourceIcon)) {
+    return err(
+      resultError(
+        'SOURCE_ICON_NOT_FOUND',
+        `Neither src-tauri/icons/square-icon.png nor src-tauri/icons/icon.png found. ` +
+          `Cannot patch AppImage icons.`,
+      ),
+    );
+  }
+
+  // 1. Replace .DirIcon symlink with real file
+  const dirIconPath = join(appDirPath, '.DirIcon');
+  try {
+    // lstat: si es symlink, lo unlinkamos; si es archivo real, overwrite está OK
+    const stat = lstatSync(dirIconPath);
+    if (stat.isSymbolicLink()) {
+      unlinkSync(dirIconPath);
+    }
+  } catch {
+    // .DirIcon no existe — lo creamos abajo
+  }
+  copyFileSync(sourceIcon, dirIconPath);
+  log.info('.DirIcon reemplazado con copia real del icono (era symlink roto al build cache).');
+
+  // 2. Add 512x512 to hicolor if missing
+  const hicolor512Dir = join(appDirPath, 'usr', 'share', 'icons', 'hicolor', '512x512', 'apps');
+  const hicolor512Icon = join(hicolor512Dir, 'tpv-el-haido.png');
+  if (!existsSync(hicolor512Icon)) {
+    mkdirSync(hicolor512Dir, { recursive: true });
+    copyFileSync(sourceIcon, hicolor512Icon);
+    log.info('Añadido hicolor/512x512/apps/tpv-el-haido.png (linuxdeploy-plugin-appimage no lo creó).');
+  } else {
+    log.info('hicolor/512x512/apps/tpv-el-haido.png ya presente — skip.');
+  }
+
+  return ok(undefined);
+}
+
+/**
  * Copies + canonicalises build artifacts into the structured output directory.
  *
  * Layout: `<outputDir>/<version>/<target-label>/<canonical-name>`
@@ -1472,6 +1564,12 @@ export async function buildTarget(
   // Los AppImage salen del build con GDK_BACKEND=x11 clavado en el AppRun, lo que
   // deja el webview compositando por software sobre NVIDIA (ver la función).
   if (target.label === 'linux-x64' || target.label === 'linux-arm64') {
+    // Icon patch DEBE correr ANTES del gtk hook: el gtk hook re-empaqueta y firma,
+    // y queremos que el AppDir ya tenga .DirIcon real + 512x512 cuando se empaque.
+    const bundleResult = await patchAppImageBundle(target);
+    if (isErr(bundleResult)) {
+      return err(bundleResult.error);
+    }
     const hookResult = await patchAppImageGtkHook(target, keys, noSign);
     if (isErr(hookResult)) {
       return err(hookResult.error);
