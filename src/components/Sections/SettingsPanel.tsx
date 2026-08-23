@@ -73,16 +73,21 @@ import {
 import { createContextLogger } from '@/lib/logger';
 import { useAppTheme } from '@/lib/theme-context';
 import { cn } from '@/lib/utils';
-import type { TickmasterPrinterConfig } from '@/models/ThermalPrinter.ts';
+import type {
+  DiscoveredPrinter,
+  PrinterHealth,
+  TickmasterPrinterConfig,
+} from '@/models/ThermalPrinter.ts';
 import type User from '@/models/User.ts';
 import { logLicenseDeactivate } from '@/services/audit.service';
 import { getPlatformService } from '@/services/platform';
 import type { StorageMode } from '@/services/storage-adapter.interface';
 import {
+  checkPrinterHealth,
+  discoverPrinter,
   openDrawer,
   printTestTicket,
   savePrinterConfig,
-  testConnection,
 } from '@/services/thermal-printer.service.ts';
 import useStore, { getBusinessNif } from '@/store/store';
 
@@ -258,11 +263,10 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     }
   };
 
-  async function handlePrintTestTicket(): Promise<{ ok: boolean; message: string }> {
-    if (!props.thermalPrinterOptions) {
-      return { ok: false, message: 'Impresora no configurada.' };
-    }
-    const result = await printTestTicket(props.thermalPrinterOptions);
+  async function handlePrintTestTicket(
+    config: TickmasterPrinterConfig
+  ): Promise<{ ok: boolean; message: string }> {
+    const result = await printTestTicket(config);
     log.debug('Printer test ticket result', { result });
     if (isErr(result)) {
       return { ok: false, message: result.error.message };
@@ -270,20 +274,26 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
     return { ok: true, message: 'Ticket de prueba impreso con éxito.' };
   }
 
-  const handleTestConnection = async (): Promise<{ ok: boolean; message: string }> => {
-    log.debug('Testing printer connection');
-    if (!props.thermalPrinterOptions) {
-      return { ok: false, message: 'Impresora no configurada.' };
-    }
-    const result = await testConnection(props.thermalPrinterOptions);
-    log.debug('Printer connection result', { result });
+  const handleCheckPrinterHealth = async (
+    config: TickmasterPrinterConfig
+  ): Promise<PrinterHealth> => {
+    const health = await checkPrinterHealth(config);
+    log.debug('Printer health', { state: health.state });
+    return health;
+  };
+
+  const handleDiscoverPrinter = async (): Promise<{
+    ok: boolean;
+    message: string;
+    printer?: DiscoveredPrinter;
+  }> => {
+    const result = await discoverPrinter();
     if (isErr(result)) {
+      log.debug('Printer discovery failed', { message: result.error.message });
       return { ok: false, message: result.error.message };
     }
-    if (result.value.paperOut) {
-      return { ok: false, message: 'Conexión establecida, pero sin papel.' };
-    }
-    return { ok: true, message: 'La conexión se ha establecido con éxito.' };
+    log.debug('Printer discovered', { name: result.value.name });
+    return { ok: true, message: 'Impresora encontrada.', printer: result.value };
   };
 
   const handleSavePrinterConfig = async (config: TickmasterPrinterConfig): Promise<void> => {
@@ -816,7 +826,8 @@ const SettingsPanel: Component<SettingsPanelProps> = (props) => {
                       options={props.thermalPrinterOptions}
                       onSave={handleSavePrinterConfig}
                       onPrintTestTicket={handlePrintTestTicket}
-                      onTestConnection={handleTestConnection}
+                      onDiscover={handleDiscoverPrinter}
+                      onCheckHealth={handleCheckPrinterHealth}
                     />
                   </div>
                 </div>
