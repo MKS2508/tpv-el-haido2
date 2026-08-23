@@ -618,7 +618,7 @@ nodes:
             - id: U2
               verdict: pass
               class: impl
-              evidenceRef: ['M6 feat(bundle) commit 73443d2: 1 archivo tauri.conf.json +5 LOC (square-icon.png 512x512 + category Office + publisher mks2508 + descriptions)']
+              evidenceRef: ['M6 feat(bundle) commit 73443d2: added 512x512 icon + publisher mks2508 + descriptions + category=Office (REJECTED by Tauri 2 bundler; fix in 876429d)', 'Hotfix commit 876429d (2026-08-24): category ''Office'' → ''Business'' (valid Tauri 2 enum', 'maps to Categories=Office; in generated .desktop per freedesktop Main Category spec)', '1 file 1 insertion(+) 1 deletion(-) surgical', 'commit message clean (cat -A confirms no trailers', 'no Co-Authored-By', 'no AI attribution)']
               verifiedBy: axon
 
             - id: U3
@@ -636,12 +636,22 @@ nodes:
             - id: U5
               verdict: pass
               class: smoke
-              evidenceRef: ['Tag v0.2.0 annotated local Tagger MKS2508 2026-08-24 apunta a commit deabb35|annotation 5-lineas menciona OKLCH tokens + CVA + 4to tema + splash/auth + sidebar + orders + rest sections + layout-integrity + AppImage + NO breaking changes|HEAD en main no detached|working tree 13 unstaged (orchestrator docs/* + hygiene', 'no M7 scope)|4 commits NO co-author AI']
+              evidenceRef: ['Tag v0.2.0 annotated force-updated to commit 876429d575ff2e8e75d1a64273072c8b2beba35a on 2026-08-24 (hotfix of category enum Office→Business)', 'Remote tag SHA 9ab2b368 (annotated object) → deref 876429d verified via git ls-remote --tags origin v0.2.0', 'Annotation menciona OKLCH tokens + CVA + 4to tema + splash/auth + sidebar + orders + rest sections + layout-integrity + AppImage + NO breaking changes', 'Tagger MKS2508 2026-08-24', 'working tree clean post-fix', 'hotfix commit clean (cat -A confirms no trailers / no Co-Authored-By / no AI attribution)']
               verifiedBy: axon
 
             - id: U6
-              verdict: open
+              verdict: partial
               class: manual-verify
-              evidenceRef: ['PUSH al remote PENDIENTE (orchestrator handle con waxin OK pre-existente ''tienes ok para push cuando este todo'')|CI linux-x64 + linux-arm64 + windows-x64 deploy verification post-push|smoke visual en brother bar post-deploy']
+              evidenceRef: ['PUSH al remote: success — commit 876429d fast-forward on main + tag v0.2.0 force-updated to 876429d per waxin OK ''tienes ok para push cuando este todo'' | CI linux/x86_64 SUCCESS — run 32670878213 — bundling PASS — uploaded tpv-haido-0.2.0-linux-x64.AppImage to admin.releases.mks2508.systems — hub entry haido v0.2.0 linux/x86_64 created | CI linux/arm64 PARTIAL — run 32670878182 — bundling PASS but publish FAILED: 401 Unauthorized mid-publish — OIDC client_credentials token expired — retry failed — release.ts:1681 | CI windows/x64 NOT BUILT — run 32670878186 — failed at ''Verify MSVC + WebView2 toolchain'' step — MSVC cl.exe missing from windows-latest runner image — infra separate from category fix | Smoke visual en brother bar: PENDING — waxin manual post-deploy per production plan | Open follow-ups opened: M8 (linux-arm64 token) + M9 (windows-x64 MSVC) added under track/v0.2.0-ui-overhaul | Hub URL spec mismatch noted: ''releases.tpv-el-haido.com'' is NXDOMAIN — real CI endpoint is admin.releases.mks2508.systems (Tailscale-only admin UI at port 8081)']
               verifiedBy: axon
+
+      - id: track/v0.2.0-ui-overhaul/m8-arm64-publish-fix
+        title: 'M8 — Linux-arm64 hub publish fix: OIDC client_credentials token TTL refresh + manual re-publish v0.2.0 (CI run 32670878182 failed with 401 mid-publish)'
+        status: queued
+        dependsOn: []
+
+      - id: track/v0.2.0-ui-overhaul/m9-windows-msvc-fix
+        title: 'M9 — Windows-x64 CI MSVC toolchain: add microsoft-visualstudio/setup-vcpp-tools@v1 step before verify (windows-latest runner image drift 2026-08 — CI run 32670878186 failed with cl.exe missing)'
+        status: queued
+        dependsOn: []
 decisions: []

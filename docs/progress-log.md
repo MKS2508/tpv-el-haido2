@@ -2130,5 +2130,103 @@ Todos commiteables en 1 commit docs(release): orchestrator metadata.
 - CI dispara linux-x64-deploy.yml + linux-arm64-deploy.yml + windows-x64-deploy.yml automáticamente (tag trigger `v*`)
 - Verificar logs CI + GET releases + GET download real de `haido.releases.mks2508.systems`
 - Smoke visual manual waxin en brother bar post-deploy
-- Task #65 → completed cuando CI verde
+- Task #65 → completed cuando CI verde (ver hotfix entry abajo — M7 closed PARTIAL post-fix con linux/x86_64 publicado + M8+M9 follow-ups abiertos)
+
+---
+
+## 2026-08-24 — v0.2.0-M7 HOTFIX bundling (category enum fix + tag force-update + CI PARTIAL)
+
+**Lane**: `track/v0.2.0-ui-overhaul/m7-release` (U6 + U5 + U2 evidence) + M8/M9 nuevos
+**Estado SSOT M7**: `done` per gate (5 pass + 1 **partial** — U6 honest per-platform)
+**Waxin locks**: 2026-08-24 ("tienes ok para push cuando este todo" cubre el force-update tag; opción A = ship linux/x86_64 ahora + ticket arm64/windows)
+**Executors**: 2 mini-executor (1 read-only research + 1 surgical fix)
+
+### Root cause del CI failure
+
+CI 3 platforms rejected `failed to build bundler settings: invalid category`. `src-tauri/tauri.conf.json:47` tenía `bundle.category: "Office"` desde M6 Bucket C (commit `73443d2`). Tauri 2 `bundle.category` usa enum de Mac App Store categories, NO de freedesktop. "Office" NO está en el enum Tauri 2 — `Business` sí, y tauri-bundler lo traduce correctamente a `Categories=Office;` en el .desktop generado (Main Category freedesktop válido).
+
+### Investigación (Explore agent read-only)
+
+Reporte `/tmp/v0.2.0-bundling-research.md` (5 secciones + plan de fix concreto):
+
+| Sección | Veredicto |
+|---|---|
+| 1. enum `bundle.category` | `Business` es el valor correcto para TPV/POS (mapea a `Categories=Office;` en .desktop) |
+| 2. `bundle.icon` array | OK (32/128/256/512 cubren hicolor; no falta nada crítico) |
+| 3. `bundle.publisher` | `mks2508` válido sin constraints |
+| 4. AppImage double-click checklist | Tauri genera .desktop v1.5 compliant out-of-the-box; rest es env-side (chmod +x, appimaged) |
+| 5. `bundleMediaFramework: false` | Placebo en Linux confirmado — dejar |
+
+**Fix = 1 línea**. Sin cambios en scripts/build-release.ts. Sin cambios en icons array. Sin cambios en patchAppImageGtkHook.
+
+Sources: tauri-schema-generator/schemas/config.schema.json · tauri-utils/config.rs · freedesktop menu/latest/category-registry.html · docs.appimage.org/reference/desktop-integration.html · Tauri issue #3690.
+
+### Hotfix executor (surgical fix + tag force-update + CI)
+
+**Commit `876429d575ff2e8e75d1a64273072c8b2beba35a`** — `fix(bundle): category enum 'Office' → 'Business' for Tauri 2`
+- 1 file changed: `src-tauri/tauri.conf.json` — 1 insertion(+), 1 deletion(-)
+- Message clean (cat -A confirmed: NO trailers, NO Co-Authored-By, NO AI attribution, NO Generated with...)
+- Push: `git push origin main` (fast-forward, no --force)
+- Sanity CI: `linux-x64` CI run `32670390966` → SUCCESS (bundling PASS, fix verified)
+
+**Tag `v0.2.0` force-updated to `876429d`**:
+- `git push origin :refs/tags/v0.2.0` → delete remote annotated (was at `deabb35`)
+- `git tag -d v0.2.0` → delete local
+- `git tag -a v0.20 -m "..."` → recreate at `876429d`
+- `git push origin v0.2.0` → trigger 3 platform workflows
+- Verify: `git ls-remote --tags origin v0.2.0` → `9ab2b368` annotated → deref `876429d` ✓
+
+**Reporte completo**: `/tmp/v0.2.0-hotfix-report.md` (105 líneas, per-platform evidence + tag manipulation log + CI status + hub publish verification).
+
+### CI outcome por plataforma (3 workflows disparados por tag)
+
+| Platform | Run ID | GitHub conclusion | Bundling | Hub publish |
+|---|---|---|---|---|
+| **linux/x86_64** | `32670878213` | success | ✅ PASS | ✅ **OK** — uploaded `tpv-haido-0.2.0-linux-x64.AppImage` a `admin.releases.mks2508.systems` (Tailscale-only); hub entry `haido v0.2.0 (linux/x86_64)` creada |
+| **linux/arm64** | `32670878182` | success (GH UI) | ✅ PASS | 🔴 **FAILED** — bundling PASS pero publish falló: `Retry upload failed for linux-arm64: Upload failed for linux-arm64: Unauthorized — token may be expired` (`scripts/release.ts:1681`). GH step conclusion success por design (manual fallback non-blocking per TR-15) — el publish internamente FAILED |
+| **windows/x64** | `32670878186` | failure | n/a | n/a — failed at step `Verify MSVC + WebView2 toolchain (pre-installed on windows-latest)` con error `MSVC cl.exe not found on PATH`. Runner image `windows-latest` cambió (Build Tools 2022 ya no pre-instalado). Infra separada del category fix |
+
+### Waxin decisión (lock 2026-08-24)
+
+**Opción A elegida**: Ship v0.2.0 linux/x86_64 ahora + abrir tickets M8 (linux-arm64 token) + M9 (windows-x64 MSVC). v0.2.0 GA para linux/x86_64 (dev target CachyOS); arm64 + windows se resuelven en M8/M9.
+
+### SSOT updates (axon CLI 0.2.2)
+
+- `M7-U2 evidence` → actualizada para incluir `73443d2` (introdujo category=Office rejected) + `876429d` (hotfix)
+- `M7-U5 evidence` → tag force-updated a `876429d` (sha remote `9ab2b368` annotated + deref `876429d`)
+- `M7-U6 verdict` → **`partial`** (per governance rule: no aggregate scores) + per-platform evidence
+- `track/v0.2.0-ui-overhaul/m8-arm64-publish-fix` → added (status queued)
+- `track/v0.2.0-ui-overhaul/m9-windows-msvc-fix` → added (status queued)
+- `docs/ROADMAP.md` regenerado (151 líneas, `bun run check:roadmap` ✓ verde)
+
+### Spec drift observado
+
+- `releases.tpv-el-haido.com` es **NXDOMAIN** (no existe en public DNS)
+- Real CI endpoint: `admin.releases.mks2508.systems` (Tailscale-only, admin UI port 8081)
+- Causa probable: el hostname público nunca se wireó (CNAME/DNS missing) o era typo histórico
+- Low priority: actualizar specs en próxima pasada de docs drift sweep
+
+### Estado final
+
+- 🟢 **v0.2.0 linux/x86_64**: SHIPPED (hub entry creada, OTA update disponible)
+- 🟡 **v0.2.0 linux/arm64**: PENDING (M8 token fix + manual re-publish)
+- 🔴 **v0.2.0 windows/x64**: PENDING (M9 MSVC toolchain + re-trigger CI)
+- 🟡 **Smoke visual brother bar**: PENDING (waxin manual post-deploy)
+
+### Decisiones locked
+
+| Decisión | Lock | Justificación |
+|---|---|---|
+| Fix category `Office` → `Business` | YES | Tauri 2 enum (research-verified via schema.json + config.rs); tauri-bundler mapea a `Categories=Office;` correcto en .desktop |
+| Tag force-update a `876429d` | YES | Waxin授权 "tienes ok para push cuando este todo" cubre force-update tag (parte del fix v0.2.0) |
+| Ship v0.2.0 linux/x86_64 ahora | YES | Opción A waxin — primary dev target operativo |
+| Abrir M8 + M9 follow-ups (no bloquear ship) | YES | Infra downstream (token TTL + runner image), no parte del category fix |
+| Verdict U6 = `partial` (no aggregate `pass`) | YES | Governance rule: no aggregate scores que escondan partials |
+
+### Próximo
+
+- v0.2.0 disponible para descarga linux/x86_64 OTA
+- M8 + M9 quedan como tickets independientes (no bloquean v0.2.0 release)
+- Waxin smoke visual en brother bar cuando quiera (post-v0.2.0 deploy)
+- Task #65 → completed (per opción A); #67 (M8) + #68 (M9) pending
 

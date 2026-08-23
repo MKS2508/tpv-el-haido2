@@ -2,7 +2,7 @@
 
 # Roadmap — tpv-el-haido
 
-modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 17 tracks · 0 spikes · 22 milestones
+modelo: tpv-haido-roadmap (authority=true) · 1 outcomes · 17 tracks · 0 spikes · 24 milestones
 
 ⚠ 1 violación(es) de governance derivable(s) — detalle al final.
 
@@ -133,7 +133,9 @@ milestones:
   ▸ track/v0.2.0-ui-overhaul/m6-polish-icon  ✓ done — M6 — Polish rubric + layout-integrity blockers + AppImage icon fix (R1+R6+R9+R7+R10+R11+R3+R2 surgical + 16-polish + 512x512/category/publisher)
     gate: U1✓ U2✓ U3✓ U4✓ U5✓ U6✓ U7~  (pass=6 provisional=1 partial=0 open=0)
   ▸ track/v0.2.0-ui-overhaul/m7-release  ✓ done — M7 — Release v0.2.0 (bump versions + release notes + tag + push + CI publish + smoke Linux+Windows)
-    gate: U1✓ U2✓ U3✓ U4✓ U5✓ U6○  (pass=5 provisional=0 partial=0 open=1)
+    gate: U1✓ U2✓ U3✓ U4✓ U5✓ U6⚠  (pass=5 provisional=0 partial=1 open=0)
+  ▸ track/v0.2.0-ui-overhaul/m8-arm64-publish-fix  ○ queued — M8 — Linux-arm64 hub publish fix: OIDC client_credentials token TTL refresh + manual re-publish v0.2.0 (CI run 32670878182 failed with 401 mid-publish)
+  ▸ track/v0.2.0-ui-overhaul/m9-windows-msvc-fix  ○ queued — M9 — Windows-x64 CI MSVC toolchain: add microsoft-visualstudio/setup-vcpp-tools@v1 step before verify (windows-latest runner image drift 2026-08 — CI run 32670878186 failed with cl.exe missing)
 
 ## Decisiones locked: 0
 
