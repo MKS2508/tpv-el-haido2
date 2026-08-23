@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 mod database;
+mod discovery;
 mod models;
 mod ota;
 mod license;
@@ -19,6 +20,7 @@ use models::license::{LicenseKey, LicenseStatus};
 use models::audit::{AuditLog, AuditLogCreateRequest, AuditLogFilter, AuditLogExportOptions, AuditLogExportResult};
 use license::{generate_machine_fingerprint, hash_license_key, validate_license_online};
 use screenshot::{save_screenshot_from_base64, get_screenshots_dir};
+use discovery::discover_printer;
 
 // Database state
 struct DbState {
@@ -646,6 +648,8 @@ pub fn run() {
             ota_app_ready,
             ota_apply_staged,
             ota_status,
+            // Impresora
+            discover_printer,
             // Products
             get_products,
             create_product,

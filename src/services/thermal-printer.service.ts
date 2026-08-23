@@ -2,19 +2,119 @@ import type { Result } from '@mks2508/no-throw';
 import { err, isErr, ok, tryCatchAsync } from '@mks2508/no-throw';
 import {
   createTickmaster,
+  type IDiscoveryResolver,
   type IPrinterStatus,
   type IPrintResult,
   type ITicket,
+  type ITickmaster,
+  type TickmasterSdkError,
 } from '@mks2508/tickmaster/sdk';
 import { invoke } from '@tauri-apps/api/core';
 import { PrinterErrorCode, type PrinterResultError } from '@/lib/error-codes';
 import type Order from '@/models/Order';
-import type { TickmasterPrinterConfig } from '@/models/ThermalPrinter';
+import type {
+  DiscoveredPrinter,
+  PrinterHealth,
+  TickmasterPrinterConfig,
+} from '@/models/ThermalPrinter';
 
 export type PrinterResult<T> = Result<T, PrinterResultError>;
 
-function buildClient(config: TickmasterPrinterConfig) {
-  return createTickmaster({ baseUrl: config.baseUrl, token: config.token });
+const DISCOVERY_TIMEOUT_MS = 1500;
+
+/**
+ * Resolver de discovery apoyado en el comando Rust.
+ *
+ * El webview no tiene sockets UDP; `discover_printer` hace el broadcast en el
+ * backend y devuelve la URL ya compuesta con la IP de origen del anuncio.
+ */
+class TauriDiscoveryResolver implements IDiscoveryResolver {
+  private lastFound: DiscoveredPrinter | null = null;
+
+  get found(): DiscoveredPrinter | null {
+    return this.lastFound;
+  }
+
+  async resolve(): Promise<string> {
+    const printer = await invoke<DiscoveredPrinter>('discover_printer', {
+      timeoutMs: DISCOVERY_TIMEOUT_MS,
+    });
+    this.lastFound = printer;
+    return printer.baseUrl;
+  }
+}
+
+/** Cliente vivo más el resolver que lo alimenta, si va por discovery. */
+interface ClientEntry {
+  readonly key: string;
+  readonly tm: ITickmaster;
+  readonly resolver: TauriDiscoveryResolver | null;
+}
+
+let cachedEntry: ClientEntry | null = null;
+
+/**
+ * Devuelve el cliente de la config dada, reutilizándolo entre operaciones.
+ *
+ * El cliente se cachea a propósito: `createTickmaster` memoiza la URL resuelta,
+ * así que uno nuevo por operación significaría un broadcast por cada ticket.
+ *
+ * @param config - URL y token; baseUrl vacía activa el discovery
+ * @returns Cliente cacheado para esa config
+ */
+function clientFor(config: TickmasterPrinterConfig): ClientEntry {
+  const baseUrl = config.baseUrl.trim();
+  const key = `${baseUrl} ${config.token}`;
+  if (cachedEntry !== null && cachedEntry.key === key) return cachedEntry;
+
+  const resolver = baseUrl === '' ? new TauriDiscoveryResolver() : null;
+  const tm =
+    resolver === null
+      ? createTickmaster({ baseUrl, token: config.token })
+      : createTickmaster({ discovery: resolver, token: config.token });
+
+  cachedEntry = { key, tm, resolver };
+  return cachedEntry;
+}
+
+/**
+ * Tira el cliente cacheado para que la siguiente operación vuelva a descubrir.
+ *
+ * Hace falta aunque el SDK ya descarte una resolución fallida: si el router le
+ * da otra IP a la Raspberry, la URL cacheada resolvió bien en su día y solo el
+ * fallo de red delata que ya no vale.
+ */
+function invalidateClient(): void {
+  cachedEntry = null;
+}
+
+/**
+ * Ejecuta una operación del SDK mapeando el error a la taxonomía de la app.
+ *
+ * @param config - Config de la impresora
+ * @param code - Código de error de la app si la operación falla
+ * @param operation - Operación a ejecutar contra el cliente
+ * @returns Resultado de la operación
+ */
+async function withClient<T>(
+  config: TickmasterPrinterConfig,
+  code: PrinterResultError['code'],
+  operation: (tm: ITickmaster) => Promise<Result<T, TickmasterSdkError>>
+): Promise<PrinterResult<T>> {
+  let result: Result<T, TickmasterSdkError>;
+  try {
+    result = await operation(clientFor(config).tm);
+  } catch (thrown) {
+    // El SDK hasta 0.1.1 deja escapar el rechazo del resolver de discovery por
+    // encima de `.safe()`, y el comando de Tauri rechaza con un string pelado.
+    invalidateClient();
+    return err({ code, message: thrown instanceof Error ? thrown.message : String(thrown) });
+  }
+  if (isErr(result)) {
+    if (result.error.code === 'TM_DAEMON_UNREACHABLE') invalidateClient();
+    return err({ code, message: result.error.message });
+  }
+  return ok(result.value);
 }
 
 export function orderToTicket(order: Order, ivaRatePercent: number): ITicket {
@@ -44,49 +144,185 @@ export async function printOrder(
   config: TickmasterPrinterConfig,
   ivaRatePercent: number
 ): Promise<PrinterResult<IPrintResult>> {
-  const tm = buildClient(config);
-  const result = await tm.tickets.safe.print(orderToTicket(order, ivaRatePercent));
-  if (isErr(result)) {
-    return err({ code: PrinterErrorCode.PrintFailed, message: result.error.message });
-  }
-  return ok(result.value);
+  return withClient(config, PrinterErrorCode.PrintFailed, (tm) =>
+    tm.tickets.safe.print(orderToTicket(order, ivaRatePercent))
+  );
 }
 
 export async function printTestTicket(
   config: TickmasterPrinterConfig
 ): Promise<PrinterResult<IPrintResult>> {
-  const tm = buildClient(config);
-  const result = await tm.tickets.safe.print({
-    cabecera: 'BAR EL HAIDO',
-    items: [{ nombre: 'Ticket de prueba', cantidad: 1, precioUnitario: 1 }],
-    pie: 'Prueba de impresión OK',
-  });
-  if (isErr(result)) {
-    return err({ code: PrinterErrorCode.TestFailed, message: result.error.message });
-  }
-  return ok(result.value);
+  return withClient(config, PrinterErrorCode.TestFailed, (tm) =>
+    tm.tickets.safe.print({
+      cabecera: 'BAR EL HAIDO',
+      items: [{ nombre: 'Ticket de prueba', cantidad: 1, precioUnitario: 1 }],
+      pie: 'Prueba de impresión OK',
+    })
+  );
 }
 
 export async function testConnection(
   config: TickmasterPrinterConfig
 ): Promise<PrinterResult<IPrinterStatus>> {
-  const tm = buildClient(config);
-  const result = await tm.printer.safe.status();
-  if (isErr(result)) {
-    return err({ code: PrinterErrorCode.ConnectionFailed, message: result.error.message });
-  }
-  return ok(result.value);
+  return withClient(config, PrinterErrorCode.ConnectionFailed, (tm) => tm.printer.safe.status());
 }
 
 export async function openDrawer(
   config: TickmasterPrinterConfig
 ): Promise<PrinterResult<{ opened: boolean }>> {
-  const tm = buildClient(config);
-  const result = await tm.drawer.safe.open();
+  return withClient(config, PrinterErrorCode.CashDrawerFailed, (tm) => tm.drawer.safe.open());
+}
+
+/**
+ * Busca la impresora por broadcast UDP en la red local.
+ *
+ * Solo alcanza a quien comparte segmento de red, que es el caso del bar: el TPV
+ * y la Raspberry cuelgan del mismo router.
+ *
+ * @param timeoutMs - Espera máxima por una respuesta
+ * @returns Impresora encontrada, o error si nadie contesta
+ */
+export async function discoverPrinter(
+  timeoutMs: number = DISCOVERY_TIMEOUT_MS
+): Promise<PrinterResult<DiscoveredPrinter>> {
+  const result = await tryCatchAsync(
+    async () => invoke<DiscoveredPrinter>('discover_printer', { timeoutMs }),
+    PrinterErrorCode.ConnectionFailed
+  );
   if (isErr(result)) {
-    return err({ code: PrinterErrorCode.CashDrawerFailed, message: result.error.message });
+    return err({ code: PrinterErrorCode.ConnectionFailed, message: result.error.message });
   }
+  invalidateClient();
   return ok(result.value);
+}
+
+/**
+ * Estado de "no hay daemon al que hablar", con la pista según cómo se configuró.
+ *
+ * @param config - Config con la que se intentó
+ * @param detail - Motivo técnico, por si la URL era explícita
+ * @returns Diagnóstico de camino cortado
+ */
+function unreachableHealth(config: TickmasterPrinterConfig, detail: string): PrinterHealth {
+  const configured = config.baseUrl.trim();
+  return {
+    state: 'no-daemon',
+    canPrint: false,
+    title: 'Sin conexión con la impresora',
+    detail:
+      configured === ''
+        ? 'No se encontró ninguna impresora en la red. Comprueba que la Raspberry está encendida y en el mismo router.'
+        : `${configured} no responde (${detail}). Comprueba la dirección, o déjala vacía para buscarla en la red.`,
+    baseUrl: null,
+    paperNearEnd: false,
+  };
+}
+
+/**
+ * Diagnostica el camino completo app → daemon → impresora.
+ *
+ * Nunca falla: cada escalón del camino tiene su estado. El daemon contesta
+ * aunque la impresora esté apagada o sin papel, así que "hay conexión" y "se
+ * puede imprimir" son dos cosas distintas y la UI tiene que poder decirlas.
+ *
+ * @param config - Config a diagnosticar; baseUrl vacía dispara el discovery
+ * @returns Diagnóstico legible
+ *
+ * @example
+ * ```typescript
+ * const health = await checkPrinterHealth(config);
+ * if (!health.canPrint) toast({ title: health.title, description: health.detail });
+ * ```
+ */
+export async function checkPrinterHealth(config: TickmasterPrinterConfig): Promise<PrinterHealth> {
+  const entry = clientFor(config);
+
+  let result: Result<IPrinterStatus, TickmasterSdkError>;
+  try {
+    result = await entry.tm.printer.safe.status();
+  } catch (thrown) {
+    invalidateClient();
+    return unreachableHealth(config, thrown instanceof Error ? thrown.message : String(thrown));
+  }
+
+  if (isErr(result)) {
+    const code = result.error.code;
+    if (code === 'TM_UNAUTHORIZED' || code === 'TM_FORBIDDEN') {
+      return {
+        state: 'unauthorized',
+        canPrint: false,
+        title: 'El daemon rechaza a este equipo',
+        detail:
+          code === 'TM_UNAUTHORIZED'
+            ? 'La impresora responde, pero el token no es válido. Revísalo arriba.'
+            : 'La impresora responde, pero esta IP no está en su lista de permitidas.',
+        baseUrl: entry.resolver?.found?.baseUrl ?? config.baseUrl.trim(),
+        paperNearEnd: false,
+      };
+    }
+    if (code === 'TM_DAEMON_UNREACHABLE') invalidateClient();
+    return unreachableHealth(config, result.error.message);
+  }
+
+  const baseUrl = entry.resolver?.found?.baseUrl ?? config.baseUrl.trim();
+  const status = result.value;
+  const base = { baseUrl, paperNearEnd: status.paperNearEnd } as const;
+
+  if (!status.connected) {
+    return {
+      ...base,
+      state: 'no-printer',
+      canPrint: false,
+      title: 'Daemon en línea, impresora no detectada',
+      detail: 'El adaptador USB de la impresora no aparece. Comprueba el cable a la Raspberry.',
+    };
+  }
+  if (status.coverOpen) {
+    return {
+      ...base,
+      state: 'cover-open',
+      canPrint: false,
+      title: 'Tapa abierta',
+      detail: 'Cierra la tapa de la impresora.',
+    };
+  }
+  if (status.paperOut) {
+    return {
+      ...base,
+      state: 'paper-out',
+      canPrint: false,
+      title: 'Sin papel',
+      detail: 'Carga un rollo nuevo.',
+    };
+  }
+  if (!status.online) {
+    return {
+      ...base,
+      state: 'printer-offline',
+      canPrint: false,
+      title: 'Impresora apagada o sin línea',
+      detail: 'El daemon la ve conectada pero no responde. Comprueba que está encendida.',
+    };
+  }
+  if (status.error) {
+    return {
+      ...base,
+      state: 'printer-error',
+      canPrint: false,
+      title: 'La impresora reporta un error',
+      detail: 'Apágala y vuelve a encenderla; si sigue, revisa el mecanismo.',
+    };
+  }
+
+  return {
+    ...base,
+    state: 'ready',
+    canPrint: true,
+    title: 'Impresora lista',
+    detail: status.paperNearEnd
+      ? 'Imprime con normalidad, pero el rollo está por acabarse.'
+      : 'Conectada, con papel y en línea.',
+  };
 }
 
 // IMPORTANTE: nunca loguear `config` (contiene el token del daemon) — el bug del
@@ -99,9 +335,11 @@ export async function savePrinterConfig(
     async () => invoke('write_json_config', { config }),
     PrinterErrorCode.ConfigError
   );
-  return isErr(result)
-    ? err({ code: PrinterErrorCode.ConfigError, message: result.error.message })
-    : ok(undefined);
+  if (isErr(result)) {
+    return err({ code: PrinterErrorCode.ConfigError, message: result.error.message });
+  }
+  invalidateClient();
+  return ok(undefined);
 }
 
 export async function loadPrinterConfig(): Promise<PrinterResult<TickmasterPrinterConfig | null>> {
