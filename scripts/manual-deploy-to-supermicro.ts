@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * manual-deploy-to-supermicro.ts
  *
@@ -20,16 +21,18 @@
  *   --target <t>        Target triple (default: linux/x86_64)
  *   --hostname <h>      SSH host (default: supermicro-pcbar.vpn.mks2508.local)
  *   --dest <path>       Remote destination dir (default: ~/Desktop)
- *   --replace-symlink   Also point ~/.local/bin/tpv-el-haido.AppImage → new
+ *   --replace-symlink   Also point ~/.local/bin/tpv-el-haido.AppImage → new (legacy, unstable dock)
+ *   --install-system    Real install to /usr/local/bin + /usr/local/share/applications
+ *                       (robust, dock-stable path; INCOMPATIBLE with --replace-symlink)
  *   --cleanup           Remove older tpv-haido-*.AppImage on remote Desktop
  *   --skip-mime-handler  Skip appimaged install on remote (default: false, appimaged is installed)
  *   --list              List hub latest, don't download/transfer
  *   --dry-run           Show actions, no mutations
  */
 
-import { parseArgs } from 'node:util';
 import { execFileSync } from 'node:child_process';
 import { existsSync, unlinkSync } from 'node:fs';
+import { parseArgs } from 'node:util';
 
 const HUB_OTA_BASE = 'https://haido.releases.mks2508.systems';
 const DEFAULT_TARGET = 'linux/x86_64';
@@ -42,6 +45,7 @@ type Args = {
   hostname: string;
   dest: string;
   replaceSymlink: boolean;
+  installSystem: boolean;
   cleanup: boolean;
   installMimeHandler: boolean;
   list: boolean;
@@ -49,6 +53,10 @@ type Args = {
 };
 
 function parseCli(): Args {
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    printHelp();
+    process.exit(0);
+  }
   const { values } = parseArgs({
     options: {
       version: { type: 'string' },
@@ -56,6 +64,7 @@ function parseCli(): Args {
       hostname: { type: 'string', default: DEFAULT_HOSTNAME },
       dest: { type: 'string', default: DEFAULT_DEST },
       'replace-symlink': { type: 'boolean', default: false },
+      'install-system': { type: 'boolean', default: false },
       cleanup: { type: 'boolean', default: false },
       'skip-mime-handler': { type: 'boolean', default: false },
       list: { type: 'boolean', default: false },
@@ -63,17 +72,53 @@ function parseCli(): Args {
     },
     strict: true,
   });
+  const replaceSymlink = !!values['replace-symlink'];
+  const installSystem = !!values['install-system'];
+  if (replaceSymlink && installSystem) {
+    throw new Error(
+      '--replace-symlink and --install-system are mutually exclusive (pick one, not both)'
+    );
+  }
   return {
     version: values.version,
     target: values.target!,
     hostname: values.hostname!,
     dest: values.dest!,
-    replaceSymlink: !!values['replace-symlink'],
+    replaceSymlink,
+    installSystem,
     cleanup: !!values.cleanup,
     installMimeHandler: !values['skip-mime-handler'],
     list: !!values.list,
     dryRun: !!values['dry-run'],
   };
+}
+
+function printHelp(): void {
+  const lines = [
+    'manual-deploy-to-supermicro.ts — bridge hub → supermicro-pcbar',
+    '',
+    'Usage: bun run scripts/manual-deploy-to-supermicro.ts [options]',
+    '',
+    'Options:',
+    '  --version <v>       Specific version to deploy (default: latest from hub)',
+    '  --target <t>        Target triple (default: linux/x86_64)',
+    '  --hostname <h>      SSH host (default: supermicro-pcbar.vpn.mks2508.local)',
+    '  --dest <path>       Remote destination dir (default: ~/Desktop)',
+    '  --replace-symlink   Also point ~/.local/bin/tpv-el-haido.AppImage → new (legacy, unstable dock)',
+    '  --install-system    Real install to /usr/local/bin + /usr/local/share/applications',
+    '                      (robust, dock-stable path; INCOMPATIBLE with --replace-symlink)',
+    '  --cleanup           Remove older tpv-haido-*.AppImage on remote Desktop',
+    '  --skip-mime-handler  Skip appimaged install on remote (default: false, appimaged is installed)',
+    "  --list              List hub latest, don't download/transfer",
+    '  --dry-run           Show actions, no mutations',
+    '  -h, --help          Show this help',
+    '',
+    'Examples:',
+    '  bun run scripts/manual-deploy-to-supermicro.ts                                    # Desktop drop only',
+    '  bun run scripts/manual-deploy-to-supermicro.ts --install-system                  # robust system install',
+    '  bun run scripts/manual-deploy-to-supermicro.ts --replace-symlink --cleanup        # legacy full sync',
+  ];
+  for (const l of lines) console.error(l);
 }
 
 function info(msg: string): void {
@@ -155,8 +200,24 @@ async function downloadToTemp(url: string, filename: string): Promise<string> {
   return localPath;
 }
 
-function scpPush(localPath: string, hostname: string, remotePath: string, opts: { dryRun?: boolean }): void {
-  exec(['scp', '-o', 'ConnectTimeout=8', '-o', 'BatchMode=yes', localPath, `${hostname}:${remotePath}`], opts);
+function scpPush(
+  localPath: string,
+  hostname: string,
+  remotePath: string,
+  opts: { dryRun?: boolean }
+): void {
+  exec(
+    [
+      'scp',
+      '-o',
+      'ConnectTimeout=8',
+      '-o',
+      'BatchMode=yes',
+      localPath,
+      `${hostname}:${remotePath}`,
+    ],
+    opts
+  );
 }
 
 function sshExec(hostname: string, remoteCmd: string, opts: { dryRun?: boolean }): string {
@@ -186,22 +247,85 @@ async function main(): Promise<void> {
   // 1. Download to /tmp
   const localPath = await downloadToTemp(manifest.url, manifest.filename);
 
-  // 2. SCP to supermicro — use expandTildeScp (scp resolves ~ natively,
-  //    does NOT spawn remote shell so $HOME would stay literal)
-  const remotePathScp = `${expandTildeScp(args.dest)}/${manifest.filename}`;
-  scpPush(localPath, args.hostname, remotePathScp, { dryRun: args.dryRun });
+  let remotePathBash: string | null = null;
 
-  // 3. chmod +x on remote — use expandTildeBash for SSH non-interactive bash
-  const remotePathBash = `${expandTildeBash(args.dest)}/${manifest.filename}`;
-  sshExec(args.hostname, `chmod +x ${JSON.stringify(remotePathBash)}`, { dryRun: args.dryRun });
+  if (args.installSystem) {
+    // ---- Robust system install (/usr/local/) ----
+    // Push AppImage to remote /tmp first (scp can't write into /usr/local/
+    // without sudo and root owns that path). Then a single sudo block on
+    // the remote does cp/chmod/dir-create/icon/.desktop/cache-refresh.
+    // Outcome: /usr/local/bin/tpv-el-haido.AppImage is root-owned and path-
+    // stable across releases (doesn't move with the version in the filename),
+    // so the .desktop Exec= stays valid even when appimaged rewrites it.
+    scpPush(localPath, args.hostname, `/tmp/${manifest.filename}`, { dryRun: args.dryRun });
 
-  // 4. Optional: replace ~/.local/bin symlink
-  if (args.replaceSymlink) {
-    sshExec(args.hostname, `ln -sf ${JSON.stringify(remotePathBash)} ${expandTildeBash('~/.local/bin/tpv-el-haido.AppImage')}`, { dryRun: args.dryRun });
-    info(`updated ~/.local/bin symlink`);
+    const iconLocalPath = 'src-tauri/icons/square-icon-256.png';
+    if (!existsSync(iconLocalPath)) {
+      throw new Error(`--install-system requires local icon at ${iconLocalPath}`);
+    }
+    const iconRemoteTmp = '/tmp/tpv-el-haido-icon.png';
+    scpPush(iconLocalPath, args.hostname, iconRemoteTmp, { dryRun: args.dryRun });
+
+    const tmpAppImage = JSON.stringify(`/tmp/${manifest.filename}`);
+    const desktopEntry = [
+      '[Desktop Entry]',
+      'Type=Application',
+      'Name=TPV El Haido',
+      'GenericName=Point of Sale',
+      'Comment=Sistema de punto de venta para restaurantes y bares',
+      'Exec=/usr/local/bin/tpv-el-haido.AppImage %u',
+      'Icon=tpv-el-haido',
+      'Terminal=false',
+      'Categories=Office;Business;',
+      'StartupNotify=true',
+      'StartupWMClass=TPV El Haido',
+      '',
+    ].join('\n');
+
+    // Note: do NOT wrap the desktopEntry in JSON.stringify here — it contains
+    // literal newlines and %u which we want passed verbatim to the heredoc.
+    // `<<'EOF'` (single-quoted EOF) prevents shell expansion inside the body.
+    const installCmd = `set -e
+sudo cp ${tmpAppImage} /usr/local/bin/tpv-el-haido.AppImage
+sudo chmod +x /usr/local/bin/tpv-el-haido.AppImage
+sudo mkdir -p /usr/local/share/applications /usr/local/share/icons/hicolor/512x512/apps
+sudo cp ${JSON.stringify(iconRemoteTmp)} /usr/local/share/icons/hicolor/512x512/apps/tpv-el-haido.png
+sudo tee /usr/local/share/applications/tpv-el-haido.desktop >/dev/null <<'EOF'
+${desktopEntry}EOF
+sudo update-desktop-database /usr/local/share/applications/
+sudo gtk-update-icon-cache /usr/local/share/icons/hicolor/ 2>/dev/null || true
+echo '[INFO] system install complete: /usr/local/bin/tpv-el-haido.AppImage + /usr/local/share/applications/tpv-el-haido.desktop'
+`;
+    sshExec(args.hostname, installCmd, { dryRun: args.dryRun });
+    const dryTag = args.dryRun ? '[dry-run] ' : '';
+    info(`${dryTag}installed system-wide on ${args.hostname}:`);
+    info(`${dryTag}  binary:  /usr/local/bin/tpv-el-haido.AppImage (root-owned, path stable)`);
+    info(`${dryTag}  desktop: /usr/local/share/applications/tpv-el-haido.desktop`);
+  } else {
+    // ---- Legacy: Desktop placement + chmod + optional ~/.local/bin symlink ----
+    // SCP to supermicro — use expandTildeScp (scp resolves ~ natively,
+    // does NOT spawn remote shell so $HOME would stay literal)
+    const remotePathScp = `${expandTildeScp(args.dest)}/${manifest.filename}`;
+    scpPush(localPath, args.hostname, remotePathScp, { dryRun: args.dryRun });
+
+    // chmod +x on remote — use expandTildeBash for SSH non-interactive bash
+    remotePathBash = `${expandTildeBash(args.dest)}/${manifest.filename}`;
+    sshExec(args.hostname, `chmod +x ${JSON.stringify(remotePathBash)}`, { dryRun: args.dryRun });
+
+    // Optional: replace ~/.local/bin symlink
+    if (args.replaceSymlink) {
+      sshExec(
+        args.hostname,
+        `ln -sf ${JSON.stringify(remotePathBash)} ${expandTildeBash('~/.local/bin/tpv-el-haido.AppImage')}`,
+        { dryRun: args.dryRun }
+      );
+      info(`updated ~/.local/bin symlink`);
+    }
   }
 
-  // 5. Optional: cleanup older AppImages on remote Desktop
+  // 5. Optional: cleanup older AppImages on remote Desktop (no-op in
+  //    --install-system mode since we don't write to Desktop; left outside
+  //    the if/else so it composes with either branch).
   if (args.cleanup) {
     const cmd = `find ${expandTildeBash(args.dest)} -maxdepth 1 -name 'tpv-haido-*.AppImage' ! -name ${JSON.stringify(manifest.filename)} -print -exec rm -v {} \\;`;
     sshExec(args.hostname, cmd, { dryRun: args.dryRun });
@@ -220,26 +344,37 @@ async function main(): Promise<void> {
   //    via `--needed` in both paths. Failure tolerant — never aborts deploy.
   if (args.installMimeHandler) {
     info(`ensuring appimaged on ${args.hostname}...`);
-    const cmd = `if command -v pacman >/dev/null 2>&1 && ` +
-                `  sudo pacman -S --noconfirm --needed appimaged 2>/dev/null; then ` +
-                `  echo '[INFO] appimaged installed via pacman (official Arch)'; ` +
-                `elif command -v paru >/dev/null 2>&1; then ` +
-                `  echo '[INFO] appimaged not in official repos, trying AUR via paru'; ` +
-                `  paru -S --noconfirm --needed appimaged-bin || echo '[WARN] AUR install failed (non-fatal)'; ` +
-                `elif command -v yay >/dev/null 2>&1; then ` +
-                `  echo '[INFO] appimaged not in official repos, trying AUR via yay'; ` +
-                `  yay -S --noconfirm --needed appimaged-bin || echo '[WARN] AUR install failed (non-fatal)'; ` +
-                `else ` +
-                `  echo '[INFO] no pacman/paru/yay detected, skipping MIME handler install (manual install required)'; ` +
-                `fi`;
+    const cmd =
+      `if command -v pacman >/dev/null 2>&1 && ` +
+      `  sudo pacman -S --noconfirm --needed appimaged 2>/dev/null; then ` +
+      `  echo '[INFO] appimaged installed via pacman (official Arch)'; ` +
+      `elif command -v paru >/dev/null 2>&1; then ` +
+      `  echo '[INFO] appimaged not in official repos, trying AUR via paru'; ` +
+      `  paru -S --noconfirm --needed appimaged-bin || echo '[WARN] AUR install failed (non-fatal)'; ` +
+      `elif command -v yay >/dev/null 2>&1; then ` +
+      `  echo '[INFO] appimaged not in official repos, trying AUR via yay'; ` +
+      `  yay -S --noconfirm --needed appimaged-bin || echo '[WARN] AUR install failed (non-fatal)'; ` +
+      `else ` +
+      `  echo '[INFO] no pacman/paru/yay detected, skipping MIME handler install (manual install required)'; ` +
+      `fi`;
     sshExec(args.hostname, cmd, { dryRun: args.dryRun });
-    info(`appimaged ensured on ${args.hostname} (pacman → AUR fallback; non-pkg-mgr skipped silently)`);
+    info(
+      `appimaged ensured on ${args.hostname} (pacman → AUR fallback; non-pkg-mgr skipped silently)`
+    );
   }
 
   info(`=== DONE ===`);
-  info(`on ${args.hostname}: double-click ${remotePathBash}`);
-  if (!args.replaceSymlink) {
-    info(`to make official install: re-run with --replace-symlink`);
+  if (args.installSystem) {
+    info(`on ${args.hostname}: open from Activities / Dock launcher (search 'TPV El Haido')`);
+    info(`appimaged was NOT uninstalled — uninstall is your call if you want to`);
+    info(
+      `re-run with --install-system on every release to refresh /usr/local/bin/tpv-el-haido.AppImage`
+    );
+  } else {
+    info(`on ${args.hostname}: double-click ${remotePathBash}`);
+    if (!args.replaceSymlink) {
+      info(`to make official install: re-run with --replace-symlink`);
+    }
   }
   info(`version deployed: ${version}`);
 }
