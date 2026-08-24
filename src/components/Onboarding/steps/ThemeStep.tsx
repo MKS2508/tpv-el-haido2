@@ -18,8 +18,8 @@ interface ThemeStepProps {
 
 export function ThemeStep(props: ThemeStepProps) {
   return (
-    <Card class="isolate w-full max-w-lg mx-auto border-none shadow-2xl bg-background/60 backdrop-blur-xl">
-      <CardHeader>
+    <Card class="isolate flex flex-col w-full max-w-lg mx-auto max-h-[calc(100vh-12rem)] border-none shadow-2xl bg-background/60 backdrop-blur-xl">
+      <CardHeader class="flex-shrink-0">
         <div class="flex items-center gap-3 mb-2">
           <div class="p-2 rounded-lg bg-pink-500/10 text-pink-500">
             <PaletteIcon class="h-6 w-6" />
@@ -30,7 +30,7 @@ export function ThemeStep(props: ThemeStepProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent class="space-y-8 py-8">
+      <CardContent class="flex-1 overflow-y-auto space-y-8 py-8">
         <div class="flex flex-col items-center justify-center text-center space-y-6">
           <div class="w-24 h-24 rounded-2xl bg-gradient-to-tr from-primary to-pink-500 flex items-center justify-center shadow-lg shadow-primary/20 animate-pulse">
             <SparklesIcon class="h-12 w-12 text-white" />
@@ -51,7 +51,7 @@ export function ThemeStep(props: ThemeStepProps) {
           </div>
         </div>
       </CardContent>
-      <CardFooter class="flex justify-between border-t p-6 bg-muted/10">
+      <CardFooter class="flex-shrink-0 flex justify-between border-t p-6 bg-muted/10">
         <Button variant="ghost" onClick={props.onBack}>
           Anterior
         </Button>
