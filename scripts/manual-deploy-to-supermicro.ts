@@ -98,12 +98,29 @@ function exec(args: string[], opts: { dryRun?: boolean } = {}): string {
 
 /**
  * Expands a leading `~` to `$HOME` so the path is safe in SSH non-interactive
- * shells (bash non-login non-interactive doesn't expand `~`). Leaves other
- * paths untouched.
+ * bash (bash non-login non-interactive doesn't expand `~`, but `$HOME` is always
+ * an env var so `${HOME}` expands in any mode). Use for commands passed to
+ * `sshExec` — the remote bash will expand it.
+ *
+ * Do NOT use this for paths passed to `scpPush`: scp does NOT spawn a remote
+ * shell, it constructs the destination path natively, so `$HOME` would end up
+ * as a literal directory name. For SCP use `expandTildeScp` instead.
  */
-function expandTilde(path: string): string {
+function expandTildeBash(path: string): string {
   if (path === '~' || path.startsWith('~/')) {
-    return '$HOME' + path.slice(1);
+    return '${HOME}' + path.slice(1);
+  }
+  return path;
+}
+
+/**
+ * Expands a leading `~` to a literal `~/` prefix for use with `scpPush`. SCP
+ * resolves `~` natively on the remote (it uses the user's home dir from the
+ * remote shell context, no shell invocation needed).
+ */
+function expandTildeScp(path: string): string {
+  if (path === '~' || path.startsWith('~/')) {
+    return '~' + path.slice(1);
   }
   return path;
 }
@@ -169,22 +186,24 @@ async function main(): Promise<void> {
   // 1. Download to /tmp
   const localPath = await downloadToTemp(manifest.url, manifest.filename);
 
-  // 2. SCP to supermicro
-  const remotePath = `${expandTilde(args.dest)}/${manifest.filename}`;
-  scpPush(localPath, args.hostname, remotePath, { dryRun: args.dryRun });
+  // 2. SCP to supermicro — use expandTildeScp (scp resolves ~ natively,
+  //    does NOT spawn remote shell so $HOME would stay literal)
+  const remotePathScp = `${expandTildeScp(args.dest)}/${manifest.filename}`;
+  scpPush(localPath, args.hostname, remotePathScp, { dryRun: args.dryRun });
 
-  // 3. chmod +x on remote
-  sshExec(args.hostname, `chmod +x ${JSON.stringify(remotePath)}`, { dryRun: args.dryRun });
+  // 3. chmod +x on remote — use expandTildeBash for SSH non-interactive bash
+  const remotePathBash = `${expandTildeBash(args.dest)}/${manifest.filename}`;
+  sshExec(args.hostname, `chmod +x ${JSON.stringify(remotePathBash)}`, { dryRun: args.dryRun });
 
   // 4. Optional: replace ~/.local/bin symlink
   if (args.replaceSymlink) {
-    sshExec(args.hostname, `ln -sf ${JSON.stringify(remotePath)} ${expandTilde('~/.local/bin/tpv-el-haido.AppImage')}`, { dryRun: args.dryRun });
+    sshExec(args.hostname, `ln -sf ${JSON.stringify(remotePathBash)} ${expandTildeBash('~/.local/bin/tpv-el-haido.AppImage')}`, { dryRun: args.dryRun });
     info(`updated ~/.local/bin symlink`);
   }
 
   // 5. Optional: cleanup older AppImages on remote Desktop
   if (args.cleanup) {
-    const cmd = `find ${expandTilde(args.dest)} -maxdepth 1 -name 'tpv-haido-*.AppImage' ! -name ${JSON.stringify(manifest.filename)} -print -exec rm -v {} \\;`;
+    const cmd = `find ${expandTildeBash(args.dest)} -maxdepth 1 -name 'tpv-haido-*.AppImage' ! -name ${JSON.stringify(manifest.filename)} -print -exec rm -v {} \\;`;
     sshExec(args.hostname, cmd, { dryRun: args.dryRun });
     info(`cleaned up old AppImages on ${args.dest}`);
   }
@@ -218,7 +237,7 @@ async function main(): Promise<void> {
   }
 
   info(`=== DONE ===`);
-  info(`on ${args.hostname}: double-click ${remotePath}`);
+  info(`on ${args.hostname}: double-click ${remotePathBash}`);
   if (!args.replaceSymlink) {
     info(`to make official install: re-run with --replace-symlink`);
   }
