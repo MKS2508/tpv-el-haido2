@@ -1,0 +1,9 @@
+{
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://haido.releases.mks2508.systems/api/updates/macos/{{arch}}/{{current_version}}"
+      ]
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://haido.releases.mks2508.systems/api/updates/windows/x86_64/{{current_version}}"
+      ]
+    }
+  }
+}
