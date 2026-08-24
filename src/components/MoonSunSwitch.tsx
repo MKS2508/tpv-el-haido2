@@ -56,8 +56,12 @@ const MoonSunSwitch: Component<MoonSunSwitchProps> = (props) => {
           <div
             class={`${styles.background} absolute w-1.5 h-1.5 bg-white rounded-full bottom-0 right-0 transition-[transform,opacity] duration-600 ease-out`}
           />
-          <div class={`${styles.star} scale-0 transition-[transform,opacity] duration-600 ease-out`} />
-          <div class={`${styles.star} scale-0 transition-[transform,opacity] duration-600 ease-out`} />
+          <div
+            class={`${styles.star} scale-0 transition-[transform,opacity] duration-600 ease-out`}
+          />
+          <div
+            class={`${styles.star} scale-0 transition-[transform,opacity] duration-600 ease-out`}
+          />
         </span>
       </label>
     </div>
