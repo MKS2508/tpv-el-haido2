@@ -25,12 +25,7 @@ export function Onboarding() {
   } = useOnboardingContext();
 
   return (
-    <div class="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden">
-      {/* Background decorations */}
-      <div class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/10 blur-[100px] rounded-full animate-pulse" />
-        <div class="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-pink-500/10 blur-[100px] rounded-full animate-pulse [animation-delay:2s]" />
-      </div>
+    <div class="min-h-screen bg-background flex flex-col items-center justify-start p-4 sm:p-8 relative">
       <div class="w-full max-w-4xl relative z-10 space-y-8">
         <div class="text-center space-y-2">
           <p class="text-muted-foreground">Configura tu experiencia en segundos</p>
@@ -42,7 +37,7 @@ export function Onboarding() {
           skippedSteps={state().skippedSteps}
         />
 
-        <div class="relative min-h-[500px] flex items-center">
+        <div class="relative flex items-start justify-center w-full">
           <Presence exitBeforeEnter>
             <Motion.div
               initial={{ opacity: 0, x: 20, scale: 0.98 }}
