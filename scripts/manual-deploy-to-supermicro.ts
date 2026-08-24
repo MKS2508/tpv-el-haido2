@@ -10,6 +10,7 @@
  *
  * Locked by: waxin 2026-08-24 ("automatiza este proceso con manual-deploy-to-supermicro.sh o .ts")
  *   2026-08-24: appimaged as MIME handler for AppImage double-click (waxin)
+ *   2026-08-24: AUR fallback via paru (CachyOS removed appimaged from official repos)
  *
  * Usage:
  *   bun run scripts/manual-deploy-to-supermicro.ts [options]
@@ -95,6 +96,18 @@ function exec(args: string[], opts: { dryRun?: boolean } = {}): string {
   }).trim();
 }
 
+/**
+ * Expands a leading `~` to `$HOME` so the path is safe in SSH non-interactive
+ * shells (bash non-login non-interactive doesn't expand `~`). Leaves other
+ * paths untouched.
+ */
+function expandTilde(path: string): string {
+  if (path === '~' || path.startsWith('~/')) {
+    return '$HOME' + path.slice(1);
+  }
+  return path;
+}
+
 type Manifest = {
   version: string;
   url: string;
@@ -157,7 +170,7 @@ async function main(): Promise<void> {
   const localPath = await downloadToTemp(manifest.url, manifest.filename);
 
   // 2. SCP to supermicro
-  const remotePath = `${args.dest}/${manifest.filename}`;
+  const remotePath = `${expandTilde(args.dest)}/${manifest.filename}`;
   scpPush(localPath, args.hostname, remotePath, { dryRun: args.dryRun });
 
   // 3. chmod +x on remote
@@ -165,13 +178,13 @@ async function main(): Promise<void> {
 
   // 4. Optional: replace ~/.local/bin symlink
   if (args.replaceSymlink) {
-    sshExec(args.hostname, `ln -sf ${JSON.stringify(remotePath)} ~/.local/bin/tpv-el-haido.AppImage`, { dryRun: args.dryRun });
+    sshExec(args.hostname, `ln -sf ${JSON.stringify(remotePath)} ${expandTilde('~/.local/bin/tpv-el-haido.AppImage')}`, { dryRun: args.dryRun });
     info(`updated ~/.local/bin symlink`);
   }
 
   // 5. Optional: cleanup older AppImages on remote Desktop
   if (args.cleanup) {
-    const cmd = `find ${args.dest} -maxdepth 1 -name 'tpv-haido-*.AppImage' ! -name ${JSON.stringify(manifest.filename)} -print -exec rm -v {} \\;`;
+    const cmd = `find ${expandTilde(args.dest)} -maxdepth 1 -name 'tpv-haido-*.AppImage' ! -name ${JSON.stringify(manifest.filename)} -print -exec rm -v {} \\;`;
     sshExec(args.hostname, cmd, { dryRun: args.dryRun });
     info(`cleaned up old AppImages on ${args.dest}`);
   }
@@ -182,18 +195,26 @@ async function main(): Promise<void> {
     info(`removed local tmp file: ${localPath}`);
   }
 
-  // 7. Ensure appimaged installed on remote (Arch-based distros; required for AppImage double-click in COSMIC).
-  //    Idempotent (`--needed` skip silent si ya instalado). Skip silent + log en non-Arch (sin pacman).
-  //    Failure tolerant: no aborta el deploy si falla (paso final, no podemos romper un deploy exitoso).
+  // 7. Ensure appimaged installed on remote. Tries official repo first
+  //    (Arch), falls back to AUR via paru (CachyOS removes appimaged from
+  //    [extra] / uses cachyos-extra-v3 which doesn't carry it). Idempotent
+  //    via `--needed` in both paths. Failure tolerant — never aborts deploy.
   if (args.installMimeHandler) {
     info(`ensuring appimaged on ${args.hostname}...`);
-    const cmd = `if command -v pacman >/dev/null 2>&1; then ` +
-                `  sudo pacman -S --noconfirm --needed appimaged || echo '[WARN] appimaged install failed (non-fatal)'; ` +
+    const cmd = `if command -v pacman >/dev/null 2>&1 && ` +
+                `  sudo pacman -S --noconfirm --needed appimaged 2>/dev/null; then ` +
+                `  echo '[INFO] appimaged installed via pacman (official Arch)'; ` +
+                `elif command -v paru >/dev/null 2>&1; then ` +
+                `  echo '[INFO] appimaged not in official repos, trying AUR via paru'; ` +
+                `  paru -S --noconfirm --needed appimaged-bin || echo '[WARN] AUR install failed (non-fatal)'; ` +
+                `elif command -v yay >/dev/null 2>&1; then ` +
+                `  echo '[INFO] appimaged not in official repos, trying AUR via yay'; ` +
+                `  yay -S --noconfirm --needed appimaged-bin || echo '[WARN] AUR install failed (non-fatal)'; ` +
                 `else ` +
-                `  echo '[INFO] no pacman detected, skipping MIME handler install (non-Arch target)'; ` +
+                `  echo '[INFO] no pacman/paru/yay detected, skipping MIME handler install (manual install required)'; ` +
                 `fi`;
     sshExec(args.hostname, cmd, { dryRun: args.dryRun });
-    info(`appimaged ensured on ${args.hostname} (idempotent; non-Arch skipped silently)`);
+    info(`appimaged ensured on ${args.hostname} (pacman → AUR fallback; non-pkg-mgr skipped silently)`);
   }
 
   info(`=== DONE ===`);
