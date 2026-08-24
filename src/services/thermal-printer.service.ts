@@ -10,6 +10,7 @@ import {
   type TickmasterSdkError,
 } from '@mks2508/tickmaster/sdk';
 import { invoke } from '@tauri-apps/api/core';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { PrinterErrorCode, type PrinterResultError } from '@/lib/error-codes';
 import { printerLog } from '@/lib/logger';
 import type Order from '@/models/Order';
@@ -18,6 +19,7 @@ import type {
   PrinterHealth,
   TickmasterPrinterConfig,
 } from '@/models/ThermalPrinter';
+import { isTauri } from '@/services/platform';
 
 export type PrinterResult<T> = Result<T, PrinterResultError>;
 
@@ -45,6 +47,21 @@ class TauriDiscoveryResolver implements IDiscoveryResolver {
   }
 }
 
+/**
+ * Fetch con el que el SDK habla con el daemon.
+ *
+ * El del webview no sirve: la peticion lleva `Authorization`, eso obliga a un
+ * preflight CORS, y el daemon no responde `OPTIONS` ni emite cabeceras
+ * `Access-Control-*` — el navegador la aborta antes de enviarla. El del plugin
+ * http sale por Rust, donde no hay politica de origen. Mismo criterio que
+ * `http-storage-adapter`.
+ *
+ * @returns `tauriFetch` bajo Tauri, el global en el build PWA
+ */
+function printerFetch(): typeof fetch {
+  return isTauri() ? (tauriFetch as typeof fetch) : fetch;
+}
+
 /** Cliente vivo más el resolver que lo alimenta, si va por discovery. */
 interface ClientEntry {
   readonly key: string;
@@ -69,10 +86,11 @@ function clientFor(config: TickmasterPrinterConfig): ClientEntry {
   if (cachedEntry !== null && cachedEntry.key === key) return cachedEntry;
 
   const resolver = baseUrl === '' ? new TauriDiscoveryResolver() : null;
+  const common = { token: config.token, fetch: printerFetch() };
   const tm =
     resolver === null
-      ? createTickmaster({ baseUrl, token: config.token })
-      : createTickmaster({ discovery: resolver, token: config.token });
+      ? createTickmaster({ ...common, baseUrl })
+      : createTickmaster({ ...common, discovery: resolver });
 
   cachedEntry = { key, tm, resolver };
   return cachedEntry;
