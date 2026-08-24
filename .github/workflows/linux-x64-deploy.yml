@@ -41,6 +41,10 @@ jobs:
         uses: Swatinem/rust-cache@v2.9.2
         with:
           workspaces: src-tauri
+          # Bust cache when tpv-el-haido crate version changes (e.g. v0.2.6 → v0.2.7).
+          # The Cargo.lock change alone isn't enough if the runner reuses a stale target dir
+          # from a previous workflow run that had the same Cargo.lock hash.
+          cache-version: v2-${{ hashFiles('src-tauri/Cargo.toml', 'src-tauri/Cargo.lock') }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
