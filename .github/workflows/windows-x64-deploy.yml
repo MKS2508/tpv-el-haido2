@@ -17,21 +17,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Verify MSVC + WebView2 toolchain (pre-installed on windows-latest)
-        shell: pwsh
-        run: |
-          $cl = Get-Command cl.exe -ErrorAction SilentlyContinue
-          if (-not $cl) {
-            Write-Error "MSVC cl.exe not found on PATH. windows-latest should pre-install Build Tools 2022 — if the runner image changed, switch to microsoft-visualstudio/setup-vcpp-tools@v1."
-            exit 1
-          }
-          Write-Host "MSVC cl.exe at: $($cl.Source)"
-          $wv2 = Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' -ErrorAction SilentlyContinue
-          if (-not $wv2) {
-            Write-Warning "WebView2 Runtime registry entry not found — Tauri build may fail if WebView2 SDK is missing. Not hard-failing (Tauri bundles its own bootstrapper, runtime is for end-user installs)."
-          } else {
-            Write-Host "WebView2 Runtime version: $($wv2.pv)"
-          }
+      - name: Setup MSVC dev cmd (provides cl.exe + Windows SDK on PATH for Rust msvc target)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          # Required on windows-2025-vs2026 (image 20260818.207) which ships VS2026 Build Tools
+          # but does NOT put cl.exe on PATH by default. ilammy/msvc-dev-cmd runs vcvarsall.bat
+          # and exports INCLUDE / LIB / PATH for the requested arch.
+          arch: x64
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
