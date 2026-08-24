@@ -7,6 +7,7 @@ mod ota;
 mod license;
 mod screenshot;
 mod installer;
+mod logger_file;
 
 use std::fs;
 use std::sync::Mutex;
@@ -21,6 +22,7 @@ use models::audit::{AuditLog, AuditLogCreateRequest, AuditLogFilter, AuditLogExp
 use license::{generate_machine_fingerprint, hash_license_key, validate_license_online};
 use screenshot::{save_screenshot_from_base64, get_screenshots_dir};
 use discovery::discover_printer;
+use logger_file::{append_log_line, get_log_path, LogState};
 
 // Database state
 struct DbState {
@@ -640,6 +642,10 @@ pub fn run() {
 
             println!("Database initialized successfully");
 
+            // Initialize log state (file at {app_data_dir}/logs/tpv-haido.log)
+            app.manage(LogState::new(app_dir.clone()));
+            println!("Log state initialized: {}/logs/tpv-haido.log", app_dir.display());
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -692,6 +698,9 @@ pub fn run() {
             // Screenshot
             save_screenshot_from_base64,
             get_screenshots_dir,
+            // Log file
+            append_log_line,
+            get_log_path,
             // Audit Logs
             create_audit_log,
             get_audit_logs,

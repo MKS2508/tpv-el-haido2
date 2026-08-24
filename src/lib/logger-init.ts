@@ -17,7 +17,7 @@
  *
  * Transports:
  * - ConsoleTransport: Styled console output
- * - FileTransport: Tauri desktop only (logs to {app_data_dir}/path)
+ * - TauriFileTransport: Tauri desktop → Rust backend → {app_data_dir}/logs/tpv-haido.log
  * - HttpTransport: Sends logs to remote server (requires VITE_LOG_HTTP_URL)
  * - OtlpTransport: Sends logs to an OTel collector (requires VITE_LOG_OTLP_URL)
  */
@@ -25,11 +25,12 @@
 import logger, { type LogLevel } from '@mks2508/better-logger';
 import {
   ConsoleTransport,
-  FileTransport,
   HttpTransport,
   OtlpTransport,
 } from '@mks2508/better-logger/transports';
 import { isTauri } from '@/services/platform';
+import { invoke } from '@tauri-apps/api/core';
+import { TauriFileTransport } from './tauri-file-transport';
 
 /**
  * Get log level from environment variable or use default
@@ -63,7 +64,6 @@ export function initializeLogger(): void {
   const enableFile = parseBoolEnv(import.meta.env.VITE_LOG_FILE, true);
   const enableHttp = parseBoolEnv(import.meta.env.VITE_LOG_HTTP, false);
   const enableOtlp = parseBoolEnv(import.meta.env.VITE_LOG_OTLP, false);
-  const filePath = import.meta.env.VITE_LOG_FILE_PATH || 'tpv-haido.log';
   const httpUrl = import.meta.env.VITE_LOG_HTTP_URL || '';
   const otlpUrl = import.meta.env.VITE_LOG_OTLP_URL || '';
   const otlpEnv = import.meta.env.VITE_LOG_OTLP_ENV || import.meta.env.MODE;
@@ -76,18 +76,19 @@ export function initializeLogger(): void {
     logger.addTransport({ target: new ConsoleTransport({ level: logLevel }), level: logLevel });
   }
 
-  // File transport (Tauri desktop only, not in PWA)
+  // File transport: Tauri desktop → TauriFileTransport (Rust backend → {app_data_dir}/logs/tpv-haido.log)
   if (enableFile && inTauri) {
     try {
-      logger.addTransport({
-        target: new FileTransport({ level: logLevel, destination: filePath }),
-        level: logLevel,
-      });
+      const tauriTransport = new TauriFileTransport({ level: logLevel });
+      logger.addTransport({ target: tauriTransport, level: logLevel });
+      // Log the path asynchronously so operators can find it
+      invoke<string>('get_log_path').then(
+        (path) => logger.info(`[Logger] File log: ${path}`),
+        () => logger.info(`[Logger] File log: {app_data_dir}/logs/tpv-haido.log`),
+      );
     } catch (error) {
-      // Silently fail if file transport unavailable
-      // This can happen in web/PWA mode
       const msg = error instanceof Error ? error.message : String(error);
-      logger.warn(`[Logger] File transport unavailable: ${msg}`);
+      logger.warn(`[Logger] TauriFileTransport unavailable: ${msg}`);
     }
   }
 
@@ -124,7 +125,7 @@ export function initializeLogger(): void {
   // Log initialization event
   const transports = [
     enableConsole && 'console',
-    enableFile && inTauri && `file(${filePath})`,
+    enableFile && inTauri && 'tauri-file',
     enableHttp && httpUrl && `http(${httpUrl})`,
     enableOtlp && otlpUrl && `otlp(${otlpUrl})`,
   ]
