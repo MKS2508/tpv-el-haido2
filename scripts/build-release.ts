@@ -1250,7 +1250,24 @@ async function patchAppImageGtkHook(
         'fi',
     ),
   );
-  log.info('AppRun parcheado: GDK_BACKEND se autodetecta (wayland en sesión Wayland).');
+  log.info('AppRun parcheado: GDK_BACKEND se autodetecta (wayland en sesion Wayland).');
+
+  // FIX permanente para "Could not create GBM EGL display: EGL_SUCCESS. Aborting…"
+  // en Wayland/COSMIC sin ruta DMABUF usable. WEBKIT_DISABLE_DMABUF_RENDERER=1
+  // DEBE estar en el env ANTES de que WebKitGTK inicialice su WebContext en el
+  // binario principal. Setear desde main() en Rust es demasiado tarde (gtk::init
+  // ya corrio); el env se lee en la init de C de WebKit, antes de nuestro codigo
+  // Rust. El hook gtk se source por el binario AppRun antes del exec del wrapped
+  // binary, asi que cualquier export aqui se ve en getenv() durante la init.
+  // Se prepende (no append) para que sea lo primero evaluado.
+  const dmabufMarker = 'export WEBKIT_DISABLE_DMABUF_RENDERER=1';
+  const hookCurrent = readFileSync(hookPath, 'utf-8');
+  if (!hookCurrent.includes(dmabufMarker)) {
+    writeFileSync(hookPath, `${dmabufMarker}\n${hookCurrent}`);
+    log.info('AppRun hook gtk: WEBKIT_DISABLE_DMABUF_RENDERER=1 prepende.');
+  } else {
+    log.info('AppRun hook gtk: WEBKIT_DISABLE_DMABUF_RENDERER=1 ya presente (skip idempotente).');
+  }
 
   const appImageName = readdirSync(bundleDir).find(
     (f) => f.endsWith('.AppImage') && !f.endsWith('.sig'),
