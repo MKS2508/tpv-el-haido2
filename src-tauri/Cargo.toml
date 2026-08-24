@@ -1,6 +1,6 @@
 [package]
 name = "tpv-el-haido"
-version = "0.2.8"
+version = "0.2.9"
 description = "TPV: El Haido - Point of Sale System"
 authors = ["El Haido Team"]
 edition = "2021"
