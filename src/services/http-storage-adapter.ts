@@ -2,6 +2,7 @@ import { err, ok, tryCatchAsync } from '@mks2508/no-throw';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { config } from '@/lib/config';
 import { StorageErrorCode } from '@/lib/error-codes';
+import { storageLog } from '@/lib/logger';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
@@ -83,6 +84,12 @@ export class HttpStorageAdapter implements IStorageAdapter {
     }, StorageErrorCode.ConnectionFailed);
 
     this.activeControllers.delete(requestId);
+    storageLog.debug('http.makeRequest', {
+      requestId,
+      endpoint,
+      method,
+      status: result.ok ? 'ok' : 'error',
+    });
     return result;
   }
 

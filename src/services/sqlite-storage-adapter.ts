@@ -1,5 +1,6 @@
 import { err, type Result } from '@mks2508/no-throw';
 import { StorageErrorCode } from '@/lib/error-codes';
+import { storageLog } from '@/lib/logger';
 import type Category from '@/models/Category';
 import type Order from '@/models/Order';
 import type Product from '@/models/Product';
@@ -48,7 +49,13 @@ export class SqliteStorageAdapter implements IStorageAdapter {
   // ==================== Products ====================
 
   async getProducts(): Promise<StorageResult<Product[]>> {
-    return toStorageError(await this.platform.getProducts(), StorageErrorCode.ReadFailed);
+    const start = Date.now();
+    const result = await toStorageError(
+      await this.platform.getProducts(),
+      StorageErrorCode.ReadFailed
+    );
+    storageLog.debug('sqlite.getProducts', { ms: Date.now() - start });
+    return result;
   }
 
   async createProduct(product: Product): Promise<StorageResult<void>> {
@@ -96,11 +103,23 @@ export class SqliteStorageAdapter implements IStorageAdapter {
   // ==================== Orders ====================
 
   async getOrders(): Promise<StorageResult<Order[]>> {
-    return toStorageError(await this.platform.getOrders(), StorageErrorCode.ReadFailed);
+    const start = Date.now();
+    const result = await toStorageError(
+      await this.platform.getOrders(),
+      StorageErrorCode.ReadFailed
+    );
+    storageLog.debug('sqlite.getOrders', { ms: Date.now() - start });
+    return result;
   }
 
   async createOrder(order: Order): Promise<StorageResult<void>> {
-    return toStorageError(await this.platform.createOrder(order), StorageErrorCode.WriteFailed);
+    const start = Date.now();
+    const result = await toStorageError(
+      await this.platform.createOrder(order),
+      StorageErrorCode.WriteFailed
+    );
+    storageLog.debug('sqlite.createOrder', { ms: Date.now() - start });
+    return result;
   }
 
   async updateOrder(order: Order): Promise<StorageResult<void>> {

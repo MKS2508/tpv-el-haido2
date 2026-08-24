@@ -199,6 +199,8 @@ export function useOnboarding(): UseOnboardingReturn {
   };
 
   const goToStep = (step: OnboardingStep) => {
+    const from = state().currentStep;
+    log.debug('wizard: goToStep', { from, to: step });
     setState((prev) => ({ ...prev, currentStep: step }));
   };
 
@@ -211,6 +213,7 @@ export function useOnboarding(): UseOnboardingReturn {
         return prev;
       }
 
+      log.debug('wizard: nextStep', { from: prev.currentStep, to: ONBOARDING_STEPS[nextIndex] });
       return {
         ...prev,
         currentStep: ONBOARDING_STEPS[nextIndex],
@@ -230,6 +233,10 @@ export function useOnboarding(): UseOnboardingReturn {
         return prev;
       }
 
+      log.debug('wizard: previousStep', {
+        from: prev.currentStep,
+        to: ONBOARDING_STEPS[prevIndex],
+      });
       return {
         ...prev,
         currentStep: ONBOARDING_STEPS[prevIndex],
@@ -246,6 +253,7 @@ export function useOnboarding(): UseOnboardingReturn {
         return prev;
       }
 
+      log.debug('wizard: skipStep', { from: prev.currentStep, to: ONBOARDING_STEPS[nextIndex] });
       return {
         ...prev,
         currentStep: ONBOARDING_STEPS[nextIndex],
@@ -429,10 +437,19 @@ export function useOnboarding(): UseOnboardingReturn {
       isActive: false,
       completedSteps: [...prev.completedSteps, prev.currentStep],
     }));
-
-    // Seed products and categories AFTER wizard completes
-    await seedCategoriesIfNeeded(store);
-    await seedProductsIfNeeded(store);
+    // Seed products and categories AFTER wizard completes.
+    // try/catch each so a failure in one doesn't block the other, and so an
+    // unhandled rejection can't leave the wizard overlay stuck over the app.
+    try {
+      await seedCategoriesIfNeeded(store);
+    } catch (e) {
+      log.error('wizard: seed categories failed', e instanceof Error ? e : new Error(String(e)));
+    }
+    try {
+      await seedProductsIfNeeded(store);
+    } catch (e) {
+      log.error('wizard: seed products failed', e instanceof Error ? e : new Error(String(e)));
+    }
   };
 
   const restartOnboarding = async () => {

@@ -95,7 +95,13 @@ export function CompleteStep(props: CompleteStepProps) {
       </CardContent>
       <CardFooter class="pb-10 px-10">
         <Button
-          onClick={props.onComplete}
+          onClick={async () => {
+            try {
+              await props.onComplete();
+            } catch (e) {
+              console.error('wizard: completeOnboarding failed', e);
+            }
+          }}
           size="lg"
           class="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-transform"
         >
