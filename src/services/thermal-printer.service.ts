@@ -11,6 +11,7 @@ import {
 } from '@mks2508/tickmaster/sdk';
 import { invoke } from '@tauri-apps/api/core';
 import { PrinterErrorCode, type PrinterResultError } from '@/lib/error-codes';
+import { printerLog } from '@/lib/logger';
 import type Order from '@/models/Order';
 import type {
   DiscoveredPrinter,
@@ -101,6 +102,8 @@ async function withClient<T>(
   code: PrinterResultError['code'],
   operation: (tm: ITickmaster) => Promise<Result<T, TickmasterSdkError>>
 ): Promise<PrinterResult<T>> {
+  const start = Date.now();
+  printerLog.debug('thermal-printer: withClient start', { code });
   let result: Result<T, TickmasterSdkError>;
   try {
     result = await operation(clientFor(config).tm);
@@ -108,12 +111,27 @@ async function withClient<T>(
     // El SDK hasta 0.1.1 deja escapar el rechazo del resolver de discovery por
     // encima de `.safe()`, y el comando de Tauri rechaza con un string pelado.
     invalidateClient();
+    printerLog.debug('thermal-printer: withClient done', {
+      code,
+      ms: Date.now() - start,
+      error: true,
+    });
     return err({ code, message: thrown instanceof Error ? thrown.message : String(thrown) });
   }
   if (isErr(result)) {
     if (result.error.code === 'TM_DAEMON_UNREACHABLE') invalidateClient();
+    printerLog.debug('thermal-printer: withClient done', {
+      code,
+      ms: Date.now() - start,
+      error: true,
+    });
     return err({ code, message: result.error.message });
   }
+  printerLog.debug('thermal-printer: withClient done', {
+    code,
+    ms: Date.now() - start,
+    error: false,
+  });
   return ok(result.value);
 }
 
@@ -185,13 +203,24 @@ export async function openDrawer(
 export async function discoverPrinter(
   timeoutMs: number = DISCOVERY_TIMEOUT_MS
 ): Promise<PrinterResult<DiscoveredPrinter>> {
+  printerLog.debug('thermal-printer: discoverPrinter start', { timeoutMs });
   const result = await tryCatchAsync(
     async () => invoke<DiscoveredPrinter>('discover_printer', { timeoutMs }),
     PrinterErrorCode.ConnectionFailed
   );
   if (isErr(result)) {
+    printerLog.debug('thermal-printer: discoverPrinter done', {
+      timeoutMs,
+      found: false,
+      error: result.error.message,
+    });
     return err({ code: PrinterErrorCode.ConnectionFailed, message: result.error.message });
   }
+  printerLog.debug('thermal-printer: discoverPrinter done', {
+    timeoutMs,
+    found: true,
+    baseUrl: result.value.baseUrl,
+  });
   invalidateClient();
   return ok(result.value);
 }

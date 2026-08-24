@@ -60,7 +60,7 @@ export function initializeLogger(): void {
 
   // Get transport config from env vars
   const enableConsole = parseBoolEnv(import.meta.env.VITE_LOG_CONSOLE, true);
-  const enableFile = parseBoolEnv(import.meta.env.VITE_LOG_FILE, false);
+  const enableFile = parseBoolEnv(import.meta.env.VITE_LOG_FILE, true);
   const enableHttp = parseBoolEnv(import.meta.env.VITE_LOG_HTTP, false);
   const enableOtlp = parseBoolEnv(import.meta.env.VITE_LOG_OTLP, false);
   const filePath = import.meta.env.VITE_LOG_FILE_PATH || 'tpv-haido.log';
