@@ -1,35 +1,31 @@
-//! Consulta periódica al release-hub y preparación del bundle nuevo.
+//! Poller del canal OTA parcial contra el hub de releases.
 //!
-//! El poller **prepara**, no aplica. Descargar, verificar y descomprimir puede
-//! tardar y ocurre mientras el TPV trabaja; activar es instantáneo y lo decide el
-//! frontend cuando la caja está quieta (ver `ota_apply_staged`). Separarlo así es
-//! lo que permite que una actualización no interrumpa un cobro.
+//! El canal parcial usa el endpoint `components` (ADR-0045 D8-B / L3): una URL
+//! por plataforma-agnostic con `target=any&arch=any`. Antes de D10-D este
+//! archivo vivía contra el endpoint `bundles`; tras la migración, el cliente
+//! consume exactamente la misma shape que `wraith-linux` consume para el
+//! updater nativo (`tauri-plugin-updater` o `mks-ota` full). El hub queda
+//! agnóstico del artefacto.
 //!
-//! El WebSocket del hub es una optimización que aún no existe: esto es el
-//! mecanismo, y seguiría siéndolo aunque el WS llegue.
+//! Ver `docs/jarvis/ota-crate-design-2026-08-28.md` §3.
 
+use std::path::PathBuf;
 use std::time::Duration;
 
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
-use super::apply;
-use super::manifest::BundleManifest;
-use super::slots;
+use mks_ota::install::partial::{self, slots};
+use mks_ota::manifest::{partial_latest_url, HubLatest};
 
-/// Host del canal por defecto. Mismo tenant que el updater nativo.
-const DEFAULT_HUB: &str = "https://haido.releases.mks2508.systems";
+use super::bundle_pubkey;
 
-/// Entre consultas. El hub no empuja todavía; 5 minutos es suficiente para un
-/// canal cuyo objetivo es "en el próximo rato", no "ya".
-const POLL_INTERVAL: Duration = Duration::from_secs(300);
-
-/// Margen tras arrancar, para no competir con la carga inicial de la app.
-const FIRST_POLL_DELAY: Duration = Duration::from_secs(60);
-
-/// Evento que avisa al frontend de que hay un bundle listo para aplicar.
 pub const BUNDLE_STAGED_EVENT: &str = "ota://bundle-staged";
 
-/// Resultado que se comunica al hub tras intentar aplicar un bundle.
+/// Resultado de aplicar un bundle, lo que se reporta al hub como telemetría.
+///
+/// El hub no contesta sobre esto: si no hay red o el endpoint no existe, se
+/// pierde y ya. La diferencia que importa desde el hub (¿se aplicó o se
+/// rechazó?) no es accionable desde el cliente.
 #[derive(Debug, Clone, Copy)]
 pub enum Outcome {
     Applied,
@@ -37,25 +33,40 @@ pub enum Outcome {
 }
 
 impl Outcome {
-    fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
-            Self::Applied => "applied",
-            Self::RolledBack => "rolled-back",
+            Outcome::Applied => "applied",
+            Outcome::RolledBack => "rolled-back",
         }
     }
 }
 
-/// Informa al hub de cómo acabó un bundle.
+/// Base del hub. `TPV_OTA_HUB` permite apuntar a un hub local para probar el
+/// canal entero sin publicar nada.
+const DEFAULT_HUB: &str = "https://haido.releases.mks2508.systems";
+
+/// Intervalo entre consultas cuando no había nada aplicable.
+const POLL_INTERVAL: Duration = Duration::from_secs(60 * 15);
+
+/// Demora del primer poll para no coincidir con el arranque del binario.
+const FIRST_POLL_DELAY: Duration = Duration::from_secs(15);
+
+/// Nombre del componente en el canal `components` (L3). Lo publica el workflow
+/// `ota-bundle-deploy.yml`. Público porque `lib.rs` lo pasa al reporter.
+pub const COMPONENT: &str = "haido-frontend";
+
+/// Reporta al hub el resultado de aplicar un bundle. Fire-and-forget.
 ///
-/// El cliente revierte por su cuenta, así que sin esto un rollback en el bar es
-/// indistinguible desde el hub de que el bundle no llegó a aplicarse nunca — que
-/// es justo la diferencia que importa cuando algo va mal a distancia.
-///
-/// Es fire-and-forget: el resultado del envío no puede condicionar nada de lo que
-/// haga la app. Si no hay red, se pierde el reporte y ya está.
+/// El cliente revierte por su cuenta, así que sin esto un rollback en el bar
+/// es indistinguible desde el hub de que el bundle no llegó a aplicarse
+/// nunca — que es justo la diferencia que importa cuando algo va mal a
+/// distancia. Si el endpoint no existe todavía en el hub (migración
+/// `bundles`→`components` en curso), el `eprintln` lo dice y se pierde: por
+/// diseño.
 pub fn report<R: Runtime>(
     app: AppHandle<R>,
-    hub_bundle_id: String,
+    component: String,
+    version: String,
     outcome: Outcome,
     error: Option<String>,
 ) {
@@ -71,7 +82,10 @@ pub fn report<R: Runtime>(
             payload["error"] = serde_json::Value::String(err);
         }
 
-        let url = format!("{}/api/bundles/{hub_bundle_id}/report", hub_base());
+        let url = format!(
+            "{}/api/components/{component}/{version}/report",
+            hub_base()
+        );
         match reqwest::Client::new().post(&url).json(&payload).send().await {
             Ok(res) => println!("[ota] reportado {} al hub: {}", outcome.as_str(), res.status()),
             Err(err) => eprintln!("[ota] no se pudo reportar al hub: {err}"),
@@ -80,8 +94,6 @@ pub fn report<R: Runtime>(
     });
 }
 
-/// Base del hub. `TPV_OTA_HUB` permite apuntar a un hub local para probar el
-/// canal entero sin publicar nada.
 fn hub_base() -> String {
     std::env::var("TPV_OTA_HUB").unwrap_or_else(|_| DEFAULT_HUB.to_string())
 }
@@ -89,18 +101,20 @@ fn hub_base() -> String {
 /// Una pasada: consultar, y si hay algo aplicable, descargarlo y prepararlo.
 ///
 /// Devuelve el id del slot preparado, o `None` si no había nada que hacer.
-/// Cualquier error se registra y se traga: el canal parcial nunca debe impedir
-/// que el TPV funcione.
-async fn poll_once<R: Runtime>(app: &AppHandle<R>, native_version: &str, device_id: &str) -> Option<String> {
-    let url = format!(
-        "{}/api/bundles/latest?nativeVersion={native_version}&deviceId={device_id}",
-        hub_base()
-    );
+/// Cualquier error se registra y se traga: el canal parcial nunca debe
+/// impedir que el TPV funcione.
+async fn poll_once<R: Runtime>(
+    app: &AppHandle<R>,
+    native_version: &str,
+    _device_id: &str,
+) -> Option<String> {
+    let url = partial_latest_url(&hub_base(), COMPONENT);
 
     let response = match reqwest::get(&url).await {
         Ok(r) => r,
         Err(err) => {
-            // Un bar se queda sin red constantemente: es ruido esperado, no un fallo.
+            // Un bar se queda sin red constantemente: es ruido esperado, no
+            // un fallo.
             eprintln!("[ota] no se pudo consultar el hub: {err}");
             return None;
         }
@@ -111,11 +125,11 @@ async fn poll_once<R: Runtime>(app: &AppHandle<R>, native_version: &str, device_
         return None;
     }
     if !response.status().is_success() {
-        eprintln!("[ota] el hub respondió {} al consultar bundles", response.status());
+        eprintln!("[ota] el hub respondió {} al consultar components", response.status());
         return None;
     }
 
-    let manifest: BundleManifest = match response.json().await {
+    let latest: HubLatest = match response.json().await {
         Ok(m) => m,
         Err(err) => {
             eprintln!("[ota] manifest ilegible: {err}");
@@ -124,46 +138,79 @@ async fn poll_once<R: Runtime>(app: &AppHandle<R>, native_version: &str, device_
     };
 
     let data_dir = app.path().app_data_dir().ok()?;
-    let id = apply::slot_id(&manifest).ok()?;
-
-    // Ya lo tenemos: ni descargar ni volver a descomprimir en cada vuelta.
     let state = slots::load_state(&data_dir);
-    if state.active.as_deref() == Some(id.as_str()) || state.staged.as_deref() == Some(id.as_str()) {
+
+    // Ya lo tenemos activo o staged: ni descargar ni volver a descomprimir en
+    // cada vuelta.
+    if state.active_version.as_deref() == Some(latest.version.as_str())
+        || state.staged_version.as_deref() == Some(latest.version.as_str())
+    {
         return None;
     }
 
-    if let Err(err) = manifest.check_native_compatible(native_version) {
-        eprintln!("[ota] el hub ofreció un bundle que no aplica a este binario: {err}");
-        return None;
+    // El hub nunca debería servir un downgrade — pero la regla la pone el
+    // cliente, no el hub.
+    match latest.is_newer_than(native_version) {
+        Ok(true) => {}
+        Ok(false) => {
+            eprintln!("[ota] el hub ofreció {} que no es más nuevo que el binario {native_version}; se ignora", latest.version);
+            return None;
+        }
+        Err(err) => {
+            eprintln!("[ota] version del hub ilegible ({latest_version}): {err}", latest_version = latest.version);
+            return None;
+        }
     }
 
-    let zip = match reqwest::get(&manifest.url).await {
-        Ok(r) => match r.bytes().await {
-            Ok(b) => b,
-            Err(err) => {
-                eprintln!("[ota] descarga interrumpida: {err}");
-                return None;
-            }
-        },
+    let tmp = match download_to_temp(&latest).await {
+        Some(p) => p,
+        None => return None,
+    };
+
+    let pubkey = bundle_pubkey();
+    match partial::stage(&data_dir, &latest, &tmp, pubkey) {
+        Ok(staged) => {
+            println!("[ota] bundle {} preparado (slot {staged})", latest.version);
+            let _ = app.emit(BUNDLE_STAGED_EVENT, &latest.version);
+            let _ = std::fs::remove_file(&tmp);
+            Some(staged)
+        }
+        Err(err) => {
+            // Firma mala, zip corrupto, hash incorrecto o escape: se queda
+            // sin aplicar y el dispositivo sigue con lo que tenía.
+            eprintln!("[ota] bundle {} rechazado: {err}", latest.version);
+            let _ = std::fs::remove_file(&tmp);
+            None
+        }
+    }
+}
+
+async fn download_to_temp(latest: &HubLatest) -> Option<PathBuf> {
+    let response = match reqwest::get(&latest.url).await {
+        Ok(r) => r,
         Err(err) => {
             eprintln!("[ota] no se pudo descargar el bundle: {err}");
             return None;
         }
     };
-
-    match apply::stage(&data_dir, &manifest, super::bundle_pubkey(), native_version, &zip) {
-        Ok(staged) => {
-            println!("[ota] bundle {} preparado ({} bytes)", manifest.bundle_version, zip.len());
-            let _ = app.emit(BUNDLE_STAGED_EVENT, manifest.bundle_version.clone());
-            Some(staged)
-        }
+    let bytes = match response.bytes().await {
+        Ok(b) => b,
         Err(err) => {
-            // Firma mala, zip corrupto o incompatible: se queda sin aplicar y el
-            // dispositivo sigue con lo que tenía.
-            eprintln!("[ota] bundle rechazado: {err}");
-            None
+            eprintln!("[ota] descarga interrumpida: {err}");
+            return None;
         }
+    };
+
+    // El nombre lleva el id del componente + version para que `releases/` en
+    // /tmp no mezcle artefactos de pruebas distintas.
+    let dir = std::env::temp_dir().join("tpv-el-haido-ota");
+    let _ = std::fs::create_dir_all(&dir);
+    let path = dir.join(format!("{}-{}.zip", latest.component, latest.version));
+    if let Err(err) = std::fs::write(&path, &bytes) {
+        eprintln!("[ota] no se pudo escribir el zip temporal: {err}");
+        return None;
     }
+    Some(path)
 }
 
 /// Arranca el bucle en segundo plano. No bloquea el arranque de la app.
@@ -183,14 +230,26 @@ mod tests {
 
     #[test]
     fn el_hub_es_configurable_para_poder_probar_el_canal() {
-        // Un solo test: los dos casos comparten variable de entorno y cargo
-        // ejecuta los tests en paralelo.
         std::env::remove_var("TPV_OTA_HUB");
         assert_eq!(hub_base(), DEFAULT_HUB);
 
-        // Sin esta salida no hay forma de ejercitar el canal entero sin publicar.
         std::env::set_var("TPV_OTA_HUB", "http://127.0.0.1:8787");
         assert_eq!(hub_base(), "http://127.0.0.1:8787");
         std::env::remove_var("TPV_OTA_HUB");
+    }
+
+    #[test]
+    fn partial_latest_url_pinneado_a_la_convencion_l3() {
+        let url = partial_latest_url("https://haido.releases.mks2508.systems", COMPONENT);
+        assert_eq!(
+            url,
+            "https://haido.releases.mks2508.systems/api/components/haido-frontend/latest?target=any&arch=any"
+        );
+    }
+
+    #[test]
+    fn outcome_serializa_a_la_string_que_espera_el_hub() {
+        assert_eq!(Outcome::Applied.as_str(), "applied");
+        assert_eq!(Outcome::RolledBack.as_str(), "rolled-back");
     }
 }

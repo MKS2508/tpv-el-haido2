@@ -151,6 +151,15 @@ export interface IBundleMetadata {
  *
  * Mirrors `IPublishOptions` but replaces the per-target `targets[]` / `notes`
  * with per-bundle fields; bundles are single uploads with explicit metadata.
+ *
+ * `component` non-empty switches the endpoint from the legacy
+ * `/api/admin/projects/{slug}/bundles` (ed25519) to the unified
+ * `/api/admin/projects/{slug}/components` (minisign, kind=binary). With the
+ * switch the multipart fields change (`sig`/`artifact`+`target`+`arch`
+ * instead of `signature`/`bundle`) and the hub verifies with the project's
+ * kind=binary signing key. ADR-0045 D8 absorbed the bundles endpoint into
+ * components; the legacy path stays for back-compat with anything still
+ * pinned to ed25519.
  */
 export interface IPublishBundleOptions {
   readonly bundlePath: string;
@@ -160,6 +169,9 @@ export interface IPublishBundleOptions {
   readonly minNativeVersion: string;
   readonly maxNativeVersion: string;
   readonly signature: string;
+  readonly component: string;
+  readonly target: string;
+  readonly arch: string;
   readonly clientCredentials: boolean;
   readonly dryRun: boolean;
 }
@@ -235,7 +247,7 @@ Commands:
 
   publish-bundle --slug <slug> [--bundle <path>] [options]
     Upload a single OTA bundle (channel JS parcial) to the hub admin API.
-    Bundles are produced by \`scripts/build-bundle.ts pack\` (ed25519 signed).
+    Bundles are produced by \`scripts/build-bundle.ts pack\` (minisign signed, D10-D+).
 
     --slug              Project slug in release-hub (e.g. "haido")     (required)
     --bundle            Path to the bundle.zip to upload.
@@ -243,7 +255,16 @@ Commands:
     --bundle-version    Override manifest.bundleVersion (else read from sibling manifest.json)
     --min-native-version   Override manifest.minNativeVersion
     --max-native-version   Override manifest.maxNativeVersion
-    --signature         Override manifest.signature (ed25519 base64)
+    --signature         Override manifest.signature (minisign .sig text — read from
+                        sibling .minisig file by build-bundle.ts)
+    --component         Component name (e.g. "haido-frontend"). When set, posts to the
+                        unified /api/admin/projects/{slug}/components endpoint (minisign,
+                        kind=binary). Without --component, posts to the legacy
+                        /api/admin/projects/{slug}/bundles endpoint.
+    --target            Platform tag for the components endpoint (default: any).
+                        For partial-artifact JS bundles, leave as any (L3).
+    --arch              Architecture tag for the components endpoint (default: any).
+                        For partial-artifact JS bundles, leave as any (L3).
     --hub               Admin API base URL (default: ${DEFAULT_HUB_URL})
     --client-credentials  Same semantics as \`publish\` — headless CI auth
     --dry-run           Log the request shape, no POST
@@ -254,8 +275,10 @@ Examples:
   bun run scripts/release.ts publish --target macos-arm64 --slug haido --dry-run
   bun run scripts/release.ts publish --target all --slug haido --skip-build
   bun run scripts/release.ts publish --target macos-arm64 --slug haido --client-credentials --dry-run
-  bun run scripts/release.ts publish-bundle --slug haido --bundle releases/bundles/2026.08.22-1/bundle.zip
-  bun run scripts/release.ts publish-bundle --slug haido --client-credentials --dry-run
+  bun run scripts/release.ts publish-bundle --slug haido --component haido-frontend \
+    --bundle releases/bundles/2026.08.29-1/bundle.zip
+  bun run scripts/release.ts publish-bundle --slug haido --component haido-frontend \
+    --client-credentials --dry-run
 `);
 }
 
@@ -343,6 +366,9 @@ function parsePublishBundleOptions(argv: string[]): Result<IPublishBundleOptions
     minNativeVersion: get('--min-native-version') ?? '',
     maxNativeVersion: get('--max-native-version') ?? '',
     signature: get('--signature') ?? '',
+    component: get('--component') ?? '',
+    target: get('--target') ?? 'any',
+    arch: get('--arch') ?? 'any',
     clientCredentials: has('--client-credentials'),
     dryRun: has('--dry-run'),
   });
@@ -1938,15 +1964,26 @@ async function uploadBundle(
     const sigPreview = metadata.signature.length > 32
       ? `${metadata.signature.slice(0, 32)}…`
       : metadata.signature;
+    const endpoint = opts.component
+      ? `${opts.hub}/api/admin/projects/${opts.slug}/components`
+      : `${opts.hub}/api/admin/projects/${opts.slug}/bundles`;
     log.info(`[DRY-RUN] Would upload bundle:`);
     log.info(`  File:              ${zipPath}`);
     log.info(`  Filename:          ${filename}`);
-    log.info(`  Endpoint:          POST ${opts.hub}/api/admin/projects/${opts.slug}/bundles`);
+    log.info(`  Endpoint:          POST ${endpoint}`);
     log.info(`  bundleVersion:     ${metadata.bundleVersion}`);
-    log.info(`  minNativeVersion:  ${metadata.minNativeVersion}`);
-    log.info(`  maxNativeVersion:  ${metadata.maxNativeVersion}`);
-    log.info(`  signature:         ${sigPreview}  (ed25519 base64, ${metadata.signature.length} chars)`);
-    log.info(`  bundle (file):     <binary ${filename}>`);
+    if (opts.component) {
+      log.info(`  component:         ${opts.component}`);
+      log.info(`  target:            ${opts.target}`);
+      log.info(`  arch:              ${opts.arch}`);
+      log.info(`  sig:               ${sigPreview}  (minisign .sig text, ${metadata.signature.length} chars)`);
+      log.info(`  artifact (file):   <binary ${filename}>`);
+    } else {
+      log.info(`  minNativeVersion:  ${metadata.minNativeVersion}`);
+      log.info(`  maxNativeVersion:  ${metadata.maxNativeVersion}`);
+      log.info(`  signature:         ${sigPreview}  (ed25519 base64, ${metadata.signature.length} chars)`);
+      log.info(`  bundle (file):     <binary ${filename}>`);
+    }
     log.info(`  Authorization:     Bearer <elided (${accessToken.length} chars)>`);
     return ok({
       bundleVersion: metadata.bundleVersion,
@@ -1962,13 +1999,31 @@ async function uploadBundle(
     const blob = new Blob([fileContent]);
 
     const formData = new FormData();
-    formData.append('bundleVersion', metadata.bundleVersion);
-    formData.append('minNativeVersion', metadata.minNativeVersion);
-    formData.append('maxNativeVersion', metadata.maxNativeVersion);
-    formData.append('signature', metadata.signature);
-    formData.append('bundle', blob, filename);
-
-    const url = `${opts.hub}/api/admin/projects/${opts.slug}/bundles`;
+    let url: string;
+    if (opts.component) {
+      // Unified /components endpoint — minisign (kind=binary), plataforma-agnóstica
+      // con target=any/arch=any para partials L3. La firma es el texto crudo del
+      // .sig (4 líneas, base64 dentro). El hub verifica server-side con su clave
+      // kind=binary del proyecto (admin/components.ts:175) ANTES de escribir nada.
+      formData.append('component', opts.component);
+      formData.append('version', metadata.bundleVersion);
+      formData.append('target', opts.target);
+      formData.append('arch', opts.arch);
+      formData.append('sig', metadata.signature);
+      formData.append('artifact', blob, filename);
+      url = `${opts.hub}/api/admin/projects/${opts.slug}/components`;
+    } else {
+      // Legacy /bundles endpoint — ed25519 sobre el zip (sha256+sign), se subía
+      // con los metadatos del manifest. Mantenido para back-compat con quien
+      // siga apuntando ahí; el cliente que lee /api/bundles/latest no debería
+      // estar activo en este repo después de D10-D.
+      formData.append('bundleVersion', metadata.bundleVersion);
+      formData.append('minNativeVersion', metadata.minNativeVersion);
+      formData.append('maxNativeVersion', metadata.maxNativeVersion);
+      formData.append('signature', metadata.signature);
+      formData.append('bundle', blob, filename);
+      url = `${opts.hub}/api/admin/projects/${opts.slug}/bundles`;
+    }
     const response = await fetch(url, {
       method: 'POST',
       headers: {

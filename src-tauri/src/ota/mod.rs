@@ -2,14 +2,19 @@
 //!
 //! Convive con el canal nativo (`tauri-plugin-updater`) sin mezclarse: distinto
 //! artefacto, distinta clave de firma y distinta cadencia. Ver
-//! `docs/ota/canal-parcial.md`.
+//! `docs/jarvis/ota-crate-design-2026-08-28.md`.
+//!
+//! A partir de D10-D (ADR-0045), la implementación vive en la crate
+//! `mks-ota` (`install::partial`, `watchdog`, `manifest`, `protocol`);
+//! este módulo es thin glue: re-exports + el ancla de confianza local
+//! (`bundle_pubkey`).
 
 pub mod apply;
-pub mod watchdog;
 pub mod manifest;
 pub mod poller;
 pub mod protocol;
 pub mod slots;
+pub mod watchdog;
 
 pub use protocol::SCHEME;
 

@@ -104,8 +104,14 @@ fn ota_app_ready(app: tauri::AppHandle) -> Result<(), String> {
     ota::watchdog::mark_ready(&data_dir)?;
 
     if recien_confirmado {
-        if let Some(id) = ota::slots::load_state(&data_dir).active_hub_id {
-            ota::poller::report(app.clone(), id, ota::poller::Outcome::Applied, None);
+        if let Some(version) = ota::slots::load_state(&data_dir).active_version {
+            ota::poller::report(
+                app.clone(),
+                ota::poller::COMPONENT.to_string(),
+                version,
+                ota::poller::Outcome::Applied,
+                None,
+            );
         }
     }
     Ok(())
@@ -573,18 +579,19 @@ pub fn run() {
                 // Consume un intento de arranque y revierte si el bundle activo
                 // lleva demasiados sin confirmar. Va antes de crear la ventana:
                 // si revierte, el protocolo ya tiene que servir el slot anterior.
-                // Se captura el id antes de reconciliar: si revierte, el estado
-                // ya no lo tendrá y no habría nada que reportar.
-                let hub_id_previo = ota::slots::load_state(&data_dir).active_hub_id;
+                // Se captura la version antes de reconciliar: si revierte, el
+                // estado ya no la tendrá y no habría nada que reportar.
+                let version_previa = ota::slots::load_state(&data_dir).active_version;
                 let arranque = ota::watchdog::reconcile_boot(&data_dir);
                 println!("[ota] arranque: {arranque:?}");
 
-                if let (ota::watchdog::BootOutcome::RolledBack { .. }, Some(id)) =
-                    (&arranque, hub_id_previo)
+                if let (ota::watchdog::BootOutcome::RolledBack { .. }, Some(version)) =
+                    (&arranque, version_previa)
                 {
                     ota::poller::report(
                         app.handle().clone(),
-                        id,
+                        ota::poller::COMPONENT.to_string(),
+                        version,
                         ota::poller::Outcome::RolledBack,
                         Some("no confirmó app-ready en los arranques concedidos".into()),
                     );

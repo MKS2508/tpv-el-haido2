@@ -12,6 +12,8 @@ on:
       - 'tsconfig.node.json'
       - 'package.json'
       - 'bun.lock'
+      - 'src-tauri/ota-bundle-pubkey.txt'
+      - 'scripts/build-bundle.ts'
   workflow_dispatch:
     inputs:
       min_native_version:
@@ -25,7 +27,7 @@ on:
 
 jobs:
   build-ota-bundle:
-    name: Build + sign OTA bundle
+    name: Build + sign + publish OTA bundle
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,6 +37,13 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      - name: Install minisign
+        # Necesario para build-bundle.ts pack (firma local) y para el verify
+        # step local. En macOS viene por defecto; en Ubuntu hay que traerlo.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y minisign
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -61,43 +70,43 @@ jobs:
           echo "max=${MAX:-$DEFAULT_VERSION}" >> "$GITHUB_OUTPUT"
           echo "version=$(date -u +%Y.%m.%d)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
-      - name: Pack + sign bundle
+      - name: Pack + sign bundle (minisign, target=any/arch=any)
         run: |
           bun run scripts/build-bundle.ts pack \
             --min "${{ steps.meta.outputs.min }}" \
             --max "${{ steps.meta.outputs.max }}" \
             --version "${{ steps.meta.outputs.version }}"
 
-      - name: Verify contract (index.html root, manifest shape)
+      - name: Verify contract (index.html root, manifest shape, minisign sig)
         run: |
           BUNDLE_DIR="releases/bundles/${{ steps.meta.outputs.version }}"
           MANIFEST="$BUNDLE_DIR/manifest.json"
+          SIG="$BUNDLE_DIR/bundle.zip.minisig"
           test -f "$MANIFEST" || { echo "::error::manifest.json not found in $BUNDLE_DIR"; exit 1; }
+          test -f "$SIG" || { echo "::error::bundle.zip.minisig not found in $BUNDLE_DIR"; exit 1; }
           unzip -l "$BUNDLE_DIR/bundle.zip" | awk '{print $NF}' | grep -qx 'index.html' \
             || { echo "::error::bundle.zip missing root index.html"; exit 1; }
           jq -e '.bundleVersion | test("^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}-[0-9]+$")' "$MANIFEST" > /dev/null \
             || { echo "::error::bundleVersion does not match contract"; exit 1; }
           jq -e '.hash | test("^sha256:[0-9a-f]{64}$")' "$MANIFEST" > /dev/null \
             || { echo "::error::hash does not match contract"; exit 1; }
-          SIG_LEN=$(jq -r '.signature' "$MANIFEST" | base64 -d | wc -c)
-          [ "$SIG_LEN" -eq 64 ] || { echo "::error::signature is $SIG_LEN bytes, expected 64"; exit 1; }
+          jq -e '.signature | startswith("untrusted comment: signature from minisign")' "$MANIFEST" > /dev/null \
+            || { echo "::error::signature is not minisign .sig text"; exit 1; }
+          jq -e '.component == "haido-frontend"' "$MANIFEST" > /dev/null \
+            || { echo "::error::component != haido-frontend"; exit 1; }
+          jq -e '.target == "any" and .arch == "any"' "$MANIFEST" > /dev/null \
+            || { echo "::error::target/arch != any (must be L3 platform-agnostic)"; exit 1; }
           echo "Contract OK: $MANIFEST"
 
-      - name: Verify ed25519 signature against embedded pubkey
+      - name: Verify minisign signature against embedded pubkey (fail-closed)
         run: |
-          bun -e "
-          (async () => {
-            const fs = require('fs');
-            const dir = 'releases/bundles/${{ steps.meta.outputs.version }}';
-            const manifest = JSON.parse(fs.readFileSync(dir + '/manifest.json', 'utf-8'));
-            const pubkeyB64 = fs.readFileSync('src-tauri/ota-bundle-pubkey.txt', 'utf-8').trim();
-            const zipBytes = fs.readFileSync(dir + '/bundle.zip');
-            const key = await crypto.subtle.importKey('raw', Buffer.from(pubkeyB64, 'base64'), { name: 'Ed25519' }, false, ['verify']);
-            const ok = await crypto.subtle.verify('Ed25519', key, Buffer.from(manifest.signature, 'base64'), zipBytes);
-            if (!ok) { console.error('ed25519 verification FAILED'); process.exit(1); }
-            console.log('ed25519 verification OK');
-          })();
-          "
+          BUNDLE_DIR="releases/bundles/${{ steps.meta.outputs.version }}"
+          PUBKEY=$(cat src-tauri/ota-bundle-pubkey.txt)
+          minisign -Vm "$BUNDLE_DIR/bundle.zip" \
+            -P "$PUBKEY" \
+            -x "$BUNDLE_DIR/bundle.zip.minisig" \
+            || { echo "::error::minisign verification FAILED"; exit 1; }
+          echo "minisign verification OK"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -107,33 +116,21 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish to release-hub (auto si hay secrets, fallback manual -- TR-release-publish-bundle)
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Publish to release-hub /api/admin/projects/{slug}/components (fail-closed)
         env:
           RELEASE_HUB_CLIENT_ID: ${{ secrets.RELEASE_HUB_CLIENT_ID }}
           RELEASE_HUB_CLIENT_SECRET: ${{ secrets.RELEASE_HUB_CLIENT_SECRET }}
         run: |
-          manual_instructions() {
-            {
-              echo "## Publish al release-hub (manual, interim -- TR-15 paso 2 / TR-release-publish-bundle)"
-              echo ""
-              echo "1. Descargar el artifact \`ota-bundle-${{ steps.meta.outputs.version }}\` de este run."
-              echo "2. Extraerlo en \`releases/bundles/${{ steps.meta.outputs.version }}/\`."
-              echo "3. \`bun run scripts/release.ts auth login\` (si no hay sesión activa)."
-              echo "4. \`bun run scripts/release.ts publish-bundle --slug haido --bundle releases/bundles/${{ steps.meta.outputs.version }}/bundle.zip\`"
-            } >> "$GITHUB_STEP_SUMMARY"
-          }
-
           if [ -z "$RELEASE_HUB_CLIENT_ID" ] || [ -z "$RELEASE_HUB_CLIENT_SECRET" ]; then
-            echo "RELEASE_HUB_CLIENT_ID/SECRET no están seteados — fallback manual (TR-release-publish-bundle)."
-            manual_instructions
-            exit 0
+            echo "::error::RELEASE_HUB_CLIENT_ID/SECRET no están seteados — D10-D exige client_credentials al /components (minisign verify contra kind=binary). Sin credenciales el publish falla cerrado, no cae a manual."
+            exit 1
           fi
 
-          if bun run scripts/release.ts publish-bundle --client-credentials --skip-build --slug haido \
-              --bundle "releases/bundles/${{ steps.meta.outputs.version }}/bundle.zip"; then
-            echo "## Publish OTA bundle al release-hub: OK (automático, client_credentials — TR-release-publish-bundle)" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "Publish OTA bundle automático falló — fallback a instrucciones manuales."
-            manual_instructions
-          fi
+          bun run scripts/release.ts publish-bundle \
+            --slug haido \
+            --component haido-frontend \
+            --target any \
+            --arch any \
+            --client-credentials \
+            --skip-build \
+            --bundle "releases/bundles/${{ steps.meta.outputs.version }}/bundle.zip"
