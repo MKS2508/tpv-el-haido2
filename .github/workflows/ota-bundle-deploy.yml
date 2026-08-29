@@ -68,7 +68,7 @@ jobs:
           MAX="${{ inputs.max_native_version }}"
           echo "min=${MIN:-$DEFAULT_VERSION}" >> "$GITHUB_OUTPUT"
           echo "max=${MAX:-$DEFAULT_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "version=$(date -u +%Y.%m.%d)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "version=$(date -u +%Y.%-m.%-d)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
       - name: Pack + sign bundle (minisign, target=any/arch=any)
         run: |
@@ -118,19 +118,12 @@ jobs:
 
       - name: Publish to release-hub /api/admin/projects/{slug}/components (fail-closed)
         env:
-          RELEASE_HUB_CLIENT_ID: ${{ secrets.RELEASE_HUB_CLIENT_ID }}
-          RELEASE_HUB_CLIENT_SECRET: ${{ secrets.RELEASE_HUB_CLIENT_SECRET }}
+          RELEASE_HUB_API_KEY: ${{ secrets.RELEASE_HUB_API_KEY }}
         run: |
-          if [ -z "$RELEASE_HUB_CLIENT_ID" ] || [ -z "$RELEASE_HUB_CLIENT_SECRET" ]; then
-            echo "::error::RELEASE_HUB_CLIENT_ID/SECRET no están seteados — D10-D exige client_credentials al /components (minisign verify contra kind=binary). Sin credenciales el publish falla cerrado, no cae a manual."
-            exit 1
-          fi
-
           bun run scripts/release.ts publish-bundle \
             --slug haido \
             --component haido-frontend \
             --target any \
             --arch any \
-            --client-credentials \
             --skip-build \
             --bundle "releases/bundles/${{ steps.meta.outputs.version }}/bundle.zip"
