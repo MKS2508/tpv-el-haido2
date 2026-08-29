@@ -2087,7 +2087,25 @@ async function publishBundle(opts: IPublishBundleOptions): Promise<Result<void, 
   // 1. Auth — same dispatch as `publish()` (TR-15 semantics: live OR
   //    --client-credentials → real token, even with --dry-run).
   let accessToken: string;
-  if (opts.dryRun && !opts.clientCredentials) {
+
+  // API key auth path (CI-friendly, bypasses Pocket ID M2M gate entirely).
+  // The hub's apiKeyOrAdminGuard validates rhk_ prefix before the auth plugin's
+  // audience/allowedClientIds gate, so a per-project API key with scope
+  // `releases:write` is the intended path for `publish-bundle` from headless CI.
+  // (Same rationale as publish() lines 1564-1575.)
+  const apiKeyFromEnv = process.env.RELEASE_HUB_API_KEY?.trim();
+  if (apiKeyFromEnv) {
+    if (!apiKeyFromEnv.startsWith('rhk_')) {
+      return err(
+        resultError(
+          'INVALID_API_KEY',
+          'RELEASE_HUB_API_KEY is set but does not start with "rhk_" — refusing to use as Bearer token.',
+        ),
+      );
+    }
+    accessToken = apiKeyFromEnv;
+    log.success('Authenticated via API key (RELEASE_HUB_API_KEY env var).');
+  } else if (opts.dryRun && !opts.clientCredentials) {
     const cacheResult = readTokenCache();
     if (isOk(cacheResult)) {
       accessToken = cacheResult.value.access_token;
@@ -2239,14 +2257,14 @@ async function main(): Promise<void> {
     const publishBundleArgv = subCmd ? [subCmd, ...rest] : rest;
     const optsResult = parsePublishBundleOptions(publishBundleArgv);
     if (isErr(optsResult)) {
-      log.error(`publish-bundle: ${optsResult.error.message}`);
+      await log.error(`publish-bundle: ${optsResult.error.message}`);
       printHelp();
       process.exit(1);
     }
 
     const result = await publishBundle(optsResult.value);
     if (isErr(result)) {
-      log.error(result.error.message);
+      await log.error(result.error.message);
       process.exit(1);
     }
     process.exit(0);
