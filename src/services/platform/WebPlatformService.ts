@@ -12,10 +12,13 @@ import type Product from '@/models/Product';
 import type Table from '@/models/Table';
 import type User from '@/models/User';
 import type { LicenseStatus } from '@/types/license';
+import { err, type Result } from '@mks2508/no-throw';
 import type {
   AuditPlatformResult,
+  PlatformError,
   PlatformService,
   StoragePlatformResult,
+  UpdateCheckResult,
 } from './PlatformService';
 
 const log = createContextLogger('WebPlatformService');
@@ -106,38 +109,18 @@ export class WebPlatformService implements PlatformService {
   // ================================
   // UPDATER - NOT APPLICABLE IN PWA
   // ================================
-  /**
-   * PWA updates are managed by service worker.
-   *
-   * Updates are downloaded and installed in the background.
-   * User is notified when update is ready.
-   *
-   * This stub returns immediately.
-   */
-  async checkForUpdates(): Promise<void> {
-    log.debug('Update check not applicable in PWA');
-    log.debug('Service worker manages PWA updates');
-    // Update check happens via service worker
-    // New service worker version is installed on page reload
-    // User is prompted to reload when update is ready
-    // No action needed here
+  async checkForUpdates(): Promise<Result<UpdateCheckResult, PlatformError>> {
+    return err({
+      code: 'UNSUPPORTED_PLATFORM',
+      message: 'OTA updates are only available in the Tauri desktop app, not the PWA',
+    });
   }
 
-  /**
-   * Reload page to apply service worker update.
-   *
-   * This is the PWA equivalent of "download and install".
-   * When service worker has a new version installed, page needs to reload.
-   */
-  async downloadAndInstall(): Promise<void> {
-    log.debug('Reloading page for service worker update');
-
-    try {
-      window.location.reload();
-    } catch (error) {
-      log.error('Failed to reload page:', error instanceof Error ? error : undefined);
-      alert('No se pudo recargar la página. Por favor, recárgala manualmente.');
-    }
+  async downloadAndInstall(): Promise<Result<void, PlatformError>> {
+    return err({
+      code: 'UNSUPPORTED_PLATFORM',
+      message: 'OTA updates are only available in the Tauri desktop app, not the PWA',
+    });
   }
 
   // ================================

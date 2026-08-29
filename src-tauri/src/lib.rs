@@ -11,6 +11,7 @@ mod logger_file;
 
 use std::fs;
 use std::sync::Mutex;
+use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
 use serde_json::Value;
@@ -558,6 +559,167 @@ async fn cleanup_audit_logs(
     db.cleanup_audit_logs(&cutoff_date).map_err(|e| e.to_string())
 }
 
+/// URL del hub para este componente.
+/// El hub shape es `GET /api/components/{c}/latest?target={os}&arch={arch}` (ADR-0045 D8).
+/// Waxin lock 2026-08-29: TPV CI matrix = linux-x64 + linux-arm64 + windows-x64.
+/// macOS queda en el shape para builds locales pero no en CI.
+#[cfg(target_os = "linux")]
+const TPV_HUB_LATEST_URL: &str = "https://haido.releases.mks2508.systems/api/components/tpv-el-haido/latest?target=linux&arch=x86_64";
+
+#[cfg(target_os = "windows")]
+const TPV_HUB_LATEST_URL: &str = "https://haido.releases.mks2508.systems/api/components/tpv-el-haido/latest?target=windows&arch=x86_64";
+
+#[cfg(target_os = "macos")]
+const TPV_HUB_LATEST_URL: &str = "https://haido.releases.mks2508.systems/api/components/tpv-el-haido/latest?target=darwin&arch=x86_64";
+
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
+const TPV_HUB_LATEST_URL: &str = "https://haido.releases.mks2508.systems/api/components/tpv-el-haido/latest?target=any&arch=any";
+
+/// Bare base64 minisign pubkey — segunda línea de
+/// `tauri-keys/tpv-el-haido.key.pub` (key id `3BDF42C4B23623D2`).
+/// Waxin lock 2026-08-28: TPV NO se rotó con wraith-linux esos días
+/// (la rotation event solo afectó `wraith-*` y `mks-agentics`).
+/// Hardcodeamos el BASE64-of-the-file, que es público (es la pubkey
+/// tracked en `tauri-keys/tpv-el-haido.key.pub` desde `adfc5bf`).
+const TPV_OTA_PUBKEY: &str = "RWTSIzayxELfO5VU3bpUnjiycxqhvdT3C95KUqkXKhogRtLKwuXgLZgt";
+
+#[tauri::command]
+async fn check_full_update(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let current_version = app.package_info().version.to_string();
+    let http_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("build http client: {e}"))?;
+    let resp = http_client.get(TPV_HUB_LATEST_URL).send().await
+        .map_err(|e| format!("hub fetch failed: {e}"))?;
+    let http_status = resp.status().as_u16();
+    if !resp.status().is_success() {
+        return Ok(serde_json::json!({
+            "httpStatus": http_status,
+            "currentVersion": current_version,
+            "updateAvailable": false,
+            "remote": null,
+        }));
+    }
+    let body: serde_json::Value = resp.json().await
+        .map_err(|e| format!("bad response body: {e}"))?;
+    let manifest: mks_ota::HubLatest = serde_json::from_value(body.clone())
+        .map_err(|e| format!("bad manifest shape: {e}"))?;
+    let update_available = manifest.is_newer_than(&current_version)
+        .map_err(|e| e.to_string())?;
+    Ok(serde_json::json!({
+        "httpStatus": http_status,
+        "currentVersion": current_version,
+        "updateAvailable": update_available,
+        "remote": body,
+    }))
+}
+
+#[tauri::command]
+async fn download_and_install_update(app: tauri::AppHandle) -> Result<(), String> {
+    let current_version = app.package_info().version.to_string();
+    let http_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("build http client: {e}"))?;
+    let resp = http_client.get(TPV_HUB_LATEST_URL).send().await
+        .map_err(|e| format!("hub fetch failed: {e}"))?;
+    if !resp.status().is_success() {
+        return Err(format!("hub returned HTTP {}", resp.status()));
+    }
+    let body: serde_json::Value = resp.json().await
+        .map_err(|e| format!("bad response body: {e}"))?;
+    let manifest: mks_ota::HubLatest = serde_json::from_value(body.clone())
+        .map_err(|e| format!("bad manifest shape: {e}"))?;
+    if !manifest.is_newer_than(&current_version).map_err(|e| e.to_string())? {
+        return Err("already up to date — refusing to reinstall the same or an older version".to_string());
+    }
+
+    let url = manifest.url.clone();
+    let expected_sha256 = manifest.sha256_hex().map(|s| s.to_string());
+    let signature = manifest.signature.clone();
+    let dest = std::env::temp_dir().join(format!("tpv-ota-{}.tar.gz", manifest.version));
+
+    let _ = app.emit("ota-stage", "downloading");
+    let app_progress = app.clone();
+    let dest_for_download = dest.clone();
+    let outcome = tauri::async_runtime::spawn_blocking(move || {
+        mks_ota::download::download(&url, &dest_for_download, expected_sha256.as_deref(), |p| {
+            let _ = app_progress.emit(
+                "ota-download-progress",
+                serde_json::json!({ "downloaded": p.downloaded, "total": p.total }),
+            );
+        })
+    })
+    .await
+    .map_err(|e| format!("download task panicked: {e}"))?
+    .map_err(|e| format!("download failed: {e}"))?;
+
+    let cleanup_archive = || { let _ = std::fs::remove_file(&outcome.path); };
+
+    let _ = app.emit("ota-stage", "verifying");
+    let verify_path = outcome.path.clone();
+    let verify_result = tauri::async_runtime::spawn_blocking(move || {
+        mks_ota::verify::verify_stream_from_file(&verify_path, &signature, TPV_OTA_PUBKEY)
+    })
+    .await
+    .map_err(|e| format!("verify task panicked: {e}"))?;
+    if let Err(e) = verify_result {
+        cleanup_archive();
+        return Err(format!("signature verification failed: {e}"));
+    }
+
+    let _ = app.emit("ota-stage", "installing");
+    let install_result: Result<(), String> = if cfg!(target_os = "macos") {
+        let app_bundle = mks_ota::install::full::macos::current_app_bundle()
+            .map_err(|e: mks_ota::error::OtaError| { cleanup_archive(); e.to_string() })?;
+        let archive_path = outcome.path.clone();
+        let install_bundle = app_bundle.clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            mks_ota::install::full::macos::install(&archive_path, &install_bundle)
+        })
+        .await
+        .map_err(|e| format!("install task panicked: {e}"))?
+        .map_err(|e: mks_ota::error::OtaError| format!("install failed: {e}"))?;
+        let _ = app.emit("ota-stage", "relaunching");
+        mks_ota::install::full::macos::relaunch(&app_bundle).map_err(|e: mks_ota::error::OtaError| e.to_string())?;
+        Ok(())
+    } else {
+        // Linux and other platforms
+        #[cfg(target_os = "linux")]
+        {
+            let app_bundle = mks_ota::install::full::linux::current_app_bundle()
+                .map_err(|e: mks_ota::error::OtaError| { cleanup_archive(); e.to_string() })?;
+            let archive_path = outcome.path.clone();
+            let install_bundle = app_bundle.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                mks_ota::install::full::linux::install(&archive_path, &install_bundle)
+            })
+            .await
+            .map_err(|e| format!("install task panicked: {e}"))?
+            .map_err(|e: mks_ota::error::OtaError| format!("install failed: {e}"))?;
+            let _ = app.emit("ota-stage", "relaunching");
+            mks_ota::install::full::linux::relaunch(&install_bundle).map_err(|e: mks_ota::error::OtaError| e.to_string())?;
+            Ok(())
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            cleanup_archive();
+            Err(format!(
+                "full-package OTA install is not supported on this platform ({}); only macOS and Linux are wired (ADR-0046)",
+                std::env::consts::OS,
+            ))
+        }
+    };
+    if let Err(e) = install_result {
+        cleanup_archive();
+        return Err(e);
+    }
+    cleanup_archive();
+    app.exit(0);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     ensure_webkit_renderer_usable();
@@ -711,6 +873,9 @@ pub fn run() {
             get_audit_logs,
             export_audit_logs,
             cleanup_audit_logs,
+            // Full OTA update (mks-ota v0.3.0)
+            check_full_update,
+            download_and_install_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

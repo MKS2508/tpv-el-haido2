@@ -111,7 +111,7 @@ jobs:
             exit 0
           fi
 
-          if bun run scripts/release.ts publish --client-credentials --skip-build --target windows-x64 --slug haido; then
+          if bun run scripts/release.ts publish --client-credentials --skip-build --target windows-x64 --slug haido --component tpv-el-haido; then
             echo "## Publish al release-hub: OK (automático, client_credentials — TR-15)" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Publish automático falló — fallback a instrucciones manuales (TR-15 paso 2)."

@@ -19,6 +19,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import DebugIndicator from '@/components/DebugIndicator';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LicenseSplashScreen from '@/components/LicenseSplashScreen';
+import UpdateChecker from '@/components/UpdateChecker';
 import Onboarding from '@/components/Onboarding';
 import { OnboardingProvider } from '@/components/Onboarding/OnboardingProvider';
 import PWAStatus from '@/components/PWAStatus';
@@ -420,6 +421,7 @@ function App() {
     >
       <Toaster />
       <PWAStatus />
+      <UpdateChecker autoCheck />
 
       {/* App Splash Screen - Brand intro */}
       <Show when={showAppSplash()}>

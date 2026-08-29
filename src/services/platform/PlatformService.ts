@@ -23,6 +23,14 @@ export type PlatformErrorCode = 'UNSUPPORTED_PLATFORM' | 'BACKEND_FAILED' | 'INV
 /** Structured error returned by PlatformService methods. */
 export type PlatformError = ResultError<PlatformErrorCode>;
 
+/** Shape del JSON devuelto por el Rust `check_full_update` command. */
+export interface UpdateCheckResult {
+  httpStatus: number;
+  currentVersion: string;
+  updateAvailable: boolean;
+  remoteVersion: string | null;
+}
+
 /** Audit method return shape (mirrors existing audit.service.ts). */
 export type AuditPlatformResult<T> = Promise<Result<T, PlatformError>>;
 
@@ -213,4 +221,10 @@ export interface PlatformService {
     categories: Category[];
     orders: Order[];
   }): StoragePlatformResult<void>;
+
+  // ================================
+  // OTA UPDATER (full channel via mks-ota)
+  // ================================
+  checkForUpdates(): Promise<Result<UpdateCheckResult, PlatformError>>;
+  downloadAndInstall(): Promise<Result<void, PlatformError>>;
 }

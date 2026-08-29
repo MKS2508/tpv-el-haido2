@@ -97,7 +97,7 @@ jobs:
           publish_ok=false
           if [ -n "$RELEASE_HUB_API_KEY" ]; then
             echo "Publishing via API key (preferred path)..."
-            if bun run scripts/release.ts publish --skip-build --target linux-arm64 --slug haido --notes "$NOTES_CONTENT"; then
+            if bun run scripts/release.ts publish --skip-build --target linux-arm64 --slug haido --component tpv-el-haido --notes "$NOTES_CONTENT"; then
               echo "## Publish al release-hub: OK (API key, preferred path — r8)" >> "$GITHUB_STEP_SUMMARY"
               publish_ok=true
             else

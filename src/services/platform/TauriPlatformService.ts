@@ -1,4 +1,4 @@
-import { isErr, tryCatchAsync } from '@mks2508/no-throw';
+import { isErr, tryCatchAsync, type Result } from '@mks2508/no-throw';
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { createContextLogger } from '@/lib/logger';
@@ -18,8 +18,10 @@ import { loadPrinterConfig, printOrder } from '@/services/thermal-printer.servic
 import type { LicenseStatus } from '@/types/license';
 import type {
   AuditPlatformResult,
+  PlatformError,
   PlatformService,
   StoragePlatformResult,
+  UpdateCheckResult,
 } from './PlatformService';
 
 const log = createContextLogger('TauriPlatformService');
@@ -91,22 +93,21 @@ export class TauriPlatformService implements PlatformService {
   }
 
   // ================================
-  // UPDATER — full OTA channel removed
-  // Updates via mks-ota (partial channel D10-D) remain intact.
+  // UPDATER — full OTA channel via mks-ota v0.3.0
   // ================================
 
-  /**
-   * Stub: full OTA channel removed. Check happens via mks-ota in background.
-   */
-  async checkForUpdates(): Promise<void> {
-    log.debug('checkForUpdates stub — full OTA channel removed');
+  async checkForUpdates(): Promise<Result<UpdateCheckResult, PlatformError>> {
+    return tryCatchAsync(
+      () => invoke<UpdateCheckResult>('check_full_update'),
+      'BACKEND_FAILED',
+    );
   }
 
-  /**
-   * Stub: full OTA channel removed.
-   */
-  async downloadAndInstall(): Promise<void> {
-    log.debug('downloadAndInstall stub — full OTA channel removed');
+  async downloadAndInstall(): Promise<Result<void, PlatformError>> {
+    return tryCatchAsync(
+      async () => { await invoke('download_and_install_update'); },
+      'BACKEND_FAILED',
+    );
   }
 
   // ================================

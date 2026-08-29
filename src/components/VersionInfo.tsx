@@ -1,13 +1,19 @@
 import {
+  AlertCircle,
   Building2,
+  CheckCircle2,
+  Download,
   Info,
   KeyRound,
   Lock,
+  RefreshCw,
   Shield,
   User,
 } from 'lucide-solid';
-import { createSignal, onMount } from 'solid-js';
+import { createSignal, onMount, Show } from 'solid-js';
 import { cn } from '@/lib/utils';
+import { useUpdater } from '@/hooks/useUpdater';
+import { Button } from '@/components/ui/button';
 import { isTauri } from '@/services/platform';
 
 interface VersionInfoProps {
@@ -16,6 +22,7 @@ interface VersionInfoProps {
 
 export function VersionInfo(props: VersionInfoProps) {
   const [currentVersion, setCurrentVersion] = createSignal<string | null>(null);
+  const updater = useUpdater();
 
   onMount(async () => {
     if (!isTauri()) {
@@ -134,6 +141,88 @@ export function VersionInfo(props: VersionInfoProps) {
           </div>
         </div>
       </div>
+
+      {/* Estado de actualizaciones */}
+      <Show when={isTauri()}>
+        <div
+          class={cn(
+            'rounded-lg border p-4 transition-colors',
+            updater.updateAvailable()
+              ? 'border-primary/50 bg-primary/5'
+              : updater.state() === 'error'
+                ? 'border-destructive/50 bg-destructive/5'
+                : 'border-success/50 bg-success/5'
+          )}
+        >
+          <div class="flex items-start gap-3">
+            <div
+              class={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+                updater.updateAvailable()
+                  ? 'bg-primary/10 text-primary'
+                  : updater.state() === 'error'
+                    ? 'bg-destructive/10 text-destructive'
+                    : 'bg-success/10 text-success'
+              )}
+            >
+              <Show when={updater.updateAvailable()}>
+                <Download class="h-5 w-5" />
+              </Show>
+              <Show when={updater.state() === 'error'}>
+                <AlertCircle class="h-5 w-5" />
+              </Show>
+              <Show when={!updater.updateAvailable() && updater.state() !== 'error'}>
+                <CheckCircle2 class="h-5 w-5" />
+              </Show>
+            </div>
+
+            <div class="flex-1 space-y-1">
+              <Show
+                when={updater.updateAvailable()}
+                fallback={
+                  <Show
+                    when={updater.state() === 'error'}
+                    fallback={
+                      <>
+                        <p class="font-medium text-success">Sistema actualizado</p>
+                        <p class="text-sm text-muted-foreground">
+                          Tienes la última versión instalada
+                        </p>
+                      </>
+                    }
+                  >
+                    <p class="font-medium text-destructive">Error al verificar</p>
+                    <p class="text-sm text-muted-foreground">{updater.error()}</p>
+                  </Show>
+                }
+              >
+                <p class="font-medium text-primary">Nueva versión disponible: {updater.remoteVersion()}</p>
+                <p class="text-sm text-muted-foreground">Hay una actualización lista para instalar</p>
+              </Show>
+            </div>
+          </div>
+
+          <Show when={updater.updateAvailable()}>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <Button
+                onClick={updater.handleDownloadInstall}
+                class="flex-1"
+              >
+                <Download class="mr-2 h-4 w-4" />
+                Actualizar ahora
+              </Button>
+              <Button
+                variant="outline"
+                onClick={updater.handleCheck}
+                class="flex-1"
+              >
+                <RefreshCw class="mr-2 h-4 w-4" />
+                Buscar actualizaciones
+              </Button>
+            </div>
+          </Show>
+        </div>
+      </Show>
     </div>
   );
 }

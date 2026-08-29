@@ -45,10 +45,8 @@ shellexpand = "2"
 # `install::full::linux` simétrico a macos para que esta app tenga full update
 # en Linux + macOS).
 #
-# v0.2.0 = primer release con `install::partial` + `watchdog` + `protocol`
-# (8df4138). El feature `tauri` gatea `protocol` (custom URI scheme 'tpvapp'
-# que esta app necesita — wraith-linux NO lo usa, por eso no lo pineamos
-# allí). `default-features = false` evita arrastrar la default feature vacía
-# que mks-ota declara.
-mks-ota = { git = "https://github.com/MKS2508/mks-ota", tag = "v0.2.0", default-features = false, features = ["tauri"] }
+# v0.3.0 = `install::full::linux` + `install::full::macos` (Lane A).
+# `install::full::linux` está controlada por `#[cfg(target_os = "linux")]` en el
+# código de mks-ota, NO por feature flag. Solo el feature `tauri` es necesario.
+mks-ota = { git = "https://github.com/MKS2508/mks-ota", tag = "v0.3.0", default-features = false, features = ["tauri"] }
 
