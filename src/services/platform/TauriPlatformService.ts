@@ -1,8 +1,6 @@
 import { isErr, tryCatchAsync } from '@mks2508/no-throw';
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { relaunch } from '@tauri-apps/plugin-process';
-import { check, type Update } from '@tauri-apps/plugin-updater';
 import { createContextLogger } from '@/lib/logger';
 import type {
   IAuditLog,
@@ -32,8 +30,6 @@ const log = createContextLogger('TauriPlatformService');
  * Uses Tauri plugins for native platform features.
  */
 export class TauriPlatformService implements PlatformService {
-  private cachedUpdate: Update | null = null;
-
   // ================================
   // THERMAL PRINTER
   // ================================
@@ -95,52 +91,22 @@ export class TauriPlatformService implements PlatformService {
   }
 
   // ================================
-  // UPDATER
+  // UPDATER — full OTA channel removed
+  // Updates via mks-ota (partial channel D10-D) remain intact.
   // ================================
 
   /**
-   * Check for application updates
-   * Caches the update object for subsequent downloadAndInstall call
+   * Stub: full OTA channel removed. Check happens via mks-ota in background.
    */
   async checkForUpdates(): Promise<void> {
-    try {
-      const update = await check();
-      this.cachedUpdate = update;
-
-      if (update) {
-        log.info(`Update available: ${update.version}`);
-      } else {
-        log.debug('No updates available');
-      }
-    } catch (error) {
-      log.error('Error checking for updates:', error instanceof Error ? error : undefined);
-      throw error;
-    }
+    log.debug('checkForUpdates stub — full OTA channel removed');
   }
 
   /**
-   * Download and install the cached update
-   * Must call checkForUpdates first
+   * Stub: full OTA channel removed.
    */
   async downloadAndInstall(): Promise<void> {
-    if (!this.cachedUpdate) {
-      // Try to check for updates first
-      await this.checkForUpdates();
-
-      if (!this.cachedUpdate) {
-        throw new Error('No update available to install');
-      }
-    }
-
-    try {
-      log.info('Downloading and installing update...');
-      await this.cachedUpdate.downloadAndInstall();
-      log.info('Update installed, relaunching...');
-      await relaunch();
-    } catch (error) {
-      log.error('Error installing update:', error instanceof Error ? error : undefined);
-      throw error;
-    }
+    log.debug('downloadAndInstall stub — full OTA channel removed');
   }
 
   // ================================

@@ -67,24 +67,6 @@ export interface PlatformService {
   saveFileDialog(): Promise<string | null>;
 
   // ================================
-  // UPDATER (Tauri Only)
-  // ================================
-  /**
-   * Check for application updates
-   * In Tauri: uses @tauri-apps/plugin-updater
-   * In PWA: always returns null (updates via service worker)
-   * @returns Update info if available, null otherwise
-   */
-  checkForUpdates(): Promise<void>;
-
-  /**
-   * Download and install the latest update
-   * In Tauri: triggers update from @tauri-apps/plugin-updater
-   * In PWA: reloads page (service worker updates in background)
-   */
-  downloadAndInstall(): Promise<void>;
-
-  // ================================
   // PLATFORM DETECTION
   // ================================
   /**

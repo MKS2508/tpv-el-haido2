@@ -33,7 +33,6 @@ import Products from '@/components/Sections/Products';
 import SectionHeader from '@/components/Sections/SectionHeader';
 import SettingsPanel from '@/components/Sections/SettingsPanel';
 import Sidebar from '@/components/SideBar';
-import UpdateChecker from '@/components/UpdateChecker';
 import { Toaster } from '@/components/ui/toaster';
 import { useAboutDialog } from '@/hooks/useAboutDialog';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -421,7 +420,6 @@ function App() {
     >
       <Toaster />
       <PWAStatus />
-      <UpdateChecker autoCheck={true} checkInterval={3600000} />
 
       {/* App Splash Screen - Brand intro */}
       <Show when={showAppSplash()}>
