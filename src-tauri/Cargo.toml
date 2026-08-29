@@ -40,10 +40,15 @@ tokio = { version = "1", features = ["time", "process", "fs", "io-util"] }
 futures-util = "0.3"
 shellexpand = "2"
 
-# Canal OTA parcial extraído del propio crate (ADR-0045 D8-C, D10-D).
-# v0.2.0 = primer release con `install::partial` + `watchdog` + `protocol`.
-# `default-features = false` evita features que no queremos (ninguna hoy, pero
-# deja la puerta cerrada); `features = ["tauri"]` enciende el watchdog timer y
-# el custom URI scheme que esta app necesita.
+# Canal OTA parcial + full extraído del propio crate (ADR-0045 D8-C, D10-D;
+# commit 8df4138 en mks-ota ejecuta la extracción; ADR-0046 añade
+# `install::full::linux` simétrico a macos para que esta app tenga full update
+# en Linux + macOS).
+#
+# v0.2.0 = primer release con `install::partial` + `watchdog` + `protocol`
+# (8df4138). El feature `tauri` gatea `protocol` (custom URI scheme 'tpvapp'
+# que esta app necesita — wraith-linux NO lo usa, por eso no lo pineamos
+# allí). `default-features = false` evita arrastrar la default feature vacía
+# que mks-ota declara.
 mks-ota = { git = "https://github.com/MKS2508/mks-ota", tag = "v0.2.0", default-features = false, features = ["tauri"] }
 
