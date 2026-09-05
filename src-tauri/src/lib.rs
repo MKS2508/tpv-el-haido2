@@ -706,7 +706,7 @@ async fn download_and_install_update(app: tauri::AppHandle) -> Result<(), String
                 .map_err(|e| format!("install task panicked: {e}"))?
                 .map_err(|e: mks_ota::error::OtaError| format!("install failed: {e}"))?;
                 let _ = app.emit("ota-stage", "relaunching");
-                mks_ota::install::full::linux::relaunch(&install_bundle).map_err(|e: mks_ota::error::OtaError| e.to_string())?;
+                mks_ota::install::full::linux::relaunch(&app_bundle).map_err(|e: mks_ota::error::OtaError| e.to_string())?;
                 Ok(())
             }
             #[cfg(not(any(target_os = "linux", target_os = "macos")))]
