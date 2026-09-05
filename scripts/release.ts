@@ -29,11 +29,12 @@
  *     env vars. No PKCE cache required, no disk cache written, no browser.
  */
 
-import { existsSync, mkdirSync, chmodSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, chmodSync, readdirSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join, basename, resolve } from 'node:path';
-import { homedir, platform } from 'node:os';
+import { homedir, platform, tmpdir } from 'node:os';
 import * as oauth from 'oauth4webapi';
 import logger from '@mks2508/better-logger';
+import { publishComponent } from '@mks2508/release-hub-sdk';
 import { createProvider } from 'gemini-commit-wizard';
 import {
   ok,
@@ -103,6 +104,8 @@ export interface IPublishOptions {
   readonly targets: ReleaseTarget[];
   readonly slug: string;
   readonly hub: string;
+  /** Component name for the unified /components channel — empty publishes the project's principal binary (no public channel). */
+  readonly component: string;
   readonly notes: string;
   readonly aiNotes: boolean;
   readonly skipBuild: boolean;
@@ -232,6 +235,9 @@ Commands:
     --target   macos-arm64 | macos-x64 | windows-x64 | linux-x64 | linux-arm64 | all   (required)
     --slug     Project slug in release-hub (e.g. "haido")     (required)
     --hub      Admin API base URL (default: ${DEFAULT_HUB_URL})
+    --component  Component name for the unified /components channel
+                  (e.g. "tpv-el-haido"). Omitted → project principal
+                  binary (admin-listed only, no public channel).
     --notes    Release notes / changelog text
     --ai-notes Generate release notes with AI from the commits since the last
                   git tag. Uses a TPV-specific prompt template that calls out
@@ -323,6 +329,7 @@ function parsePublishOptions(argv: string[]): Result<IPublishOptions, ResultErro
     targets,
     slug,
     hub: get('--hub') ?? DEFAULT_HUB_URL,
+    component: get('--component') ?? '',
     notes: get('--notes') ?? '',
     aiNotes: has('--ai-notes'),
     skipBuild: has('--skip-build'),
@@ -452,6 +459,60 @@ export async function deleteTokenCache(): Promise<Result<void, ResultError>> {
     await unlink(TOKEN_CACHE_PATH);
     void file; // consumed by unlink above
   }, 'TOKEN_CACHE_DELETE_FAILED');
+}
+
+// ─────────────────────────────── SDK session bridge ─────────────────────────
+
+/**
+ * Bridges the access token resolved by this CLI (PKCE cache or
+ * client_credentials) into the SDK session store
+ * (`~/.config/release-hub/cli.json`) so `publishComponent` from
+ * `@mks2508/release-hub-sdk` can consume it.
+ *
+ * The SDK resolves auth itself from `RELEASE_HUB_API_KEY` env or that file;
+ * it takes no token parameter. When `RELEASE_HUB_API_KEY` is set the bridge is
+ * a no-op (the SDK reads the env var natively). The file mirrors the exact
+ * shape the SDK's `saveSession` writes (hub origin must match for the SDK's
+ * HUB_MISMATCH check to pass).
+ *
+ * @param hub         - Hub admin origin (normalised like the SDK's resolveHubUrl).
+ * @param accessToken - Bearer token to persist.
+ * @param meta        - Optional identity fields for the session record.
+ * @returns `ok(undefined)` on success, `err(...)` on failure.
+ */
+export async function writeSdkSessionFile(
+  hub: string,
+  accessToken: string,
+  meta: { email?: string; sub?: string } = {},
+): Promise<Result<void, ResultError>> {
+  const dirResult = ensureCacheDir();
+  if (isErr(dirResult)) {
+    return err(dirResult.error);
+  }
+
+  const sessionPath = join(homedir(), '.config', 'release-hub', 'cli.json');
+  const writeResult = await tryCatchAsync(async () => {
+    const session = {
+      hub: hub.replace(/\/+$/, ''),
+      token: accessToken,
+      sub: meta.sub,
+      email: meta.email,
+      savedAt: new Date().toISOString(),
+    };
+    await Bun.write(sessionPath, `${JSON.stringify(session, null, 2)}\n`);
+    if (platform() !== 'win32') {
+      chmodSync(sessionPath, 0o600);
+    }
+  }, 'SDK_SESSION_WRITE_FAILED');
+
+  if (isErr(writeResult)) {
+    return err(
+      resultError('SDK_SESSION_WRITE_FAILED', `Cannot bridge token into SDK session: ${writeResult.error.message}`),
+    );
+  }
+
+  log.info(`[sdk] Sesión puente escrita en ${sessionPath} (hub=${hub}, email=${meta.email ?? 'n/a'}).`);
+  return ok(undefined);
 }
 
 // ─────────────────────────────── OIDC discovery ──────────────────────────────
@@ -1204,14 +1265,21 @@ async function invokeBuildRelease(target: ReleaseTarget): Promise<Result<void, R
 // ─────────────────────────────── Upload ──────────────────────────────────────
 
 /**
- * Uploads a single release artifact to the admin API via multipart/form-data.
+ * Uploads a single release artifact to the admin API via the SDK's
+ * `publishComponent` — multipart to
+ * `POST /api/admin/projects/{slug}/components` (version/target/arch/sig/
+ * artifact[/component][/notes]), the only live publish surface since M6.
  *
- * @param opts         - Publish options (hub, slug, notes, dryRun).
+ * The legacy releases endpoint this function used to target was dropped by
+ * the hub (M6 corte seco, 2026-08-28) — that code is gone, git preserves it.
+ *
+ * @param opts         - Publish options (hub, slug, component, notes, dryRun).
  * @param target       - CLI target label.
  * @param version      - App version string.
  * @param artifactPath - Absolute path to the binary artifact.
- * @param sigContent   - Content of the `.sig` file.
- * @param accessToken  - Bearer token for Authorization header.
+ * @param sigPath      - Absolute path to the `.sig` file.
+ * @param accessToken  - Bearer token (bridged into the SDK session when the
+ *                       auth did not come from RELEASE_HUB_API_KEY).
  * @returns Upload result or an error.
  */
 async function uploadArtifact(
@@ -1219,7 +1287,7 @@ async function uploadArtifact(
   target: ReleaseTarget,
   version: string,
   artifactPath: string,
-  sigContent: string,
+  sigPath: string,
   accessToken: string,
 ): Promise<Result<IReleaseUploadResult, ResultError>> {
   const filename = basename(artifactPath);
@@ -1230,15 +1298,16 @@ async function uploadArtifact(
   const { serverTarget, serverArch } = mappingResult.value;
 
   if (opts.dryRun) {
-    const sigPreview = sigContent.length > 32 ? `${sigContent.slice(0, 32)}…` : sigContent;
+    // Dry-run never touches the network — the SDK is not called.
     log.info(`[DRY-RUN] Would upload:`);
     log.info(`  File:      ${artifactPath}`);
     log.info(`  Filename:  ${filename}`);
     log.info(`  Version:   ${version}`);
     log.info(`  Target:    ${serverTarget}`);
     log.info(`  Arch:      ${serverArch}`);
-    log.info(`  Sig:       ${sigPreview}`);
-    log.info(`  Hub:       POST ${opts.hub}/api/admin/projects/${opts.slug}/releases`);
+    log.info(`  Component: ${opts.component || '(principal — sin canal público)'}`);
+    log.info(`  Sig:       ${sigPath}`);
+    log.info(`  Hub:       POST ${opts.hub}/api/admin/projects/${opts.slug}/components`);
     return ok({
       target,
       version,
@@ -1249,72 +1318,47 @@ async function uploadArtifact(
 
   log.info(`Uploading ${filename} (${target}) to ${opts.hub}…`);
 
-  const uploadResult = await tryCatchAsync(async (): Promise<{ url?: string }> => {
-    const fileContent = readFileSync(artifactPath);
-    const blob = new Blob([fileContent]);
-
-    const formData = new FormData();
-    formData.append('version', version);
-    formData.append('target', serverTarget);
-    formData.append('arch', serverArch);
-    formData.append('signature', sigContent);
-    if (opts.notes) {
-      formData.append('notes', opts.notes);
+  // publishComponent reads auth itself: RELEASE_HUB_API_KEY env, or the SDK
+  // session at ~/.config/release-hub/cli.json. With the API key the bridge is
+  // a no-op; otherwise the token this CLI resolved (PKCE / client_credentials)
+  // is transcribed into the session store first.
+  if (!process.env.RELEASE_HUB_API_KEY?.trim()) {
+    const bridgeResult = await writeSdkSessionFile(opts.hub, accessToken, {});
+    if (isErr(bridgeResult)) {
+      return err(bridgeResult.error);
     }
-    formData.append('binary', blob, filename);
+  }
 
-    const url = `${opts.hub}/api/admin/projects/${opts.slug}/releases`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: formData,
-    });
+  const pubResult = await publishComponent({
+    project: opts.slug,
+    version,
+    target: serverTarget,
+    arch: serverArch,
+    artifact: artifactPath,
+    sig: sigPath,
+    component: opts.component || undefined,
+    notes: opts.notes || undefined,
+    hub: opts.hub,
+  });
 
-    if (response.status === 401) {
-      throw Object.assign(new Error('Unauthorized — token may be expired'), { status: 401 });
-    }
-
-    if (response.status === 409) {
-      throw Object.assign(
-        new Error(`Release already exists: ${version} ${serverTarget}/${serverArch}`),
-        { status: 409 },
-      );
-    }
-
-    if (!response.ok) {
-      const body = await response.text().catch(() => '');
-      throw Object.assign(
-        new Error(`Server returned ${response.status}: ${body}`),
-        { status: response.status },
-      );
-    }
-
-    const json = await response.json().catch(() => ({})) as Record<string, unknown>;
-    const releaseUrl = (json.url as string | undefined) ?? (json.data as Record<string, unknown> | undefined)?.url as string | undefined;
-    return { url: releaseUrl };
-  }, 'UPLOAD_FAILED');
-
-  if (isErr(uploadResult)) {
+  if (isErr(pubResult)) {
     return err(
       resultError(
         'UPLOAD_FAILED',
-        `Upload failed for ${target}: ${uploadResult.error.message}`,
+        `Upload failed for ${target}: ${pubResult.error.message}`,
       ),
     );
   }
 
-  log.success(`Uploaded ${filename} → ${opts.slug} v${version} (${serverTarget}/${serverArch})`);
-  if (uploadResult.value.url) {
-    log.info(`  Release URL: ${uploadResult.value.url}`);
-  }
+  log.success(
+    `Uploaded ${filename} → ${opts.slug} v${version} (${serverTarget}/${serverArch}` +
+      `${opts.component ? `, component=${opts.component}` : ', principal'} )`,
+  );
 
   return ok({
     target,
     version,
     artifactFilename: filename,
-    url: uploadResult.value.url,
     dryRun: false,
   });
 }
@@ -1672,7 +1716,7 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
       continue;
     }
 
-    const { artifactPath, sigContent } = artifactResult.value;
+    const { artifactPath, sigPath } = artifactResult.value;
 
     // Upload (or dry-run)
     const uploadResult = await uploadArtifact(
@@ -1680,16 +1724,17 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
       target,
       version,
       artifactPath,
-      sigContent,
+      sigPath,
       accessToken,
     );
 
     if (isErr(uploadResult)) {
-      // If 401, attempt one re-auth (PKCE refresh OR client_credentials re-mint)
-      // and retry. The strategy follows `opts` so --client-credentials mode
-      // mints a fresh token instead of trying to load the (absent) PKCE cache.
-      if (uploadResult.error.message.includes('Unauthorized') && !opts.dryRun) {
-        log.warn('Got 401 — attempting re-auth + retry…');
+      // If the SDK reports the token rejected (401/403), attempt one re-auth
+      // (PKCE refresh OR client_credentials re-mint) and retry. The strategy
+      // follows `opts` so --client-credentials mode mints a fresh token
+      // instead of trying to load the (absent) PKCE cache.
+      if (uploadResult.error.code === 'TOKEN_EXPIRED' && !opts.dryRun) {
+        log.warn('Hub rejected the token — attempting re-auth + retry…');
         const refreshResult = await mintAccessToken(opts);
         if (isOk(refreshResult)) {
           const retryResult = await uploadArtifact(
@@ -1697,7 +1742,7 @@ async function publish(opts: IPublishOptions): Promise<Result<void, ResultError>
             target,
             version,
             artifactPath,
-            sigContent,
+            sigPath,
             refreshResult.value.accessToken,
           );
           if (isOk(retryResult)) {
@@ -1994,36 +2039,73 @@ async function uploadBundle(
 
   log.info(`Uploading ${filename} (bundleVersion=${metadata.bundleVersion}) to ${opts.hub}…`);
 
+  if (opts.component) {
+    // Unified /components endpoint via the SDK — same multipart contract the
+    // legacy branch below used to hand-roll (component/version/target/arch/
+    // sig/artifact), with the server-side minisign verify against the
+    // project's kind=binary key BEFORE storage write (admin/components.ts).
+    if (!process.env.RELEASE_HUB_API_KEY?.trim()) {
+      const bridgeResult = await writeSdkSessionFile(opts.hub, accessToken, {});
+      if (isErr(bridgeResult)) {
+        return err(bridgeResult.error);
+      }
+    }
+
+    // publishComponent takes a .sig FILE path; the metadata holds the .sig
+    // TEXT (manifest.json / --signature override). Transcribe to a temp file.
+    const publishCall = (): Promise<Result<void, ResultError>> => {
+      const tmpSigPath = join(tmpdir(), `release-hub-bundle-${Date.now()}.sig`);
+      writeFileSync(tmpSigPath, metadata.signature);
+      return publishComponent({
+        project: opts.slug,
+        version: metadata.bundleVersion,
+        target: opts.target,
+        arch: opts.arch,
+        artifact: zipPath,
+        sig: tmpSigPath,
+        component: opts.component,
+        hub: opts.hub,
+      }).finally(() => {
+        if (existsSync(tmpSigPath)) {
+          unlinkSync(tmpSigPath);
+        }
+      });
+    };
+
+    const pubResult = await publishCall();
+    if (isErr(pubResult)) {
+      return err(
+        resultError(
+          'UPLOAD_FAILED',
+          `Bundle upload failed for ${metadata.bundleVersion}: ${pubResult.error.message}`,
+        ),
+      );
+    }
+
+    log.success(`Uploaded ${filename} → ${opts.slug} bundleVersion=${metadata.bundleVersion} (component=${opts.component})`);
+    return ok({
+      bundleVersion: metadata.bundleVersion,
+      bundleFilename: filename,
+      dryRun: false,
+    });
+  }
+
+  // Legacy /bundles endpoint — ed25519 sobre el zip (sha256+sign), se subía
+  // con los metadatos del manifest. Mantenido para back-compat con quien
+  // siga apuntando ahí; el cliente que lee /api/bundles/latest no debería
+  // estar activo en este repo después de D10-D.
   const uploadResult = await tryCatchAsync(async (): Promise<{ url?: string }> => {
     const fileContent = readFileSync(zipPath);
     const blob = new Blob([fileContent]);
 
     const formData = new FormData();
-    let url: string;
-    if (opts.component) {
-      // Unified /components endpoint — minisign (kind=binary), plataforma-agnóstica
-      // con target=any/arch=any para partials L3. La firma es el texto crudo del
-      // .sig (4 líneas, base64 dentro). El hub verifica server-side con su clave
-      // kind=binary del proyecto (admin/components.ts:175) ANTES de escribir nada.
-      formData.append('component', opts.component);
-      formData.append('version', metadata.bundleVersion);
-      formData.append('target', opts.target);
-      formData.append('arch', opts.arch);
-      formData.append('sig', metadata.signature);
-      formData.append('artifact', blob, filename);
-      url = `${opts.hub}/api/admin/projects/${opts.slug}/components`;
-    } else {
-      // Legacy /bundles endpoint — ed25519 sobre el zip (sha256+sign), se subía
-      // con los metadatos del manifest. Mantenido para back-compat con quien
-      // siga apuntando ahí; el cliente que lee /api/bundles/latest no debería
-      // estar activo en este repo después de D10-D.
-      formData.append('bundleVersion', metadata.bundleVersion);
-      formData.append('minNativeVersion', metadata.minNativeVersion);
-      formData.append('maxNativeVersion', metadata.maxNativeVersion);
-      formData.append('signature', metadata.signature);
-      formData.append('bundle', blob, filename);
-      url = `${opts.hub}/api/admin/projects/${opts.slug}/bundles`;
-    }
+    formData.append('bundleVersion', metadata.bundleVersion);
+    formData.append('minNativeVersion', metadata.minNativeVersion);
+    formData.append('maxNativeVersion', metadata.maxNativeVersion);
+    formData.append('signature', metadata.signature);
+    formData.append('bundle', blob, filename);
+
+    const url = `${opts.hub}/api/admin/projects/${opts.slug}/bundles`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -2119,6 +2201,7 @@ async function publishBundle(opts: IPublishBundleOptions): Promise<Result<void, 
       targets: [],
       slug: opts.slug,
       hub: opts.hub,
+      component: '',
       notes: '',
       aiNotes: false,
       skipBuild: true,

@@ -141,14 +141,15 @@ function keygen(): void {
 `);
 }
 
-/** Siguiente identificador del día: YYYY.MM.DD-N. Válido semver strict (la
- * `semver.valid()` del hub lo acepta: major.minor.patch + prerelease). */
+/** Siguiente identificador del día: YYYY.M.D-N. Válido semver strict (la
+ * `semver.valid()` del hub lo acepta: major.minor.patch + prerelease) — sin
+ * ceros de padding (2026.09.05-N es semver INVALIDO: leading zeros, hub 422). */
 function nextBundleVersion(): string {
   const now = new Date();
   const day = [
     now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, '0'),
-    String(now.getDate()).padStart(2, '0'),
+    now.getMonth() + 1,
+    now.getDate(),
   ].join('.');
 
   const existing = existsSync(OUTPUT_ROOT) ? readdirSync(OUTPUT_ROOT) : [];

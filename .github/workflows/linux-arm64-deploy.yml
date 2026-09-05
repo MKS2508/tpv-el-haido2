@@ -51,6 +51,20 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # Requiere secret SOAP_AEAT_PAT (PAT classico 'repo' o fine-grained contents:read
+      # sobre MKS2508/tpv-soap-aeat) — GITHUB_TOKEN no llega a repos privados cruzados.
+      - name: Checkout tpv-soap-aeat (sidecar source)
+        uses: actions/checkout@v7
+        with:
+          repository: MKS2508/tpv-soap-aeat
+          path: tpv-soap-aeat
+          token: ${{ secrets.SOAP_AEAT_PAT }}
+          persist-credentials: false
+
+      - name: Install tpv-soap-aeat dependencies
+        working-directory: tpv-soap-aeat
+        run: bun install --frozen-lockfile
+
       - name: Build + sign (linux-arm64)
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -66,7 +80,7 @@ jobs:
           if [ -z "$ARTIFACT" ]; then echo "::error::No .AppImage artifact found under releases/"; exit 1; fi
           base64 -d "${ARTIFACT}.sig" > /tmp/artifact.minisig
           minisign -Vm "$ARTIFACT" -x /tmp/artifact.minisig \
-            -P RWSxu04zRL8L250wN61H4xvaSW8GmAGBOIPtqmRbKw6C9ZNlC9VrlUUU
+            -P RWTSIzayxELfO5VU3bpUnjiycxqhvdT3C95KUqkXKhogRtLKwuXgLZgt
 
       - name: Upload release artifact
         if: startsWith(github.ref, 'refs/tags/')
