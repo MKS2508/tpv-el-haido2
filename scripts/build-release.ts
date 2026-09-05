@@ -10,7 +10,8 @@
  *                                    [--no-sign] [--output <dir>] [--help]
  *
  * Environment variables (all optional — script falls back to file/Bitwarden):
- *   TAURI_SIGNING_PRIVATE_KEY          — Base64 private key contents (skips file lookup)
+ *   TAURI_SIGNING_PRIVATE_KEY          — Private key contents, base64 or plain
+ *                                        minisign text (normalised on load; skips file lookup)
  *   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — Passphrase (skips Bitwarden lookup)
  *   TAURI_KEY_NAME                     — Key file basename, default "tpv-el-haido"
  *                                        (looked up at ~/.tauri/<name>.key, then <repo>/tauri-keys/<name>.key)
@@ -302,7 +303,8 @@ Options:
   --help          Show this message
 
 Environment variables (all optional):
-  TAURI_SIGNING_PRIVATE_KEY          Base64 private key contents (overrides file lookup)
+  TAURI_SIGNING_PRIVATE_KEY          Private key contents, base64 or plain minisign
+                                     text (normalised on load; overrides file lookup)
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD Passphrase (overrides Bitwarden lookup)
   TAURI_KEY_NAME                     Key file basename (default: "${DEFAULT_TAURI_KEY_NAME}")
                                      Looked up at ~/.tauri/<name>.key, then <repo>/tauri-keys/<name>.key
@@ -440,20 +442,21 @@ export function locatePrivateKeyFile(keyName: string): Result<string, ResultErro
  * @returns Base64-encoded key string ready to inject into `TAURI_SIGNING_PRIVATE_KEY`,
  *   or an error.
  */
+export function normalizeSigningKey(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('untrusted comment:')) {
+    return Buffer.from(trimmed, 'utf-8').toString('base64');
+  }
+  return trimmed;
+}
+
 function readPrivateKeyFile(path: string): Result<string, ResultError> {
   return tryCatch(() => {
     const raw = readFileSync(path, 'utf-8');
     if (!raw.trim()) {
       throw new Error(`Key file "${path}" is empty.`);
     }
-
-    // Plain-text minisign file → base64-encode the whole thing.
-    if (raw.startsWith('untrusted comment:')) {
-      return Buffer.from(raw, 'utf-8').toString('base64');
-    }
-
-    // Otherwise assume already base64-encoded — return as a single trimmed line.
-    return raw.trim();
+    return normalizeSigningKey(raw);
   }, 'PRIVATE_KEY_READ_FAILED');
 }
 
@@ -727,7 +730,8 @@ export function verifyKeyMatchesConfig(keyPath: string): Result<void, ResultErro
  * Resolution strategy (independent for each piece):
  *
  * **Private key**:
- *   1. `TAURI_SIGNING_PRIVATE_KEY` env var (used as-is, expected base64 contents).
+ *   1. `TAURI_SIGNING_PRIVATE_KEY` env var (normalised to base64 — plain minisign
+ *      text, e.g. from `gh secret set NAME < file`, is accepted).
  *   2. File at `<homedir>/.tauri/<TAURI_KEY_NAME>.key` (default name: "tpv-el-haido").
  *   3. File at `<projectRoot>/tauri-keys/<TAURI_KEY_NAME>.key`.
  *
@@ -751,7 +755,7 @@ export async function loadSigningKeys(): Promise<Result<ISigningKeys, ResultErro
 
   if (envKey) {
     log.success('Private key loaded from TAURI_SIGNING_PRIVATE_KEY env var.');
-    privateKey = envKey;
+    privateKey = normalizeSigningKey(envKey);
   } else if (envKeyPath) {
     log.info(`Reading private key from TAURI_KEY_PATH: ${envKeyPath}`);
     const readResult = readPrivateKeyFile(envKeyPath);
