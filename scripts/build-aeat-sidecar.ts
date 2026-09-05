@@ -24,6 +24,9 @@ import { join, resolve } from 'path';
 // ==================== Configuration ====================
 
 const AEAT_PROJECT_PATHS = [
+  // Primer candidato: checkout del CI dentro del workspace (actions/checkout no
+  // permite escapar de GITHUB_WORKSPACE — path: ../ inyecta un throw en el action).
+  resolve(__dirname, '../tpv-soap-aeat'),
   resolve(__dirname, '../../tpv-soap-aeat'),
   '/Users/mks/tpv-soap-aeat',
 ];
