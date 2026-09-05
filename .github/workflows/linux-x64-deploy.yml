@@ -74,7 +74,7 @@ jobs:
           if [ -z "$ARTIFACT" ]; then echo "::error::No .AppImage artifact found under releases/"; exit 1; fi
           base64 -d "${ARTIFACT}.sig" > /tmp/artifact.minisig
           minisign -Vm "$ARTIFACT" -x /tmp/artifact.minisig \
-            -P RWSxu04zRL8L250wN61H4xvaSW8GmAGBOIPtqmRbKw6C9ZNlC9VrlUUU
+            -P RWTSIzayxELfO5VU3bpUnjiycxqhvdT3C95KUqkXKhogRtLKwuXgLZgt
 
       - name: Upload release artifact
         if: startsWith(github.ref, 'refs/tags/')
