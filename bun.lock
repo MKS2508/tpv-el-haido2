@@ -9,6 +9,7 @@
         "@kobalte/core": "^0.13.9",
         "@mks2508/better-logger": "0.18.3",
         "@mks2508/no-throw": "^0.3.7",
+        "@mks2508/release-hub-sdk": "0.3.0",
         "@mks2508/shadcn-basecoat-theme-manager": "^4.3.2",
         "@mks2508/tickmaster": "^0.1.2",
         "@motionone/solid": "^10.13.2",
@@ -299,6 +300,8 @@
     "@mks2508/mks-dev-session": ["@mks2508/mks-dev-session@0.2.2", "", { "dependencies": { "arktype": "^2.1.0", "clipanion": "^4.0.0-rc.4", "kleur": "^4.1.5" }, "bin": { "mks-dev-session": "src/cli.ts" } }, "sha512-BQyOoykeyWqL/aedF6+BZFkNjwkAKhBENuoIYyOqbZPAkApQe00y8na2SXIDOz2fQJppvH/tGRbcllzz3wWLRQ=="],
 
     "@mks2508/no-throw": ["@mks2508/no-throw@0.3.7", "", { "peerDependencies": { "react": ">=17.0.0", "react-dom": ">=17.0.0" }, "optionalPeers": ["react", "react-dom"] }, "sha512-QGzhlJo5z6tA8LmR/AugvzhOJ0fO3Ho2yAeq7S5TG/kU3V1hlCHyBJ0VoptWkAJFHDi0bJTkDAniVdQF24jn7Q=="],
+
+    "@mks2508/release-hub-sdk": ["@mks2508/release-hub-sdk@0.3.0", "", { "dependencies": { "@mks2508/no-throw": "^0.3.3" }, "bin": { "release-hub": "dist/cli.js" } }, "sha512-PXDLztshKXwXJwTPk/GC5cuvZez8HBwPb2m+Fm7IfGVhA25RmRHlESQOp73ILrGR0jcgq8tyRav2hmdxJtTqEw=="],
 
     "@mks2508/shadcn-basecoat-theme-manager": ["@mks2508/shadcn-basecoat-theme-manager@4.3.2", "", { "peerDependencies": { "@mks2508/better-logger": "^5.0.1" } }, "sha512-2fK1xBQRcD1wwzPL0DK8yIUlJeLVdfxMHnPv9mJ+GRiQMoUE2el3DQho0DBOwOGweVOVpMqafA9RFB0ycczPFA=="],
 
