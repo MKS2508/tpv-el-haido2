@@ -41,14 +41,15 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Requiere secret SOAP_AEAT_PAT (PAT classico 'repo' o fine-grained contents:read
-      # sobre MKS2508/tpv-soap-aeat) — GITHUB_TOKEN no llega a repos privados cruzados.
+      # Checkout del sidecar con deploy key read-only (secret SOAP_AEAT_DEPLOY_KEY,
+      # añadida a MKS2508/tpv-soap-aeat) — GITHUB_TOKEN no llega a repos privados
+      # cruzados y los PATs solo se crean por UI de GitHub.
       - name: Checkout tpv-soap-aeat (sidecar source)
         uses: actions/checkout@v7
         with:
           repository: MKS2508/tpv-soap-aeat
           path: tpv-soap-aeat
-          token: ${{ secrets.SOAP_AEAT_PAT }}
+          ssh-key: ${{ secrets.SOAP_AEAT_DEPLOY_KEY }}
           persist-credentials: false
 
       - name: Install tpv-soap-aeat dependencies
