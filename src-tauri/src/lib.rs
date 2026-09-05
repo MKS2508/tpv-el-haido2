@@ -670,45 +670,53 @@ async fn download_and_install_update(app: tauri::AppHandle) -> Result<(), String
     }
 
     let _ = app.emit("ota-stage", "installing");
-    let install_result: Result<(), String> = if cfg!(target_os = "macos") {
-        let app_bundle = mks_ota::install::full::macos::current_app_bundle()
-            .map_err(|e: mks_ota::error::OtaError| { cleanup_archive(); e.to_string() })?;
-        let archive_path = outcome.path.clone();
-        let install_bundle = app_bundle.clone();
-        tauri::async_runtime::spawn_blocking(move || {
-            mks_ota::install::full::macos::install(&archive_path, &install_bundle)
-        })
-        .await
-        .map_err(|e| format!("install task panicked: {e}"))?
-        .map_err(|e: mks_ota::error::OtaError| format!("install failed: {e}"))?;
-        let _ = app.emit("ota-stage", "relaunching");
-        mks_ota::install::full::macos::relaunch(&app_bundle).map_err(|e: mks_ota::error::OtaError| e.to_string())?;
-        Ok(())
-    } else {
-        // Linux and other platforms
-        #[cfg(target_os = "linux")]
+    // Dispatch por plataforma en COMPILE time: mks-ota v0.3.0 gatea full::macos y
+    // full::linux con #[cfg(target_os=...)] — un if cfg!(...) runtime se compila en
+    // todas las plataformas y rompe (E0433) donde el módulo del crate no existe.
+    let install_result: Result<(), String> = {
+        #[cfg(target_os = "macos")]
         {
-            let app_bundle = mks_ota::install::full::linux::current_app_bundle()
+            let app_bundle = mks_ota::install::full::macos::current_app_bundle()
                 .map_err(|e: mks_ota::error::OtaError| { cleanup_archive(); e.to_string() })?;
             let archive_path = outcome.path.clone();
             let install_bundle = app_bundle.clone();
             tauri::async_runtime::spawn_blocking(move || {
-                mks_ota::install::full::linux::install(&archive_path, &install_bundle)
+                mks_ota::install::full::macos::install(&archive_path, &install_bundle)
             })
             .await
             .map_err(|e| format!("install task panicked: {e}"))?
             .map_err(|e: mks_ota::error::OtaError| format!("install failed: {e}"))?;
             let _ = app.emit("ota-stage", "relaunching");
-            mks_ota::install::full::linux::relaunch(&install_bundle).map_err(|e: mks_ota::error::OtaError| e.to_string())?;
+            mks_ota::install::full::macos::relaunch(&app_bundle).map_err(|e: mks_ota::error::OtaError| e.to_string())?;
             Ok(())
         }
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(not(target_os = "macos"))]
         {
-            cleanup_archive();
-            Err(format!(
-                "full-package OTA install is not supported on this platform ({}); only macOS and Linux are wired (ADR-0046)",
-                std::env::consts::OS,
-            ))
+            // Linux and other platforms
+            #[cfg(target_os = "linux")]
+            {
+                let app_bundle = mks_ota::install::full::linux::current_app_bundle()
+                    .map_err(|e: mks_ota::error::OtaError| { cleanup_archive(); e.to_string() })?;
+                let archive_path = outcome.path.clone();
+                let install_bundle = app_bundle.clone();
+                tauri::async_runtime::spawn_blocking(move || {
+                    mks_ota::install::full::linux::install(&archive_path, &install_bundle)
+                })
+                .await
+                .map_err(|e| format!("install task panicked: {e}"))?
+                .map_err(|e: mks_ota::error::OtaError| format!("install failed: {e}"))?;
+                let _ = app.emit("ota-stage", "relaunching");
+                mks_ota::install::full::linux::relaunch(&install_bundle).map_err(|e: mks_ota::error::OtaError| e.to_string())?;
+                Ok(())
+            }
+            #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+            {
+                cleanup_archive();
+                Err(format!(
+                    "full-package OTA install is not supported on this platform ({}); only macOS and Linux are wired (ADR-0046)",
+                    std::env::consts::OS,
+                ))
+            }
         }
     };
     if let Err(e) = install_result {
